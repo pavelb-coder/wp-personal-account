@@ -1,0 +1,61 @@
+<?php
+/**
+ * Каркас личного кабинета: навигация + активная вкладка.
+ *
+ * Доступные переменные: $user, $tabs, $current_tab.
+ *
+ * @package WP_Personal_Account
+ */
+
+defined( 'ABSPATH' ) || exit;
+?>
+<div class="wppa">
+
+	<header class="wppa-header">
+		<div class="wppa-header__user">
+			<div class="wppa-avatar" aria-hidden="true">
+				<?php echo get_avatar( $user->ID, 56, '', '', array( 'class' => 'wppa-avatar__img' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- разметка от WP. ?>
+			</div>
+			<div>
+				<p class="wppa-header__name"><?php echo esc_html( $user->display_name ); ?></p>
+				<p class="wppa-header__email"><?php echo esc_html( $user->user_email ); ?></p>
+			</div>
+		</div>
+
+		<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( wp_logout_url( WPPA_Plugin::account_url() ) ); ?>">
+			<?php esc_html_e( 'Выйти', 'wp-personal-account' ); ?>
+		</a>
+	</header>
+
+	<?php WPPA_Notices::render(); ?>
+
+	<nav class="wppa-nav" aria-label="<?php esc_attr_e( 'Разделы личного кабинета', 'wp-personal-account' ); ?>">
+		<?php foreach ( $tabs as $slug => $label ) : ?>
+			<a
+				class="wppa-nav__link<?php echo $slug === $current_tab ? ' is-active' : ''; ?>"
+				href="<?php echo esc_url( WPPA_Plugin::tab_url( $slug ) ); ?>"
+				<?php echo $slug === $current_tab ? 'aria-current="page"' : ''; ?>
+			>
+				<?php echo esc_html( $label ); ?>
+			</a>
+		<?php endforeach; ?>
+	</nav>
+
+	<div class="wppa-body">
+		<?php
+		$tab_file = 'tab-' . $current_tab;
+
+		if ( ! file_exists( WPPA_Template::locate( $tab_file ) ) ) {
+			$tab_file = 'tab-profile';
+		}
+
+		WPPA_Template::render(
+			$tab_file,
+			array(
+				'user' => $user,
+				'tabs' => $tabs,
+			)
+		);
+		?>
+	</div>
+</div>

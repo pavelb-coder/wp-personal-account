@@ -1,0 +1,222 @@
+<?php
+/**
+ * Вход и регистрация.
+ *
+ * @package WP_Personal_Account
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Class WPPA_Auth
+ */
+class WPPA_Auth {
+
+	/**
+	 * Максимум попыток входа.
+	 */
+	const MAX_ATTEMPTS = 5;
+
+	/**
+	 * Окно блокировки в секундах.
+	 */
+	const LOCK_WINDOW = 900;
+
+	/**
+	 * Обработка формы входа.
+	 *
+	 * @return void
+	 */
+	public static function handle_login() {
+		check_admin_referer( 'wppa_login', 'wppa_nonce' );
+
+		$tab_url = WPPA_Plugin::tab_url( WPPA_Account::current_tab() );
+		$key     = self::client_key();
+
+		if ( self::is_locked( $key ) ) {
+			WPPA_Notices::redirect( 'login_blocked', $tab_url );
+		}
+
+		$login    = isset( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : '';
+		$password = isset( $_POST['pwd'] ) ? (string) wp_unslash( $_POST['pwd'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- пароль не санитизируем.
+
+		if ( '' === $login || '' === $password ) {
+			WPPA_Notices::redirect( 'empty_fields', $tab_url );
+		}
+
+		if ( is_email( $login ) ) {
+			$user = get_user_by( 'email', $login );
+			if ( $user ) {
+				$login = $user->user_login;
+			}
+		}
+
+		$creds = array(
+			'user_login'    => $login,
+			'user_password' => $password,
+			'remember'      => ! empty( $_POST['rememberme'] ),
+		);
+
+		$result = wp_signon( $creds, is_ssl() );
+
+		if ( is_wp_error( $result ) ) {
+			self::register_attempt( $key );
+			WPPA_Notices::redirect( 'login_failed', $tab_url );
+		}
+
+		self::clear_attempts( $key );
+
+		$redirect = '';
+
+		if ( ! empty( $_POST['redirect_to'] ) ) {
+			$redirect = wp_validate_redirect( esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ), '' );
+		}
+
+		if ( ! $redirect ) {
+			$redirect = WPPA_Plugin::setting( 'login_redirect', '' );
+		}
+
+		if ( ! $redirect ) {
+			$redirect = WPPA_Plugin::tab_url( 'dashboard' );
+		}
+
+		WPPA_Notices::redirect( 'login_success', $redirect );
+	}
+
+	/**
+	 * Обработка формы регистрации.
+	 *
+	 * @return void
+	 */
+	public static function handle_register() {
+		check_admin_referer( 'wppa_register', 'wppa_nonce' );
+
+		$tab_url = WPPA_Plugin::account_url( array( 'wppa_view' => 'register' ) );
+
+		if ( ! WPPA_Plugin::setting( 'registration_enabled', 1 ) || ! get_option( 'users_can_register' ) ) {
+			WPPA_Notices::redirect( 'registration_closed', $tab_url );
+		}
+
+		$name     = isset( $_POST['display_name'] ) ? sanitize_text_field( wp_unslash( $_POST['display_name'] ) ) : '';
+		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$repeat   = isset( $_POST['password_confirm'] ) ? (string) wp_unslash( $_POST['password_confirm'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$consent  = ! empty( $_POST['consent'] );
+
+		if ( ! $consent ) {
+			WPPA_Notices::redirect( 'no_consent', $tab_url );
+		}
+
+		if ( '' === $name || '' === $email || '' === $password || '' === $repeat ) {
+			WPPA_Notices::redirect( 'empty_fields', $tab_url );
+		}
+
+		if ( ! is_email( $email ) ) {
+			WPPA_Notices::redirect( 'email_invalid', $tab_url );
+		}
+
+		if ( email_exists( $email ) ) {
+			WPPA_Notices::redirect( 'email_exists', $tab_url );
+		}
+
+		if ( $password !== $repeat ) {
+			WPPA_Notices::redirect( 'password_mismatch', $tab_url );
+		}
+
+		if ( strlen( $password ) < 8 ) {
+			WPPA_Notices::redirect( 'password_short', $tab_url );
+		}
+
+		$username = self::unique_username( $email );
+		$default  = get_option( 'default_role', 'subscriber' );
+
+		$user_id = wp_insert_user(
+			array(
+				'user_login'   => $username,
+				'user_email'   => $email,
+				'user_pass'    => $password,
+				'display_name' => $name,
+				'nickname'     => $name,
+				'role'         => $default ? $default : 'subscriber',
+			)
+		);
+
+		if ( is_wp_error( $user_id ) ) {
+			$code = $user_id->get_error_code();
+			WPPA_Notices::redirect( 'existing_user_email' === $code ? 'email_exists' : 'save_failed', $tab_url );
+		}
+
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true, is_ssl() );
+
+		WPPA_Notices::redirect( 'registration_success', WPPA_Plugin::tab_url( 'dashboard' ) );
+	}
+
+	/**
+	 * Уникальное имя пользователя на основе email.
+	 *
+	 * @param string $email Email.
+	 * @return string
+	 */
+	private static function unique_username( $email ) {
+		$base = strstr( $email, '@', true );
+		$base = sanitize_user( $base ? $base : $email, true );
+		$base = '' !== $base ? $base : 'user';
+
+		$candidate = $base;
+		$i         = 1;
+
+		while ( username_exists( $candidate ) ) {
+			++$i;
+			$candidate = $base . '_' . $i;
+			if ( $i > 500 ) {
+				$candidate = 'user_' . wp_generate_password( 6, false, false );
+				break;
+			}
+		}
+
+		return $candidate;
+	}
+
+	/**
+	 * Ключ клиента для лимита попыток.
+	 *
+	 * @return string
+	 */
+	private static function client_key() {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		return 'wppa_lp_' . md5( $ip . '|' . AUTH_SALT );
+	}
+
+	/**
+	 * Проверка блокировки.
+	 *
+	 * @param string $key Ключ.
+	 * @return bool
+	 */
+	private static function is_locked( $key ) {
+		$attempts = (int) get_transient( $key );
+		return $attempts >= self::MAX_ATTEMPTS;
+	}
+
+	/**
+	 * Учёт неудачной попытки.
+	 *
+	 * @param string $key Ключ.
+	 * @return void
+	 */
+	private static function register_attempt( $key ) {
+		$attempts = (int) get_transient( $key );
+		set_transient( $key, $attempts + 1, self::LOCK_WINDOW );
+	}
+
+	/**
+	 * Сброс счётчика после успешного входа.
+	 *
+	 * @param string $key Ключ.
+	 * @return void
+	 */
+	private static function clear_attempts( $key ) {
+		delete_transient( $key );
+	}
+}

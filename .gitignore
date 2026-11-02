@@ -1,0 +1,16 @@
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-*
+
+# Node / сборка
+node_modules/
+dist/
+build/
+
+# Локальные конфиги и артефакты
+*.log
+*.zip
+.phpunit.result.cache

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="WP Personal Account">
+	<description>Правила WordPress Coding Standards для плагина.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+	<exclude-pattern>node_modules/*</exclude-pattern>
+	<exclude-pattern>tools/*</exclude-pattern>
+	<exclude-pattern>preview.html</exclude-pattern>
+
+	<arg name="extensions" value="php" />
+	<arg name="colors" />
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName" />
+	</rule>
+
+	<config name="minimum_supported_wp_version" value="6.0" />
+	<config name="text_domain" value="wp-personal-account" />
+</ruleset>

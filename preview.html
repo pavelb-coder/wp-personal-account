@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WP Personal Account — превью интерфейса</title>
+<style>
+/**
+ * WP Personal Account — стили личного кабинета.
+ * Акцентный цвет задаётся переменной --wppa-accent (настройки плагина).
+ */
+
+.wppa {
+	--wppa-accent: #2563eb;
+	--wppa-accent-contrast: #ffffff;
+	--wppa-bg: #f8fafc;
+	--wppa-surface: #ffffff;
+	--wppa-border: #e2e8f0;
+	--wppa-text: #0f172a;
+	--wppa-muted: #64748b;
+	--wppa-radius: 14px;
+	--wppa-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .05);
+
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 0;
+	color: var(--wppa-text);
+	font-size: 16px;
+	line-height: 1.55;
+	box-sizing: border-box;
+}
+
+.wppa *,
+.wppa *::before,
+.wppa *::after {
+	box-sizing: inherit;
+}
+
+.wppa a {
+	color: var(--wppa-accent);
+}
+
+.wppa-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	padding: 18px 20px;
+	background: var(--wppa-surface);
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	box-shadow: var(--wppa-shadow);
+}
+
+.wppa-header__user {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.wppa-avatar {
+	flex: 0 0 auto;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--wppa-bg);
+}
+
+.wppa-avatar__img {
+	width: 56px;
+	height: 56px;
+	display: block;
+	object-fit: cover;
+}
+
+.wppa-header__name {
+	margin: 0;
+	font-weight: 650;
+	font-size: 1.05em;
+}
+
+.wppa-header__email {
+	margin: 2px 0 0;
+	color: var(--wppa-muted);
+	font-size: .9em;
+}
+
+.wppa-nav {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin: 18px 0;
+	padding: 6px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	border-radius: 999px;
+}
+
+.wppa-nav__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 40px;
+	padding: 8px 16px;
+	border-radius: 999px;
+	color: var(--wppa-muted) !important;
+	text-decoration: none;
+	font-size: .95em;
+	font-weight: 500;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.wppa-nav__link:hover,
+.wppa-nav__link:focus-visible {
+	background: #e8eef8;
+	color: var(--wppa-text) !important;
+}
+
+.wppa-nav__link.is-active {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast) !important;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, .25);
+}
+
+.wppa-body > .wppa-title:first-child {
+	margin-top: 0;
+}
+
+.wppa-title {
+	margin: 0 0 18px;
+	font-size: 1.4em;
+	font-weight: 650;
+	line-height: 1.25;
+}
+
+.wppa-subtitle {
+	margin: 24px 0 12px;
+	font-size: 1.05em;
+	font-weight: 600;
+}
+
+.wppa-card .wppa-subtitle:first-child {
+	margin-top: 0;
+}
+
+.wppa-card {
+	background: var(--wppa-surface);
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	box-shadow: var(--wppa-shadow);
+	padding: 20px;
+	margin-bottom: 16px;
+}
+
+.wppa-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 14px;
+	margin-bottom: 8px;
+}
+
+.wppa-card--stat {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 0;
+}
+
+.wppa-card__label {
+	color: var(--wppa-muted);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.wppa-card__value {
+	font-size: 1.6em;
+	font-weight: 650;
+	line-height: 1.2;
+	word-break: break-word;
+}
+
+.wppa-card__value--small {
+	font-size: 1.05em;
+	font-weight: 600;
+}
+
+.wppa-order-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.wppa-order-card__number {
+	margin: 0;
+	font-weight: 600;
+}
+
+.wppa-order-card__meta {
+	margin: 4px 0 0;
+	color: var(--wppa-muted);
+	font-size: .9em;
+}
+
+.wppa-order-card__side {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.wppa-amount {
+	font-weight: 650;
+	white-space: nowrap;
+}
+
+.wppa-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+/* Формы */
+
+.wppa-form-wrap {
+	padding: 4px 0;
+}
+
+.wppa-form {
+	display: block;
+	margin: 0;
+}
+
+.wppa-field {
+	display: block;
+	margin: 0 0 16px;
+}
+
+.wppa-field > label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: .9em;
+	font-weight: 600;
+	color: var(--wppa-text);
+}
+
+.wppa-field input[type="text"],
+.wppa-field input[type="email"],
+.wppa-field input[type="password"],
+.wppa-field input[type="tel"],
+.wppa-field input[type="url"],
+.wppa-field input[type="number"],
+.wppa-field select,
+.wppa-field textarea {
+	width: 100%;
+	max-width: 100%;
+	padding: 10px 12px;
+	font: inherit;
+	color: var(--wppa-text);
+	background: #fff;
+	border: 1px solid var(--wppa-border);
+	border-radius: 10px;
+	transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.wppa-field input:focus,
+.wppa-field select:focus,
+.wppa-field textarea:focus {
+	outline: none;
+	border-color: var(--wppa-accent);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+
+.wppa-field input[readonly] {
+	background: var(--wppa-bg);
+	color: var(--wppa-muted);
+}
+
+.wppa-field--inline {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	font-size: .92em;
+}
+
+.wppa-field--check label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+.wppa-field--check input {
+	margin-top: 3px;
+}
+
+.wppa-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0 16px;
+}
+
+.wppa-password {
+	position: relative;
+	display: block;
+}
+
+.wppa-password input {
+	padding-right: 44px !important;
+}
+
+.wppa-password__toggle {
+	position: absolute;
+	top: 50%;
+	right: 6px;
+	transform: translateY(-50%);
+	width: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	cursor: pointer;
+	opacity: .6;
+	line-height: 1;
+}
+
+.wppa-password__toggle:hover {
+	opacity: 1;
+	background: var(--wppa-bg);
+}
+
+.wppa-hint {
+	display: block;
+	margin-top: 6px;
+	color: var(--wppa-muted);
+	font-size: .85em;
+}
+
+/* Кнопки */
+
+.wppa-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 42px;
+	padding: 9px 18px;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	font: inherit;
+	font-size: .95em;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+	transition: filter .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+.wppa-button--primary {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast) !important;
+}
+
+.wppa-button--primary:hover {
+	filter: brightness(.93);
+}
+
+.wppa-button--ghost {
+	background: #fff;
+	border-color: var(--wppa-border);
+	color: var(--wppa-text) !important;
+}
+
+.wppa-button--ghost:hover {
+	border-color: var(--wppa-accent);
+	color: var(--wppa-accent) !important;
+}
+
+/* Уведомления */
+
+.wppa-notice {
+	padding: 12px 16px;
+	margin: 0 0 18px;
+	border-radius: 10px;
+	border: 1px solid var(--wppa-border);
+	border-left-width: 4px;
+	font-size: .95em;
+	background: var(--wppa-surface);
+}
+
+.wppa-notice a {
+	font-weight: 600;
+}
+
+.wppa-notice--success {
+	border-left-color: #16a34a;
+	background: #f0fdf4;
+}
+
+.wppa-notice--error {
+	border-left-color: #dc2626;
+	background: #fef2f2;
+}
+
+.wppa-notice--info {
+	border-left-color: #0284c7;
+	background: #f0f9ff;
+}
+
+/* Таблицы */
+
+.wppa-table-wrap {
+	overflow-x: auto;
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	background: var(--wppa-surface);
+}
+
+.wppa-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: .95em;
+}
+
+.wppa-table th,
+.wppa-table td {
+	padding: 12px 14px;
+	text-align: left;
+	border-bottom: 1px solid var(--wppa-border);
+	vertical-align: top;
+}
+
+.wppa-table thead th {
+	background: var(--wppa-bg);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--wppa-muted);
+	white-space: nowrap;
+}
+
+.wppa-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.wppa-table tfoot th,
+.wppa-table tfoot td {
+	border-top: 1px solid var(--wppa-border);
+	border-bottom: 0;
+	background: #fbfdff;
+}
+
+.wppa-status {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	font-size: .85em;
+	white-space: nowrap;
+}
+
+.wppa-status--completed,
+.wppa-status--processing {
+	background: #ecfdf5;
+	border-color: #bbf7d0;
+	color: #15803d;
+}
+
+.wppa-status--pending,
+.wppa-status--on-hold {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #b45309;
+}
+
+.wppa-status--cancelled,
+.wppa-status--failed,
+.wppa-status--refunded {
+	background: #fef2f2;
+	border-color: #fecaca;
+	color: #b91c1c;
+}
+
+.wppa-link {
+	font-weight: 600;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.wppa-pagination {
+	display: flex;
+	gap: 6px;
+	justify-content: center;
+	margin: 18px 0 0;
+	flex-wrap: wrap;
+}
+
+.wppa-pagination__item a,
+.wppa-pagination__item span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	height: 36px;
+	padding: 0 8px;
+	border: 1px solid var(--wppa-border);
+	border-radius: 8px;
+	text-decoration: none;
+	color: var(--wppa-text);
+	font-size: .9em;
+}
+
+.wppa-pagination__item .current {
+	background: var(--wppa-accent);
+	border-color: var(--wppa-accent);
+	color: #fff;
+}
+
+/* Адреса */
+
+.wppa-address-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.wppa-fieldset {
+	margin: 0;
+	padding: 18px 20px 6px;
+	min-width: 0;
+}
+
+.wppa-fieldset legend {
+	padding: 0 6px;
+}
+
+.wppa-order-info {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 14px;
+	margin-bottom: 18px;
+}
+
+.wppa-address {
+	font-style: normal;
+	line-height: 1.6;
+}
+
+/* Гость */
+
+.wppa--guest {
+	max-width: 460px;
+}
+
+.wppa-switch {
+	margin: 14px 0 0;
+	font-size: .92em;
+	color: var(--wppa-muted);
+	text-align: center;
+}
+
+/* Адаптив */
+
+@media (max-width: 640px) {
+	.wppa-header {
+		padding: 14px;
+	}
+
+	.wppa-nav {
+		border-radius: var(--wppa-radius);
+	}
+
+	.wppa-card {
+		padding: 16px;
+	}
+
+	.wppa-table thead {
+		display: none;
+	}
+
+	.wppa-table,
+	.wppa-table tbody,
+	.wppa-table tr,
+	.wppa-table td,
+	.wppa-table tfoot,
+	.wppa-table tfoot th {
+		display: block;
+		width: 100%;
+	}
+
+	.wppa-table tr {
+		border-bottom: 1px solid var(--wppa-border);
+		padding: 6px 0;
+	}
+
+	.wppa-table td,
+	.wppa-table tfoot th {
+		border: 0;
+		padding: 6px 14px;
+	}
+
+	.wppa-table td::before {
+		content: attr(data-label);
+		display: block;
+		font-size: .75em;
+		text-transform: uppercase;
+		letter-spacing: .04em;
+		color: var(--wppa-muted);
+	}
+
+	.wppa-table tfoot th {
+		font-size: .9em;
+	}
+}
+
+body {
+	margin: 0;
+	padding: 32px 20px 64px;
+	background: #eef2f7;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	color: #0f172a;
+}
+.demo-top { max-width: 960px; margin: 0 auto 28px; }
+.demo-top h1 { margin: 0 0 8px; font-size: 1.6rem; }
+.demo-top p { margin: 0; color: #64748b; }
+.demo-block { max-width: 960px; margin: 0 auto 40px; }
+.demo-block__head { margin-bottom: 16px; }
+.demo-block__head h2 { margin: 0 0 4px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .06em; color: #475569; }
+.demo-block__head p { margin: 0; font-size: .88rem; color: #7c8798; }
+.demo-block > .wppa, .demo-block > .demo-two { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+.demo-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+</style>
+</head>
+<body>
+<div class="demo-top">
+	<h1>Личный кабинет — превью интерфейса</h1>
+	<p>Демонстрация шаблонов плагина WP Personal Account на тестовых данных (WooCommerce-заказы и адреса — пример).</p>
+</div>
+<section class="demo-block"><div class="demo-block__head"><h2>Кабинет целиком (активна вкладка «Обзор»)</h2><p>Шапка с аватаром и кнопкой выхода, навигация по вкладкам, контент активной вкладки</p></div><div class="wppa">
+
+	<header class="wppa-header">
+		<div class="wppa-header__user">
+			<div class="wppa-avatar" aria-hidden="true">
+				<img class="avatar" width="56" height="56" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />			</div>
+			<div>
+				<p class="wppa-header__name">Иван Петров</p>
+				<p class="wppa-header__email">ivan@example.com</p>
+			</div>
+		</div>
+
+		<a class="wppa-button wppa-button--ghost" href="https://example.com/logout">
+			Выйти		</a>
+	</header>
+
+	
+	<nav class="wppa-nav" aria-label="Разделы личного кабинета">
+					<a
+				class="wppa-nav__link is-active"
+				href="https://example.com/personal-account/?wppa_tab=dashboard"
+				aria-current="page"			>
+				Обзор			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/personal-account/?wppa_tab=profile"
+							>
+				Профиль			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/personal-account/?wppa_tab=orders"
+							>
+				Заказы			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/personal-account/?wppa_tab=addresses"
+							>
+				Адреса			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/personal-account/?wppa_tab=security"
+							>
+				Безопасность			</a>
+			</nav>
+
+	<div class="wppa-body">
+		<h2 class="wppa-title">
+	Здравствуйте, Иван Петров!</h2>
+
+<div class="wppa-grid">
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label">Заказов всего</span>
+		<span class="wppa-card__value">3</span>
+	</div>
+
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label">Дата регистрации</span>
+		<span class="wppa-card__value wppa-card__value--small">10.01.2025</span>
+	</div>
+
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label">Email</span>
+		<span class="wppa-card__value wppa-card__value--small">ivan@example.com</span>
+	</div>
+</div>
+
+	<h3 class="wppa-subtitle">Последний заказ</h3>
+	<div class="wppa-card wppa-order-card">
+		<div>
+			<p class="wppa-order-card__number">
+				Заказ №1042			</p>
+			<p class="wppa-order-card__meta">
+				28.10.2026 ·
+				В обработке			</p>
+		</div>
+		<div class="wppa-order-card__side">
+			<span class="wppa-amount"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></span>
+			<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1042">
+				Подробнее			</a>
+		</div>
+	</div>
+
+<h3 class="wppa-subtitle">Быстрые действия</h3>
+<div class="wppa-actions">
+			<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=profile">Редактировать профиль</a>
+				<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=security">Сменить пароль</a>
+				<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=orders">Все заказы</a>
+	</div>
+	</div>
+</div>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Заказы</h2><p>Вкладка orders: таблица заказов WooCommerce со статусами, суммами и пагинацией</p></div><h2 class="wppa-title">Мои заказы</h2>
+
+	<div class="wppa-table-wrap">
+		<table class="wppa-table">
+			<thead>
+				<tr>
+					<th>Заказ</th>
+					<th>Дата</th>
+					<th>Статус</th>
+					<th>Сумма</th>
+					<th>Действия</th>
+				</tr>
+			</thead>
+			<tbody>
+									<tr>
+						<td data-label="Заказ">
+							№1042						</td>
+						<td data-label="Дата">28.10.2026</td>
+						<td data-label="Статус">
+							<span class="wppa-status wppa-status--processing">
+								В обработке							</span>
+						</td>
+						<td data-label="Сумма"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></td>
+						<td data-label="Действия">
+							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1042">
+								Подробнее							</a>
+													</td>
+					</tr>
+									<tr>
+						<td data-label="Заказ">
+							№1031						</td>
+						<td data-label="Дата">28.10.2026</td>
+						<td data-label="Статус">
+							<span class="wppa-status wppa-status--completed">
+								Выполнен							</span>
+						</td>
+						<td data-label="Сумма"><span class="woocommerce-Price-amount">2 490&nbsp;₽</span></td>
+						<td data-label="Действия">
+							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1031">
+								Подробнее							</a>
+													</td>
+					</tr>
+									<tr>
+						<td data-label="Заказ">
+							№1017						</td>
+						<td data-label="Дата">28.10.2026</td>
+						<td data-label="Статус">
+							<span class="wppa-status wppa-status--pending">
+								Ожидает оплаты							</span>
+						</td>
+						<td data-label="Сумма"><span class="woocommerce-Price-amount">890&nbsp;₽</span></td>
+						<td data-label="Действия">
+							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1017">
+								Подробнее							</a>
+															<a class="wppa-link" href="#pay">
+									Оплатить								</a>
+													</td>
+					</tr>
+							</tbody>
+		</table>
+	</div>
+
+	</section><section class="demo-block"><div class="demo-block__head"><h2>Детали заказа</h2><p>Просмотр состава заказа, итогов и адреса</p></div><p>
+	<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders">← Ко всем заказам</a>
+</p>
+
+<h2 class="wppa-title">
+	Заказ №1042</h2>
+
+<div class="wppa-order-info">
+	<div class="wppa-card">
+		<span class="wppa-card__label">Дата</span>
+		<span class="wppa-card__value wppa-card__value--small">28.10.2026</span>
+	</div>
+	<div class="wppa-card">
+		<span class="wppa-card__label">Статус</span>
+		<span class="wppa-card__value wppa-card__value--small">В обработке</span>
+	</div>
+	<div class="wppa-card">
+		<span class="wppa-card__label">Итого</span>
+		<span class="wppa-card__value wppa-card__value--small"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></span>
+	</div>
+	<div class="wppa-card">
+		<span class="wppa-card__label">Оплата</span>
+		<span class="wppa-card__value wppa-card__value--small">Банковская карта</span>
+	</div>
+</div>
+
+
+<div class="wppa-table-wrap">
+	<table class="wppa-table">
+		<thead>
+			<tr>
+				<th>Товар</th>
+				<th>Кол-во</th>
+				<th>Сумма</th>
+			</tr>
+		</thead>
+		<tbody>
+											<tr>
+					<td data-label="Товар">
+						Кофе в зёрнах Ethiopia 1 кг											</td>
+					<td data-label="Кол-во">2</td>
+					<td data-label="Сумма">3 980&nbsp;₽</td>
+				</tr>
+											<tr>
+					<td data-label="Товар">
+						Кружка керамическая 350 мл											</td>
+					<td data-label="Кол-во">1</td>
+					<td data-label="Сумма">1 290&nbsp;₽</td>
+				</tr>
+					</tbody>
+		<tfoot>
+							<tr>
+					<th colspan="2">Товары:</th>
+					<td>5 270&nbsp;₽</td>
+				</tr>
+							<tr>
+					<th colspan="2">Доставка:</th>
+					<td>Бесплатно</td>
+				</tr>
+							<tr>
+					<th colspan="2">Итого:</th>
+					<td><strong>5 270&nbsp;₽</strong></td>
+				</tr>
+					</tfoot>
+	</table>
+</div>
+
+	<h3 class="wppa-subtitle">Адрес плательщика</h3>
+	<address class="wppa-address">Иван Петров<br>ул. Ленина, 12, кв. 5<br>Красноярск, 660000</address>
+
+</section><section class="demo-block"><div class="demo-block__head"><h2>Профиль</h2><p>Вкладка profile: имя, фамилия, отображаемое имя, «о себе»</p></div><h2 class="wppa-title">Профиль</h2>
+
+<form class="wppa-form" method="post" action="https://example.com/personal-account/?wppa_tab=profile">
+	<input type="hidden" name="wppa_nonce" value="nonce" />	<input type="hidden" name="wppa_action" value="profile" />
+
+	<div class="wppa-row">
+		<p class="wppa-field">
+			<label for="wppa-first-name">Имя</label>
+			<input type="text" id="wppa-first-name" name="first_name" value="Иван" autocomplete="given-name" />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-last-name">Фамилия</label>
+			<input type="text" id="wppa-last-name" name="last_name" value="Петров" autocomplete="family-name" />
+		</p>
+	</div>
+
+	<p class="wppa-field">
+		<label for="wppa-display-name">Отображаемое имя</label>
+		<input type="text" id="wppa-display-name" name="display_name" value="Иван Петров" required />
+	</p>
+
+	<p class="wppa-field">
+		<label for="wppa-description">О себе</label>
+		<textarea id="wppa-description" name="description" rows="4">Люблю доставку.</textarea>
+	</p>
+
+	<p class="wppa-field">
+		<label>Email</label>
+		<input type="email" value="ivan@example.com" readonly />
+		<span class="wppa-hint">
+			Сменить email можно в разделе <a href="https://example.com/personal-account/?wppa_tab=security">Безопасность</a>.		</span>
+	</p>
+
+	<button type="submit" class="wppa-button wppa-button--primary">Сохранить</button>
+</form>
+<div class="wppa-notice wppa-notice--success" role="status">
+	Профиль обновлён.</div>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Безопасность</h2><p>Вкладка security: смена пароля, смена email с подтверждением, выход</p></div><h2 class="wppa-title">Безопасность</h2>
+
+<section class="wppa-card">
+	<h3 class="wppa-subtitle">Смена пароля</h3>
+
+	<form class="wppa-form" method="post" action="https://example.com/personal-account/?wppa_tab=security">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="password" />
+
+		<p class="wppa-field">
+			<label for="wppa-current-password">Текущий пароль</label>
+			<input type="password" id="wppa-current-password" name="current_password" autocomplete="current-password" required />
+		</p>
+
+		<div class="wppa-row">
+			<p class="wppa-field">
+				<label for="wppa-new-password">Новый пароль</label>
+				<input type="password" id="wppa-new-password" name="new_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+			</p>
+
+			<p class="wppa-field">
+				<label for="wppa-repeat-password">Повторите пароль</label>
+				<input type="password" id="wppa-repeat-password" name="repeat_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+			</p>
+		</div>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Изменить пароль</button>
+	</form>
+</section>
+
+<section class="wppa-card">
+	<h3 class="wppa-subtitle">Смена email</h3>
+	<p class="wppa-hint">
+		Текущий email: ivan@example.com	</p>
+
+	
+	<form class="wppa-form" method="post" action="https://example.com/personal-account/?wppa_tab=security">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="email" />
+
+		<p class="wppa-field">
+			<label for="wppa-new-email">Новый email</label>
+			<input type="email" id="wppa-new-email" name="new_email" autocomplete="email" required />
+			<span class="wppa-hint">На новый адрес придёт письмо со ссылкой подтверждения.</span>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Отправить подтверждение</button>
+	</form>
+</section>
+
+<section class="wppa-card">
+	<h3 class="wppa-subtitle">Сессия</h3>
+	<p class="wppa-hint">Выход завершит текущую сессию на этом устройстве.</p>
+	<a class="wppa-button wppa-button--ghost" data-wppa-confirm-logout href="https://example.com/logout">
+		Выйти из аккаунта	</a>
+</section>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Вход и регистрация</h2><p>Экран для гостей: формы [wppa_login] и [wppa_register]</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
+	<h2 class="wppa-title">Вход в личный кабинет</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/personal-account/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
+		
+		<p class="wppa-field">
+			<label for="wppa-login">Логин или email</label>
+			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
+			</span>
+		</p>
+
+		<p class="wppa-field wppa-field--inline">
+			<label>
+				<input type="checkbox" name="rememberme" value="1" />
+				Запомнить меня			</label>
+			<a href="https://example.com/lost">Забыли пароль?</a>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Войти</button>
+	</form>
+</div>
+</div><div><div class="wppa-form-wrap">
+	<h2 class="wppa-title">Регистрация</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/personal-account/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
+
+		<p class="wppa-field">
+			<label for="wppa-name">Имя</label>
+			<input type="text" id="wppa-name" name="display_name" autocomplete="name" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-email">Email</label>
+			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
+			</span>
+			<span class="wppa-hint">Минимум 8 символов.</span>
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password2">Пароль ещё раз</label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+		</p>
+
+		<p class="wppa-field wppa-field--check">
+			<label>
+				<input type="checkbox" name="consent" value="1" required />
+				Согласен на обработку персональных данных			</label>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
+	</form>
+</div>
+</div></div></section>
+</body>
+</html>

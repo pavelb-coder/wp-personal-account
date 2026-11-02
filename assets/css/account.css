@@ -1,0 +1,619 @@
+/**
+ * WP Personal Account — стили личного кабинета.
+ * Акцентный цвет задаётся переменной --wppa-accent (настройки плагина).
+ */
+
+.wppa {
+	--wppa-accent: #2563eb;
+	--wppa-accent-contrast: #ffffff;
+	--wppa-bg: #f8fafc;
+	--wppa-surface: #ffffff;
+	--wppa-border: #e2e8f0;
+	--wppa-text: #0f172a;
+	--wppa-muted: #64748b;
+	--wppa-radius: 14px;
+	--wppa-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .05);
+
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 0;
+	color: var(--wppa-text);
+	font-size: 16px;
+	line-height: 1.55;
+	box-sizing: border-box;
+}
+
+.wppa *,
+.wppa *::before,
+.wppa *::after {
+	box-sizing: inherit;
+}
+
+.wppa a {
+	color: var(--wppa-accent);
+}
+
+.wppa-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	padding: 18px 20px;
+	background: var(--wppa-surface);
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	box-shadow: var(--wppa-shadow);
+}
+
+.wppa-header__user {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.wppa-avatar {
+	flex: 0 0 auto;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: var(--wppa-bg);
+}
+
+.wppa-avatar__img {
+	width: 56px;
+	height: 56px;
+	display: block;
+	object-fit: cover;
+}
+
+.wppa-header__name {
+	margin: 0;
+	font-weight: 650;
+	font-size: 1.05em;
+}
+
+.wppa-header__email {
+	margin: 2px 0 0;
+	color: var(--wppa-muted);
+	font-size: .9em;
+}
+
+.wppa-nav {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin: 18px 0;
+	padding: 6px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	border-radius: 999px;
+}
+
+.wppa-nav__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 40px;
+	padding: 8px 16px;
+	border-radius: 999px;
+	color: var(--wppa-muted) !important;
+	text-decoration: none;
+	font-size: .95em;
+	font-weight: 500;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.wppa-nav__link:hover,
+.wppa-nav__link:focus-visible {
+	background: #e8eef8;
+	color: var(--wppa-text) !important;
+}
+
+.wppa-nav__link.is-active {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast) !important;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, .25);
+}
+
+.wppa-body > .wppa-title:first-child {
+	margin-top: 0;
+}
+
+.wppa-title {
+	margin: 0 0 18px;
+	font-size: 1.4em;
+	font-weight: 650;
+	line-height: 1.25;
+}
+
+.wppa-subtitle {
+	margin: 24px 0 12px;
+	font-size: 1.05em;
+	font-weight: 600;
+}
+
+.wppa-card .wppa-subtitle:first-child {
+	margin-top: 0;
+}
+
+.wppa-card {
+	background: var(--wppa-surface);
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	box-shadow: var(--wppa-shadow);
+	padding: 20px;
+	margin-bottom: 16px;
+}
+
+.wppa-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 14px;
+	margin-bottom: 8px;
+}
+
+.wppa-card--stat {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 0;
+}
+
+.wppa-card__label {
+	color: var(--wppa-muted);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.wppa-card__value {
+	font-size: 1.6em;
+	font-weight: 650;
+	line-height: 1.2;
+	word-break: break-word;
+}
+
+.wppa-card__value--small {
+	font-size: 1.05em;
+	font-weight: 600;
+}
+
+.wppa-order-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.wppa-order-card__number {
+	margin: 0;
+	font-weight: 600;
+}
+
+.wppa-order-card__meta {
+	margin: 4px 0 0;
+	color: var(--wppa-muted);
+	font-size: .9em;
+}
+
+.wppa-order-card__side {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.wppa-amount {
+	font-weight: 650;
+	white-space: nowrap;
+}
+
+.wppa-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+/* Формы */
+
+.wppa-form-wrap {
+	padding: 4px 0;
+}
+
+.wppa-form {
+	display: block;
+	margin: 0;
+}
+
+.wppa-field {
+	display: block;
+	margin: 0 0 16px;
+}
+
+.wppa-field > label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: .9em;
+	font-weight: 600;
+	color: var(--wppa-text);
+}
+
+.wppa-field input[type="text"],
+.wppa-field input[type="email"],
+.wppa-field input[type="password"],
+.wppa-field input[type="tel"],
+.wppa-field input[type="url"],
+.wppa-field input[type="number"],
+.wppa-field select,
+.wppa-field textarea {
+	width: 100%;
+	max-width: 100%;
+	padding: 10px 12px;
+	font: inherit;
+	color: var(--wppa-text);
+	background: #fff;
+	border: 1px solid var(--wppa-border);
+	border-radius: 10px;
+	transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.wppa-field input:focus,
+.wppa-field select:focus,
+.wppa-field textarea:focus {
+	outline: none;
+	border-color: var(--wppa-accent);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+
+.wppa-field input[readonly] {
+	background: var(--wppa-bg);
+	color: var(--wppa-muted);
+}
+
+.wppa-field--inline {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	font-size: .92em;
+}
+
+.wppa-field--check label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+.wppa-field--check input {
+	margin-top: 3px;
+}
+
+.wppa-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0 16px;
+}
+
+.wppa-password {
+	position: relative;
+	display: block;
+}
+
+.wppa-password input {
+	padding-right: 44px !important;
+}
+
+.wppa-password__toggle {
+	position: absolute;
+	top: 50%;
+	right: 6px;
+	transform: translateY(-50%);
+	width: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	cursor: pointer;
+	opacity: .6;
+	line-height: 1;
+}
+
+.wppa-password__toggle:hover {
+	opacity: 1;
+	background: var(--wppa-bg);
+}
+
+.wppa-hint {
+	display: block;
+	margin-top: 6px;
+	color: var(--wppa-muted);
+	font-size: .85em;
+}
+
+/* Кнопки */
+
+.wppa-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 42px;
+	padding: 9px 18px;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	font: inherit;
+	font-size: .95em;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+	transition: filter .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+.wppa-button--primary {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast) !important;
+}
+
+.wppa-button--primary:hover {
+	filter: brightness(.93);
+}
+
+.wppa-button--ghost {
+	background: #fff;
+	border-color: var(--wppa-border);
+	color: var(--wppa-text) !important;
+}
+
+.wppa-button--ghost:hover {
+	border-color: var(--wppa-accent);
+	color: var(--wppa-accent) !important;
+}
+
+/* Уведомления */
+
+.wppa-notice {
+	padding: 12px 16px;
+	margin: 0 0 18px;
+	border-radius: 10px;
+	border: 1px solid var(--wppa-border);
+	border-left-width: 4px;
+	font-size: .95em;
+	background: var(--wppa-surface);
+}
+
+.wppa-notice a {
+	font-weight: 600;
+}
+
+.wppa-notice--success {
+	border-left-color: #16a34a;
+	background: #f0fdf4;
+}
+
+.wppa-notice--error {
+	border-left-color: #dc2626;
+	background: #fef2f2;
+}
+
+.wppa-notice--info {
+	border-left-color: #0284c7;
+	background: #f0f9ff;
+}
+
+/* Таблицы */
+
+.wppa-table-wrap {
+	overflow-x: auto;
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	background: var(--wppa-surface);
+}
+
+.wppa-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: .95em;
+}
+
+.wppa-table th,
+.wppa-table td {
+	padding: 12px 14px;
+	text-align: left;
+	border-bottom: 1px solid var(--wppa-border);
+	vertical-align: top;
+}
+
+.wppa-table thead th {
+	background: var(--wppa-bg);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: var(--wppa-muted);
+	white-space: nowrap;
+}
+
+.wppa-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.wppa-table tfoot th,
+.wppa-table tfoot td {
+	border-top: 1px solid var(--wppa-border);
+	border-bottom: 0;
+	background: #fbfdff;
+}
+
+.wppa-status {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	font-size: .85em;
+	white-space: nowrap;
+}
+
+.wppa-status--completed,
+.wppa-status--processing {
+	background: #ecfdf5;
+	border-color: #bbf7d0;
+	color: #15803d;
+}
+
+.wppa-status--pending,
+.wppa-status--on-hold {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #b45309;
+}
+
+.wppa-status--cancelled,
+.wppa-status--failed,
+.wppa-status--refunded {
+	background: #fef2f2;
+	border-color: #fecaca;
+	color: #b91c1c;
+}
+
+.wppa-link {
+	font-weight: 600;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.wppa-pagination {
+	display: flex;
+	gap: 6px;
+	justify-content: center;
+	margin: 18px 0 0;
+	flex-wrap: wrap;
+}
+
+.wppa-pagination__item a,
+.wppa-pagination__item span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	height: 36px;
+	padding: 0 8px;
+	border: 1px solid var(--wppa-border);
+	border-radius: 8px;
+	text-decoration: none;
+	color: var(--wppa-text);
+	font-size: .9em;
+}
+
+.wppa-pagination__item .current {
+	background: var(--wppa-accent);
+	border-color: var(--wppa-accent);
+	color: #fff;
+}
+
+/* Адреса */
+
+.wppa-address-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.wppa-fieldset {
+	margin: 0;
+	padding: 18px 20px 6px;
+	min-width: 0;
+}
+
+.wppa-fieldset legend {
+	padding: 0 6px;
+}
+
+.wppa-order-info {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 14px;
+	margin-bottom: 18px;
+}
+
+.wppa-address {
+	font-style: normal;
+	line-height: 1.6;
+}
+
+/* Гость */
+
+.wppa--guest {
+	max-width: 460px;
+}
+
+.wppa-switch {
+	margin: 14px 0 0;
+	font-size: .92em;
+	color: var(--wppa-muted);
+	text-align: center;
+}
+
+/* Адаптив */
+
+@media (max-width: 640px) {
+	.wppa-header {
+		padding: 14px;
+	}
+
+	.wppa-nav {
+		border-radius: var(--wppa-radius);
+	}
+
+	.wppa-card {
+		padding: 16px;
+	}
+
+	.wppa-table thead {
+		display: none;
+	}
+
+	.wppa-table,
+	.wppa-table tbody,
+	.wppa-table tr,
+	.wppa-table td,
+	.wppa-table tfoot,
+	.wppa-table tfoot th {
+		display: block;
+		width: 100%;
+	}
+
+	.wppa-table tr {
+		border-bottom: 1px solid var(--wppa-border);
+		padding: 6px 0;
+	}
+
+	.wppa-table td,
+	.wppa-table tfoot th {
+		border: 0;
+		padding: 6px 14px;
+	}
+
+	.wppa-table td::before {
+		content: attr(data-label);
+		display: block;
+		font-size: .75em;
+		text-transform: uppercase;
+		letter-spacing: .04em;
+		color: var(--wppa-muted);
+	}
+
+	.wppa-table tfoot th {
+		font-size: .9em;
+	}
+}
