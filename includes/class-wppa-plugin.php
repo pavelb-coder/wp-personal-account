@@ -141,6 +141,7 @@ class WPPA_Plugin {
 			'min_team_members'     => 2,
 			'fields'               => array(),
 			'password_rules'       => array(),
+			'link_button'          => array(),
 			'delete_data_on_uninstall' => 0,
 		);
 	}
@@ -428,6 +429,12 @@ class WPPA_Plugin {
 			$settings['min_team_members'] = $defaults['min_team_members'];
 		}
 
+		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.
+		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
+			WPPA_Builder::seed_block( 'link-button', 'dashboard' );
+			update_option( 'wppa_link_button_seeded', 1 );
+		}
+
 		update_option( 'wppa_settings', $settings );
 		update_option( 'wppa_version', WPPA_VERSION );
 	}
@@ -439,6 +446,12 @@ class WPPA_Plugin {
 	 */
 	public static function activate() {
 		$settings = self::get_settings();
+		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.
+		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
+			WPPA_Builder::seed_block( 'link-button', 'dashboard' );
+			update_option( 'wppa_link_button_seeded', 1 );
+		}
+
 		update_option( 'wppa_settings', $settings );
 		update_option( 'wppa_version', WPPA_VERSION );
 

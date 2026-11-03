@@ -1036,3 +1036,53 @@
 .wppa-password-rules__item.is-bad .wppa-password-rules__mark {
 	color: #dc2626;
 }
+
+/* Кнопка со ссылкой и таймер */
+
+.wppa-link-block {
+	text-align: center;
+}
+
+.wppa-link-block__button--disabled,
+.wppa-button.wppa-link-block__button--disabled {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	opacity: .55;
+	cursor: not-allowed;
+	filter: grayscale(.35);
+	pointer-events: none;
+	text-decoration: none;
+}
+
+.wppa-link-block__message {
+	margin-top: 10px;
+}
+
+.wppa-link-block__timer {
+	margin: 6px 0 0;
+	font-size: .9em;
+	color: var(--wppa-muted, #6b7280);
+}
+
+.wppa-link-block__timer-label {
+	margin-right: 6px;
+}
+
+.wppa-countdown {
+	display: inline-block;
+	min-width: 7.5em;
+	padding: 2px 8px;
+	border-radius: 8px;
+	background: #f1f5f9;
+	border: 1px solid var(--wppa-border, #e5e7eb);
+	font-variant-numeric: tabular-nums;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: #0f172a;
+}
+
+.wppa-countdown.is-done {
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+	color: #047857;
+}

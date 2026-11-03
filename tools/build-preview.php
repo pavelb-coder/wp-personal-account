@@ -19,6 +19,7 @@ define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
+require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
@@ -180,6 +181,68 @@ $sections .= demo_section(
 		. '</div>'
 );
 
+// Кнопка со ссылкой: четыре состояния в одном ряду.
+$link_states   = '';
+$link_variants = array(
+	'Ссылка открыта'      => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => '', 'new_tab' => 1, 'require_team' => 0 ),
+	'Ждём состав команды' => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => '', 'new_tab' => 1, 'require_team' => 1 ),
+	'До открытия'         => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => gmdate( 'Y-m-d\TH:i', time() + 7200 ), 'end' => '', 'new_tab' => 1, 'require_team' => 0 ),
+	'Срок истёк'          => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => gmdate( 'Y-m-d\TH:i', time() - 3600 ), 'new_tab' => 1, 'require_team' => 0 ),
+);
+
+$wppa_settings_snapshot = get_option( 'wppa_settings', array() );
+$wppa_meta_snapshot     = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$wppa_posts_snapshot    = isset( $GLOBALS['wppa_test']['posts'] ) ? $GLOBALS['wppa_test']['posts'] : array();
+$wppa_postmeta_snapshot = isset( $GLOBALS['wppa_test']['postmeta'] ) ? $GLOBALS['wppa_test']['postmeta'] : array();
+$wppa_user_id           = get_current_user_id();
+
+foreach ( $link_variants as $link_label => $link_config ) {
+	update_option( 'wppa_settings', array_merge( (array) $wppa_settings_snapshot, array( 'link_button' => $link_config ) ) );
+
+	// Для состояния «ждём состав» показываем команду из одного человека.
+	$GLOBALS['wppa_test']['meta']     = $wppa_meta_snapshot;
+	$GLOBALS['wppa_test']['posts']    = $wppa_posts_snapshot;
+	$GLOBALS['wppa_test']['postmeta'] = $wppa_postmeta_snapshot;
+
+	if ( ! empty( $link_config['require_team'] ) ) {
+		// Команда из одного человека при минимуме 2 — «ждём состав».
+		$GLOBALS['wppa_test']['meta'] = array(
+			$wppa_user_id => array(
+				'_wppa_team_id'   => 777,
+				'_wppa_team_role' => 'owner',
+			),
+		);
+
+		$GLOBALS['wppa_test']['posts'][777]                        = new WP_Post(
+			array(
+				'ID'        => 777,
+				'post_type' => WPPA_Teams::CPT,
+				'post_title' => 'Команда «Вектор»',
+			)
+		);
+		$GLOBALS['wppa_test']['postmeta'][777]['_wppa_team_min']   = 2;
+		$GLOBALS['wppa_test']['postmeta'][777]['_wppa_team_limit'] = 10;
+	}
+
+	$link_states .= '<div><p class="demo-label">' . htmlspecialchars( $link_label ) . '</p>'
+		. WPPA_Builder::render_block(
+			array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => 'Трансляция', 'audience' => 'all', 'html' => '' ),
+			array()
+		)
+		. '</div>';
+}
+
+update_option( 'wppa_settings', $wppa_settings_snapshot );
+$GLOBALS['wppa_test']['meta']     = $wppa_meta_snapshot;
+$GLOBALS['wppa_test']['posts']    = $wppa_posts_snapshot;
+$GLOBALS['wppa_test']['postmeta'] = $wppa_postmeta_snapshot;
+
+$sections .= demo_section(
+	'Кнопка со ссылкой',
+	'Внешняя ссылка с окном дат и условием «команда сформирована»: активна, ждёт состав, ждёт открытия с таймером, закрыта',
+	'<div class="demo-three">' . $link_states . '</div>'
+);
+
 $css = file_get_contents( $base . 'assets/css/account.css' );
 
 $html = '<!DOCTYPE html>
@@ -209,6 +272,7 @@ body {
 .demo-block > .demo-three { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 .demo-three { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; align-items: start; }
 .demo-sidebar { max-width: 340px; margin: 0 auto; }
+.demo-label { margin: 0 0 8px; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
 .demo-block > .demo-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 </style>
 </head>

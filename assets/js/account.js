@@ -187,6 +187,67 @@
 	}
 
 	/**
+	 * Обратный отсчёт до открытия или закрытия ссылки.
+	 *
+	 * Когда таймер открытия доходит до нуля, страница перезагружается один раз:
+	 * решение о доступе принимает сервер, в разметке до этого момента нет адреса ссылки.
+	 */
+	function initCountdowns() {
+		var nodes = document.querySelectorAll( '[data-wppa-countdown]' );
+
+		Array.prototype.forEach.call( nodes, function ( node ) {
+			var target = parseInt( node.getAttribute( 'data-wppa-countdown' ), 10 ) || 0;
+			var canReload = '1' === node.getAttribute( 'data-wppa-reload' );
+			var reloaded = false;
+
+			if ( ! target ) {
+				return;
+			}
+
+			function pad( value ) {
+				return ( value < 10 ? '0' : '' ) + value;
+			}
+
+			function render() {
+				var left = target - Math.floor( Date.now() / 1000 );
+
+				if ( left <= 0 ) {
+					node.textContent = canReload ? '00:00:00' : '00:00:00';
+					node.classList.add( 'is-done' );
+
+					if ( canReload && ! reloaded ) {
+						reloaded = true;
+						window.setTimeout( function () {
+							window.location.reload();
+						}, 800 );
+					}
+
+					return true;
+				}
+
+				var days = Math.floor( left / 86400 );
+				var rest = left % 86400;
+				var text = pad( Math.floor( rest / 3600 ) ) + ':' + pad( Math.floor( ( rest % 3600 ) / 60 ) ) + ':' + pad( rest % 60 );
+
+				node.textContent = days > 0 ? days + ' д ' + text : text;
+				node.classList.remove( 'is-done' );
+
+				return false;
+			}
+
+			if ( render() ) {
+				return;
+			}
+
+			var timer = window.setInterval( function () {
+				if ( render() ) {
+					window.clearInterval( timer );
+				}
+			}, 1000 );
+		} );
+	}
+
+	/**
 	 * Живая проверка пароля по требованиям из формы.
 	 *
 	 * Список требований выводит PHP (WPPA_Password::render_requirements),
@@ -408,6 +469,7 @@
 		initCopyButtons();
 		initWidgetPanels();
 		initPasswordRules();
+		initCountdowns();
 		initConfirmActions();
 		initSubmitGuard();
 	}

@@ -17,6 +17,7 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
+require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
@@ -526,6 +527,166 @@ $rule_checks['форма регистрации: список требовани
 
 foreach ( $rule_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'password rules: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Кнопка со ссылкой: окно дат и условие по команде ----------
+$link_base = array(
+	'url'          => 'https://example.com/go',
+	'text'         => 'Перейти',
+	'start'        => '',
+	'end'          => '',
+	'new_tab'      => 1,
+	'require_team' => 0,
+);
+
+$link_settings_snapshot = get_option( 'wppa_settings', array() );
+$link_meta_snapshot     = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$link_posts_snapshot    = isset( $GLOBALS['wppa_test']['posts'] ) ? $GLOBALS['wppa_test']['posts'] : array();
+$link_postmeta_snapshot = isset( $GLOBALS['wppa_test']['postmeta'] ) ? $GLOBALS['wppa_test']['postmeta'] : array();
+
+/**
+ * Состояние кнопки при заданных настройках.
+ *
+ * @param array $config Настройки.
+ * @return array
+ */
+function wppa_link_state( $config ) {
+	update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'link_button' => $config ) ) );
+	return WPPA_Link_Button::state();
+}
+
+$link_checks = array();
+
+$state = wppa_link_state( array_merge( $link_base, array( 'url' => '' ) ) );
+$link_checks['без ссылки — блок неактивен'] = 'unconfigured' === $state['status'] && ! $state['is_open'];
+
+$state = wppa_link_state( $link_base );
+$link_checks['без дат — ссылка открыта'] = 'ready' === $state['status'] && $state['is_open'] && 0 === $state['countdown'];
+
+$state = wppa_link_state( array_merge( $link_base, array( 'start' => gmdate( 'Y-m-d\TH:i', time() + 3600 ) ) ) );
+$link_checks['до начала — закрыто и есть отсчёт'] = 'before' === $state['status'] && ! $state['is_open'] && $state['countdown'] > time();
+$link_checks['до начала — сообщение с датой']      = false !== strpos( $state['message'], 'Откроется' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'start' => gmdate( 'Y-m-d\TH:i', time() - 7200 ) ) ) );
+$link_checks['после начала — открыто'] = 'ready' === $state['status'] && $state['is_open'];
+
+$state = wppa_link_state( array_merge( $link_base, array( 'end' => gmdate( 'Y-m-d\TH:i', time() - 60 ) ) ) );
+$link_checks['после окончания — закрыто']   = 'after' === $state['status'] && ! $state['is_open'];
+$link_checks['после окончания — сообщение'] = false !== strpos( $state['message'], 'Срок доступа истёк' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'end' => gmdate( 'Y-m-d\TH:i', time() + 3600 ) ) ) );
+$link_checks['внутри окна — открыто и отсчёт до конца'] = 'ready' === $state['status'] && 'end' === $state['countdown_of'];
+
+// Условие «команда сформирована»: пользователь без команды.
+$GLOBALS['wppa_test']['meta'] = array();
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['нет команды — закрыто']      = 'team' === $state['status'] && ! $state['is_open'];
+$link_checks['нет команды — сообщение']    = false !== strpos( $state['message'], 'команда' );
+
+// Команда из одного человека при минимуме 2 — не сформирована.
+$GLOBALS['wppa_test']['meta']     = array( 7 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'owner' ) );
+$GLOBALS['wppa_test']['posts'][901] = new WP_Post( array( 'ID' => 901, 'post_type' => WPPA_Teams::CPT, 'post_title' => 'Команда' ) );
+$GLOBALS['wppa_test']['postmeta'][901]['_wppa_team_min'] = 2;
+
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['один из двух — закрыто']   = 'team' === $state['status'] && 1 === $state['team']['members'] && 2 === $state['team']['required'];
+$link_checks['один из двух — текст']     = false !== strpos( $state['message'], '1 из 2' );
+
+// Наставник в зачёт не идёт: второй участник — наставник.
+$GLOBALS['wppa_test']['meta'][8] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' );
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['наставник не считается'] = 'team' === $state['status'] && 1 === $state['team']['members'];
+
+// Обычный участник закрывает условие.
+$GLOBALS['wppa_test']['meta'][8]['_wppa_team_role'] = 'member';
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['минимум набран — открыто'] = 'ready' === $state['status'] && $state['is_open'] && 2 === $state['team']['members'];
+
+// Условие команды + окно дат одновременно.
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1, 'start' => gmdate( 'Y-m-d\TH:i', time() + 3600 ) ) ) );
+$link_checks['команда есть, но рано — отсчёт'] = 'before' === $state['status'] && $state['countdown'] > time();
+
+// Разметка блока: открытое состояние.
+wppa_link_state( $link_base );
+$link_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => 'Трансляция', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['открытая кнопка — ссылка с target'] = false !== strpos( $link_html, 'href="https://example.com/go"' ) && false !== strpos( $link_html, 'noopener' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'end' => gmdate( 'Y-m-d\TH:i', time() - 60 ) ) ) );
+$link_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['закрытая кнопка — без href']         = false === strpos( $link_html, 'href="https://example.com/go"' );
+$link_checks['закрытая кнопка — aria-disabled']    = false !== strpos( $link_html, 'aria-disabled="true"' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'start' => gmdate( 'Y-m-d\TH:i', time() + 7200 ) ) ) );
+$link_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['таймер выводится в разметке'] = false !== strpos( $link_html, 'data-wppa-countdown=' );
+$link_checks['таймер перезагружает страницу'] = false !== strpos( $link_html, 'data-wppa-reload="1"' );
+$link_checks['адрес не утекает в разметке']   = false === strpos( $link_html, 'https://example.com/go' );
+
+// Форматирование и сохранение дат.
+$link_checks['datetime-local сохраняется'] = '2026-11-05T10:00' === WPPA_Link_Button::sanitize_datetime( '2026-11-05T10:00' );
+$link_checks['мусор в дате отбрасывается'] = '' === WPPA_Link_Button::sanitize_datetime( 'завтра' );
+$link_checks['отсчёт: часы и минуты']      = '01:01:01' === WPPA_Link_Button::countdown_text( 3661 );
+$link_checks['отсчёт: дни']                = '1 д 01:00:00' === WPPA_Link_Button::countdown_text( 90000 );
+$link_checks['отсчёт: не уходит в минус']  = '00:00:00' === WPPA_Link_Button::countdown_text( -50 );
+
+// Блок в конструкторе и на «Обзоре» по умолчанию.
+$link_checks['блок есть в конструкторе'] = isset( WPPA_Builder::blocks()['link-button'] );
+$link_checks['блок стоит на «Обзоре» по умолчанию'] = in_array(
+	'link-button',
+	array_map(
+		function ( $item ) {
+			return $item['id'];
+		},
+		WPPA_Builder::defaults()['dashboard']
+	),
+	true
+);
+
+$link_checks['на других вкладках по умолчанию нет'] = ! in_array(
+	'link-button',
+	array_map(
+		function ( $item ) {
+			return $item['id'];
+		},
+		WPPA_Builder::defaults()['security']
+	),
+	true
+);
+
+// Сидинг для существующих установок: блок добавляется один раз.
+delete_option( 'wppa_layout' );
+update_option(
+	'wppa_layout',
+	array(
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
+$seeded = WPPA_Builder::seed_block( 'link-button', 'dashboard' );
+$link_checks['сидинг добавил блок в сохранённую раскладку'] = $seeded && 'link-button' === WPPA_Builder::layout()['dashboard'][0]['id'];
+$link_checks['повторный сидинг ничего не дублирует']        = false === WPPA_Builder::seed_block( 'link-button', 'dashboard' );
+delete_option( 'wppa_layout' );
+
+update_option( 'wppa_settings', $link_settings_snapshot );
+$GLOBALS['wppa_test']['meta']     = $link_meta_snapshot;
+$GLOBALS['wppa_test']['posts']    = $link_posts_snapshot;
+$GLOBALS['wppa_test']['postmeta'] = $link_postmeta_snapshot;
+
+foreach ( $link_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'link button: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

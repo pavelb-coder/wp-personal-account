@@ -942,6 +942,46 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
 							</span>
 						</div>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[dashboard][3][enabled]" value="1"  checked="checked" />
+										<strong>Кнопка со ссылкой</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Внешняя ссылка с таймером и условием по составу команды</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[dashboard][3][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[dashboard][3][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[dashboard][3][type]" value="block" />
+							<input type="hidden" name="wppa_layout[dashboard][3][id]" value="link-button" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
 									</div>
 
 				<p class="wppa-builder__add">
@@ -950,7 +990,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						class="button"
 						data-wppa-add-custom
 						data-tab="dashboard"
-						data-index="3"
+						data-index="4"
 					>
 						+ HTML-блок					</button>
 				</p>

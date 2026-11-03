@@ -140,6 +140,12 @@ class WPPA_Builder {
 				'tabs'  => array( 'security' ),
 				'desc'  => __( 'Запрос нового адреса с подтверждением по почте', 'wp-personal-account' ),
 			),
+			'link-button'     => array(
+				'label'        => __( 'Кнопка со ссылкой', 'wp-personal-account' ),
+				'tabs'         => array( 'dashboard', 'profile', 'team', 'security' ),
+				'default_tabs' => array( 'dashboard' ),
+				'desc'         => __( 'Внешняя ссылка с таймером и условием по составу команды', 'wp-personal-account' ),
+			),
 			'session-card'    => array(
 				'label' => __( 'Сессия и выход', 'wp-personal-account' ),
 				'tabs'  => array( 'security' ),
@@ -168,7 +174,9 @@ class WPPA_Builder {
 		}
 
 		foreach ( self::blocks() as $id => $block ) {
-			foreach ( (array) $block['tabs'] as $tab ) {
+			$default_tabs = isset( $block['default_tabs'] ) ? (array) $block['default_tabs'] : (array) $block['tabs'];
+
+			foreach ( $default_tabs as $tab ) {
 				if ( ! isset( $layout[ $tab ] ) ) {
 					$layout[ $tab ] = array();
 				}
@@ -266,6 +274,49 @@ class WPPA_Builder {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Однократно добавить блок в раскладку существующей установки.
+	 *
+	 * @param string $block_id ID блока.
+	 * @param string $tab      Вкладка.
+	 * @return bool true — блок добавлен.
+	 */
+	public static function seed_block( $block_id, $tab = 'dashboard' ) {
+		$saved = get_option( self::OPTION, null );
+
+		if ( ! is_array( $saved ) ) {
+			return false;
+		}
+
+		foreach ( $saved as $items ) {
+			foreach ( (array) $items as $item ) {
+				if ( isset( $item['id'] ) && $block_id === $item['id'] ) {
+					return false;
+				}
+			}
+		}
+
+		if ( ! array_key_exists( $tab, $saved ) ) {
+			$saved[ $tab ] = array();
+		}
+
+		array_unshift(
+			$saved[ $tab ],
+			array(
+				'type'     => 'block',
+				'id'       => $block_id,
+				'enabled'  => 1,
+				'title'    => '',
+				'audience' => 'all',
+				'html'     => '',
+			)
+		);
+
+		update_option( self::OPTION, $saved );
+
+		return true;
 	}
 
 	/**

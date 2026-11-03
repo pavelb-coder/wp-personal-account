@@ -432,3 +432,22 @@ function add_action( $h, $cb, $p = 10, $a = 1 ) {}
 function add_filter( $h, $cb, $p = 10, $a = 1 ) {}
 function apply_filters( $h, $v ) { return $v; }
 function do_action( $h ) {}
+
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( $cap = '' ) {
+		if ( isset( $GLOBALS['wppa_test']['can_manage'] ) ) {
+			return (bool) $GLOBALS['wppa_test']['can_manage'];
+		}
+		return true;
+	}
+}
+
+function wp_timezone() { return new DateTimeZone( 'UTC' ); }
+
+function wp_timezone_string() { return 'UTC'; }
+
+function wp_date( $format, $timestamp = null ) { return gmdate( $format, $timestamp ? $timestamp : time() ); }

@@ -116,6 +116,23 @@ class WPPA_Settings {
 
 		$out['password_rules'] = $rules_out;
 
+		// Кнопка со ссылкой.
+		$link_saved = isset( $input['link_button'] ) && is_array( $input['link_button'] ) ? $input['link_button'] : array();
+
+		$out['link_button'] = array(
+			'url'          => isset( $link_saved['url'] ) ? esc_url_raw( trim( (string) $link_saved['url'] ) ) : '',
+			'text'         => isset( $link_saved['text'] ) ? sanitize_text_field( $link_saved['text'] ) : '',
+			'start'        => isset( $link_saved['start'] ) ? WPPA_Link_Button::sanitize_datetime( $link_saved['start'] ) : '',
+			'end'          => isset( $link_saved['end'] ) ? WPPA_Link_Button::sanitize_datetime( $link_saved['end'] ) : '',
+			'new_tab'      => empty( $link_saved['new_tab'] ) ? 0 : 1,
+			'require_team' => empty( $link_saved['require_team'] ) ? 0 : 1,
+		);
+
+		// Ссылка допускается только на http(s).
+		if ( '' !== $out['link_button']['url'] && ! preg_match( '#^https?://#i', $out['link_button']['url'] ) ) {
+			$out['link_button']['url'] = '';
+		}
+
 		return wp_parse_args( $out, $defaults );
 	}
 
@@ -283,6 +300,68 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="1" max="100" id="wppa-min-team" name="wppa_settings[min_team_members]" value="<?php echo esc_attr( (int) $s['min_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Сколько человек должно быть в команде, чтобы она считалась набранной. Не может быть больше максимума. Команды ниже минимума получают отметку «недобор» в кабинете и в админке.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Кнопка со ссылкой', 'wp-personal-account' ); ?></h2>
+				<?php $wppa_link = WPPA_Link_Button::config(); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-link-url"><?php esc_html_e( 'Ссылка', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="url" class="regular-text code" id="wppa-link-url" name="wppa_settings[link_button][url]" value="<?php echo esc_attr( $wppa_link['url'] ); ?>" placeholder="https://" />
+							<p class="description"><?php esc_html_e( 'Внешний адрес, только http или https. Пусто — блок в кабинете скрыт.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-link-text"><?php esc_html_e( 'Текст кнопки', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" class="regular-text" id="wppa-link-text" name="wppa_settings[link_button][text]" value="<?php echo esc_attr( $wppa_link['text'] ); ?>" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Период активности', 'wp-personal-account' ); ?></th>
+						<td>
+							<label for="wppa-link-start"><?php esc_html_e( 'С', 'wp-personal-account' ); ?></label>
+							<input type="datetime-local" id="wppa-link-start" name="wppa_settings[link_button][start]" value="<?php echo esc_attr( $wppa_link['start'] ); ?>" />
+							<label for="wppa-link-end"><?php esc_html_e( 'по', 'wp-personal-account' ); ?></label>
+							<input type="datetime-local" id="wppa-link-end" name="wppa_settings[link_button][end]" value="<?php echo esc_attr( $wppa_link['end'] ); ?>" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: часовой пояс сайта */
+									esc_html__( 'Время по часовому поясу сайта (%s). Пустое поле — без ограничения. До начала и после окончания кнопка видна, но неактивна: показывается отсчёт или сообщение о закрытии.', 'wp-personal-account' ),
+									esc_html( function_exists( 'wp_timezone_string' ) ? wp_timezone_string() : 'UTC' )
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Условия', 'wp-personal-account' ); ?></th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[link_button][require_team]" value="1" <?php checked( $wppa_link['require_team'] ); ?> />
+									<?php esc_html_e( 'Только когда команда сформирована — набран минимум участников', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[link_button][new_tab]" value="1" <?php checked( $wppa_link['new_tab'] ); ?> />
+									<?php esc_html_e( 'Открывать ссылку в новой вкладке', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %d: текущий минимум участников */
+									esc_html__( 'Минимум участников задаётся ниже и сейчас равен %d. Наставник в зачёт не идёт.', 'wp-personal-account' ),
+									(int) WPPA_Teams::min_members()
+								);
+								?>
+							</p>
 						</td>
 					</tr>
 				</table>

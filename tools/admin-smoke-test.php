@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
+require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
@@ -81,6 +82,49 @@ WPPA_Teams::set_team_min( $demo_team_id, 3 );
 ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
+
+$link_settings_ok = false !== strpos( $settings_html, 'wppa_settings[link_button][url]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[link_button][start]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[link_button][end]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[link_button][require_team]' );
+
+echo ( $link_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: поля кнопки со ссылкой\n";
+if ( ! $link_settings_ok ) {
+	$fail++;
+}
+
+$link_sanitize = WPPA_Settings::sanitize(
+	array(
+		'link_button' => array(
+			'url'          => 'https://example.com/go',
+			'text'         => '  Перейти к трансляции ',
+			'start'        => '2026-11-05T10:00',
+			'end'          => 'не дата',
+			'new_tab'      => '1',
+			'require_team' => '0',
+		),
+	)
+);
+
+$link_sanitize_ok = 'https://example.com/go' === $link_sanitize['link_button']['url']
+	&& 'Перейти к трансляции' === $link_sanitize['link_button']['text']
+	&& '2026-11-05T10:00' === $link_sanitize['link_button']['start']
+	&& '' === $link_sanitize['link_button']['end']
+	&& 1 === $link_sanitize['link_button']['new_tab']
+	&& 0 === $link_sanitize['link_button']['require_team'];
+
+echo ( $link_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: настройки кнопки сохраняются\n";
+if ( ! $link_sanitize_ok ) {
+	$fail++;
+}
+
+$link_unsafe = WPPA_Settings::sanitize( array( 'link_button' => array( 'url' => 'javascript:alert(1)' ) ) );
+$link_unsafe_ok = '' === $link_unsafe['link_button']['url'];
+
+echo ( $link_unsafe_ok ? 'OK    ' : 'FAIL  ' ) . "settings: небезопасная ссылка отбрасывается\n";
+if ( ! $link_unsafe_ok ) {
+	$fail++;
+}
 
 $rules_settings_ok = false !== strpos( $settings_html, 'wppa_settings[password_rules][uppercase]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[password_rules][no_sequence]' );

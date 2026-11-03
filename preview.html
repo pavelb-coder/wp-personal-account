@@ -1044,6 +1044,56 @@
 	color: #dc2626;
 }
 
+/* Кнопка со ссылкой и таймер */
+
+.wppa-link-block {
+	text-align: center;
+}
+
+.wppa-link-block__button--disabled,
+.wppa-button.wppa-link-block__button--disabled {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	opacity: .55;
+	cursor: not-allowed;
+	filter: grayscale(.35);
+	pointer-events: none;
+	text-decoration: none;
+}
+
+.wppa-link-block__message {
+	margin-top: 10px;
+}
+
+.wppa-link-block__timer {
+	margin: 6px 0 0;
+	font-size: .9em;
+	color: var(--wppa-muted, #6b7280);
+}
+
+.wppa-link-block__timer-label {
+	margin-right: 6px;
+}
+
+.wppa-countdown {
+	display: inline-block;
+	min-width: 7.5em;
+	padding: 2px 8px;
+	border-radius: 8px;
+	background: #f1f5f9;
+	border: 1px solid var(--wppa-border, #e5e7eb);
+	font-variant-numeric: tabular-nums;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: #0f172a;
+}
+
+.wppa-countdown.is-done {
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+	color: #047857;
+}
+
 body {
 	margin: 0;
 	padding: 32px 20px 64px;
@@ -1063,6 +1113,7 @@ body {
 .demo-block > .demo-three { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 .demo-three { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; align-items: start; }
 .demo-sidebar { max-width: 340px; margin: 0 auto; }
+.demo-label { margin: 0 0 8px; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
 .demo-block > .demo-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 </style>
 </head>
@@ -2075,6 +2126,71 @@ body {
 				Войти			</a>
 		</div>
 	</div>
+</div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Кнопка со ссылкой</h2><p>Внешняя ссылка с окном дат и условием «команда сформирована»: активна, ждёт состав, ждёт открытия с таймером, закрыта</p></div><div class="demo-three"><div><p class="demo-label">Ссылка открыта</p><section class="wppa-card wppa-link-block">
+			<h3 class="wppa-subtitle">Трансляция</h3>
+	
+			<a
+			class="wppa-button wppa-button--primary wppa-link-block__button"
+			href="https://example.com/stream"
+			target="_blank" rel="noopener noreferrer"		>Перейти к трансляции</a>
+	
+	
+	
+	</section>
+</div><div><p class="demo-label">Ждём состав команды</p><section class="wppa-card wppa-link-block wppa-link-block--locked">
+			<h3 class="wppa-subtitle">Трансляция</h3>
+	
+			<span
+			class="wppa-button wppa-link-block__button wppa-link-block__button--disabled"
+			role="link"
+			aria-disabled="true"
+			tabindex="-1"
+		>Перейти к трансляции</span>
+	
+			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
+			Ждём состав команды: 1 из 2 участников.		</p>
+	
+	
+	</section>
+</div><div><p class="demo-label">До открытия</p><section class="wppa-card wppa-link-block wppa-link-block--locked">
+			<h3 class="wppa-subtitle">Трансляция</h3>
+	
+			<span
+			class="wppa-button wppa-link-block__button wppa-link-block__button--disabled"
+			role="link"
+			aria-disabled="true"
+			tabindex="-1"
+		>Перейти к трансляции</span>
+	
+			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
+			Откроется 03.11.2026 09:40.		</p>
+	
+			<p class="wppa-link-block__timer">
+			<span class="wppa-link-block__timer-label">
+				До открытия:			</span>
+			<span
+				class="wppa-countdown"
+				data-wppa-countdown="1793698800"
+				data-wppa-countdown-mode="open"
+				data-wppa-reload="1"			>01:59:55</span>
+		</p>
+	
+	</section>
+</div><div><p class="demo-label">Срок истёк</p><section class="wppa-card wppa-link-block wppa-link-block--locked">
+			<h3 class="wppa-subtitle">Трансляция</h3>
+	
+			<span
+			class="wppa-button wppa-link-block__button wppa-link-block__button--disabled"
+			role="link"
+			aria-disabled="true"
+			tabindex="-1"
+		>Перейти к трансляции</span>
+	
+			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
+			Срок доступа истёк 03.11.2026 06:40.		</p>
+	
+	
+	</section>
 </div></div></section>
 </body>
 </html>
