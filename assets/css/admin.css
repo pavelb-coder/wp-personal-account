@@ -269,6 +269,63 @@
 	flex: 0 0 auto;
 }
 
+/* Экспорт аккаунтов */
+
+.wppa-tool--export {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.wppa-export-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	align-items: flex-end;
+	margin-top: 10px !important;
+	padding: 12px 14px;
+	background: #f6f8fb;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+}
+
+.wppa-export-form__groups {
+	flex: 1 1 100%;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.wppa-export-form__groups legend {
+	padding: 0;
+	margin-bottom: 4px;
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #64748b;
+}
+
+.wppa-export-form__groups label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.wppa-export-form__row {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 0 !important;
+}
+
+.wppa-export-form__row label {
+	font-size: 12px;
+	color: #64748b;
+}
+
 .wppa-admin__actions {
 	display: flex;
 	gap: 8px;

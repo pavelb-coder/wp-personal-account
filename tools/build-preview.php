@@ -20,6 +20,7 @@ require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
+require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';

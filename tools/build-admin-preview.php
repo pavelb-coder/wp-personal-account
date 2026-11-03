@@ -27,6 +27,7 @@ require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
+require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-admin.php';
 
 // Демо-данные графика: разнообразные значения вместо одинаковых.
@@ -173,4 +174,10 @@ $html = '<!DOCTYPE html>
 </html>';
 
 file_put_contents( $base . 'preview-admin.html', $html );
+// Образец выгрузки для проверки структуры.
+$sample_user = new WP_User( 7 );
+$sample = WPPA_Export::csv( array( 'users' => array( $sample_user ) ) );
+file_put_contents( $base . 'export-sample.csv', $sample );
+echo "export-sample.csv: " . strlen( $sample ) . " байт\n";
+
 echo 'preview-admin.html: ' . strlen( $html ) . " байт\n";

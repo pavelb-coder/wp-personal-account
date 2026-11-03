@@ -715,63 +715,32 @@ class WPPA_Admin {
 	 * @return void
 	 */
 	private static function export_users_csv() {
-		$filename = 'wppa-users-' . gmdate( 'Ymd-His' ) . '.csv';
-
-		nocache_headers();
-		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename=' . $filename );
-
-		$output = fopen( 'php://output', 'w' );
-
-		// BOM, чтобы Excel корректно открыл UTF-8.
-		fwrite( $output, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
-
-		$columns = array(
-			__( 'ID', 'wp-personal-account' ),
-			__( 'Логин', 'wp-personal-account' ),
-			__( 'Email', 'wp-personal-account' ),
-			__( 'Имя', 'wp-personal-account' ),
-			__( 'Фамилия', 'wp-personal-account' ),
-			__( 'Роль', 'wp-personal-account' ),
-			__( 'Регистрация', 'wp-personal-account' ),
-			__( 'Команда', 'wp-personal-account' ),
+		$args = array(
+			'groups'    => self::export_groups_from_request(),
+			'scope'     => isset( $_POST['export_scope'] ) ? sanitize_key( wp_unslash( $_POST['export_scope'] ) ) : 'all',
+			'delimiter' => isset( $_POST['export_delimiter'] ) && ',' === $_POST['export_delimiter'] ? ',' : ';',
+			'limit'     => isset( $_POST['export_limit'] ) ? absint( wp_unslash( $_POST['export_limit'] ) ) : 5000,
 		);
 
-		foreach ( WPPA_Fields::meta_fields() as $field ) {
-			$columns[] = $field['label'];
-		}
-
-		fputcsv( $output, $columns );
-
-		$users = get_users(
-			array(
-				'number'  => 5000,
-				'orderby' => 'registered',
-				'order'   => 'DESC',
-			)
-		);
-
-		foreach ( $users as $user ) {
-			$row = array(
-				$user->ID,
-				$user->user_login,
-				$user->user_email,
-				$user->display_name,
-				$user->last_name,
-				implode( ', ', (array) $user->roles ),
-				$user->user_registered,
-				WPPA_Teams::team_id( $user->ID ) ? get_the_title( WPPA_Teams::team_id( $user->ID ) ) : '',
-			);
-
-			foreach ( array_keys( WPPA_Fields::meta_fields() ) as $field_id ) {
-				$row[] = WPPA_Fields::get( $user->ID, $field_id );
-			}
-
-			fputcsv( $output, $row );
-		}
-
-		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		WPPA_Export::send( $args );
 		exit;
 	}
 
+	/**
+	 * Группы колонок из запроса.
+	 *
+	 * @return array
+	 */
+	private static function export_groups_from_request() {
+		$posted = isset( $_POST['export_groups'] ) ? (array) wp_unslash( $_POST['export_groups'] ) : array();
+		$posted = array_map( 'sanitize_key', $posted );
+		$groups = array_values( array_intersect( array_keys( WPPA_Export::groups() ), $posted ) );
+
+		// Учётную запись выгружаем всегда: без логина и email строки бессмысленны.
+		if ( ! in_array( 'account', $groups, true ) ) {
+			array_unshift( $groups, 'account' );
+		}
+
+		return $groups;
+	}
 }

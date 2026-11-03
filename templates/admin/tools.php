@@ -62,16 +62,60 @@ defined( 'ABSPATH' ) || exit;
 				</form>
 			</div>
 
-			<div class="wppa-tool">
+			<div class="wppa-tool wppa-tool--export">
 				<div>
 					<strong><?php esc_html_e( 'Экспорт аккаунтов', 'wp-personal-account' ); ?></strong>
-					<p class="wppa-admin__muted"><?php esc_html_e( 'CSV с логинами, email, ролями и датой регистрации (до 5000 записей).', 'wp-personal-account' ); ?></p>
+					<p class="wppa-admin__muted"><?php esc_html_e( 'CSV по группам колонок: учётная запись, профиль, личные данные, команда, статусы. Две строки заголовков — группа и поле.', 'wp-personal-account' ); ?></p>
 				</div>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-export-form">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
 					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_csv" />
-					<button type="submit" class="button"><?php esc_html_e( 'Скачать CSV', 'wp-personal-account' ); ?></button>
+
+					<fieldset class="wppa-export-form__groups">
+						<legend><?php esc_html_e( 'Группы колонок', 'wp-personal-account' ); ?></legend>
+						<?php foreach ( WPPA_Export::groups() as $wppa_group_key => $wppa_group_label ) : ?>
+							<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="<?php echo esc_attr( $wppa_group_key ); ?>"
+									<?php checked( in_array( $wppa_group_key, WPPA_Export::default_groups(), true ) ); ?>
+									<?php echo 'account' === $wppa_group_key ? 'disabled' : ''; ?>
+								/>
+								<?php
+								if ( 'account' === $wppa_group_key ) {
+									echo '<input type="hidden" name="export_groups[]" value="account" />';
+								}
+								echo esc_html( $wppa_group_label );
+								?>
+							</label>
+						<?php endforeach; ?>
+					</fieldset>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-scope"><?php esc_html_e( 'Кого выгружать', 'wp-personal-account' ); ?></label>
+						<select id="wppa-export-scope" name="export_scope">
+							<?php foreach ( WPPA_Export::scopes() as $wppa_scope_key => $wppa_scope_label ) : ?>
+								<option value="<?php echo esc_attr( $wppa_scope_key ); ?>"><?php echo esc_html( $wppa_scope_label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</p>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-delimiter"><?php esc_html_e( 'Разделитель', 'wp-personal-account' ); ?></label>
+						<select id="wppa-export-delimiter" name="export_delimiter">
+							<option value=";"><?php esc_html_e( 'точка с запятой (;), Excel', 'wp-personal-account' ); ?></option>
+							<option value=","><?php esc_html_e( 'запятая (,), Google Sheets', 'wp-personal-account' ); ?></option>
+						</select>
+					</p>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-limit"><?php esc_html_e( 'Максимум строк', 'wp-personal-account' ); ?></label>
+						<input type="number" id="wppa-export-limit" name="export_limit" value="5000" min="1" max="20000" step="100" class="small-text" />
+					</p>
+
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Скачать CSV', 'wp-personal-account' ); ?></button>
 				</form>
 			</div>
 		</section>

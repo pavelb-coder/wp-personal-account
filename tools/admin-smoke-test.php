@@ -27,6 +27,7 @@ require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
+require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
 
@@ -83,6 +84,57 @@ WPPA_Teams::set_team_min( $demo_team_id, 3 );
 ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
+
+// ---------- Экспорт аккаунтов ----------
+$export_groups = WPPA_Export::groups();
+$export_checks = array(
+	'группы: пять блоков'              => 5 === count( $export_groups ) && isset( $export_groups['team'], $export_groups['personal'] ),
+	'колонки: учётная запись идёт первой' => 'account' === WPPA_Export::columns()[0]['group'],
+	'колонки: порядок групп'           => array( 'account', 'profile', 'personal', 'team', 'status' ) === array_values( array_unique( array_column( WPPA_Export::columns(), 'group' ) ) ),
+);
+
+$account_only = WPPA_Export::columns( array( 'account' ) );
+$export_checks['колонки: только выбранная группа'] = 5 === count( $account_only ) && ! in_array( 'personal', array_column( $account_only, 'group' ), true );
+
+$header    = WPPA_Export::header( WPPA_Export::columns() );
+$header_rows = explode( "\n", trim( $header ) );
+$export_checks['заголовок: две строки']          = 2 === count( $header_rows );
+$export_checks['заголовок: названия групп']      = false !== strpos( $header_rows[0], 'Учётная запись' ) && false !== strpos( $header_rows[0], 'Команда' );
+$export_checks['заголовок: подписи полей']       = false !== strpos( $header_rows[1], 'Логин' ) && false !== strpos( $header_rows[1], 'Роль в команде' );
+
+$export_user = new WP_User( 7 );
+$export_row  = WPPA_Export::row( $export_user );
+$export_checks['строка: логин и email']       = 'ivan' === $export_row['login'] && 'ivan@example.com' === $export_row['email'];
+$export_checks['строка: роль WordPress']      = 'subscriber' === $export_row['role'];
+$no_team_row = WPPA_Export::row( new WP_User( 999 ) );
+$export_checks['строка: без команды поля пустые'] = '' === $no_team_row['team'] && '' === $no_team_row['team_role'] && '' === $no_team_row['team_complete'];
+
+$csv = WPPA_Export::csv( array( 'users' => array( $export_user ), 'groups' => array( 'account', 'profile' ) ) );
+$csv_lines = explode( "\n", trim( $csv ) );
+$export_checks['csv: BOM в начале']            = 0 === strpos( $csv, "\xEF\xBB\xBF" );
+$export_checks['csv: заголовок + одна строка'] = 3 === count( $csv_lines );
+$export_checks['csv: разделитель точка с запятой'] = false !== strpos( $csv_lines[2], ';' );
+$export_checks['csv: личные данные не попали'] = false === strpos( $csv, 'Личные данные' );
+
+$csv_comma = WPPA_Export::csv( array( 'users' => array( $export_user ), 'groups' => array( 'account' ), 'delimiter' => ',' ) );
+$export_checks['csv: разделитель запятая']     = false !== strpos( explode( "\n", trim( $csv_comma ) )[2], ',' );
+
+// Экранирование значения с разделителем.
+$quoted_user = new WP_User( 7 );
+$quoted_user->description = 'Люблю; доставку';
+$csv_quoted  = WPPA_Export::csv( array( 'users' => array( $quoted_user ), 'groups' => array( 'profile' ) ) );
+$export_checks['csv: значение с ; экранируется'] = false !== strpos( $csv_quoted, '"Люблю; доставку"' );
+
+// Фильтры по составу.
+$export_checks['кого: четыре варианта'] = 4 === count( WPPA_Export::scopes() );
+$export_checks['файл: имя с датой']     = 1 === preg_match( '/^wppa-accounts-\d{8}-\d{6}\.csv$/', WPPA_Export::filename() );
+
+foreach ( $export_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );

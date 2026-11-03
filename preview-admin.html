@@ -276,6 +276,63 @@
 	flex: 0 0 auto;
 }
 
+/* Экспорт аккаунтов */
+
+.wppa-tool--export {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.wppa-export-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	align-items: flex-end;
+	margin-top: 10px !important;
+	padding: 12px 14px;
+	background: #f6f8fb;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+}
+
+.wppa-export-form__groups {
+	flex: 1 1 100%;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 16px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.wppa-export-form__groups legend {
+	padding: 0;
+	margin-bottom: 4px;
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #64748b;
+}
+
+.wppa-export-form__groups label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.wppa-export-form__row {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 0 !important;
+}
+
+.wppa-export-form__row label {
+	font-size: 12px;
+	color: #64748b;
+}
+
 .wppa-admin__actions {
 	display: flex;
 	gap: 8px;
@@ -1529,15 +1586,78 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 				</form>
 			</div>
 
-			<div class="wppa-tool">
+			<div class="wppa-tool wppa-tool--export">
 				<div>
 					<strong>Экспорт аккаунтов</strong>
-					<p class="wppa-admin__muted">CSV с логинами, email, ролями и датой регистрации (до 5000 записей).</p>
+					<p class="wppa-admin__muted">CSV по группам колонок: учётная запись, профиль, личные данные, команда, статусы. Две строки заголовков — группа и поле.</p>
 				</div>
-				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+				<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-export-form">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_csv" />
-					<button type="submit" class="button">Скачать CSV</button>
+
+					<fieldset class="wppa-export-form__groups">
+						<legend>Группы колонок</legend>
+													<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="account"
+									 checked="checked"									disabled								/>
+								<input type="hidden" name="export_groups[]" value="account" />Учётная запись							</label>
+													<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="profile"
+									 checked="checked"																	/>
+								Профиль							</label>
+													<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="personal"
+									 checked="checked"																	/>
+								Личные данные							</label>
+													<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="team"
+									 checked="checked"																	/>
+								Команда							</label>
+													<label>
+								<input
+									type="checkbox"
+									name="export_groups[]"
+									value="status"
+									 checked="checked"																	/>
+								Статусы							</label>
+											</fieldset>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-scope">Кого выгружать</label>
+						<select id="wppa-export-scope" name="export_scope">
+															<option value="all">Все пользователи</option>
+															<option value="team">Только с командой</option>
+															<option value="no-team">Только без команды</option>
+															<option value="complete">Только из сформированных команд</option>
+													</select>
+					</p>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-delimiter">Разделитель</label>
+						<select id="wppa-export-delimiter" name="export_delimiter">
+							<option value=";">точка с запятой (;), Excel</option>
+							<option value=",">запятая (,), Google Sheets</option>
+						</select>
+					</p>
+
+					<p class="wppa-export-form__row">
+						<label for="wppa-export-limit">Максимум строк</label>
+						<input type="number" id="wppa-export-limit" name="export_limit" value="5000" min="1" max="20000" step="100" class="small-text" />
+					</p>
+
+					<button type="submit" class="button button-primary">Скачать CSV</button>
 				</form>
 			</div>
 		</section>
