@@ -18,13 +18,20 @@ class WPPA_Export {
 	 * @return array Ключ => название.
 	 */
 	public static function groups() {
-		return array(
+		$groups = array(
 			'account'  => __( 'Учётная запись', 'wp-personal-account' ),
 			'profile'  => __( 'Профиль', 'wp-personal-account' ),
 			'personal' => __( 'Личные данные', 'wp-personal-account' ),
 			'team'     => __( 'Команда', 'wp-personal-account' ),
 			'status'   => __( 'Статусы', 'wp-personal-account' ),
 		);
+
+		// Баллы за тесты есть только вместе с плагином олимпиад.
+		if ( WPPA_Olympiad::is_active() ) {
+			$groups['olympiad'] = __( 'Баллы за тесты', 'wp-personal-account' );
+		}
+
+		return $groups;
 	}
 
 	/**
@@ -33,7 +40,7 @@ class WPPA_Export {
 	 * @return array
 	 */
 	public static function default_groups() {
-		return array( 'account', 'profile', 'personal', 'team', 'status' );
+		return array_keys( self::groups() );
 	}
 
 	/**
@@ -67,6 +74,14 @@ class WPPA_Export {
 			array( 'group' => 'status', 'label' => __( 'Нет наставника', 'wp-personal-account' ), 'key' => 'team_gap_mentor' ),
 			array( 'group' => 'status', 'label' => __( 'Email на подтверждении', 'wp-personal-account' ), 'key' => 'email_pending' ),
 		);
+
+		if ( WPPA_Olympiad::is_active() ) {
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Баллы за тесты', 'wp-personal-account' ), 'key' => 'olympiad_score' );
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Максимум баллов', 'wp-personal-account' ), 'key' => 'olympiad_max' );
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Процент', 'wp-personal-account' ), 'key' => 'olympiad_percentage' );
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Работ зачтено', 'wp-personal-account' ), 'key' => 'olympiad_tests' );
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'На проверке', 'wp-personal-account' ), 'key' => 'olympiad_pending' );
+		}
 
 		// Личные поля идут отдельной группой, их состав настраивается в «Персональных данных».
 		foreach ( WPPA_Fields::meta_fields() as $field_id => $field ) {
@@ -107,7 +122,7 @@ class WPPA_Export {
 	 * @param WP_User $user Пользователь.
 	 * @return array Ключ колонки => значение.
 	 */
-	public static function row( $user ) {
+	public static function row( $user, $context = array() ) {
 		$team_id = (int) WPPA_Teams::team_id( $user->ID );
 		$team    = $team_id ? WPPA_Teams::get( $team_id ) : null;
 		$owner   = $team ? get_userdata( (int) $team['owner'] ) : null;
@@ -141,6 +156,18 @@ class WPPA_Export {
 			'team_gap_mentor'  => $team_id ? ( WPPA_Teams::is_missing_mentor( $team_id ) ? __( 'да', 'wp-personal-account' ) : __( 'нет', 'wp-personal-account' ) ) : '',
 			'email_pending'    => (string) WPPA_Profile::pending_email( $user->ID ),
 		);
+
+		if ( WPPA_Olympiad::is_active() ) {
+			$scores = isset( $context['olympiad'][ (int) $user->ID ] )
+				? (array) $context['olympiad'][ (int) $user->ID ]
+				: array_merge( WPPA_Olympiad::summary( $user->ID ), array( 'pending' => 0 ) );
+
+			$row['olympiad_score']      = isset( $scores['score'] ) ? (int) $scores['score'] : 0;
+			$row['olympiad_max']        = isset( $scores['max_score'] ) ? (int) $scores['max_score'] : 0;
+			$row['olympiad_percentage'] = isset( $scores['percentage'] ) ? (float) $scores['percentage'] : 0.0;
+			$row['olympiad_tests']      = isset( $scores['tests'] ) ? (int) $scores['tests'] : 0;
+			$row['olympiad_pending']    = isset( $scores['pending'] ) ? (int) $scores['pending'] : 0;
+		}
 
 		foreach ( array_keys( WPPA_Fields::meta_fields() ) as $field_id ) {
 			$row[ 'field_' . $field_id ] = WPPA_Fields::get( $user->ID, $field_id );
@@ -287,12 +314,20 @@ class WPPA_Export {
 		$columns   = self::columns( (array) $args['groups'] );
 		$users     = null === $args['users'] ? self::users( $args ) : (array) $args['users'];
 
+		// Баллы за тесты — одним запросом на всю выгрузку, а не на каждого пользователя.
+		$context = array();
+
+		if ( WPPA_Olympiad::is_active() && in_array( 'olympiad', (array) $args['groups'], true ) ) {
+			$ids             = array_map( static function ( $item ) { return (int) $item->ID; }, $users );
+			$context['olympiad'] = WPPA_Olympiad::summary_map( $ids );
+		}
+
 		// BOM, чтобы Excel открыл UTF-8 без «кракозябр».
 		$csv = "\xEF\xBB\xBF";
 		$csv .= self::header( $columns, $delimiter );
 
 		foreach ( $users as $user ) {
-			$data = self::row( $user );
+			$data = self::row( $user, $context );
 			$line = array();
 
 			foreach ( $columns as $column ) {

@@ -245,6 +245,65 @@ class WPPA_Olympiad {
 	}
 
 	/**
+	 * Сводные баллы сразу по многим пользователям — один запрос на выгрузку.
+	 *
+	 * @param array $user_ids ID пользователей.
+	 * @return array user_id => array( score, max_score, percentage, tests, pending )
+	 */
+	public static function summary_map( $user_ids ) {
+		$user_ids = array_values( array_filter( array_map( 'intval', (array) $user_ids ) ) );
+
+		if ( empty( $user_ids ) || ! self::is_active() ) {
+			return array();
+		}
+
+		global $wpdb;
+
+		$attempts = self::table( 'attempts' );
+		$counted  = self::counted_statuses();
+		$in       = implode( ',', array_fill( 0, count( $user_ids ), '%d' ) );
+		$statuses = "'" . implode( "','", array_map( 'esc_sql', $counted ) ) . "'";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT user_id,
+					SUM( CASE WHEN status IN ({$statuses}) THEN score ELSE 0 END ) AS score,
+					SUM( CASE WHEN status IN ({$statuses}) THEN max_score ELSE 0 END ) AS max_score,
+					SUM( CASE WHEN status IN ({$statuses}) THEN 1 ELSE 0 END ) AS tests,
+					SUM( CASE WHEN status = 'needs_review' THEN 1 ELSE 0 END ) AS pending
+				FROM {$attempts}
+				WHERE user_id IN ({$in})
+				GROUP BY user_id",
+				$user_ids
+			)
+		);
+
+		$map = array();
+
+		foreach ( (array) $rows as $row ) {
+			$row  = (array) $row;
+			$id   = isset( $row['user_id'] ) ? (int) $row['user_id'] : 0;
+			$max  = isset( $row['max_score'] ) ? (int) $row['max_score'] : 0;
+			$sum  = isset( $row['score'] ) ? (int) $row['score'] : 0;
+
+			if ( $id <= 0 ) {
+				continue;
+			}
+
+			$map[ $id ] = array(
+				'score'      => $sum,
+				'max_score'  => $max,
+				'percentage' => $max > 0 ? round( $sum / $max * 100, 2 ) : 0.0,
+				'tests'      => isset( $row['tests'] ) ? (int) $row['tests'] : 0,
+				'pending'    => isset( $row['pending'] ) ? (int) $row['pending'] : 0,
+			);
+		}
+
+		return $map;
+	}
+
+	/**
 	 * Баллы одного пользователя одной строкой (для сводок и экспорта).
 	 *
 	 * @param int $user_id ID пользователя.

@@ -244,7 +244,20 @@ $html = '<!DOCTYPE html>
 </html>';
 
 file_put_contents( $base . 'preview-admin.html', $html );
-// Образец выгрузки для проверки структуры.
+// Образец выгрузки для проверки структуры: вместе с баллами за тесты.
+global $wpdb;
+
+if ( $wpdb instanceof WPPA_Test_WPDB ) {
+	$wpdb->data = array(
+		'var'      => $wpdb->prefix . 'olympiad_attempts',
+		'attempts' => array(
+			(object) array( 'user_id' => 7, 'score' => 27, 'max_score' => 40, 'tests' => 3, 'pending' => 1 ),
+		),
+	);
+
+	WPPA_Olympiad::flush();
+}
+
 $sample_user = new WP_User( 7 );
 $sample = WPPA_Export::csv( array( 'users' => array( $sample_user ) ) );
 file_put_contents( $base . 'export-sample.csv', $sample );

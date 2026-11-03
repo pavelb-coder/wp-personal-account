@@ -45,7 +45,6 @@ function current_user_can( $cap ) { return true; }
 function get_current_screen() { return (object) array( 'id' => 'toplevel_page_wppa-dashboard' ); }
 function get_edit_post_link( $id = 0, $context = 'display' ) { return 'https://example.com/wp-admin/post.php?post=' . $id . '&action=edit'; }
 function get_edit_user_link( $id = 0 ) { return 'https://example.com/wp-admin/user-edit.php?user_id=' . $id; }
-function _n( $single, $plural, $number, $domain = null ) { return 1 === (int) $number ? $single : $plural; }
 function submit_button( $text = '', $type = 'primary', $name = 'submit', $wrap = true, $other = null ) { echo '<button class="button">' . htmlspecialchars( $text ) . '</button>'; }
 function checked( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' checked="checked"' : ''; if ( $echo ) { echo $r; } return $r; }
 function selected( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' selected="selected"' : ''; if ( $echo ) { echo $r; } return $r; }

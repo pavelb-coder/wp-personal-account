@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.3.0
+Stable tag: 3.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.4.0 =
+* Баллы за тесты добавлены в выгрузку аккаунтов отдельной группой колонок «Баллы за тесты».
+* Колонки: баллы, максимум баллов, процент, работ зачтено, работ на проверке.
+* Баллы собираются одним запросом на всю выгрузку (GROUP BY user_id), а не по запросу на каждого пользователя.
+* Группа появляется только при установленном плагине олимпиад; без него в CSV прежние колонки.
+* Новый метод `WPPA_Olympiad::summary_map()` для сводных баллов по списку пользователей.
 
 = 3.3.0 =
 * Интеграция с плагином олимпиад (wordprees): баллы за тесты в личном кабинете.

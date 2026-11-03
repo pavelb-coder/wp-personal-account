@@ -749,8 +749,8 @@ $olympiad_checks['по умолчанию вкладка включена'] = 1 
 // 6. Ручной фильтр наличия плагина.
 WPPA_Olympiad::flush();
 $wpdb->data = array();
-add_filter( 'wppa_olympiad_active', static function () {
-	return true;
+add_filter( 'wppa_olympiad_active', static function ( $active ) {
+	return array_key_exists( 'olympiad_force', $GLOBALS['wppa_test'] ) ? (bool) $GLOBALS['wppa_test']['olympiad_force'] : true;
 } );
 
 WPPA_Olympiad::flush();
@@ -762,6 +762,102 @@ $wpdb->queries = array();
 
 foreach ( $olympiad_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'olympiad: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+
+// ---------- Баллы за тесты в выгрузке ----------
+global $wpdb;
+
+$export_olympiad_checks = array();
+
+$wpdb->data = array(
+	'var'      => 'wp_olympiad_attempts',
+	'attempts' => array(
+		(object) array( 'user_id' => 7, 'score' => 27, 'max_score' => 40, 'tests' => 3, 'pending' => 1 ),
+		(object) array( 'user_id' => 8, 'score' => 5, 'max_score' => 10, 'tests' => 1, 'pending' => 0 ),
+	),
+);
+WPPA_Olympiad::flush();
+$wpdb->queries = array();
+
+$export_olympiad_checks['группа появилась']  = array_key_exists( 'olympiad', WPPA_Export::groups() );
+$export_olympiad_checks['группа в списке по умолчанию'] = in_array( 'olympiad', WPPA_Export::default_groups(), true );
+
+$all_columns = array_column( WPPA_Export::columns(), 'key' );
+$export_olympiad_checks['колонки баллов']    = in_array( 'olympiad_score', $all_columns, true )
+	&& in_array( 'olympiad_max', $all_columns, true )
+	&& in_array( 'olympiad_percentage', $all_columns, true )
+	&& in_array( 'olympiad_tests', $all_columns, true )
+	&& in_array( 'olympiad_pending', $all_columns, true );
+$export_olympiad_checks['колонки баллов в конце'] = 'olympiad' === end( WPPA_Export::columns() )['group'];
+
+$account_columns = array_column( WPPA_Export::columns( array( 'account' ) ), 'key' );
+$export_olympiad_checks['без группы баллов нет колонок'] = ! in_array( 'olympiad_score', $account_columns, true )
+	&& ! in_array( 'olympiad_tests', $account_columns, true );
+
+$map = WPPA_Olympiad::summary_map( array( 7, 8, 9 ) );
+$export_olympiad_checks['карта по нескольким пользователям'] = 2 === count( $map ) && 27 === $map[7]['score'];
+$export_olympiad_checks['карта: процент']                   = 67.5 === $map[7]['percentage'];
+$export_olympiad_checks['карта: один запрос']                = 1 === count( array_filter( $wpdb->queries, static function ( $q ) {
+	return false !== strpos( (string) $q, 'GROUP BY user_id' );
+} ) );
+
+$row = WPPA_Export::row( get_userdata( 7 ), array( 'olympiad' => $map ) );
+$export_olympiad_checks['строка: баллы']       = 27 === $row['olympiad_score'] && 40 === $row['olympiad_max'];
+$export_olympiad_checks['строка: процент']     = 67.5 === $row['olympiad_percentage'];
+$export_olympiad_checks['строка: зачтено']     = 3 === $row['olympiad_tests'];
+$export_olympiad_checks['строка: на проверке'] = 1 === $row['olympiad_pending'];
+
+$csv_users = array( get_userdata( 7 ), get_userdata( 8 ) );
+$csv       = WPPA_Export::csv(
+	array(
+		'groups' => array( 'account', 'olympiad' ),
+		'users'  => $csv_users,
+		'limit'  => 10,
+	)
+);
+
+$export_olympiad_checks['csv: заголовок с баллами'] = false !== strpos( $csv, 'Баллы за тесты' ) && false !== strpos( $csv, 'Максимум баллов' );
+$export_olympiad_checks['csv: значения баллов']     = false !== strpos( $csv, '27;40;67.5;3;1' );
+$export_olympiad_checks['csv: второй пользователь'] = false !== strpos( $csv, '5;10;50;1;0' );
+
+$wpdb->queries = array();
+WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => $csv_users, 'limit' => 10 ) );
+$export_olympiad_checks['csv: баллы одним запросом на всех'] = 1 === count( array_filter( $wpdb->queries, static function ( $q ) {
+	return false !== strpos( (string) $q, 'GROUP BY user_id' );
+} ) );
+
+// Плагина нет — ни группы, ни колонок, ни запросов.
+$GLOBALS['wppa_test']['olympiad_force'] = false;
+WPPA_Olympiad::flush();
+$wpdb->data    = array();
+$wpdb->queries = array();
+
+$export_olympiad_checks['без плагина: группы нет']    = ! array_key_exists( 'olympiad', WPPA_Export::groups() );
+$export_olympiad_checks['без плагина: колонок нет']   = ! in_array( 'olympiad_score', array_column( WPPA_Export::columns( WPPA_Export::default_groups() ), 'key' ), true );
+
+$csv_plain = WPPA_Export::csv( array( 'groups' => array( 'account' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 10 ) );
+$export_olympiad_checks['без плагина: нет баллов в csv'] = false === strpos( $csv_plain, 'Баллы за тесты' );
+$export_olympiad_checks['без плагина: нет запросов к попыткам'] = array() === array_filter( $wpdb->queries, static function ( $q ) {
+	return false !== strpos( (string) $q, 'olympiad_attempts' ) && false === strpos( (string) $q, 'SHOW TABLES' );
+} );
+
+// Ключ группы доходит до настроек выгрузки в папку.
+$GLOBALS['wppa_test']['olympiad_force'] = true;
+$wpdb->data = array( 'var' => 'wp_olympiad_attempts' );
+WPPA_Olympiad::flush();
+
+$folder_groups = WPPA_Settings::sanitize(
+	array( 'export_folder' => array( 'groups' => array( 'account', 'olympiad' ) ) )
+)['export_folder']['groups'];
+
+$export_olympiad_checks['настройки: группа баллов сохраняется'] = in_array( 'olympiad', $folder_groups, true );
+
+foreach ( $export_olympiad_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export olympiad: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}
