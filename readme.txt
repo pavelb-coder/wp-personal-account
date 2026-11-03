@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.6.1
+Stable tag: 3.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.6.2 =
+* Действия в админке больше не роняют сайт в критическую ошибку: исключение внутри обработчика ловится, подробности пишутся в журнал PHP, посетитель возвращается на страницу с уведомлением.
+* Все инструменты вынесены в `WPPA_Admin::run_tool()`, обработчик только ловит ошибки и перенаправляет.
+* Nonce и ключ действия проверяются на тип: массив вместо строки больше не вызывает ошибку.
 
 = 3.6.1 =
 * Кнопки «Наставник» и «снять» больше не приводят к красному экрану WordPress: истёкшая форма и нехватка прав возвращают назад с понятным уведомлением.

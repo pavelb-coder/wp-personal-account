@@ -565,6 +565,7 @@ class WPPA_Admin {
 			'team_mentor_not_mentor' => array( 'info', __( 'У этого участника и так нет роли наставника.', 'wp-personal-account' ) ),
 			'tool_expired'           => array( 'warning', __( 'Страница устарела: пока она была открыта, истёк срок действия формы. Обновите страницу и повторите действие.', 'wp-personal-account' ) ),
 			'tool_forbidden'         => array( 'error', __( 'Недостаточно прав для этого действия.', 'wp-personal-account' ) ),
+			'tool_failed'            => array( 'error', __( 'Действие не выполнено: на сайте произошла ошибка. Подробности записаны в журнал ошибок PHP.', 'wp-personal-account' ) ),
 			'folder_export_ok'   => array( 'success', __( 'Файл выгрузки записан в папку. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
@@ -594,47 +595,78 @@ class WPPA_Admin {
 			self::redirect_tool( 'tool_forbidden' );
 		}
 
-		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- значение проверяется ниже.
+		$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : '';
 
-		if ( ! wp_verify_nonce( $nonce, 'wppa_tool' ) ) {
+		// Массив вместо строки прилетает от ботов и старых форм: не роняем сайт.
+		if ( ! is_string( $nonce ) || ! wp_verify_nonce( $nonce, 'wppa_tool' ) ) {
 			self::redirect_tool( 'tool_expired' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
-		$tool = isset( $_POST['wppa_tool'] ) ? sanitize_key( wp_unslash( $_POST['wppa_tool'] ) ) : '';
+		$raw_tool = isset( $_POST['wppa_tool'] ) ? wp_unslash( $_POST['wppa_tool'] ) : '';
+		$tool     = is_string( $raw_tool ) ? sanitize_key( $raw_tool ) : '';
 
+		try {
+			$code = self::run_tool( $tool );
+		} catch ( Throwable $e ) {
+			// Критическая ошибка на весь сайт из-за одного действия не нужна:
+			// пишем подробности в журнал и возвращаем понятное уведомление.
+			if ( function_exists( 'error_log' ) ) {
+				error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					sprintf(
+						'WPPA: действие «%1$s» не выполнено — %2$s в %3$s:%4$d',
+						$tool,
+						$e->getMessage(),
+						$e->getFile(),
+						$e->getLine()
+					)
+				);
+			}
+
+			self::redirect_tool( 'tool_failed' );
+		}
+
+		self::redirect_tool( $code );
+	}
+
+	/**
+	 * Выполнение инструмента: возвращает код уведомления.
+	 *
+	 * Отдельный метод, чтобы ошибку внутри любого действия можно было поймать
+	 * в handle_tool() и не отдавать посетителю экран критической ошибки.
+	 *
+	 * @param string $tool Ключ действия.
+	 * @return string Код уведомления.
+	 */
+	private static function run_tool( $tool ) {
 		switch ( $tool ) {
 			case 'create_page':
 				WPPA_Plugin::activate();
-				self::redirect_tool( 'page_created' );
-				break;
+				return 'page_created';
 
 			case 'clear_limits':
 				self::clear_login_limits();
-				self::redirect_tool( 'limits_clear' );
-				break;
+				return 'limits_clear';
 
 			case 'clear_pending_emails':
 				delete_metadata( 'user', 0, WPPA_Profile::META_PENDING_EMAIL, '', true );
 				delete_metadata( 'user', 0, WPPA_Profile::META_EMAIL_TOKEN, '', true );
 				delete_metadata( 'user', 0, WPPA_Profile::META_EMAIL_EXPIRES, '', true );
-				self::redirect_tool( 'emails_clear' );
-				break;
+				return 'emails_clear';
 
 			case 'export_csv':
 				self::export_users_csv();
-				break;
+				return '';
 
 			case 'export_folder_now':
 				$result = WPPA_Export_Folder::write( WPPA_Export_Folder::config() );
-				self::redirect_tool( $result['ok'] ? 'folder_export_ok' : 'folder_export_fail' );
-				break;
+				return $result['ok'] ? 'folder_export_ok' : 'folder_export_fail';
 
 			case 'smb_check':
 				$result = WPPA_SMB::test( WPPA_SMB::config() );
 				WPPA_Export_Folder::log_entry( $result['ok'], '', 0, $result['message'] );
-				self::redirect_tool( $result['ok'] ? 'smb_check_ok' : 'smb_check_fail' );
-				break;
+				return $result['ok'] ? 'smb_check_ok' : 'smb_check_fail';
 
 			case 'folder_verify':
 				$folder = WPPA_Export_Folder::config();
@@ -642,19 +674,16 @@ class WPPA_Admin {
 					? WPPA_SMB::test( WPPA_SMB::config() )
 					: WPPA_Export_Folder::check_folder( $folder['path'] );
 				WPPA_Export_Folder::log_entry( $result['ok'], '', 0, $result['message'] );
-				self::redirect_tool( $result['ok'] ? 'folder_verify_ok' : 'folder_verify_fail' );
-				break;
+				return $result['ok'] ? 'folder_verify_ok' : 'folder_verify_fail';
 
 			case 'export_folder_check':
 				$folder = WPPA_Export_Folder::config();
 				$result = WPPA_Export_Folder::check_folder( $folder['path'] );
-				self::redirect_tool( $result['ok'] ? 'folder_check_ok' : 'folder_check_fail' );
-				break;
+				return $result['ok'] ? 'folder_check_ok' : 'folder_check_fail';
 
 			case 'export_folder_clear_log':
 				delete_option( WPPA_Export_Folder::LOG_OPTION );
-				self::redirect_tool( 'folder_log_clear' );
-				break;
+				return 'folder_log_clear';
 
 			case 'update_team_limit':
 				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -664,8 +693,7 @@ class WPPA_Admin {
 					WPPA_Teams::set_team_limit( $team_id, $limit );
 				}
 
-				self::redirect_tool( 'team_limit_saved' );
-				break;
+				return 'team_limit_saved';
 
 			case 'update_team_settings':
 				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -678,8 +706,7 @@ class WPPA_Admin {
 					WPPA_Teams::set_team_min( $team_id, $min );
 				}
 
-				self::redirect_tool( 'team_settings_saved' );
-				break;
+				return 'team_settings_saved';
 
 			case 'update_team_min':
 				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -689,16 +716,14 @@ class WPPA_Admin {
 					WPPA_Teams::set_team_min( $team_id, $min );
 				}
 
-				self::redirect_tool( 'team_min_saved' );
-				break;
+				return 'team_min_saved';
 
 			case 'set_team_mentor':
 			case 'remove_team_mentor':
 				$team_id   = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				self::redirect_tool( self::mentor_action( $tool, $team_id, $member_id ) );
-				break;
+				return self::mentor_action( $tool, $team_id, $member_id );
 
 			case 'dissolve_team':
 				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -707,21 +732,18 @@ class WPPA_Admin {
 					WPPA_Teams::dissolve( $team_id );
 				}
 
-				self::redirect_tool( 'team_dissolved' );
-				break;
+				return 'team_dissolved';
 
 			case 'reset_layout':
 				WPPA_Builder::reset();
-				self::redirect_tool( 'layout_reset' );
-				break;
+				return 'layout_reset';
 
 			case 'clear_cache':
 				delete_transient( 'wppa_admin_stats' );
-				self::redirect_tool( 'cache_clear' );
-				break;
+				return 'cache_clear';
 
 			default:
-				self::redirect_tool( '' );
+				return '';
 		}
 	}
 

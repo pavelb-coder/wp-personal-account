@@ -1343,7 +1343,7 @@ $mentor_checks['неизвестное действие']    = 'team_mentor_inva
 $mentor_checks['отказы роль не меняют']   = 'member' === WPPA_Teams::role( 9003 ) && 'owner' === WPPA_Teams::role( 9001 );
 
 // Все коды, которые возвращает обработчик, должны иметь текст уведомления.
-$mentor_codes = array( 'team_mentor_added', 'team_mentor_removed', 'team_mentor_invalid', 'team_mentor_not_member', 'team_mentor_captain', 'team_mentor_already', 'team_mentor_not_mentor', 'tool_expired', 'tool_forbidden' );
+$mentor_codes = array( 'team_mentor_added', 'team_mentor_removed', 'team_mentor_invalid', 'team_mentor_not_member', 'team_mentor_captain', 'team_mentor_already', 'team_mentor_not_mentor', 'tool_expired', 'tool_forbidden', 'tool_failed' );
 $mentor_notice_ok = true;
 
 foreach ( $mentor_codes as $mentor_code ) {
