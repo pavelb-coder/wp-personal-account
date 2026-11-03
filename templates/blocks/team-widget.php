@@ -20,6 +20,8 @@ $wppa_min      = WPPA_Teams::team_min( $wppa_team_id );
 $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 $wppa_members  = $wppa_team_id ? WPPA_Teams::members_count( $wppa_team_id ) : 0;
 $wppa_mentors  = $wppa_team_id ? WPPA_Teams::mentors_count( $wppa_team_id ) : 0;
+$wppa_gaps     = $wppa_team_id ? WPPA_Teams::gaps( $wppa_team_id ) : array( 'members' => 0, 'mentor' => false );
+$wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 ?>
 
 <h2 class="wppa-title">
@@ -120,6 +122,18 @@ $wppa_mentors  = $wppa_team_id ? WPPA_Teams::mentors_count( $wppa_team_id ) : 0;
 			);
 			?>
 		</div>
+	<?php endif; ?>
+
+	<?php if ( ! empty( $wppa_gaps['mentor'] ) ) : ?>
+		<div class="wppa-notice wppa-notice--info">
+			<?php esc_html_e( 'В команде нет наставника. Без наставника команда считается несформированной — назначьте наставника из числа участников.', 'wp-personal-account' ); ?>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $wppa_complete ) : ?>
+		<p class="wppa-hint">
+			<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'Команда сформирована', 'wp-personal-account' ); ?></span>
+		</p>
 	<?php endif; ?>
 
 	<?php if ( $wppa_mentors > 0 ) : ?>

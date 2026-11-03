@@ -132,6 +132,14 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 									?>
 								</span>
 							<?php endif; ?>
+							<?php if ( ! empty( $wppa_row['gaps']['mentor'] ) ) : ?>
+								<br />
+								<span class="wppa-badge wppa-badge--warn"><?php esc_html_e( 'нет наставника', 'wp-personal-account' ); ?></span>
+							<?php endif; ?>
+							<?php if ( ! empty( $wppa_row['complete'] ) ) : ?>
+								<br />
+								<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'сформирована', 'wp-personal-account' ); ?></span>
+							<?php endif; ?>
 						</td>
 						<td>
 							<?php if ( ! empty( $wppa_row['mentors'] ) ) : ?>

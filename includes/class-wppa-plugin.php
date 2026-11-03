@@ -139,6 +139,7 @@ class WPPA_Plugin {
 			'custom_css'           => '',
 			'max_team_members'     => 10,
 			'min_team_members'     => 2,
+			'require_mentor'       => 1,
 			'fields'               => array(),
 			'password_rules'       => array(),
 			'link_button'          => array(),

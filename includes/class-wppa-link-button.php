@@ -102,10 +102,13 @@ class WPPA_Link_Button {
 
 		if ( ! $team_id ) {
 			return array(
-				'team_id'  => 0,
-				'members'  => 0,
-				'required' => (int) WPPA_Teams::min_members(),
-				'ready'    => false,
+				'team_id'         => 0,
+				'members'         => 0,
+				'required'        => (int) WPPA_Teams::min_members(),
+				'mentors'         => 0,
+				'mentor_required' => WPPA_Teams::require_mentor(),
+				'has_mentor'      => false,
+				'ready'           => false,
 			);
 		}
 
@@ -113,10 +116,13 @@ class WPPA_Link_Button {
 		$required = (int) WPPA_Teams::team_min( $team_id );
 
 		return array(
-			'team_id'  => $team_id,
-			'members'  => $members,
-			'required' => $required,
-			'ready'    => $members >= $required && $required > 0,
+			'team_id'         => $team_id,
+			'members'         => $members,
+			'required'        => $required,
+			'mentors'         => (int) WPPA_Teams::mentors_count( $team_id ),
+			'mentor_required' => WPPA_Teams::require_mentor(),
+			'has_mentor'      => WPPA_Teams::has_mentor( $team_id ),
+			'ready'           => $required > 0 && WPPA_Teams::is_complete( $team_id ),
 		);
 	}
 
@@ -166,13 +172,24 @@ class WPPA_Link_Button {
 			}
 
 			if ( ! $team['ready'] ) {
-				$state['status']  = 'team';
+				$state['status'] = 'team';
+
+				if ( $team['members'] >= $team['required'] && ! $team['has_mentor'] ) {
+					$state['message'] = __( 'Ждём наставника: в команде пока нет наставника.', 'wp-personal-account' );
+					return $state;
+				}
+
 				$state['message'] = sprintf(
 					/* translators: 1: участников сейчас, 2: сколько нужно */
 					__( 'Ждём состав команды: %1$d из %2$d участников.', 'wp-personal-account' ),
 					(int) $team['members'],
 					(int) $team['required']
 				);
+
+				if ( $team['mentor_required'] && ! $team['has_mentor'] ) {
+					$state['message'] .= ' ' . __( 'Ещё нужен наставник.', 'wp-personal-account' );
+				}
+
 				return $state;
 			}
 		}

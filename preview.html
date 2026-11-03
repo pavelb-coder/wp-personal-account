@@ -703,6 +703,18 @@
 	color: #047857;
 }
 
+.wppa-badge--ok {
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+	color: #047857;
+}
+
+.wppa-badge--warn {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #b45309;
+}
+
 .wppa-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -1180,7 +1192,8 @@ body {
 			<div class="wppa-card wppa-card--stat">
 			<span class="wppa-card__label">Команда</span>
 			<span class="wppa-card__value wppa-card__value--small">Студия «Вектор»</span>
-							<a class="wppa-link" href="https://example.com/?wppa_tab=team">Состав команды</a>
+							<span class="wppa-badge wppa-badge--ok">Команда сформирована</span>
+										<a class="wppa-link" href="https://example.com/?wppa_tab=team">Состав команды</a>
 					</div>
 	</div>
 
@@ -1284,6 +1297,11 @@ body {
 			Капитан		</span>
 	</div>
 
+	
+	
+			<p class="wppa-hint">
+			<span class="wppa-badge wppa-badge--ok">Команда сформирована</span>
+		</p>
 	
 			<p class="wppa-hint">
 			Наставники входят в состав, но не считаются участниками: не занимают место в лимите и не идут в зачёт минимума.		</p>
@@ -1460,6 +1478,11 @@ body {
 	</div>
 
 	
+	
+			<p class="wppa-hint">
+			<span class="wppa-badge wppa-badge--ok">Команда сформирована</span>
+		</p>
+	
 			<p class="wppa-hint">
 			Наставники входят в состав, но не считаются участниками: не занимают место в лимите и не идут в зачёт минимума.		</p>
 	
@@ -1579,6 +1602,183 @@ body {
 			<input type="hidden" name="wppa_team_action" value="leave" />
 			<button type="submit" class="wppa-button wppa-button--danger" data-wppa-confirm="Точно? Действие необратимо.">
 				Выйти из команды			</button>
+		</form>
+	</section>
+
+</section><section class="demo-block"><div class="demo-block__head"><h2>Команда без наставника</h2><p>Настройка «Требовать наставника» включена: минимум набран, но команда считается несформированной</p></div>
+<h2 class="wppa-title">
+	Команда</h2>
+
+
+	<div class="wppa-card wppa-team-head">
+		<div>
+			<h3 class="wppa-team-name">Студия «Вектор»</h3>
+			<p class="wppa-hint">
+				Участников: 3 из 10 (минимум 2) · создана 03.11.2026			</p>
+		</div>
+		<span class="wppa-badge wppa-badge--owner">
+			Капитан		</span>
+	</div>
+
+	
+			<div class="wppa-notice wppa-notice--info">
+			В команде нет наставника. Без наставника команда считается несформированной — назначьте наставника из числа участников.		</div>
+	
+	
+	
+	
+	<h3 class="wppa-subtitle">Состав команды</h3>
+
+	<div class="wppa-table-wrap">
+		<table class="wppa-table">
+			<thead>
+				<tr>
+					<th>Участник</th>
+					<th>Email</th>
+					<th>Роль</th>
+											<th>Действия</th>
+									</tr>
+			</thead>
+			<tbody>
+														<tr>
+						<td data-label="Участник">
+							<img class="avatar" width="28" height="28" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />							<strong>Иван Петров</strong>
+															<span class="wppa-hint">(это вы)</span>
+													</td>
+						<td data-label="Email">ivan@example.com</td>
+						<td data-label="Роль">
+							<span class="wppa-badge wppa-badge--owner">
+								Капитан							</span>
+						</td>
+																				<td data-label="Действия">
+																	<span class="wppa-hint">—</span>
+															</td>
+											</tr>
+														<tr>
+						<td data-label="Участник">
+							<img class="avatar" width="28" height="28" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />							<strong>Мария Соколова</strong>
+													</td>
+						<td data-label="Email">maria@example.com</td>
+						<td data-label="Роль">
+							<span class="wppa-badge ">
+								Участник							</span>
+						</td>
+																				<td data-label="Действия">
+																	<div class="wppa-actions">
+																					<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+												<input type="hidden" name="wppa_nonce" value="nonce" />												<input type="hidden" name="wppa_action" value="team" />
+												<input type="hidden" name="wppa_team_action" value="make_mentor" />
+												<input type="hidden" name="member_id" value="8" />
+												<button type="submit" class="wppa-link-button">
+													Сделать наставником												</button>
+											</form>
+										
+										<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+											<input type="hidden" name="wppa_nonce" value="nonce" />											<input type="hidden" name="wppa_action" value="team" />
+											<input type="hidden" name="wppa_team_action" value="remove_member" />
+											<input type="hidden" name="member_id" value="8" />
+											<button type="submit" class="wppa-link-button">Исключить</button>
+										</form>
+									</div>
+															</td>
+											</tr>
+														<tr>
+						<td data-label="Участник">
+							<img class="avatar" width="28" height="28" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />							<strong>Пётр Сидоров</strong>
+													</td>
+						<td data-label="Email">petr@example.com</td>
+						<td data-label="Роль">
+							<span class="wppa-badge ">
+								Участник							</span>
+						</td>
+																				<td data-label="Действия">
+																	<div class="wppa-actions">
+																					<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+												<input type="hidden" name="wppa_nonce" value="nonce" />												<input type="hidden" name="wppa_action" value="team" />
+												<input type="hidden" name="wppa_team_action" value="make_mentor" />
+												<input type="hidden" name="member_id" value="9" />
+												<button type="submit" class="wppa-link-button">
+													Сделать наставником												</button>
+											</form>
+										
+										<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+											<input type="hidden" name="wppa_nonce" value="nonce" />											<input type="hidden" name="wppa_action" value="team" />
+											<input type="hidden" name="wppa_team_action" value="remove_member" />
+											<input type="hidden" name="member_id" value="9" />
+											<button type="submit" class="wppa-link-button">Исключить</button>
+										</form>
+									</div>
+															</td>
+											</tr>
+							</tbody>
+		</table>
+	</div>
+
+	
+		<section class="wppa-card">
+			<h3 class="wppa-subtitle">Пригласить участников</h3>
+
+			
+			<p class="wppa-field">
+				<label for="wppa-invite-link">Ссылка-приглашение</label>
+				<span class="wppa-copy">
+					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=abc123abc123abc123abc123abc123ab" readonly />
+					<button type="button" class="wppa-button wppa-button--ghost" data-wppa-copy="wppa-invite-link">Копировать</button>
+				</span>
+				<span class="wppa-hint">Действует 7 дней. Перегенерируйте, если ссылка попала не туда.</span>
+			</p>
+
+			<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+				<input type="hidden" name="wppa_nonce" value="nonce" />				<input type="hidden" name="wppa_action" value="team" />
+				<input type="hidden" name="wppa_team_action" value="refresh_token" />
+				<button type="submit" class="wppa-button wppa-button--ghost">Обновить ссылку</button>
+			</form>
+
+			<hr class="wppa-divider" />
+
+			<form class="wppa-form" method="post" action="https://example.com/?wppa_tab=team">
+				<input type="hidden" name="wppa_nonce" value="nonce" />				<input type="hidden" name="wppa_action" value="team" />
+				<input type="hidden" name="wppa_team_action" value="invite_email" />
+
+				<p class="wppa-field">
+					<label for="wppa-invite-email">Пригласить по email</label>
+					<input type="email" id="wppa-invite-email" name="invite_email" autocomplete="email" required />
+				</p>
+
+				<button type="submit" class="wppa-button wppa-button--primary">Отправить приглашение</button>
+			</form>
+		</section>
+
+	
+	
+		<section class="wppa-card">
+			<h3 class="wppa-subtitle">Название команды</h3>
+
+			<form class="wppa-form" method="post" action="https://example.com/?wppa_tab=team">
+				<input type="hidden" name="wppa_nonce" value="nonce" />				<input type="hidden" name="wppa_action" value="team" />
+				<input type="hidden" name="wppa_team_action" value="rename" />
+
+				<p class="wppa-field">
+					<label for="wppa-team-rename">Название</label>
+					<input type="text" id="wppa-team-rename" name="team_name" value="Студия «Вектор»" maxlength="100" required />
+				</p>
+
+				<button type="submit" class="wppa-button wppa-button--primary">Сохранить</button>
+			</form>
+		</section>
+
+	
+	<section class="wppa-card wppa-card--danger">
+		<h3 class="wppa-subtitle">
+			Распустить команду		</h3>
+		<p class="wppa-hint">
+			Команда будет удалена, все участники выйдут из неё. Действие необратимо.		</p>
+
+		<form method="post" action="https://example.com/?wppa_tab=team" class="wppa-inline-form">
+			<input type="hidden" name="wppa_nonce" value="nonce" />			<input type="hidden" name="wppa_action" value="team" />
+			<input type="hidden" name="wppa_team_action" value="leave" />
+			<button type="submit" class="wppa-button wppa-button--danger" data-wppa-confirm="Точно? Действие необратимо.">
+				Распустить команду			</button>
 		</form>
 	</section>
 
@@ -2158,7 +2358,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Ждём состав команды: 1 из 2 участников.		</p>
+			Ждём состав команды: 1 из 2 участников. Ещё нужен наставник.		</p>
 	
 	
 	</section>
@@ -2173,16 +2373,16 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Откроется 03.11.2026 09:55.		</p>
+			Откроется 03.11.2026 10:00.		</p>
 	
 			<p class="wppa-link-block__timer">
 			<span class="wppa-link-block__timer-label">
 				До открытия:			</span>
 			<span
 				class="wppa-countdown"
-				data-wppa-countdown="1793699700"
+				data-wppa-countdown="1793700000"
 				data-wppa-countdown-mode="open"
-				data-wppa-reload="1"			>01:59:57</span>
+				data-wppa-reload="1"			>01:59:59</span>
 		</p>
 	
 	</section>
@@ -2197,7 +2397,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Срок доступа истёк 03.11.2026 06:55.		</p>
+			Срок доступа истёк 03.11.2026 07:00.		</p>
 	
 	
 	</section>

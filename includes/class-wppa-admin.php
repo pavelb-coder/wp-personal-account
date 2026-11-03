@@ -282,6 +282,8 @@ class WPPA_Admin {
 				'min'       => WPPA_Teams::team_min( (int) $team->ID ),
 				'own_min'   => WPPA_Teams::raw_team_min( (int) $team->ID ),
 				'missing'   => WPPA_Teams::missing_members( (int) $team->ID ),
+				'gaps'      => WPPA_Teams::gaps( (int) $team->ID ),
+				'complete'  => WPPA_Teams::is_complete( (int) $team->ID ),
 				'created' => (int) get_post_meta( (int) $team->ID, WPPA_Teams::META_CREATED, true ),
 			);
 		}

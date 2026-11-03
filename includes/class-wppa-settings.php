@@ -106,6 +106,8 @@ class WPPA_Settings {
 
 		$out['fields'] = $fields_out;
 
+		$out['require_mentor'] = empty( $input['require_mentor'] ) ? 0 : 1;
+
 		// Требования к паролю.
 		$rules_saved = isset( $input['password_rules'] ) && is_array( $input['password_rules'] ) ? $input['password_rules'] : array();
 		$rules_out   = array();
@@ -223,6 +225,20 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="<?php echo esc_attr( (int) $s['max_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[require_mentor]" value="1" <?php checked( WPPA_Teams::require_mentor() ); ?> />
+									<?php esc_html_e( 'Требовать наставника: команда без наставника считается несформированной', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Действует во всех статусах команды: отметка «недобор» в кабинете и в админке, а также условие «команда сформирована» у кнопки со ссылкой. Наставник по-прежнему не занимает место в лимите и не идёт в зачёт минимума участников.', 'wp-personal-account' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>

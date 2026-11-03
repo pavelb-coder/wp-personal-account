@@ -634,19 +634,66 @@ $state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) 
 $link_checks['один из двух — закрыто']   = 'team' === $state['status'] && 1 === $state['team']['members'] && 2 === $state['team']['required'];
 $link_checks['один из двух — текст']     = false !== strpos( $state['message'], '1 из 2' );
 
-// Наставник в зачёт не идёт: второй участник — наставник.
+// Наставник в зачёт минимума не идёт: он есть, но участников всё равно не хватает.
 $GLOBALS['wppa_test']['meta'][8] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' );
 $state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
-$link_checks['наставник не считается'] = 'team' === $state['status'] && 1 === $state['team']['members'];
+$link_checks['наставник не считается участником'] = 'team' === $state['status'] && 1 === $state['team']['members'];
+$link_checks['наставник есть — про него не напоминаем'] = false === strpos( $state['message'], 'наставник' );
 
-// Обычный участник закрывает условие.
-$GLOBALS['wppa_test']['meta'][8]['_wppa_team_role'] = 'member';
+// Минимум набран, но наставника нет — команда не сформирована.
+$GLOBALS['wppa_test']['meta'][9] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'member' );
+unset( $GLOBALS['wppa_test']['meta'][8] );
 $state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
-$link_checks['минимум набран — открыто'] = 'ready' === $state['status'] && $state['is_open'] && 2 === $state['team']['members'];
+$link_checks['минимум без наставника — закрыто']  = 'team' === $state['status'] && ! $state['is_open'];
+$link_checks['минимум без наставника — текст']    = false !== strpos( $state['message'], 'Ждём наставника' );
+$link_checks['прогресс: участники есть, наставника нет'] = 2 === $state['team']['members'] && false === $state['team']['has_mentor'];
+
+// Наставник назначен — условие закрыто.
+$GLOBALS['wppa_test']['meta'][8] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' );
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['минимум и наставник — открыто'] = 'ready' === $state['status'] && $state['is_open'] && 2 === $state['team']['members'] && $state['team']['has_mentor'];
+
+// Требование наставника выключено — хватает минимума.
+unset( $GLOBALS['wppa_test']['meta'][8] );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'require_mentor' => 0 ) ) );
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['наставник не требуется — открыто'] = 'ready' === $state['status'] && $state['is_open'];
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'require_mentor' => 1 ) ) );
+$GLOBALS['wppa_test']['meta'][8] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' );
 
 // Условие команды + окно дат одновременно.
 $state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1, 'start' => gmdate( 'Y-m-d\TH:i', time() + 3600 ) ) ) );
 $link_checks['команда есть, но рано — отсчёт'] = 'before' === $state['status'] && $state['countdown'] > time();
+
+// Условия команды: gaps() и is_complete().
+$team_gaps_checks = array(
+	'gaps: всё в порядке'                => array( 'members' => 0, 'mentor' => false ) === WPPA_Teams::gaps( 901 ),
+	'is_complete: состав и наставник'    => true === WPPA_Teams::is_complete( 901 ),
+	'has_mentor: наставник есть'         => true === WPPA_Teams::has_mentor( 901 ),
+	'require_mentor включено по умолчанию' => true === WPPA_Teams::require_mentor(),
+);
+
+unset( $GLOBALS['wppa_test']['meta'][8] );
+$team_gaps_checks['gaps: нет наставника']    = array( 'members' => 0, 'mentor' => true ) === WPPA_Teams::gaps( 901 );
+$team_gaps_checks['is_complete: без наставника — нет'] = false === WPPA_Teams::is_complete( 901 );
+$team_gaps_checks['is_missing_mentor']       = true === WPPA_Teams::is_missing_mentor( 901 );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'require_mentor' => 0 ) ) );
+$team_gaps_checks['выключено — наставник не мешает'] = false === WPPA_Teams::is_missing_mentor( 901 ) && true === WPPA_Teams::is_complete( 901 );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'require_mentor' => 1 ) ) );
+
+unset( $GLOBALS['wppa_test']['meta'][9] );
+$team_gaps_checks['is_complete: пусто — нет'] = false === WPPA_Teams::is_complete( 901 );
+$GLOBALS['wppa_test']['meta'][8] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' );
+$GLOBALS['wppa_test']['meta'][9] = array( '_wppa_team_id' => 901, '_wppa_team_role' => 'member' );
+
+foreach ( $team_gaps_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team mentor: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 // Разметка блока: открытое состояние.
 wppa_link_state( $link_base );

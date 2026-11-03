@@ -83,6 +83,31 @@ ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
 
+$mentor_settings_ok = false !== strpos( $settings_html, 'wppa_settings[require_mentor]' )
+	&& false !== strpos( $settings_html, 'Требовать наставника' );
+
+echo ( $mentor_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: галочка «Требовать наставника»\n";
+if ( ! $mentor_settings_ok ) {
+	$fail++;
+}
+
+$mentor_sanitize     = WPPA_Settings::sanitize( array( 'require_mentor' => '1' ) );
+$mentor_sanitize_off = WPPA_Settings::sanitize( array() );
+
+$mentor_sanitize_ok = 1 === $mentor_sanitize['require_mentor'] && 0 === $mentor_sanitize_off['require_mentor'];
+
+echo ( $mentor_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: требование наставника сохраняется\n";
+if ( ! $mentor_sanitize_ok ) {
+	$fail++;
+}
+
+$mentor_badge_ok = false !== strpos( $teams_html, 'нет наставника' ) || false !== strpos( $teams_html, 'сформирована' );
+
+echo ( $mentor_badge_ok ? 'OK    ' : 'FAIL  ' ) . "teams: статус команды в админке\n";
+if ( ! $mentor_badge_ok ) {
+	$fail++;
+}
+
 $link_settings_ok = false !== strpos( $settings_html, 'wppa_settings[link_button][url]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[link_button][start]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[link_button][end]' )

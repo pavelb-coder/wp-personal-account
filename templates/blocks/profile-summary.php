@@ -33,6 +33,11 @@ $wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 		<div class="wppa-card wppa-card--stat">
 			<span class="wppa-card__label"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></span>
 			<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $wppa_team['name'] ); ?></span>
+			<?php if ( ! WPPA_Teams::is_complete( $wppa_team_id ) ) : ?>
+				<span class="wppa-badge wppa-badge--warn"><?php esc_html_e( 'Команда не сформирована', 'wp-personal-account' ); ?></span>
+			<?php else : ?>
+				<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'Команда сформирована', 'wp-personal-account' ); ?></span>
+			<?php endif; ?>
 			<?php if ( isset( $tabs['team'] ) ) : ?>
 				<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
 			<?php endif; ?>

@@ -212,6 +212,73 @@ class WPPA_Teams {
 	}
 
 	/**
+	 * Требуется ли наставник в команде (настройка плагина).
+	 *
+	 * @return bool
+	 */
+	public static function require_mentor() {
+		/**
+		 * Фильтр требования наставника.
+		 *
+		 * @param bool $required Требуется ли наставник.
+		 */
+		return (bool) apply_filters( 'wppa_require_mentor', (bool) WPPA_Plugin::setting( 'require_mentor', 1 ) );
+	}
+
+	/**
+	 * Есть ли в команде наставник.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function has_mentor( $team_id ) {
+		return $team_id && self::mentors_count( $team_id ) > 0;
+	}
+
+	/**
+	 * В команде не хватает наставника при включённом требовании.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function is_missing_mentor( $team_id ) {
+		if ( ! self::require_mentor() ) {
+			return false;
+		}
+
+		return $team_id && ! self::has_mentor( $team_id );
+	}
+
+	/**
+	 * Команда сформирована: набран минимум участников и (если требуется) есть наставник.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function is_complete( $team_id ) {
+		if ( ! $team_id || self::is_below_min( $team_id ) ) {
+			return false;
+		}
+
+		return ! self::is_missing_mentor( $team_id );
+	}
+
+	/**
+	 * Что мешает считать команду сформированной.
+	 *
+	 * Ключи: members (сколько не хватает), mentor (нет наставника).
+	 *
+	 * @param int $team_id ID команды.
+	 * @return array
+	 */
+	public static function gaps( $team_id ) {
+		return array(
+			'members' => (int) self::missing_members( $team_id ),
+			'mentor'  => (bool) self::is_missing_mentor( $team_id ),
+		);
+	}
+
+	/**
 	 * Лимит участников конкретной команды.
 	 *
 	 * @param int $team_id ID команды.

@@ -104,6 +104,23 @@ $sections   .= demo_section(
 	WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
 );
 
+// Команда без наставника: команда считается несформированной.
+$wppa_mentor_snapshot = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+
+foreach ( (array) $wppa_mentor_snapshot as $wppa_uid => $wppa_meta ) {
+	if ( isset( $wppa_meta['_wppa_team_role'] ) && 'mentor' === $wppa_meta['_wppa_team_role'] ) {
+		$GLOBALS['wppa_test']['meta'][ $wppa_uid ]['_wppa_team_role'] = 'member';
+	}
+}
+
+$sections .= demo_section(
+	'Команда без наставника',
+	'Настройка «Требовать наставника» включена: минимум набран, но команда считается несформированной',
+	WPPA_Template::get( 'tab-team', array( 'user' => $user, 'tabs' => $tabs ) )
+);
+
+$GLOBALS['wppa_test']['meta'] = $wppa_mentor_snapshot;
+
 $sections .= demo_section(
 	'Безопасность',
 	'Вкладка security: смена пароля, смена email с подтверждением, выход',
