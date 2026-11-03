@@ -62,17 +62,24 @@ class WPPA_Account {
 	private static function render_guest() {
 		$registration = WPPA_Plugin::registration_open();
 
-		$view = WPPA_Plugin::requested_view();
+		$view = WPPA_Plugin::guest_view();
 
 		if ( '' === $view ) {
 			$view = 'login';
 		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- ключ и логин из ссылки в письме.
+		$key   = isset( $_GET['wppa_key'] ) ? sanitize_text_field( wp_unslash( $_GET['wppa_key'] ) ) : '';
+		$login = isset( $_GET['wppa_login'] ) ? sanitize_text_field( wp_unslash( $_GET['wppa_login'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		WPPA_Template::render(
 			'guest',
 			array(
 				'view'         => $view,
 				'registration' => $registration,
+				'key'          => $key,
+				'login'        => $login,
 			)
 		);
 	}

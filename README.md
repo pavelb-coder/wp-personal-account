@@ -219,6 +219,7 @@ includes/
   class-wppa-password.php    требования к паролю: правила, проверка, подсказки
   class-wppa-link-button.php кнопка со ссылкой: окно дат, условие по команде, состояние
   class-wppa-time.php        даты и время: разбор datetime-local, форматирование, отсчёт
+  class-wppa-reset.php       восстановление пароля: заявка, письмо, ссылка, новый пароль
   class-wppa-teams.php       команды: создание, приглашения, состав, роли (капитан/наставник), роспуск
   class-wppa-builder.php     конструктор: блоки, раскладка, рендер вкладок
   class-wppa-widget.php      виджет «Вход и регистрация» + общий рендер форм
@@ -310,6 +311,30 @@ add_filter( 'wppa_link_button', function ( $config ) {
 ```
 
 Хелперы: `WPPA_Link_Button::config()`, `WPPA_Link_Button::state()`, `WPPA_Link_Button::team_progress()`, `WPPA_Link_Button::countdown_text()`.
+
+## Восстановление пароля
+
+Ссылка «Забыли пароль?» больше не уводит на служебную страницу WordPress (`wp-login.php`) — весь сброс проходит в кабинете.
+
+1. `?wppa_view=lostpassword` — форма «Укажите логин или email».
+2. Письмо со ссылкой `?wppa_view=resetpass&wppa_login=…&wppa_key=…` (срок жизни 24 часа, одноразовая, как в ядре WP).
+3. `?wppa_view=resetpass` — форма нового пароля с требованиями из `WPPA_Password` и `minlength` из настроек.
+4. После сохранения — уведомление «Пароль обновлён» и переход к входу.
+
+Что учтено:
+
+* Ответ на заявку всегда одинаковый («если такой аккаунт есть, письмо отправлено») — нельзя перебором узнать, кто зарегистрирован на сайте.
+* Повторная заявка по тому же логину/email — не чаще раза в минуту (транзиент, код `reset_too_fast`).
+* Ключ проверяется `check_password_reset_key()`, пароль меняется `reset_password()` — то же, что в ядре, но интерфейс свой.
+* Валидация пароля — общие правила (`WPPA_Password`), те же сообщения, что при регистрации и смене пароля.
+* Ссылки и письмо можно переписать фильтрами `wppa_reset_password_subject` и `wppa_reset_password_body`.
+
+```php
+WPPA_Plugin::lost_password_url();            // ссылка на форму заявки
+WPPA_Reset::reset_url( $login, $key );       // ссылка установки пароля
+WPPA_Reset::validate( $key, $login );        // WP_User|null
+WPPA_Reset::is_throttled( $login );          // защита от частых заявок
+```
 
 ## Экспорт аккаунтов
 

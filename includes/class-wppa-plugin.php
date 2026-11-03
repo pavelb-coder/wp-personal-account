@@ -15,7 +15,7 @@ class WPPA_Plugin {
 	/**
 	 * Query-параметры плагина (регистрируются, чтобы WordPress их не выбрасывал).
 	 */
-	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action' );
+	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login' );
 
 	/**
 	 * Минимальная длина пароля.
@@ -198,6 +198,37 @@ class WPPA_Plugin {
 	 */
 	public static function password_too_short( $password ) {
 		return strlen( (string) $password ) < self::min_password_length();
+	}
+
+	/**
+	 * Экран гостя с учётом параметра ?wppa_view.
+	 *
+	 * login | register | lostpassword | resetpass | '' (по умолчанию).
+	 *
+	 * @return string
+	 */
+	public static function guest_view() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор формы.
+		$view = isset( $_GET['wppa_view'] ) ? sanitize_key( wp_unslash( $_GET['wppa_view'] ) ) : '';
+
+		if ( 'resetpass' === $view ) {
+			return 'resetpass';
+		}
+
+		if ( 'lostpassword' === $view ) {
+			return 'lostpassword';
+		}
+
+		return self::requested_view();
+	}
+
+	/**
+	 * URL формы «Забыли пароль?».
+	 *
+	 * @return string
+	 */
+	public static function lost_password_url() {
+		return self::account_url( array( 'wppa_view' => 'lostpassword' ) );
 	}
 
 	/**
@@ -516,6 +547,12 @@ class WPPA_Plugin {
 				break;
 			case 'email':
 				WPPA_Profile::handle_email_request();
+				break;
+			case 'lostpassword':
+				WPPA_Reset::handle_request();
+				break;
+			case 'resetpass':
+				WPPA_Reset::handle_reset();
 				break;
 			default:
 				break;

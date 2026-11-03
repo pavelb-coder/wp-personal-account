@@ -45,7 +45,7 @@ $wppa_reg_live = 'open' === $wppa_window['state'];
 				<input type="checkbox" name="rememberme" value="1" />
 				<?php esc_html_e( 'Запомнить меня', 'wp-personal-account' ); ?>
 			</label>
-			<a href="<?php echo esc_url( wp_lostpassword_url( $wppa_action ) ); ?>"><?php esc_html_e( 'Забыли пароль?', 'wp-personal-account' ); ?></a>
+			<a href="<?php echo esc_url( WPPA_Plugin::lost_password_url() ); ?>"><?php esc_html_e( 'Забыли пароль?', 'wp-personal-account' ); ?></a>
 		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Войти', 'wp-personal-account' ); ?></button>

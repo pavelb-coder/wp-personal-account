@@ -19,6 +19,7 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
+require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
@@ -988,6 +989,80 @@ $GLOBALS['wppa_test']['admin_bar'] = null;
 
 foreach ( $bar_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'admin bar: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Восстановление пароля внутри кабинета ----------
+$reset_settings_snapshot = get_option( 'wppa_settings', array() );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'account_page_id' => 5 ) ) );
+
+$reset_checks = array(
+	'ссылка «Забыли пароль?» ведёт в кабинет' => false !== strpos( WPPA_Plugin::lost_password_url(), 'wppa_view=lostpassword' )
+		&& false === strpos( WPPA_Plugin::lost_password_url(), 'wp-login.php' ),
+	'экран сброса: ключ и логин в ссылке'      => false !== strpos( WPPA_Reset::reset_url( 'ivan', 'test-reset-key' ), 'wppa_key=test-reset-key' ),
+);
+
+$login_form_html = WPPA_Template::get( 'login', array( 'title' => '' ) );
+$reset_checks['форма входа не ведёт на wp-login.php'] = false === strpos( $login_form_html, 'wp-login.php' )
+	&& false !== strpos( $login_form_html, 'wppa_view=lostpassword' );
+
+$lost_html = WPPA_Template::get( 'lost-password', array() );
+$reset_checks['форма заявки: поле логина']   = false !== strpos( $lost_html, 'name="user_login"' );
+$reset_checks['форма заявки: действие']      = false !== strpos( $lost_html, 'value="lostpassword"' );
+$reset_checks['форма заявки: кнопка входа']  = false !== strpos( $lost_html, 'wppa_view=login' );
+
+// Письмо со ссылкой.
+$reset_user = new WP_User( 7 );
+$mail_body  = WPPA_Reset::mail_body( $reset_user, 'test-reset-key' );
+$reset_checks['письмо содержит ссылку на кабинет'] = false !== strpos( $mail_body, 'wppa_view=resetpass' )
+	&& false === strpos( $mail_body, 'wp-login.php' );
+$reset_checks['письмо объясняет срок жизни']       = false !== strpos( $mail_body, '24 часа' );
+
+// Экран установки пароля: недействительный ключ.
+$bad_html = WPPA_Template::get( 'reset-password', array( 'key' => 'broken-key', 'login' => 'ivan' ) );
+$reset_checks['неверный ключ: формы нет']        = false === strpos( $bad_html, 'name="wppa_action" value="resetpass"' );
+$reset_checks['неверный ключ: просьба запросить заново'] = false !== strpos( $bad_html, 'wppa_view=lostpassword' );
+
+// Экран установки пароля: верный ключ.
+$good_html = WPPA_Template::get( 'reset-password', array( 'key' => 'test-reset-key', 'login' => 'ivan' ) );
+$reset_checks['верный ключ: форма есть']         = false !== strpos( $good_html, 'value="resetpass"' );
+$reset_checks['верный ключ: minlength=16']       = false !== strpos( $good_html, 'minlength="16"' );
+$reset_checks['верный ключ: требования к паролю'] = false !== strpos( $good_html, 'data-wppa-password-rules' );
+$reset_checks['верный ключ: ключ в скрытом поле'] = false !== strpos( $good_html, 'value="test-reset-key"' );
+
+// Экран гостя переключается на новые формы.
+$guest_lost = WPPA_Template::get( 'guest', array( 'view' => 'lostpassword', 'registration' => true ) );
+$reset_checks['экран гостя: форма заявки']   = false !== strpos( $guest_lost, 'name="user_login"' );
+$guest_reset = WPPA_Template::get( 'guest', array( 'view' => 'resetpass', 'registration' => true, 'key' => 'test-reset-key', 'login' => 'ivan' ) );
+$reset_checks['экран гостя: форма нового пароля'] = false !== strpos( $guest_reset, 'value="resetpass"' );
+
+// Коды уведомлений.
+$notices = WPPA_Notices::registry();
+$reset_checks['уведомления сброса на месте'] = isset( $notices['reset_sent'], $notices['reset_done'], $notices['reset_link_invalid'], $notices['reset_too_fast'] );
+
+// Поиск пользователя и защита от частых заявок.
+$GLOBALS['wppa_test']['users_by'] = array(
+	'email' => array( 'ivan@example.com' => 7 ),
+	'login' => array( 'ivan' => 7 ),
+);
+$reset_checks['поиск по email']  = 7 === WPPA_Reset::find_user( 'ivan@example.com' )->ID;
+$reset_checks['поиск по логину'] = 7 === WPPA_Reset::find_user( 'ivan' )->ID;
+$reset_checks['чужой логин — не найден'] = null === WPPA_Reset::find_user( 'nobody' );
+$reset_checks['пустой логин — не найден'] = null === WPPA_Reset::find_user( '  ' );
+
+// Проверка ключа.
+$reset_checks['верный ключ принимается']   = null !== WPPA_Reset::validate( 'test-reset-key', 'ivan' );
+$reset_checks['неверный ключ отклоняется'] = null === WPPA_Reset::validate( 'broken-key', 'ivan' );
+$reset_checks['пустой ключ отклоняется']   = null === WPPA_Reset::validate( '', 'ivan' );
+
+update_option( 'wppa_settings', $reset_settings_snapshot );
+unset( $GLOBALS['wppa_test']['users_by'] );
+
+foreach ( $reset_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'password reset: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

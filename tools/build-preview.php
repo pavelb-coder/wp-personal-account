@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
+require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
@@ -290,6 +291,16 @@ $sections .= demo_section(
 );
 
 update_option( 'wppa_settings', $wppa_settings_snapshot );
+
+// Восстановление пароля: заявка и установка нового пароля.
+$sections .= demo_section(
+	'Восстановление пароля',
+	'Свои формы вместо служебной страницы WordPress: заявка по логину или email и установка нового пароля по ссылке из письма',
+	'<div class="demo-two">'
+		. '<div>' . WPPA_Template::get( 'lost-password', array() ) . '</div>'
+		. '<div>' . WPPA_Template::get( 'reset-password', array( 'key' => 'test-reset-key', 'login' => 'ivan' ) ) . '</div>'
+		. '</div>'
+);
 
 $css = file_get_contents( $base . 'assets/css/account.css' );
 

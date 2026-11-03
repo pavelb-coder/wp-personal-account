@@ -468,3 +468,33 @@ if ( ! function_exists( 'is_singular' ) ) {
 if ( ! function_exists( 'wp_doing_ajax' ) ) {
 	function wp_doing_ajax() { return ! empty( $GLOBALS['wppa_test']['doing_ajax'] ); }
 }
+
+function get_user_by( $field, $value ) {
+	$users = isset( $GLOBALS['wppa_test']['users_by'] ) ? (array) $GLOBALS['wppa_test']['users_by'] : array();
+
+	if ( isset( $users[ $field ][ $value ] ) ) {
+		return new WP_User( (int) $users[ $field ][ $value ] );
+	}
+
+	return false;
+}
+
+function get_password_reset_key( $user ) {
+	$GLOBALS['wppa_test']['reset_key_user'] = $user->ID;
+	return 'test-reset-key';
+}
+
+function check_password_reset_key( $key, $login ) {
+	$GLOBALS['wppa_test']['checked_key'] = array( $key, $login );
+
+	if ( 'test-reset-key' !== $key ) {
+		return new WP_Error();
+	}
+
+	return new WP_User( 7 );
+}
+
+function reset_password( $user, $new_pass ) {
+	$GLOBALS['wppa_test']['reset_done'] = array( $user->ID, $new_pass );
+	return true;
+}

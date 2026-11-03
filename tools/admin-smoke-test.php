@@ -28,6 +28,7 @@ require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
+require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
 
