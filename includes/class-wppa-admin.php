@@ -558,7 +558,13 @@ class WPPA_Admin {
 			'team_settings_saved' => array( 'success', __( 'Минимум и лимит участников команды обновлены.', 'wp-personal-account' ) ),
 			'team_mentor_added'   => array( 'success', __( 'Наставник назначен.', 'wp-personal-account' ) ),
 			'team_mentor_removed' => array( 'success', __( 'Роль наставника снята.', 'wp-personal-account' ) ),
-			'team_mentor_invalid' => array( 'warning', __( 'Наставником можно назначить только участника этой команды, кроме капитана.', 'wp-personal-account' ) ),
+			'team_mentor_invalid' => array( 'warning', __( 'Не удалось изменить наставника: команда или участник не найдены.', 'wp-personal-account' ) ),
+			'team_mentor_not_member' => array( 'warning', __( 'Этот пользователь не состоит в выбранной команде.', 'wp-personal-account' ) ),
+			'team_mentor_captain'    => array( 'warning', __( 'Капитан не может быть наставником: он уже ведёт команду.', 'wp-personal-account' ) ),
+			'team_mentor_already'    => array( 'info', __( 'Этот участник уже наставник.', 'wp-personal-account' ) ),
+			'team_mentor_not_mentor' => array( 'info', __( 'У этого участника и так нет роли наставника.', 'wp-personal-account' ) ),
+			'tool_expired'           => array( 'warning', __( 'Страница устарела: пока она была открыта, истёк срок действия формы. Обновите страницу и повторите действие.', 'wp-personal-account' ) ),
+			'tool_forbidden'         => array( 'error', __( 'Недостаточно прав для этого действия.', 'wp-personal-account' ) ),
 			'folder_export_ok'   => array( 'success', __( 'Файл выгрузки записан в папку. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
@@ -583,11 +589,16 @@ class WPPA_Admin {
 	 * @return void
 	 */
 	public static function handle_tool() {
+		// Вместо красного экрана WordPress — возврат назад с понятным уведомлением.
 		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-personal-account' ), 403 );
+			self::redirect_tool( 'tool_forbidden' );
 		}
 
-		check_admin_referer( 'wppa_tool' );
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, 'wppa_tool' ) ) {
+			self::redirect_tool( 'tool_expired' );
+		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
 		$tool = isset( $_POST['wppa_tool'] ) ? sanitize_key( wp_unslash( $_POST['wppa_tool'] ) ) : '';
@@ -686,21 +697,7 @@ class WPPA_Admin {
 				$team_id   = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				if ( $team_id && $member_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
-					if ( (int) WPPA_Teams::team_id( $member_id ) !== $team_id || 'owner' === WPPA_Teams::role( $member_id ) ) {
-						self::redirect_tool( 'team_mentor_invalid' );
-					}
-
-					if ( 'set_team_mentor' === $tool ) {
-						WPPA_Teams::make_mentor( $team_id, $member_id );
-						self::redirect_tool( 'team_mentor_added' );
-					}
-
-					WPPA_Teams::dismiss_mentor( $team_id, $member_id );
-					self::redirect_tool( 'team_mentor_removed' );
-				}
-
-				self::redirect_tool( 'team_mentor_invalid' );
+				self::redirect_tool( self::mentor_action( $tool, $team_id, $member_id ) );
 				break;
 
 			case 'dissolve_team':
@@ -726,6 +723,52 @@ class WPPA_Admin {
 			default:
 				self::redirect_tool( '' );
 		}
+	}
+
+	/**
+	 * Назначение и снятие наставника: что именно произошло.
+	 *
+	 * Возвращает код уведомления, ничего не выводит и не перенаправляет —
+	 * так его можно проверить без HTTP.
+	 *
+	 * @param string $tool      set_team_mentor|remove_team_mentor.
+	 * @param int    $team_id   ID команды.
+	 * @param int    $member_id ID пользователя.
+	 * @return string Код уведомления.
+	 */
+	public static function mentor_action( $tool, $team_id, $member_id ) {
+		$team_id   = (int) $team_id;
+		$member_id = (int) $member_id;
+
+		if ( ! $team_id || ! $member_id || WPPA_Teams::CPT !== get_post_type( $team_id ) ) {
+			return 'team_mentor_invalid';
+		}
+
+		if ( (int) WPPA_Teams::team_id( $member_id ) !== $team_id ) {
+			return 'team_mentor_not_member';
+		}
+
+		if ( 'owner' === WPPA_Teams::role( $member_id ) ) {
+			return 'team_mentor_captain';
+		}
+
+		if ( 'set_team_mentor' === $tool ) {
+			if ( 'mentor' === WPPA_Teams::role( $member_id ) ) {
+				return 'team_mentor_already';
+			}
+
+			return WPPA_Teams::make_mentor( $team_id, $member_id ) ? 'team_mentor_added' : 'team_mentor_invalid';
+		}
+
+		if ( 'remove_team_mentor' !== $tool ) {
+			return 'team_mentor_invalid';
+		}
+
+		if ( 'mentor' !== WPPA_Teams::role( $member_id ) ) {
+			return 'team_mentor_not_mentor';
+		}
+
+		return WPPA_Teams::dismiss_mentor( $team_id, $member_id ) ? 'team_mentor_removed' : 'team_mentor_invalid';
 	}
 
 	/**

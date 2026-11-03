@@ -1313,6 +1313,60 @@ $mentor_ok = $mentor_before
 	&& 1 === WPPA_Teams::members_count( $demo_team_id );
 
 echo ( $mentor_ok ? 'OK    ' : 'FAIL  ' ) . "teams: назначение и снятие наставника в админке\n";
+// Обработчик кнопок «Наставник» / «снять»: коды уведомлений на каждую причину.
+$mentor_snapshot = array(
+	'meta'  => $GLOBALS['wppa_test']['meta'],
+	'posts' => $GLOBALS['wppa_test']['posts'],
+);
+
+$GLOBALS['wppa_test']['posts'][902] = (object) array( 'ID' => 902, 'post_type' => 'wppa_team', 'post_title' => 'Тестовая', 'post_author' => 9001 );
+$GLOBALS['wppa_test']['posts'][903] = (object) array( 'ID' => 903, 'post_type' => 'wppa_team', 'post_title' => 'Чужая', 'post_author' => 9004 );
+$GLOBALS['wppa_test']['meta'][9001] = array( '_wppa_team_id' => 902, '_wppa_team_role' => 'owner' );
+$GLOBALS['wppa_test']['meta'][9002] = array( '_wppa_team_id' => 902, '_wppa_team_role' => 'member' );
+$GLOBALS['wppa_test']['meta'][9003] = array( '_wppa_team_id' => 902, '_wppa_team_role' => 'member' );
+$GLOBALS['wppa_test']['meta'][9004] = array( '_wppa_team_id' => 903, '_wppa_team_role' => 'member' );
+
+$mentor_checks = array();
+$mentor_checks['назначение: успех']       = 'team_mentor_added' === WPPA_Admin::mentor_action( 'set_team_mentor', 902, 9002 );
+$mentor_checks['назначение: роль mentor'] = 'mentor' === WPPA_Teams::role( 9002 );
+$mentor_checks['назначение: повторно']    = 'team_mentor_already' === WPPA_Admin::mentor_action( 'set_team_mentor', 902, 9002 );
+$mentor_checks['снятие: успех']           = 'team_mentor_removed' === WPPA_Admin::mentor_action( 'remove_team_mentor', 902, 9002 );
+$mentor_checks['снятие: роль member']     = 'member' === WPPA_Teams::role( 9002 );
+$mentor_checks['снятие: повторно']        = 'team_mentor_not_mentor' === WPPA_Admin::mentor_action( 'remove_team_mentor', 902, 9002 );
+$mentor_checks['капитан не назначается']  = 'team_mentor_captain' === WPPA_Admin::mentor_action( 'set_team_mentor', 902, 9001 );
+$mentor_checks['чужой участник']          = 'team_mentor_not_member' === WPPA_Admin::mentor_action( 'set_team_mentor', 902, 9004 );
+$mentor_checks['несуществующая команда']  = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'set_team_mentor', 999999, 9002 );
+$mentor_checks['пустые параметры']        = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'set_team_mentor', 0, 0 );
+$mentor_checks['неизвестное действие']    = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'dissolve_team', 902, 9002 );
+
+// Ни один отказ не должен менять роль.
+$mentor_checks['отказы роль не меняют']   = 'member' === WPPA_Teams::role( 9003 ) && 'owner' === WPPA_Teams::role( 9001 );
+
+// Все коды, которые возвращает обработчик, должны иметь текст уведомления.
+$mentor_codes = array( 'team_mentor_added', 'team_mentor_removed', 'team_mentor_invalid', 'team_mentor_not_member', 'team_mentor_captain', 'team_mentor_already', 'team_mentor_not_mentor', 'tool_expired', 'tool_forbidden' );
+$mentor_notice_ok = true;
+
+foreach ( $mentor_codes as $mentor_code ) {
+	$_GET['wppa_done'] = $mentor_code;
+	if ( null === WPPA_Admin::tool_notice() ) {
+		$mentor_notice_ok = false;
+	}
+}
+
+unset( $_GET['wppa_done'] );
+
+$mentor_checks['у каждого кода есть уведомление'] = $mentor_notice_ok;
+
+$GLOBALS['wppa_test']['meta']  = $mentor_snapshot['meta'];
+$GLOBALS['wppa_test']['posts'] = $mentor_snapshot['posts'];
+
+foreach ( $mentor_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mentor action: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 if ( ! $mentor_ok ) {
 	$fail++;
 }

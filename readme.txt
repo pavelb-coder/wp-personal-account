@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.6.0
+Stable tag: 3.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.6.1 =
+* Кнопки «Наставник» и «снять» больше не приводят к красному экрану WordPress: истёкшая форма и нехватка прав возвращают назад с понятным уведомлением.
+* Причина отказа называется точно: уже наставник, роль снимать нечего, капитан, участник другой команды, команда не найдена.
+* Обработчик вынесен в `WPPA_Admin::mentor_action()` — проверяется тестами без HTTP.
+* 13 новых проверок на все коды уведомлений и на то, что отказ не меняет роль.
 
 = 3.6.0 =
 * Наставнику кнопка перехода на внешнюю ссылку больше не выдаётся: блок не выводится ни открытым, ни закрытым.

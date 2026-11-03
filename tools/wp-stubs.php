@@ -201,6 +201,19 @@ function wp_mail( $to, $s, $m ) { return true; }
 function email_exists( $e ) { return false; }
 function username_exists( $u ) { return false; }
 function check_admin_referer( $a, $n = '' ) { return true; }
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/**
+	 * Проверка nonce: в заглушках пустой nonce считается просроченным.
+	 *
+	 * @param string $nonce  Значение.
+	 * @param string $action Действие.
+	 * @return int|false
+	 */
+	function wp_verify_nonce( $nonce, $action = -1 ) {
+		return '' === (string) $nonce ? false : 1;
+	}
+}
 function wp_safe_redirect( $u ) { return true; }
 function get_bloginfo( $k ) { return 'Демо-сайт'; }
 function wp_specialchars_decode( $t, $q = null ) { return $t; }
