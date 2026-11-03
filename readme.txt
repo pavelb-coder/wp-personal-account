@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.5.2
+Stable tag: 3.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.6.0 =
+* Наставнику кнопка перехода на внешнюю ссылку больше не выдаётся: блок не выводится ни открытым, ни закрытым.
+* Причина: наставник в команде наблюдатель, он не входит в состав и не идёт в зачёт минимума.
+* Проверка на сервере: `WPPA_Link_Button::is_mentor()`, новое состояние `mentor` в `state()`.
+* Участники и капитан получают кнопку как раньше.
 
 = 3.5.2 =
 * Из выгрузки убрана колонка «ID»: строку опознаёт логин, он уникален и не меняется.

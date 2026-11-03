@@ -10,6 +10,13 @@
 defined( 'ABSPATH' ) || exit;
 
 $wppa_link = WPPA_Link_Button::state();
+
+// Наставнику кнопка не выдаётся: блок не выводим совсем — ни открытым,
+// ни серым с сообщением.
+if ( 'mentor' === $wppa_link['status'] ) {
+	return;
+}
+
 $wppa_text = $wppa_link['text'];
 ?>
 <section class="wppa-card wppa-link-block<?php echo 'ready' === $wppa_link['status'] ? '' : ' wppa-link-block--locked'; ?>">

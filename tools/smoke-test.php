@@ -726,6 +726,58 @@ $link_checks['таймер выводится в разметке'] = false !== 
 $link_checks['таймер перезагружает страницу'] = false !== strpos( $link_html, 'data-wppa-reload="1"' );
 $link_checks['адрес не утекает в разметке']   = false === strpos( $link_html, 'https://example.com/go' );
 
+// Наставнику кнопка не выдаётся — ни открытой, ни закрытой.
+$GLOBALS['wppa_test']['meta'] = array(
+	7 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'owner' ),
+	8 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' ),
+	9 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'member' ),
+);
+$GLOBALS['wppa_test']['current_user'] = 8;
+
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 0 ) ) );
+$link_checks['наставник — статус mentor']        = 'mentor' === $state['status'] && true === $state['is_mentor'];
+$link_checks['наставник — кнопка не открыта']    = false === $state['is_open'];
+$link_checks['наставник — без отсчёта и дат']    = 0 === $state['countdown'];
+$link_checks['is_mentor: наставник']             = true === WPPA_Link_Button::is_mentor( 8 );
+
+$link_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => 'Трансляция', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['наставник — блок не выводится']      = '' === trim( $link_html );
+$link_checks['наставник — адреса нет в разметке']  = false === strpos( $link_html, 'example.com' );
+$link_checks['наставник — заголовка блока нет']    = false === strpos( $link_html, 'Трансляция' );
+
+// Условие по команде не важно: наставник без доступа в любом случае.
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 1 ) ) );
+$link_checks['наставник — и при условии по команде mentor'] = 'mentor' === $state['status'];
+
+// Участники и капитан кнопку получают.
+$GLOBALS['wppa_test']['current_user'] = 9;
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 0 ) ) );
+$link_checks['участник — кнопка открыта'] = 'ready' === $state['status'] && $state['is_open'];
+$link_checks['is_mentor: участник']       = false === WPPA_Link_Button::is_mentor( 9 );
+
+$member_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['участник — ссылка в разметке'] = false !== strpos( $member_html, 'href="https://example.com/go"' );
+
+$GLOBALS['wppa_test']['current_user'] = 7;
+$state = wppa_link_state( array_merge( $link_base, array( 'require_team' => 0 ) ) );
+$link_checks['капитан — кнопка открыта']   = 'ready' === $state['status'] && $state['is_open'];
+$link_checks['is_mentor: капитан']         = false === WPPA_Link_Button::is_mentor( 7 );
+$link_checks['is_mentor: без команды']     = false === WPPA_Link_Button::is_mentor( 555 );
+
+$captain_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['капитан — ссылка в разметке'] = false !== strpos( $captain_html, 'href="https://example.com/go"' );
+
+unset( $GLOBALS['wppa_test']['current_user'] );
+
 // Форматирование и сохранение дат.
 $link_checks['datetime-local сохраняется'] = '2026-11-05T10:00' === WPPA_Link_Button::sanitize_datetime( '2026-11-05T10:00' );
 $link_checks['мусор в дате отбрасывается'] = '' === WPPA_Link_Button::sanitize_datetime( 'завтра' );

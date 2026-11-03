@@ -188,7 +188,7 @@ function wp_roles() {
 
 function translate_user_role( $name ) { return $name; }
 function wp_get_current_user() { return new WP_User(); }
-function get_current_user_id() { return 7; }
+function get_current_user_id() { return isset( $GLOBALS['wppa_test']['current_user'] ) ? (int) $GLOBALS['wppa_test']['current_user'] : 7; }
 function wp_set_current_user( $id ) { return new WP_User(); }
 function wp_set_auth_cookie( $id, $r = false, $s = false ) {}
 function wp_set_password( $p, $id ) {}

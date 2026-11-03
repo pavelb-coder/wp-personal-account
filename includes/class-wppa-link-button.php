@@ -73,6 +73,26 @@ class WPPA_Link_Button {
 	}
 
 	/**
+	 * Наставник ли пользователь.
+	 *
+	 * Наставник в команде наблюдатель: в зачёт минимума не идёт, участником не
+	 * считается. Поэтому кнопка перехода на внешнюю ссылку ему не выдаётся —
+	 * ни открытой, ни закрытой.
+	 *
+	 * @param int $user_id ID пользователя (0 — текущий).
+	 * @return bool
+	 */
+	public static function is_mentor( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $user_id || ! WPPA_Teams::team_id( $user_id ) ) {
+			return false;
+		}
+
+		return 'mentor' === WPPA_Teams::role( $user_id );
+	}
+
+	/**
 	 * Состояние команды текущего пользователя относительно минимума участников.
 	 *
 	 * Наставник в зачёт не идёт — считается как в WPPA_Teams::members_count().
@@ -113,7 +133,7 @@ class WPPA_Link_Button {
 	/**
 	 * Текущее состояние кнопки.
 	 *
-	 * status: unconfigured | team | before | after | ready.
+	 * status: mentor | unconfigured | team | before | after | ready.
 	 *
 	 * @param int $user_id ID пользователя (0 — текущий).
 	 * @return array
@@ -137,7 +157,16 @@ class WPPA_Link_Button {
 			'countdown_of' => '',
 			'team'         => array(),
 			'is_open'      => false,
+			'is_mentor'    => false,
 		);
+
+		// Наставнику кнопка не выдаётся: ссылка предназначена участникам.
+		if ( self::is_mentor( $user_id ) ) {
+			$state['status']    = 'mentor';
+			$state['is_mentor'] = true;
+			$state['message']   = __( 'Кнопка перехода выдаётся участникам команды; наставникам она недоступна.', 'wp-personal-account' );
+			return $state;
+		}
 
 		if ( '' === trim( (string) $config['url'] ) ) {
 			$state['status']  = 'unconfigured';
