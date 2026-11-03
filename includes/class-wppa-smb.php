@@ -361,6 +361,46 @@ class WPPA_SMB {
 	}
 
 	/**
+	 * Временный файл.
+	 *
+	 * wp_tempnam() живёт в wp-admin/includes/file.php: на фронтенде этот файл
+	 * не подключён, поэтому вызов напрямую даёт fatal error. Подключаем файл
+	 * сами, а если его нет — создаём файл через tempnam().
+	 *
+	 * @param string $name Подсказка для имени файла.
+	 * @return string|false Путь к файлу или false.
+	 */
+	public static function temp_file( $name = '' ) {
+		if ( ! function_exists( 'wp_tempnam' ) && defined( 'ABSPATH' ) ) {
+			$file = ABSPATH . 'wp-admin/includes/file.php';
+
+			if ( file_exists( $file ) ) {
+				require_once $file;
+			}
+		}
+
+		if ( function_exists( 'wp_tempnam' ) ) {
+			$path = wp_tempnam( (string) $name );
+
+			if ( $path ) {
+				return $path;
+			}
+		}
+
+		$dir  = function_exists( 'get_temp_dir' ) ? get_temp_dir() : sys_get_temp_dir();
+		$path = tempnam( $dir, 'wppa' );
+
+		if ( false === $path ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		@chmod( $path, 0600 );
+
+		return $path;
+	}
+
+	/**
 	 * Временный файл учётных данных (0600): пароль не виден в ps.
 	 *
 	 * @param array  $config    Настройки.
@@ -371,7 +411,7 @@ class WPPA_SMB {
 		$login = self::split_user( $config['user'], isset( $parsed['user'] ) ? $parsed['user'] : '' );
 		$pass  = '' !== $config['pass'] ? $config['pass'] : ( isset( $parsed['password'] ) ? $parsed['password'] : '' );
 
-		$file = wp_tempnam( 'wppa_smb_creds_' );
+		$file = self::temp_file( 'wppa_smb_creds_' );
 
 		if ( ! $file ) {
 			return false;
@@ -735,7 +775,7 @@ class WPPA_SMB {
 		$binary = self::smbclient_binary();
 
 		if ( '' !== $binary ) {
-			$temp = wp_tempnam( $name );
+			$temp = self::temp_file( $name );
 
 			if ( ! $temp ) {
 				return array(

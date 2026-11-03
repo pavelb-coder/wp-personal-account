@@ -355,9 +355,14 @@ WPPA_SMB::split_user( 'DOM\user' );  // domain, user
 WPPA_SMB::test();                     // ok, message, method (filesystem|mounted|windows|extension|cli)
 WPPA_SMB::write( $name, $csv );
 WPPA_SMB::mount_command();
+WPPA_SMB::temp_file( $name );       // временный файл: подключает wp-admin/includes/file.php сам
 ```
 
 Фильтры: `wppa_smb` (настройки), `wppa_smb_runner` (запуск команд), `wppa_smb_port_check` (проверка портов).
+
+Временные файлы создаются только через `WPPA_SMB::temp_file()`: `wp_tempnam()` объявлена в `wp-admin/includes/file.php`, а на фронтенде этот файл не подключён — прямой вызов давал `Call to undefined function wp_tempnam()` при сохранении профиля. Обёртка подключает файл сама, а если его нет — работает через `tempnam()`.
+
+Выгрузка по изменению может выполняться внутри обычного запроса (сохранение профиля, смена роли в команде). Любая ошибка внутри неё перехватывается `Throwable`: пишется строка в журнал выгрузок, страница продолжает работать. Ожидание изменений снимается в любом случае, поэтому упавшая выгрузка не повторяется на каждое сохранение.
 
 ### Баллы за тесты (плагин олимпиад)
 

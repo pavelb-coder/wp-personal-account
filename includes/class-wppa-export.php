@@ -363,7 +363,8 @@ class WPPA_Export {
 	 */
 	public static function line( $values, $delimiter = ';' ) {
 		$handle = fopen( 'php://temp', 'r+' );
-		fputcsv( $handle, $values, $delimiter );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fputcsv -- запись в php://temp, не в файл сайта.
+		fputcsv( $handle, $values, $delimiter, '"', '\\' );
 		rewind( $handle );
 		$line = (string) stream_get_contents( $handle );
 		fclose( $handle );

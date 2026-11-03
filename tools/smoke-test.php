@@ -1326,6 +1326,92 @@ if ( ! $short_ok ) {
 
 $GLOBALS['wppa_test']['logged_in'] = true;
 
+// Регресс 3.7.1: deprecation в fputcsv() и fatal error на wp_tempnam() во фронтенде.
+$csv_checks = array();
+
+$deprecations = array();
+set_error_handler(
+	static function ( $errno, $errstr ) use ( &$deprecations ) {
+		$deprecations[] = $errstr;
+
+		return true;
+	},
+	E_DEPRECATED | E_USER_DEPRECATED
+);
+
+$line = WPPA_Export::line( array( 'обычное', 'с ; точкой с запятой', 'кавычка "внутри"', 'слэш \\ и перенос
+строки', 'ё' ) );
+
+restore_error_handler();
+
+$parsed = str_getcsv( rtrim( $line, "\r\n" ), ';', '"', '\\' );
+
+$csv_checks['fputcsv без deprecation (PHP 8.4)'] = array() === $deprecations;
+$csv_checks['строка CSV разбирается обратно']    = 5 === count( $parsed ) && 'кавычка "внутри"' === $parsed[2];
+$csv_checks['разделитель не ломает поле']        = 'с ; точкой с запятой' === $parsed[1];
+$csv_checks['кириллица цела']                    = 'ё' === $parsed[4];
+
+$smb_source = (string) file_get_contents( WPPA_PATH . 'includes/class-wppa-smb.php' );
+
+// wp_tempnam() живёт в wp-admin/includes/file.php: на фронтенде его нет.
+// Вызов допустим только один — внутри обёртки temp_file(), после подключения файла.
+$tempnam_calls = 0;
+
+foreach ( explode( "\n", $smb_source ) as $smb_line ) {
+	$code = trim( $smb_line );
+
+	if ( '' === $code || 0 === strpos( $code, '*' ) || 0 === strpos( $code, '//' ) ) {
+		continue;
+	}
+
+	if ( false === strpos( $code, 'wp_tempnam(' ) || false !== strpos( $code, 'function_exists' ) ) {
+		continue;
+	}
+
+	$tempnam_calls++;
+}
+
+$csv_checks['прямых вызовов wp_tempnam не осталось'] = 1 === $tempnam_calls;
+$csv_checks['есть обёртка WPPA_SMB::temp_file()']    = false !== strpos( $smb_source, 'public static function temp_file(' );
+$csv_checks['wp-admin/includes/file.php подключается'] = false !== strpos( $smb_source, "'wp-admin/includes/file.php'" );
+
+$temp = WPPA_SMB::temp_file( 'wppa-regress-' . getmypid() );
+$csv_checks['temp_file() создаёт файл'] = is_string( $temp ) && file_exists( $temp );
+
+if ( $temp ) {
+	@unlink( $temp );
+}
+
+$creds = WPPA_SMB::credentials_file( array( 'user' => 'домен\\юзер', 'pass' => 'секрет' ), array() );
+
+if ( is_string( $creds ) && file_exists( $creds ) ) {
+	$content = (string) file_get_contents( $creds );
+
+	$csv_checks['credentials_file() создаёт файл']   = true;
+	$csv_checks['в файле учётных данных есть логин'] = false !== strpos( $content, 'username = юзер' );
+	$csv_checks['права на файл 0600']               = 0600 === ( fileperms( $creds ) & 0777 );
+
+	@unlink( $creds );
+} else {
+	$csv_checks['credentials_file() создаёт файл']   = false;
+	$csv_checks['в файле учётных данных есть логин'] = false;
+	$csv_checks['права на файл 0600']               = false;
+}
+
+// Выгрузка по изменению выполняется внутри запроса: любая ошибка — в журнал, не в белый экран.
+$folder_source = (string) file_get_contents( WPPA_PATH . 'includes/class-wppa-export-folder.php' );
+$run_change    = preg_match( '/function run_change\(.*?function \w+/s', $folder_source, $run_match ) ? $run_match[0] : '';
+
+$csv_checks['run_change() ловит Throwable']          = false !== strpos( $run_change, 'catch ( \Throwable $e )' );
+$csv_checks['SMB-ветка write() ловит Throwable']     = false !== strpos( $folder_source, "if ( 'smb' === \$args['mode'] ) {\n\t\t\ttry {" );
+
+foreach ( $csv_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'csv/smb: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

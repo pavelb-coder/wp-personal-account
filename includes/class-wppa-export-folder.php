@@ -326,15 +326,33 @@ class WPPA_Export_Folder {
 
 		// Режим SMB: путь может быть шарой, логин и пароль — в настройках.
 		if ( 'smb' === $args['mode'] ) {
-			$build  = WPPA_Export::build(
-				array(
-					'groups'    => (array) $args['groups'],
-					'scope'     => (string) $args['scope'],
-					'delimiter' => (string) $args['delimiter'],
-					'limit'     => (int) $args['limit'],
-				)
-			);
-			$result = WPPA_SMB::write( $name, $build['csv'], WPPA_SMB::config() );
+			try {
+				$build  = WPPA_Export::build(
+					array(
+						'groups'    => (array) $args['groups'],
+						'scope'     => (string) $args['scope'],
+						'delimiter' => (string) $args['delimiter'],
+						'limit'     => (int) $args['limit'],
+					)
+				);
+				$result = WPPA_SMB::write( $name, $build['csv'], WPPA_SMB::config() );
+			} catch ( \Throwable $e ) {
+				// Сбой в SMB не должен превращаться в белый экран: пишем в журнал и отдаём ошибку.
+				$message = sprintf(
+					/* translators: %s: текст ошибки */
+					__( 'Сетевая папка: ошибка записи — %s', 'wp-personal-account' ),
+					$e->getMessage()
+				);
+
+				self::log_entry( false, '', 0, $message );
+
+				return array(
+					'ok'      => false,
+					'message' => $message,
+					'file'    => '',
+					'bytes'   => 0,
+				);
+			}
 
 			self::log_entry( $result['ok'], $result['file'], (int) $result['bytes'], $result['message'] . ' ' . self::describe( $build ) );
 
@@ -623,7 +641,12 @@ class WPPA_Export_Folder {
 		$delay = (int) $config['change_delay'];
 
 		if ( 0 === $delay ) {
-			self::run_change();
+			try {
+				self::run_change();
+			} catch ( \Throwable $e ) {
+				self::log_entry( false, '', 0, sprintf( /* translators: %s: текст ошибки */ __( 'Выгрузка по изменению прервана: %s', 'wp-personal-account' ), $e->getMessage() ) );
+			}
+
 			return true;
 		}
 
@@ -675,10 +698,34 @@ class WPPA_Export_Folder {
 			);
 		}
 
-		$result = self::write( $config );
+		try {
+			$result = self::write( $config );
+		} catch ( \Throwable $e ) {
+			$result = array(
+				'ok'      => false,
+				'message' => $e->getMessage(),
+				'file'    => '',
+				'bytes'   => 0,
+			);
+		}
 
+		// Ожидание снимаем в любом случае: иначе упавшая выгрузка повторится на каждое изменение.
 		self::clear_pending();
 		wp_clear_scheduled_hook( self::CHANGE_HOOK );
+
+		if ( ! $result['ok'] ) {
+			self::log_entry(
+				false,
+				(string) $result['file'],
+				(int) $result['bytes'],
+				sprintf(
+					/* translators: 1: причина, 2: сообщение */
+					__( 'Выгрузка по изменению не удалась (%1$s). %2$s', 'wp-personal-account' ),
+					implode( ', ', array_slice( $pending, 0, 5 ) ),
+					$result['message']
+				)
+			);
+		}
 
 		if ( $result['ok'] ) {
 			self::log_entry(

@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.7.0
+Stable tag: 3.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.7.1 =
+* Исправлена критическая ошибка `Call to undefined function wp_tempnam()`: `WPPA_SMB::temp_file()` подключает `wp-admin/includes/file.php` и имеет резервный путь через `tempnam()`.
+* Исправлен `Deprecated: fputcsv(): the $escape parameter must be provided` на PHP 8.4 — параметр `$escape` передаётся явно, формат CSV не изменился.
+* Ошибка при выгрузке в сетевую папку больше не даёт белый экран: `Throwable` перехватывается в `run_change()` и в SMB-ветке `write()`, причина пишется в журнал выгрузок.
+* Ожидание выгрузки по изменению снимается даже при ошибке, чтобы упавшая выгрузка не повторялась при каждом сохранении.
 
 = 3.7.0 =
 * В личном кабинете больше нет олимпиад: убраны вкладка «Олимпиады» и блок «Баллы за тесты».
