@@ -13,6 +13,8 @@ $wppa_team_id  = WPPA_Teams::team_id( $user->ID );
 $wppa_team     = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 $wppa_is_owner = $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
+$wppa_min      = WPPA_Teams::team_min( $wppa_team_id );
+$wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 ?>
 
 <h2 class="wppa-title">
@@ -72,10 +74,11 @@ $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 			<p class="wppa-hint">
 				<?php
 				printf(
-					/* translators: 1: количество участников, 2: лимит */
-					esc_html__( 'Участников: %1$d из %2$d', 'wp-personal-account' ),
+					/* translators: 1: количество участников, 2: лимит, 3: минимум */
+					esc_html__( 'Участников: %1$d из %2$d (минимум %3$d)', 'wp-personal-account' ),
 					count( $wppa_team['members'] ),
-					$wppa_max
+					$wppa_max,
+					$wppa_min
 				);
 				if ( $wppa_team['created'] ) {
 					echo ' · ';
@@ -92,6 +95,19 @@ $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 			<?php echo $wppa_is_owner ? esc_html__( 'Капитан', 'wp-personal-account' ) : esc_html__( 'Участник', 'wp-personal-account' ); ?>
 		</span>
 	</div>
+
+	<?php if ( $wppa_missing > 0 ) : ?>
+		<div class="wppa-notice wppa-notice--info">
+			<?php
+			printf(
+				/* translators: 1: сколько не хватает, 2: минимум */
+				esc_html__( 'Команда ещё не набрана: не хватает %1$d участник(ов) до минимума %2$d. Пригласите коллег по ссылке ниже.', 'wp-personal-account' ),
+				(int) $wppa_missing,
+				(int) $wppa_min
+			);
+			?>
+		</div>
+	<?php endif; ?>
 
 	<h3 class="wppa-subtitle"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></h3>
 

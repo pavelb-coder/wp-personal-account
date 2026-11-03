@@ -275,6 +275,9 @@ class WPPA_Admin {
 				'members' => WPPA_Teams::members_count( (int) $team->ID ),
 				'limit'   => WPPA_Teams::team_limit( (int) $team->ID ),
 				'own_limit' => WPPA_Teams::raw_team_limit( (int) $team->ID ),
+				'min'       => WPPA_Teams::team_min( (int) $team->ID ),
+				'own_min'   => WPPA_Teams::raw_team_min( (int) $team->ID ),
+				'missing'   => WPPA_Teams::missing_members( (int) $team->ID ),
 				'created' => (int) get_post_meta( (int) $team->ID, WPPA_Teams::META_CREATED, true ),
 			);
 		}
@@ -284,6 +287,7 @@ class WPPA_Admin {
 			array(
 				'rows'         => $rows,
 				'max_members'  => WPPA_Teams::max_members(),
+				'min_members'  => WPPA_Teams::min_members(),
 				'total_users'  => count_users(),
 				'notice'       => self::tool_notice(),
 			)
@@ -531,6 +535,8 @@ class WPPA_Admin {
 			'team_dissolved' => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
 			'layout_reset'   => array( 'success', __( 'Раскладка кабинета сброшена к стандартной.', 'wp-personal-account' ) ),
 			'team_limit_saved' => array( 'success', __( 'Лимит участников команды обновлён.', 'wp-personal-account' ) ),
+			'team_min_saved'   => array( 'success', __( 'Минимум участников команды обновлён.', 'wp-personal-account' ) ),
+			'team_settings_saved' => array( 'success', __( 'Минимум и лимит участников команды обновлены.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -586,6 +592,31 @@ class WPPA_Admin {
 				}
 
 				self::redirect_tool( 'team_limit_saved' );
+				break;
+
+			case 'update_team_settings':
+				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+				$min     = isset( $_POST['team_min'] ) ? absint( wp_unslash( $_POST['team_min'] ) ) : 0;
+				$limit   = isset( $_POST['team_limit'] ) ? absint( wp_unslash( $_POST['team_limit'] ) ) : 0;
+
+				if ( $team_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
+					// Сначала лимит: минимум ограничивается им.
+					WPPA_Teams::set_team_limit( $team_id, $limit );
+					WPPA_Teams::set_team_min( $team_id, $min );
+				}
+
+				self::redirect_tool( 'team_settings_saved' );
+				break;
+
+			case 'update_team_min':
+				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+				$min     = isset( $_POST['team_min'] ) ? absint( wp_unslash( $_POST['team_min'] ) ) : 0;
+
+				if ( $team_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
+					WPPA_Teams::set_team_min( $team_id, $min );
+				}
+
+				self::redirect_tool( 'team_min_saved' );
 				break;
 
 			case 'dissolve_team':

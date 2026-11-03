@@ -377,3 +377,14 @@
 	margin-bottom: 6px;
 	line-height: 1.5;
 }
+
+.wppa-team-limits {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.wppa-team-limits .small-text {
+	width: 64px;
+}

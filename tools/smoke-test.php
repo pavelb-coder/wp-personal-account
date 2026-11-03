@@ -118,6 +118,36 @@ if ( is_wp_error( $team_id ) ) {
 		}
 	}
 
+	// Минимум участников.
+	WPPA_Teams::set_team_limit( $team_id, 5 );
+	WPPA_Teams::set_team_min( $team_id, 3 );
+
+	$min_checks = array(
+		'минимум команды = 3'          => 3 === WPPA_Teams::team_min( $team_id ),
+		'свой минимум записан'         => 3 === WPPA_Teams::raw_team_min( $team_id ),
+		'не хватает 1 участника'       => 1 === WPPA_Teams::missing_members( $team_id ),
+		'команда ниже минимума'        => true === WPPA_Teams::is_below_min( $team_id ),
+	);
+
+	WPPA_Teams::add_member( $team_id, 9 );
+	$min_checks['минимум набран'] = false === WPPA_Teams::is_below_min( $team_id );
+	$min_checks['недобор = 0']    = 0 === WPPA_Teams::missing_members( $team_id );
+
+	// Минимум не может превышать лимит.
+	WPPA_Teams::set_team_min( $team_id, 50 );
+	$min_checks['минимум ограничен лимитом'] = 5 === WPPA_Teams::raw_team_min( $team_id );
+
+	// Сброс минимума к общему значению.
+	WPPA_Teams::set_team_min( $team_id, 0 );
+	$min_checks['сброс к общему минимуму'] = 0 === WPPA_Teams::raw_team_min( $team_id ) && WPPA_Teams::min_members() === WPPA_Teams::team_min( $team_id );
+
+	foreach ( $min_checks as $check_name => $ok ) {
+		echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team min: ' . $check_name . "\n";
+		if ( ! $ok ) {
+			$fail++;
+		}
+	}
+
 	WPPA_Teams::dissolve( $team_id );
 	echo 'team: после роспуска команда ' . ( get_post( $team_id ) ? 'осталась' : 'удалена' ) . ", мета пользователя «" . get_user_meta( 7, WPPA_Teams::META_TEAM, true ) . "»\n";
 }

@@ -81,6 +81,9 @@ class WPPA_Settings {
 		$max_team              = isset( $input['max_team_members'] ) ? absint( $input['max_team_members'] ) : 10;
 		$out['max_team_members'] = min( 100, max( 2, $max_team ) );
 
+		$min_team              = isset( $input['min_team_members'] ) ? absint( $input['min_team_members'] ) : 2;
+		$out['min_team_members'] = min( $out['max_team_members'], max( 1, $min_team ) );
+
 		$accent                = isset( $input['accent_color'] ) ? sanitize_hex_color( $input['accent_color'] ) : '';
 		$out['accent_color']   = $accent ? $accent : $defaults['accent_color'];
 
@@ -176,6 +179,13 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="<?php echo esc_attr( (int) $s['max_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-min-team"><?php esc_html_e( 'Минимум участников', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="number" min="1" max="100" id="wppa-min-team" name="wppa_settings[min_team_members]" value="<?php echo esc_attr( (int) $s['min_team_members'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Сколько человек должно быть в команде, чтобы она считалась набранной. Не может быть больше максимума. Команды ниже минимума получают отметку «недобор» в кабинете и в админке.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 				</table>

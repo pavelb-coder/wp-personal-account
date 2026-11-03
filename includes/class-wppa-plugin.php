@@ -98,6 +98,7 @@ class WPPA_Plugin {
 			'accent_color'         => '#2563eb',
 			'custom_css'           => '',
 			'max_team_members'     => 10,
+			'min_team_members'     => 2,
 			'delete_data_on_uninstall' => 0,
 		);
 	}
@@ -328,6 +329,10 @@ class WPPA_Plugin {
 		// Новые числовые настройки.
 		if ( empty( $settings['max_team_members'] ) ) {
 			$settings['max_team_members'] = $defaults['max_team_members'];
+		}
+
+		if ( empty( $settings['min_team_members'] ) ) {
+			$settings['min_team_members'] = $defaults['min_team_members'];
 		}
 
 		update_option( 'wppa_settings', $settings );

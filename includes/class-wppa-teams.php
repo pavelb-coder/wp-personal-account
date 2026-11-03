@@ -53,6 +53,11 @@ class WPPA_Teams {
 	const META_LIMIT = '_wppa_team_limit';
 
 	/**
+	 * Мета: индивидуальный минимум участников (0 или пусто — общий).
+	 */
+	const META_MIN = '_wppa_team_min';
+
+	/**
 	 * Срок жизни приглашения (7 дней).
 	 */
 	const TOKEN_TTL = 604800;
@@ -102,6 +107,103 @@ class WPPA_Teams {
 		 * @param int $max Лимит.
 		 */
 		return (int) apply_filters( 'wppa_team_max_members', $max );
+	}
+
+	/**
+	 * Общий минимум участников команды.
+	 *
+	 * @return int
+	 */
+	public static function min_members() {
+		$min = (int) WPPA_Plugin::setting( 'min_team_members', 2 );
+		$min = max( 1, $min );
+		$max = self::max_members();
+
+		if ( $min > $max ) {
+			$min = $max;
+		}
+
+		/**
+		 * Фильтр общего минимума участников.
+		 *
+		 * @param int $min Минимум.
+		 */
+		return (int) apply_filters( 'wppa_team_min_members', $min );
+	}
+
+	/**
+	 * Минимум участников конкретной команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function team_min( $team_id ) {
+		$min = (int) get_post_meta( (int) $team_id, self::META_MIN, true );
+
+		if ( $min >= 1 ) {
+			// Минимум не может превышать лимит команды.
+			$min = min( $min, self::team_limit( $team_id ) );
+
+			/**
+			 * Фильтр минимума конкретной команды.
+			 *
+			 * @param int $min     Минимум.
+			 * @param int $team_id ID команды.
+			 */
+			return (int) apply_filters( 'wppa_team_min', $min, (int) $team_id );
+		}
+
+		return self::min_members();
+	}
+
+	/**
+	 * Индивидуальный минимум команды (0 — используется общий).
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function raw_team_min( $team_id ) {
+		$min = (int) get_post_meta( (int) $team_id, self::META_MIN, true );
+		return $min >= 1 ? $min : 0;
+	}
+
+	/**
+	 * Установка минимума команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $min     Новый минимум; 0 — вернуть общий.
+	 * @return void
+	 */
+	public static function set_team_min( $team_id, $min ) {
+		$min = (int) $min;
+
+		if ( $min < 1 ) {
+			delete_post_meta( (int) $team_id, self::META_MIN );
+			return;
+		}
+
+		update_post_meta( (int) $team_id, self::META_MIN, min( self::team_limit( $team_id ), $min ) );
+	}
+
+	/**
+	 * Сколько участников не хватает до минимума.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function missing_members( $team_id ) {
+		$missing = self::team_min( $team_id ) - self::members_count( $team_id );
+		return max( 0, (int) $missing );
+	}
+
+	/**
+	 * Команда не добрала минимум участников.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function is_below_min( $team_id ) {
+		return self::missing_members( $team_id ) > 0;
 	}
 
 	/**

@@ -70,8 +70,13 @@ WPPA_Teams::set_team_limit( $demo_team_id, 5 );
 ob_start();
 WPPA_Admin::page_teams();
 $teams_html = ob_get_clean();
-$limit_ok = false !== strpos( $teams_html, 'name="team_limit"' ) && 5 === WPPA_Teams::team_limit( $demo_team_id );
-echo ( $limit_ok ? 'OK    ' : 'FAIL  ' ) . "teams: поле лимита в таблице и лимит команды применён\n";
+WPPA_Teams::set_team_min( $demo_team_id, 3 );
+
+$limit_ok = false !== strpos( $teams_html, 'name="team_limit"' )
+	&& false !== strpos( $teams_html, 'name="team_min"' )
+	&& 5 === WPPA_Teams::team_limit( $demo_team_id )
+	&& 3 === WPPA_Teams::team_min( $demo_team_id );
+echo ( $limit_ok ? 'OK    ' : 'FAIL  ' ) . "teams: поля минимума и лимита в таблице, значения применены\n";
 if ( ! $limit_ok ) {
 	$fail++;
 }
