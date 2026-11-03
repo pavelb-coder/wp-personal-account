@@ -25,7 +25,6 @@ class WPPA_Template {
 			'profile'   => __( 'Профиль', 'wp-personal-account' ),
 			'team'      => __( 'Команда', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
-			'olympiad'  => __( 'Олимпиады', 'wp-personal-account' ),
 		);
 	}
 
@@ -40,18 +39,9 @@ class WPPA_Template {
 		$tabs    = array();
 
 		foreach ( $all as $slug => $label ) {
-			if ( 'olympiad' === $slug ) {
-				continue;
-			}
-
 			if ( in_array( $slug, $enabled, true ) ) {
 				$tabs[ $slug ] = $label;
 			}
-		}
-
-		// Вкладка «Олимпиады» появляется только вместе с плагином олимпиад.
-		if ( WPPA_Olympiad::is_active() && ! empty( WPPA_Plugin::setting( WPPA_Olympiad::SETTING, 1 ) ) ) {
-			$tabs['olympiad'] = $all['olympiad'];
 		}
 
 		if ( empty( $tabs ) ) {

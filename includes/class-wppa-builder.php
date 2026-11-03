@@ -141,21 +141,12 @@ class WPPA_Builder {
 				'default_tabs' => array( 'dashboard' ),
 				'desc'         => __( 'Внешняя ссылка с таймером и условием по составу команды', 'wp-personal-account' ),
 			),
-			'olympiad-scores' => array(
-				'label' => __( 'Баллы за тесты', 'wp-personal-account' ),
-				'tabs'  => array( 'olympiad' ),
-				'desc'  => __( 'Результаты олимпиад из плагина олимпиад', 'wp-personal-account' ),
-			),
 			'session-card'    => array(
 				'label' => __( 'Сессия и выход', 'wp-personal-account' ),
 				'tabs'  => array( 'security' ),
 				'desc'  => __( 'Кнопка выхода из аккаунта', 'wp-personal-account' ),
 			),
 		);
-
-		if ( ! WPPA_Olympiad::is_active() ) {
-			unset( $blocks['olympiad-scores'] );
-		}
 
 		/**
 		 * Фильтр реестра блоков конструктора.

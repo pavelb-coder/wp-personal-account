@@ -154,7 +154,6 @@ class WPPA_Plugin {
 			'link_button'          => array(),
 			'export_folder'        => array(),
 			'smb'                  => array(),
-			'olympiad_tab'         => 1,
 			'delete_data_on_uninstall' => 0,
 		);
 	}

@@ -16,13 +16,10 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Class WPPA_Olympiad
+ *
+ * В кабинете вкладки нет: баллы берутся только для выгрузки аккаунтов.
  */
 class WPPA_Olympiad {
-
-	/**
-	 * Настройка «показывать вкладку».
-	 */
-	const SETTING = 'olympiad_tab';
 
 	/**
 	 * Транзиент проверки наличия плагина.
@@ -301,16 +298,6 @@ class WPPA_Olympiad {
 		}
 
 		return $map;
-	}
-
-	/**
-	 * Процент в виде для вывода: 67,5 на русской локали, 67.5 на английской.
-	 *
-	 * @param mixed $value Значение.
-	 * @return string
-	 */
-	public static function format_percentage( $value ) {
-		return WPPA_Export::percent( $value, ';' );
 	}
 
 	/**

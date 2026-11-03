@@ -145,12 +145,6 @@ $sections .= demo_section(
 $GLOBALS['wppa_test']['meta'] = $wppa_mentor_snapshot;
 
 $sections .= demo_section(
-	'Олимпиады (баллы за тесты)',
-	'Вкладка появляется, когда установлен плагин олимпиад: баллы за завершённые работы, средний результат и статусы проверки',
-	WPPA_Template::get( 'tab-olympiad', array( 'user' => $user, 'tabs' => $tabs ) )
-);
-
-$sections .= demo_section(
 	'Безопасность',
 	'Вкладка security: смена пароля, смена email с подтверждением, выход',
 	WPPA_Template::get( 'tab-security', array( 'user' => $user, 'tabs' => $tabs ) )

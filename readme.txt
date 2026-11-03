@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.6.3
+Stable tag: 3.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.7.0 =
+* В личном кабинете больше нет олимпиад: убраны вкладка «Олимпиады» и блок «Баллы за тесты».
+* Убраны файлы `templates/tab-olympiad.php` и `templates/blocks/olympiad-scores.php`, блок исчез из конструктора.
+* Убрана настройка «Вкладки кабинета» → «Олимпиады» (`olympiad_tab`); сохранённая раскладка со старым ключом `olympiad` отбрасывается при сохранении.
+* Баллы за тесты остаются в выгрузке аккаунтов: группа колонок «Баллы за тесты» с баллами, максимумом и процентом.
+* Убраны методы `WPPA_Olympiad::format_percentage()` и константа `SETTING` — в кабинете они больше не нужны.
 
 = 3.6.3 =
 * Исправлено: несуществующие даты и время (30 февраля, месяц 13, часы 99, 24:00) сохранялись в настройках окна кнопки и регистрации — сравнение `'' === to_timestamp()` не срабатывало, а `date_create()` молча переносил дату. Теперь проверка по календарю.

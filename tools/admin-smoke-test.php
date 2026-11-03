@@ -661,8 +661,9 @@ $wpdb->data = array();
 unset( $GLOBALS['wppa_test']['transients'] );
 
 $olympiad_checks['без плагина: не активен']   = false === WPPA_Olympiad::is_active();
-$olympiad_checks['без плагина: нет вкладки']  = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
-$olympiad_checks['без плагина: нет блока']    = ! array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
+$olympiad_checks['вкладки нет и с плагином']  = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
+$olympiad_checks['вкладки нет в реестре']     = ! array_key_exists( 'olympiad', WPPA_Template::all_tabs() );
+$olympiad_checks['блока баллов нет']          = ! array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
 $olympiad_checks['без плагина: результатов нет'] = array() === WPPA_Olympiad::results( 7 );
 
 // 2. Плагин есть: таблица найдена через SHOW TABLES.
@@ -723,36 +724,39 @@ $olympiad_checks['сводка одной строкой'] = 27 === $summary['sc
 
 $olympiad_checks['запрос по конкретному пользователю'] = false !== strpos( implode( ' ', $wpdb->queries ), 'user_id = 7' );
 
-// 4. Вкладка, блок и вывод в кабинете.
-$olympiad_checks['плагин есть: вкладка появилась'] = array_key_exists( 'olympiad', WPPA_Template::tabs() );
-$olympiad_checks['плагин есть: блок зарегистрирован'] = array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
-$olympiad_checks['блок стоит в раскладке вкладки'] = in_array( 'olympiad-scores', array_column( WPPA_Builder::layout()['olympiad'], 'id' ), true );
+// 4. В кабинете олимпиад нет: ни вкладки, ни блока, ни шаблона.
+$olympiad_checks['плагин есть: вкладки всё равно нет'] = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
+$olympiad_checks['плагин есть: блока всё равно нет']   = ! array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
+$olympiad_checks['в раскладке нет вкладки']            = ! array_key_exists( 'olympiad', WPPA_Builder::layout() );
+$olympiad_checks['в раскладке по умолчанию нет']       = ! array_key_exists( 'olympiad', WPPA_Builder::defaults() );
+$olympiad_checks['шаблон вкладки удалён']              = ! file_exists( WPPA_PATH . 'templates/tab-olympiad.php' );
+$olympiad_checks['шаблон блока удалён']                = ! file_exists( WPPA_PATH . 'templates/blocks/olympiad-scores.php' );
+$olympiad_checks['настройки: поля вкладки нет']        = false === strpos( $settings_html, 'olympiad_tab' );
+$olympiad_checks['в настройках нет ключа']             = ! array_key_exists( 'olympiad_tab', WPPA_Settings::sanitize( array() ) );
+$olympiad_checks['в умолчаниях нет ключа']             = ! array_key_exists( 'olympiad_tab', WPPA_Plugin::defaults() );
 
-ob_start();
-WPPA_Template::render(
-	'tab-olympiad',
-	array(
-		'user' => new WP_User( 7 ),
-		'tabs' => WPPA_Template::tabs(),
+// Вкладки, которые остались, работают как раньше.
+$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'security' ) === array_keys( WPPA_Template::all_tabs() );
+
+// 5. Раскладка со старым ключом olympiad не ломает рендер.
+update_option(
+	'wppa_layout',
+	array_merge(
+		(array) get_option( 'wppa_layout', array() ),
+		array(
+			'olympiad' => array(
+				array( 'type' => 'block', 'id' => 'olympiad-scores', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			),
+		)
 	)
 );
-$olympiad_html = ob_get_clean();
+$olympiad_clean = WPPA_Builder::sanitize( (array) get_option( 'wppa_layout', array() ) );
+$olympiad_checks['старый ключ отбрасывается при сохранении'] = ! array_key_exists( 'olympiad', $olympiad_clean );
 
-$olympiad_checks['вывод: баллы в кабинете']  = false !== strpos( $olympiad_html, '27' ) && false !== strpos( $olympiad_html, 'баллов всего' );
-$olympiad_checks['вывод: список тестов']      = false !== strpos( $olympiad_html, 'Математика' ) && false !== strpos( $olympiad_html, '8 из 10' );
-$olympiad_checks['вывод: статус на проверке'] = false !== strpos( $olympiad_html, 'На проверке' );
-$olympiad_checks['вывод: процент']            = false !== strpos( $olympiad_html, '67,5%' );
-
-// 5. Настройка вкладки.
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'olympiad_tab' => 0 ) ) );
-$olympiad_checks['выключение вкладки работает'] = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
-
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'olympiad_tab' => 1 ) ) );
-$olympiad_checks['включение вкладки работает'] = array_key_exists( 'olympiad', WPPA_Template::tabs() );
-
-$olympiad_checks['настройки: поле вкладки есть'] = false !== strpos( $settings_html, 'wppa_settings[olympiad_tab]' );
-$olympiad_checks['sanitize: флаг сохраняется']    = 0 === WPPA_Settings::sanitize( array() )['olympiad_tab'];
-$olympiad_checks['по умолчанию вкладка включена'] = 1 === WPPA_Plugin::defaults()['olympiad_tab'];
+ob_start();
+WPPA_Builder::render_tab( 'dashboard' );
+$olympiad_dashboard = ob_get_clean();
+$olympiad_checks['«Обзор» рисуется без баллов'] = '' !== trim( $olympiad_dashboard ) && false === strpos( $olympiad_dashboard, 'баллов всего' );
 
 // 6. Ручной фильтр наличия плагина.
 WPPA_Olympiad::flush();
