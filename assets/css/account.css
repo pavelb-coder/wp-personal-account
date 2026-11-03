@@ -1098,3 +1098,27 @@
 	border-color: #a7f3d0;
 	color: #047857;
 }
+
+/* Регистрация по таймеру */
+
+.wppa-button--disabled,
+.wppa-button.wppa-button--disabled {
+	opacity: .55;
+	cursor: not-allowed;
+	filter: grayscale(.35);
+	pointer-events: none;
+}
+
+.wppa-countdown-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 10px 0 0;
+	font-size: .92em;
+	color: var(--wppa-muted, #6b7280);
+}
+
+.wppa-register-locked .wppa-hint {
+	margin-top: 10px;
+}

@@ -33,6 +33,8 @@ class WPPA_Notices {
 			'login_failed'          => array( 'error', __( 'Неверный логин или пароль.', 'wp-personal-account' ) ),
 			'login_blocked'         => array( 'error', __( 'Слишком много попыток входа. Попробуйте через 15 минут.', 'wp-personal-account' ) ),
 			'registration_closed'   => array( 'error', __( 'Регистрация на сайте отключена.', 'wp-personal-account' ) ),
+			'registration_not_yet'  => array( 'error', __( 'Регистрация ещё не открыта — форма появится после начала приёма заявок.', 'wp-personal-account' ) ),
+			'registration_over'     => array( 'error', __( 'Приём заявок на регистрацию уже закрыт.', 'wp-personal-account' ) ),
 			'email_invalid'         => array( 'error', __( 'Укажите корректный email.', 'wp-personal-account' ) ),
 			'email_exists'          => array( 'error', __( 'Пользователь с таким email уже зарегистрирован.', 'wp-personal-account' ) ),
 			'login_exists'          => array( 'error', __( 'Такое имя пользователя уже занято.', 'wp-personal-account' ) ),

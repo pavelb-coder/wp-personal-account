@@ -212,6 +212,11 @@ class WPPA_Blocks {
 
 		$url   = 'register' === $mode ? WPPA_Plugin::register_url() : WPPA_Plugin::login_url();
 		$style = isset( $attributes['buttonStyle'] ) && 'ghost' === $attributes['buttonStyle'] ? 'ghost' : 'primary';
+		$window = 'register' === $mode ? WPPA_Plugin::registration_window() : array(
+			'state'     => 'open',
+			'message'   => '',
+			'countdown' => 0,
+		);
 
 		$button_classes = array( 'wppa-button', 'wppa-button--' . $style );
 
@@ -224,10 +229,37 @@ class WPPA_Blocks {
 			$button_classes[] = 'wppa-button--block';
 		}
 
+		$classes = esc_attr( implode( ' ', $button_classes ) );
+		$wrapper = self::wrapper_attributes( $mode, $attributes );
+
+		// Регистрация ограничена по времени: вне окна кнопка неактивна, показываем отсчёт.
+		if ( 'register' === $mode && 'open' !== $window['state'] ) {
+			$button_classes[] = 'wppa-button--disabled';
+
+			$out = sprintf(
+				'<div %1$s><span class="%2$s" role="link" aria-disabled="true" tabindex="-1">%3$s</span>',
+				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				esc_attr( implode( ' ', $button_classes ) ),
+				esc_html( $text )
+			);
+
+			if ( '' !== $window['message'] ) {
+				$out .= '<p class="wppa-hint wppa-hint--block">' . esc_html( $window['message'] );
+
+				if ( $window['countdown'] ) {
+					$out .= ' ' . WPPA_Time::countdown_html( $window['countdown'], 'open', true );
+				}
+
+				$out .= '</p>';
+			}
+
+			return $out . '</div>';
+		}
+
 		return sprintf(
 			'<div %1$s><a class="%2$s" href="%3$s">%4$s</a></div>',
-			self::wrapper_attributes( $mode, $attributes ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			esc_attr( implode( ' ', $button_classes ) ),
+			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			$classes,
 			esc_url( $url ),
 			esc_html( $text )
 		);

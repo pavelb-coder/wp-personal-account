@@ -12,6 +12,7 @@ define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
 
+require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
@@ -773,6 +774,103 @@ $GLOBALS['wppa_test']['postmeta'] = $link_postmeta_snapshot;
 
 foreach ( $link_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'link button: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Регистрация по таймеру ----------
+$reg_settings_snapshot = get_option( 'wppa_settings', array() );
+
+/**
+ * Настройки окна регистрации.
+ *
+ * @param string $start Начало (datetime-local).
+ * @param string $end   Конец.
+ * @return void
+ */
+function wppa_reg_window( $start = '', $end = '' ) {
+	update_option(
+		'wppa_settings',
+		array_merge(
+			(array) get_option( 'wppa_settings', array() ),
+			array(
+				'registration_enabled' => 1,
+				'registration_start'   => $start,
+				'registration_end'     => $end,
+			)
+		)
+	);
+}
+
+$reg_checks = array();
+
+wppa_reg_window();
+$window = WPPA_Plugin::registration_window();
+$reg_checks['без дат — окно открыто']      = 'open' === $window['state'] && ! $window['limited'];
+$reg_checks['без дат — регистрация идёт']  = true === WPPA_Plugin::registration_live();
+
+wppa_reg_window( gmdate( 'Y-m-d\TH:i', time() + 3600 ), '' );
+$window = WPPA_Plugin::registration_window();
+$reg_checks['до начала — состояние before']   = 'before' === $window['state'];
+$reg_checks['до начала — регистрация стоит']  = false === WPPA_Plugin::registration_live();
+$reg_checks['до начала — есть дата']          = $window['start'] > time();
+$reg_checks['до начала — есть отсчёт']        = $window['countdown'] === $window['start'];
+$reg_checks['до начала — сообщение']          = false !== strpos( $window['message'], 'Регистрация откроется' );
+
+wppa_reg_window( gmdate( 'Y-m-d\TH:i', time() - 7200 ), '' );
+$window = WPPA_Plugin::registration_window();
+$reg_checks['после начала — регистрация идёт'] = 'open' === $window['state'] && true === WPPA_Plugin::registration_live();
+
+wppa_reg_window( '', gmdate( 'Y-m-d\TH:i', time() - 60 ) );
+$window = WPPA_Plugin::registration_window();
+$reg_checks['после конца — состояние after']  = 'after' === $window['state'];
+$reg_checks['после конца — регистрация стоит'] = false === WPPA_Plugin::registration_live();
+$reg_checks['после конца — сообщение']        = false !== strpos( $window['message'], 'Регистрация закрыта' );
+
+wppa_reg_window( gmdate( 'Y-m-d\TH:i', time() - 7200 ), gmdate( 'Y-m-d\TH:i', time() + 7200 ) );
+$window = WPPA_Plugin::registration_window();
+$reg_checks['внутри окна — регистрация идёт'] = 'open' === $window['state'] && true === WPPA_Plugin::registration_live();
+
+// Форма регистрации и кнопки внутри окна и вне его.
+$reg_open_html = WPPA_Template::get( 'register', array( 'title' => '' ) );
+$reg_checks['окно открыто — форма на месте'] = false !== strpos( $reg_open_html, 'name="wppa_action" value="register"' );
+
+wppa_reg_window( gmdate( 'Y-m-d\TH:i', time() + 3600 ), '' );
+$reg_locked_html = WPPA_Template::get( 'register', array( 'title' => '' ) );
+$reg_checks['до открытия — формы нет']            = false === strpos( $reg_locked_html, 'name="wppa_action" value="register"' );
+$reg_checks['до открытия — заглушка с таймером']  = false !== strpos( $reg_locked_html, 'wppa-register-locked' ) && false !== strpos( $reg_locked_html, 'data-wppa-countdown=' );
+$reg_checks['до открытия — текст об открытии']    = false !== strpos( $reg_locked_html, 'Форма регистрации откроется' );
+
+$login_locked_html = WPPA_Template::get( 'login', array( 'title' => '' ) );
+$reg_checks['вход: кнопка регистрации неактивна'] = false !== strpos( $login_locked_html, 'wppa-button--disabled' );
+$reg_checks['вход: подсказка о времени']          = false !== strpos( $login_locked_html, 'Регистрация откроется' );
+
+wppa_reg_window();
+$login_open_html = WPPA_Template::get( 'login', array( 'title' => '' ) );
+$reg_checks['вход: кнопка регистрации ведёт на форму'] = false !== strpos( $login_open_html, 'wppa_view=register' )
+	&& false === strpos( $login_open_html, 'wppa-button--disabled' );
+
+// Кнопка блока wppa/register вне окна.
+wppa_reg_window( gmdate( 'Y-m-d\TH:i', time() + 3600 ), '' );
+$reg_block_button = WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button' ) );
+$reg_checks['блок-кнопка: нет ссылки']       = false === strpos( $reg_block_button, 'wppa_view=register' );
+$reg_checks['блок-кнопка: aria-disabled']    = false !== strpos( $reg_block_button, 'aria-disabled="true"' );
+$reg_checks['блок-кнопка: отсчёт']           = false !== strpos( $reg_block_button, 'data-wppa-countdown=' );
+
+wppa_reg_window();
+$reg_block_button = WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button' ) );
+$reg_checks['блок-кнопка открыта — ссылка есть'] = false !== strpos( $reg_block_button, 'wppa_view=register' );
+
+// Серверная блокировка: коды уведомлений на месте.
+$notices = WPPA_Notices::registry();
+$reg_checks['уведомление «ещё не открыта»'] = isset( $notices['registration_not_yet'] );
+$reg_checks['уведомление «закрыта»']        = isset( $notices['registration_over'] );
+
+update_option( 'wppa_settings', $reg_settings_snapshot );
+
+foreach ( $reg_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'registration window: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

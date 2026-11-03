@@ -69,23 +69,7 @@ class WPPA_Link_Button {
 	 * @return int Метка времени или 0, если дата не задана.
 	 */
 	public static function to_timestamp( $value ) {
-		$value = trim( (string) $value );
-
-		if ( '' === $value ) {
-			return 0;
-		}
-
-		$value = str_replace( 'T', ' ', $value );
-		$value = preg_replace( '/\s+/', ' ', $value );
-
-		$timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
-		$date     = date_create( $value, $timezone );
-
-		if ( ! $date ) {
-			return 0;
-		}
-
-		return (int) $date->getTimestamp();
+		return WPPA_Time::to_timestamp( $value );
 	}
 
 	/**
@@ -238,15 +222,7 @@ class WPPA_Link_Button {
 	 * @return string
 	 */
 	public static function format_date( $timestamp ) {
-		if ( ! $timestamp ) {
-			return '';
-		}
-
-		if ( function_exists( 'wp_date' ) ) {
-			return (string) wp_date( 'd.m.Y H:i', $timestamp );
-		}
-
-		return (string) date_i18n( 'd.m.Y H:i', $timestamp );
+		return WPPA_Time::format_date( $timestamp );
 	}
 
 	/**
@@ -256,21 +232,7 @@ class WPPA_Link_Button {
 	 * @return string
 	 */
 	public static function countdown_text( $seconds ) {
-		$seconds = max( 0, (int) $seconds );
-		$days    = (int) floor( $seconds / DAY_IN_SECONDS );
-		$rest    = $seconds % DAY_IN_SECONDS;
-		$time    = sprintf( '%02d:%02d:%02d', (int) floor( $rest / 3600 ), (int) floor( ( $rest % 3600 ) / 60 ), $rest % 60 );
-
-		if ( $days > 0 ) {
-			return sprintf(
-				/* translators: 1: дней, 2: время ЧЧ:ММ:СС */
-				__( '%1$d д %2$s', 'wp-personal-account' ),
-				$days,
-				$time
-			);
-		}
-
-		return $time;
+		return WPPA_Time::countdown_text( $seconds );
 	}
 
 	/**
@@ -280,16 +242,6 @@ class WPPA_Link_Button {
 	 * @return string Пустая строка, если формат неверный.
 	 */
 	public static function sanitize_datetime( $value ) {
-		$value = trim( (string) $value );
-
-		if ( '' === $value ) {
-			return '';
-		}
-
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value ) ) {
-			return '';
-		}
-
-		return '' === self::to_timestamp( $value ) ? '' : $value;
+		return WPPA_Time::sanitize_datetime( $value );
 	}
 }

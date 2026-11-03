@@ -134,6 +134,8 @@ class WPPA_Plugin {
 			'account_page_id'      => 0,
 			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'security' ),
 			'registration_enabled' => 1,
+			'registration_start'   => '',
+			'registration_end'     => '',
 			'login_redirect'       => '',
 			'accent_color'         => '#2563eb',
 			'custom_css'           => '',
@@ -203,6 +205,66 @@ class WPPA_Plugin {
 	 */
 	public static function registration_open() {
 		return (bool) self::setting( 'registration_enabled', 1 ) && (bool) get_option( 'users_can_register' );
+	}
+
+	/**
+	 * Окно доступности регистрации: с какого и по какое время открыта форма.
+	 *
+	 * state: none (без ограничений) | before | open | after.
+	 *
+	 * @return array
+	 */
+	public static function registration_window() {
+		$start    = WPPA_Time::to_timestamp( self::setting( 'registration_start', '' ) );
+		$end      = WPPA_Time::to_timestamp( self::setting( 'registration_end', '' ) );
+		$now      = time();
+		$state    = 'open';
+		$message  = '';
+		$countdown = 0;
+		$countdown_of = '';
+
+		if ( $start && $now < $start ) {
+			$state        = 'before';
+			$countdown    = $start;
+			$countdown_of = 'open';
+			$message      = sprintf(
+				/* translators: %s: дата и время открытия */
+				__( 'Регистрация откроется %s.', 'wp-personal-account' ),
+				WPPA_Time::format_date( $start )
+			);
+		} elseif ( $end && $now > $end ) {
+			$state   = 'after';
+			$message = sprintf(
+				/* translators: %s: дата и время закрытия */
+				__( 'Регистрация закрыта %s.', 'wp-personal-account' ),
+				WPPA_Time::format_date( $end )
+			);
+		}
+
+		return array(
+			'state'        => $state,
+			'start'        => (int) $start,
+			'end'          => (int) $end,
+			'message'      => $message,
+			'countdown'    => (int) $countdown,
+			'countdown_of' => $countdown_of,
+			'limited'      => (bool) ( $start || $end ),
+		);
+	}
+
+	/**
+	 * Регистрация принимает заявки прямо сейчас: включена и открыта по времени.
+	 *
+	 * @return bool
+	 */
+	public static function registration_live() {
+		if ( ! self::registration_open() ) {
+			return false;
+		}
+
+		$window = self::registration_window();
+
+		return 'open' === $window['state'];
 	}
 
 	/**

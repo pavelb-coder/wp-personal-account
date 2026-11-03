@@ -218,6 +218,7 @@ includes/
   class-wppa-fields.php      персональные данные: реестр полей, вывод, валидация, сохранение
   class-wppa-password.php    требования к паролю: правила, проверка, подсказки
   class-wppa-link-button.php кнопка со ссылкой: окно дат, условие по команде, состояние
+  class-wppa-time.php        даты и время: разбор datetime-local, форматирование, отсчёт
   class-wppa-teams.php       команды: создание, приглашения, состав, роли (капитан/наставник), роспуск
   class-wppa-builder.php     конструктор: блоки, раскладка, рендер вкладок
   class-wppa-widget.php      виджет «Вход и регистрация» + общий рендер форм
@@ -309,6 +310,29 @@ add_filter( 'wppa_link_button', function ( $config ) {
 ```
 
 Хелперы: `WPPA_Link_Button::config()`, `WPPA_Link_Button::state()`, `WPPA_Link_Button::team_progress()`, `WPPA_Link_Button::countdown_text()`.
+
+## Регистрация по таймеру
+
+Приём заявок можно ограничить по времени — два поля `datetime-local` в **Настройки → «Основное» → «Приём заявок»** (время сайта, пустое поле — без ограничения с этой стороны).
+
+* Внутри окна всё как обычно: форма, кнопки, отправка.
+* **До начала**: вместо формы — заглушка «Форма регистрации откроется 05.11.2026 10:00» с обратным отсчётом; кнопка «Регистрация» (в форме входа, в блоке `wppa/register` с `display="button"`) неактивна и показывает отсчёт.
+* **После окончания**: заглушка «Регистрация закончилась …», кнопки неактивны, отсчёта нет.
+* Проверка **серверная**: `WPPA_Plugin::registration_live()` в обработчике формы. Отправка POST вне окна отклоняется с уведомлением `registration_not_yet` / `registration_over` — обойти через консоль или прямую отправку формы нельзя.
+* Когда отсчёт доходит до нуля, страница перезагружается и форма открывается сама.
+
+Хелперы и состояния:
+
+```php
+$window = WPPA_Plugin::registration_window();
+// array( 'state' => 'none|before|open|after', 'start' => 0, 'end' => 0,
+//        'message' => '', 'countdown' => 0, 'countdown_of' => 'open', 'limited' => bool )
+
+WPPA_Plugin::registration_open(); // регистрация включена в настройках и в WordPress
+WPPA_Plugin::registration_live(); // включена и открыта по времени — пускает заявки
+```
+
+Общие функции времени (`to_timestamp()`, `format_date()`, `sanitize_datetime()`, `countdown_text()`, `countdown_html()`) вынесены в класс `WPPA_Time` — он же используется кнопкой со ссылкой.
 
 ## Наставник как обязательное условие
 

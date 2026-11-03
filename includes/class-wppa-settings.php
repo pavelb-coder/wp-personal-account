@@ -73,6 +73,8 @@ class WPPA_Settings {
 		$out['enabled_tabs']    = array_values( array_intersect( $allowed_tabs, $tabs ) );
 
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
+		$out['registration_start']   = isset( $input['registration_start'] ) ? WPPA_Time::sanitize_datetime( $input['registration_start'] ) : '';
+		$out['registration_end']     = isset( $input['registration_end'] ) ? WPPA_Time::sanitize_datetime( $input['registration_end'] ) : '';
 		$out['delete_data_on_uninstall'] = empty( $input['delete_data_on_uninstall'] ) ? 0 : 1;
 
 		$redirect               = isset( $input['login_redirect'] ) ? esc_url_raw( trim( (string) $input['login_redirect'] ) ) : '';
@@ -189,6 +191,24 @@ class WPPA_Settings {
 									/* translators: %s: ссылка на настройки */
 									esc_html__( 'В WordPress регистрация сейчас: %s', 'wp-personal-account' ),
 									esc_html( get_option( 'users_can_register' ) ? __( 'включена', 'wp-personal-account' ) : __( 'выключена', 'wp-personal-account' ) )
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Приём заявок', 'wp-personal-account' ); ?></th>
+						<td>
+							<label for="wppa-reg-start"><?php esc_html_e( 'с', 'wp-personal-account' ); ?></label>
+							<input type="datetime-local" id="wppa-reg-start" name="wppa_settings[registration_start]" value="<?php echo esc_attr( $s['registration_start'] ); ?>" />
+							<label for="wppa-reg-end"><?php esc_html_e( 'по', 'wp-personal-account' ); ?></label>
+							<input type="datetime-local" id="wppa-reg-end" name="wppa_settings[registration_end]" value="<?php echo esc_attr( $s['registration_end'] ); ?>" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: часовой пояс сайта */
+									esc_html__( 'Время по часовому поясу сайта (%s). Пустое поле — без ограничения. До начала и после окончания кнопка «Регистрация» неактивна и показывает отсчёт, а форма заменяется заглушкой; отправка формы на сервере также блокируется.', 'wp-personal-account' ),
+									esc_html( function_exists( 'wp_timezone_string' ) ? wp_timezone_string() : 'UTC' )
 								);
 								?>
 							</p>

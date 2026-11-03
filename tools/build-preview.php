@@ -16,6 +16,7 @@ define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
 
+require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
@@ -259,6 +260,35 @@ $sections .= demo_section(
 	'Внешняя ссылка с окном дат и условием «команда сформирована»: активна, ждёт состав, ждёт открытия с таймером, закрыта',
 	'<div class="demo-three">' . $link_states . '</div>'
 );
+
+// Регистрация по таймеру: форма закрыта, кнопка неактивна с отсчётом.
+$wppa_settings_snapshot = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $wppa_settings_snapshot,
+		array(
+			'registration_enabled' => 1,
+			'registration_start'   => gmdate( 'Y-m-d\TH:i', time() + 7200 ),
+			'registration_end'     => '',
+		)
+	)
+);
+
+$sections .= demo_section(
+	'Регистрация по таймеру',
+	'Окно приёма заявок ещё не открыто: вместо формы — заглушка с датой и отсчётом, кнопка «Регистрация» неактивна',
+	'<div class="demo-two">'
+		. '<div>' . WPPA_Template::get( 'register', array( 'title' => '' ) ) . '</div>'
+		. '<div>'
+			. WPPA_Template::get( 'login', array( 'title' => '', 'redirect' => '' ) )
+			. '<div style="margin-top:18px">' . WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button' ) ) . '</div>'
+		. '</div>'
+		. '</div>'
+);
+
+update_option( 'wppa_settings', $wppa_settings_snapshot );
 
 $css = file_get_contents( $base . 'assets/css/account.css' );
 

@@ -1106,6 +1106,30 @@
 	color: #047857;
 }
 
+/* Регистрация по таймеру */
+
+.wppa-button--disabled,
+.wppa-button.wppa-button--disabled {
+	opacity: .55;
+	cursor: not-allowed;
+	filter: grayscale(.35);
+	pointer-events: none;
+}
+
+.wppa-countdown-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 10px 0 0;
+	font-size: .92em;
+	color: var(--wppa-muted, #6b7280);
+}
+
+.wppa-register-locked .wppa-hint {
+	margin-top: 10px;
+}
+
 body {
 	margin: 0;
 	padding: 32px 20px 64px;
@@ -2203,10 +2227,10 @@ body {
 
 			<div class="wppa-switch wppa-switch--button">
 			<span class="wppa-switch__text">Нет аккаунта?</span>
-			<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_view=register">
-				Регистрация			</a>
-		</div>
-	</div>
+							<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_view=register">
+					Регистрация				</a>
+					</div>
+			</div>
 	</div>
 </div>
 </div><div><div class="wppa wppa--guest">
@@ -2289,10 +2313,10 @@ body {
 
 			<div class="wppa-switch wppa-switch--button">
 			<span class="wppa-switch__text">Нет аккаунта?</span>
-			<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_view=register">
-				Регистрация			</a>
-		</div>
-	</div>
+							<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_view=register">
+					Регистрация				</a>
+					</div>
+			</div>
 </div><div><div class="wppa-form-wrap">
 	<h2 class="wppa-title">Регистрация</h2>
 
@@ -2373,16 +2397,16 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Откроется 03.11.2026 10:00.		</p>
+			Откроется 03.11.2026 10:08.		</p>
 	
 			<p class="wppa-link-block__timer">
 			<span class="wppa-link-block__timer-label">
 				До открытия:			</span>
 			<span
 				class="wppa-countdown"
-				data-wppa-countdown="1793700000"
+				data-wppa-countdown="1793700480"
 				data-wppa-countdown-mode="open"
-				data-wppa-reload="1"			>01:59:59</span>
+				data-wppa-reload="1"			>01:59:38</span>
 		</p>
 	
 	</section>
@@ -2397,10 +2421,59 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Срок доступа истёк 03.11.2026 07:00.		</p>
+			Срок доступа истёк 03.11.2026 07:08.		</p>
 	
 	
 	</section>
-</div></div></section>
+</div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Регистрация по таймеру</h2><p>Окно приёма заявок ещё не открыто: вместо формы — заглушка с датой и отсчётом, кнопка «Регистрация» неактивна</p></div><div class="demo-two"><div><div class="wppa-form-wrap wppa-register-locked">
+	<h2 class="wppa-title">Регистрация</h2>
+
+	<div class="wppa-notice wppa-notice--info" role="status">
+	Форма регистрации откроется 03.11.2026 10:08.</div>
+
+			<p class="wppa-countdown-row">
+			<span class="wppa-countdown-row__label">До открытия:</span>
+			<span class="wppa-countdown" data-wppa-countdown="1793700480" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:38</span>		</p>
+	
+	<p class="wppa-hint">Регистрация ограничена по времени: форма появится здесь автоматически, когда откроется.</p>
+</div>
+</div><div><div class="wppa-form-wrap">
+	<h2 class="wppa-title">Вход в личный кабинет</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
+		
+		<p class="wppa-field">
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
+			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
+			</span>
+		</p>
+
+		<p class="wppa-field wppa-field--inline">
+			<label>
+				<input type="checkbox" name="rememberme" value="1" />
+				Запомнить меня			</label>
+			<a href="https://example.com/lost">Забыли пароль?</a>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Войти</button>
+	</form>
+
+			<div class="wppa-switch wppa-switch--button">
+			<span class="wppa-switch__text">Нет аккаунта?</span>
+							<span class="wppa-button wppa-button--ghost wppa-button--disabled" role="link" aria-disabled="true" tabindex="-1">
+					Регистрация				</span>
+					</div>
+					<p class="wppa-hint wppa-hint--block">
+				Регистрация откроется 03.11.2026 10:08.									<span class="wppa-countdown" data-wppa-countdown="1793700480" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:38</span>							</p>
+			</div>
+<div style="margin-top:18px"></div></div></div></section>
 </body>
 </html>

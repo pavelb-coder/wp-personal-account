@@ -97,6 +97,12 @@ class WPPA_Auth {
 			WPPA_Notices::redirect( 'registration_closed', $tab_url );
 		}
 
+		$window = WPPA_Plugin::registration_window();
+
+		if ( 'open' !== $window['state'] ) {
+			WPPA_Notices::redirect( 'before' === $window['state'] ? 'registration_not_yet' : 'registration_over', $tab_url );
+		}
+
 		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$repeat   = isset( $_POST['password_confirm'] ) ? (string) wp_unslash( $_POST['password_confirm'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized

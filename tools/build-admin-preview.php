@@ -16,6 +16,7 @@ define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
 
+require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';

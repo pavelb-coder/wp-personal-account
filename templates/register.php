@@ -9,7 +9,21 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистрация', 'wp-personal-account' );
+$wppa_title  = isset( $title ) && '' !== $title ? $title : __( 'Регистрация', 'wp-personal-account' );
+$wppa_window = WPPA_Plugin::registration_window();
+
+// Вне окна доступности вместо формы показываем заглушку с таймером.
+if ( 'open' !== $wppa_window['state'] ) {
+	WPPA_Template::render(
+		'registration-locked',
+		array(
+			'window' => $wppa_window,
+			'title'  => $wppa_title,
+		)
+	);
+
+	return;
+}
 ?>
 <div class="wppa-form-wrap">
 	<h2 class="wppa-title"><?php echo esc_html( $wppa_title ); ?></h2>

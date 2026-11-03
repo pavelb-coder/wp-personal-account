@@ -16,6 +16,7 @@ define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
 
+require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
@@ -82,6 +83,30 @@ WPPA_Teams::set_team_min( $demo_team_id, 3 );
 ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
+
+$reg_window_fields_ok = false !== strpos( $settings_html, 'wppa_settings[registration_start]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[registration_end]' );
+
+echo ( $reg_window_fields_ok ? 'OK    ' : 'FAIL  ' ) . "settings: поля времени регистрации\n";
+if ( ! $reg_window_fields_ok ) {
+	$fail++;
+}
+
+$reg_window_sanitize = WPPA_Settings::sanitize(
+	array(
+		'registration_enabled' => '1',
+		'registration_start'   => '2026-12-01T09:00',
+		'registration_end'     => 'мусор',
+	)
+);
+
+$reg_window_sanitize_ok = '2026-12-01T09:00' === $reg_window_sanitize['registration_start']
+	&& '' === $reg_window_sanitize['registration_end'];
+
+echo ( $reg_window_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: окно регистрации сохраняется\n";
+if ( ! $reg_window_sanitize_ok ) {
+	$fail++;
+}
 
 $mentor_settings_ok = false !== strpos( $settings_html, 'wppa_settings[require_mentor]' )
 	&& false !== strpos( $settings_html, 'Требовать наставника' );
