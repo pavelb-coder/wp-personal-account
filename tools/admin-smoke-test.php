@@ -20,6 +20,7 @@ require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-fields.php';
+require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
@@ -80,6 +81,29 @@ WPPA_Teams::set_team_min( $demo_team_id, 3 );
 ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
+
+$rules_settings_ok = false !== strpos( $settings_html, 'wppa_settings[password_rules][uppercase]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[password_rules][no_sequence]' );
+
+echo ( $rules_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: требования к паролю\n";
+if ( ! $rules_settings_ok ) {
+	$fail++;
+}
+
+$rules_sanitize = WPPA_Settings::sanitize(
+	array(
+		'password_rules' => array( 'uppercase' => '1' ),
+	)
+);
+
+$rules_sanitize_ok = 1 === $rules_sanitize['password_rules']['uppercase']
+	&& 0 === $rules_sanitize['password_rules']['no_sequence']
+	&& count( $rules_sanitize['password_rules'] ) === count( WPPA_Password::rules() );
+
+echo ( $rules_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: правила пароля сохраняются и сбрасываются\n";
+if ( ! $rules_sanitize_ok ) {
+	$fail++;
+}
 
 $fields_settings_ok = false !== strpos( $settings_html, 'wppa_settings[fields][phone][enabled]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[fields][phone][required]' )

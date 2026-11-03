@@ -16,6 +16,7 @@ require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-fields.php';
+require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
@@ -475,6 +476,56 @@ $password_checks['сообщение содержит 16'] = false !== strpos( $
 
 foreach ( $password_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'password: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Правила проверки пароля ----------
+$strong = 'Kr7#mQz!vLp2wXe9';
+$rule_checks = array(
+	'сильный пароль проходит'             => '' === WPPA_Password::error_code( $strong ),
+	'15 символов — короткий'              => 'password_short' === WPPA_Password::error_code( 'Kr7#mQz!vLp2wXe' ),
+	'без заглавной'                       => 'password_no_uppercase' === WPPA_Password::error_code( 'kr7#mqz!vlp2wxe9' ),
+	'без строчной'                        => 'password_no_lowercase' === WPPA_Password::error_code( 'KR7#MQZ!VLP2WXE9' ),
+	'без цифры'                           => 'password_no_digit' === WPPA_Password::error_code( 'KrQ#mQz!vLpAwXeY' ),
+	'без спецсимвола'                     => 'password_no_special' === WPPA_Password::error_code( 'Kr7vmQz2vLp9wXe4' ),
+	'повтор вида aaa'                     => 'password_repeat' === WPPA_Password::error_code( 'Kraaa#7mQz2vLp9X' ),
+	'последовательность 5678'             => 'password_sequence' === WPPA_Password::error_code( 'Kl#5678mQzRvXe9j' ),
+	'раскладка qwerty'                    => 'password_sequence' === WPPA_Password::error_code( 'Qwerty#9LmPz4Xv2K' ),
+	'частый пароль'                       => 'password_common' === WPPA_Password::error_code( 'Password#Secret99' ),
+	'пароль с email'                      => 'password_personal' === WPPA_Password::error_code( 'Ivan#Petrov#7712', array( 'email' => 'ivan.petrov@example.com' ) ),
+	'пароль с именем'                     => 'password_personal' === WPPA_Password::error_code( 'Kr7#mQz!Иван#9Xv2', array( 'name' => 'Иван Петров' ) ),
+	'мало разных символов'                => 'password_variety' === WPPA_Password::error_code( 'Aa1#Aa1#Aa1#Aa1#' ),
+);
+
+// Отключённое правило не проверяется.
+update_option(
+	'wppa_settings',
+	array_merge(
+		get_option( 'wppa_settings', array() ),
+		array( 'password_rules' => array( 'uppercase' => 0 ) )
+	)
+);
+$rule_checks['отключённое правило игнорируется'] = '' === WPPA_Password::error_code( 'kr7#mqz!vlp2wxe9' );
+update_option( 'wppa_settings', array_merge( get_option( 'wppa_settings', array() ), array( 'password_rules' => array() ) ) );
+
+$rule_checks['список правил непустой'] = count( WPPA_Password::labels() ) >= 9;
+
+ob_start();
+WPPA_Password::render_requirements( 'wppa-reg-password' );
+$requirements_html = ob_get_clean();
+
+$rule_checks['подсказки: список выводится']        = false !== strpos( $requirements_html, 'data-wppa-password-rules' );
+$rule_checks['подсказки: привязка к полю']         = false !== strpos( $requirements_html, 'data-for="wppa-reg-password"' );
+$rule_checks['подсказки: правило в разметке']      = false !== strpos( $requirements_html, 'data-rule="no_sequence"' );
+$rule_checks['подсказки: параметры длины']         = false !== strpos( $requirements_html, 'data-params="{&quot;min&quot;:16}"' );
+
+$register_rules_html = WPPA_Template::get( 'register', array() );
+$rule_checks['форма регистрации: список требований'] = false !== strpos( $register_rules_html, 'Требования к паролю:' );
+
+foreach ( $rule_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'password rules: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

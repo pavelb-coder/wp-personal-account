@@ -31,15 +31,7 @@ $wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистра�
 				<input type="password" id="wppa-reg-password" name="password" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="<?php esc_attr_e( 'Показать пароль', 'wp-personal-account' ); ?>">👁</button>
 			</span>
-			<span class="wppa-hint">
-				<?php
-				printf(
-					/* translators: %d: минимальная длина пароля */
-					esc_html__( 'Минимум %d символов.', 'wp-personal-account' ),
-					(int) WPPA_Plugin::min_password_length()
-				);
-				?>
-			</span>
+			<?php WPPA_Password::render_requirements( 'wppa-reg-password' ); ?>
 		</p>
 
 		<p class="wppa-field">

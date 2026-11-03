@@ -367,6 +367,19 @@ function shortcode_atts( $defaults, $atts, $shortcode = '' ) {
 }
 function add_shortcode( $tag, $callback ) { $GLOBALS['wppa_test']['shortcodes'][ $tag ] = $callback; }
 
+function sanitize_html_class( $class, $fallback = '' ) {
+	$class = preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $class );
+	return '' === $class ? (string) $fallback : $class;
+}
+
+function wp_unique_id( $prefix = '' ) {
+	static $id = 0;
+	++$id;
+	return $prefix . $id;
+}
+
+function wp_json_encode( $data, $options = 0, $depth = 512 ) { return json_encode( $data, $options, $depth ); }
+
 function get_block_wrapper_attributes( $extra = array() ) {
 	$classes = isset( $extra['class'] ) ? $extra['class'] : '';
 	$styles  = isset( $extra['style'] ) ? $extra['style'] : '';

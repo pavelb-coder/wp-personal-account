@@ -187,6 +187,143 @@
 	}
 
 	/**
+	 * Живая проверка пароля по требованиям из формы.
+	 *
+	 * Список требований выводит PHP (WPPA_Password::render_requirements),
+	 * здесь он только подсвечивается по мере ввода.
+	 */
+	function initPasswordRules() {
+		var lists = document.querySelectorAll( '[data-wppa-password-rules]' );
+
+		Array.prototype.forEach.call( lists, function ( list ) {
+			var input = document.getElementById( list.getAttribute( 'data-for' ) || '' );
+
+			if ( ! input ) {
+				return;
+			}
+
+			var items = list.querySelectorAll( '.wppa-password-rules__item' );
+			var email = document.getElementById( 'wppa-email' );
+
+			function params( item ) {
+				try {
+					return JSON.parse( item.getAttribute( 'data-params' ) || '{}' ) || {};
+				} catch ( error ) {
+					return {};
+				}
+			}
+
+			function check( rule, value, options ) {
+				var letters;
+
+				switch ( rule ) {
+					case 'length':
+						return value.length >= ( options.min || 16 );
+
+					case 'uppercase':
+						letters = value.replace( /[^A-Za-zА-Яа-яЁё]/g, '' );
+						return letters !== letters.toLowerCase() && /[A-ZА-ЯЁ]/.test( value );
+
+					case 'lowercase':
+						return /[a-zа-яё]/.test( value );
+
+					case 'digit':
+						return /\d/.test( value );
+
+					case 'special':
+						return /[^A-Za-zА-Яа-яЁё0-9]/.test( value );
+
+					case 'variety':
+						return new Set( value.split( '' ) ).size >= ( options.unique || 8 );
+
+					case 'no_repeat':
+						return ! /(.)\1{2,}/.test( value );
+
+					case 'no_sequence':
+						return hasNoSequence( value );
+
+					case 'not_common':
+						return isNotCommon( value );
+
+					case 'not_personal':
+						return isNotPersonal( value, email ? email.value : '' );
+
+					default:
+						return null;
+				}
+			}
+
+			function hasNoSequence( value ) {
+				var lower = value.toLowerCase();
+
+				if ( /(qwer|wert|erty|rtyu|tyui|yuio|uiop|asdf|sdfg|dfgh|fghj|ghjk|hjkl|zxcv|xcvb|cvbn|vbnm)/.test( lower ) ) {
+					return false;
+				}
+
+				for ( var i = 0; i + 3 < value.length; i++ ) {
+					var a = value.charCodeAt( i );
+					var b = value.charCodeAt( i + 1 );
+					var c = value.charCodeAt( i + 2 );
+					var d = value.charCodeAt( i + 3 );
+
+					if ( ( b === a + 1 && c === b + 1 && d === c + 1 ) || ( b === a - 1 && c === b - 1 && d === c - 1 ) ) {
+						return false;
+					}
+				}
+
+				return true;
+			}
+
+			function isNotCommon( value ) {
+				var words = [ 'password', 'qwerty', '123456', '12345678', '1234567890', '111111', 'admin', 'letmein', 'welcome', 'iloveyou', 'monkey', 'dragon', 'football', 'sunshine', 'princess', 'abc123', 'пароль', 'йцукен', 'привет', 'любовь' ];
+				var lower = value.toLowerCase();
+
+				return ! words.some( function ( word ) {
+					return lower === word || ( word.length >= 5 && lower.indexOf( word ) !== -1 );
+				} );
+			}
+
+			function isNotPersonal( value, emailValue ) {
+				var lower = value.toLowerCase();
+				var parts = [];
+
+				if ( emailValue ) {
+					parts.push( emailValue );
+					parts.push( emailValue.split( '@' )[ 0 ] );
+				}
+
+				return ! parts.some( function ( part ) {
+					part = ( part || '' ).trim().toLowerCase();
+					return part.length >= 3 && lower.indexOf( part ) !== -1;
+				} );
+			}
+
+			function update() {
+				var value = input.value || '';
+
+				Array.prototype.forEach.call( items, function ( item ) {
+					var result = check( item.getAttribute( 'data-rule' ), value, params( item ) );
+
+					if ( null === result ) {
+						return;
+					}
+
+					item.classList.toggle( 'is-ok', result && value.length > 0 );
+					item.classList.toggle( 'is-bad', ! result && value.length > 0 );
+				} );
+			}
+
+			input.addEventListener( 'input', update );
+
+			if ( email ) {
+				email.addEventListener( 'input', update );
+			}
+
+			update();
+		} );
+	}
+
+	/**
 	 * Копирование в буфер обмена.
 	 */
 	function initCopyButtons() {
@@ -270,6 +407,7 @@
 		initLogoutConfirm();
 		initCopyButtons();
 		initWidgetPanels();
+		initPasswordRules();
 		initConfirmActions();
 		initSubmitGuard();
 	}

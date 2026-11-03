@@ -979,3 +979,60 @@
 .wp-block-wppa-register .wppa-title {
 	margin-top: 0;
 }
+
+/* Требования к паролю */
+
+.wppa-password-rules {
+	margin: 8px 0 0;
+	padding: 10px 12px;
+	list-style: none;
+	border: 1px solid var(--wppa-border, #e5e7eb);
+	border-radius: 10px;
+	background: #f8fafc;
+	font-size: .85em;
+	line-height: 1.5;
+}
+
+.wppa-password-rules__title {
+	font-weight: 600;
+	color: var(--wppa-muted, #6b7280);
+	margin-bottom: 2px;
+}
+
+.wppa-password-rules__item {
+	display: flex;
+	gap: 6px;
+	align-items: baseline;
+	color: var(--wppa-muted, #6b7280);
+}
+
+.wppa-password-rules__mark {
+	width: 1em;
+	text-align: center;
+	color: var(--wppa-muted, #9ca3af);
+}
+
+.wppa-password-rules__item.is-ok {
+	color: #047857;
+}
+
+.wppa-password-rules__item.is-ok .wppa-password-rules__mark::before {
+	content: "✓";
+}
+
+.wppa-password-rules__item.is-ok .wppa-password-rules__mark {
+	color: #059669;
+	font-size: 0;
+}
+
+.wppa-password-rules__item.is-ok .wppa-password-rules__mark::before {
+	font-size: 13px;
+}
+
+.wppa-password-rules__item.is-bad {
+	color: #b91c1c;
+}
+
+.wppa-password-rules__item.is-bad .wppa-password-rules__mark {
+	color: #dc2626;
+}

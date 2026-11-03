@@ -146,8 +146,16 @@ class WPPA_Auth {
 			WPPA_Notices::redirect( 'password_mismatch', $tab_url );
 		}
 
-		if ( WPPA_Plugin::password_too_short( $password ) ) {
-			WPPA_Notices::redirect( 'password_short', $tab_url );
+		$password_error = WPPA_Password::error_code(
+			$password,
+			array(
+				'email' => $email,
+				'name'  => $name,
+			)
+		);
+
+		if ( '' !== $password_error ) {
+			WPPA_Notices::redirect( $password_error, $tab_url );
 		}
 
 		$username = self::unique_username( $email );

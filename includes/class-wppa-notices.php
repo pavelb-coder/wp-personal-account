@@ -45,6 +45,23 @@ class WPPA_Notices {
 					WPPA_Plugin::min_password_length()
 				),
 			),
+			'password_no_uppercase' => array( 'error', __( 'Пароль должен содержать хотя бы одну заглавную букву.', 'wp-personal-account' ) ),
+			'password_no_lowercase' => array( 'error', __( 'Пароль должен содержать хотя бы одну строчную букву.', 'wp-personal-account' ) ),
+			'password_no_digit'     => array( 'error', __( 'Пароль должен содержать хотя бы одну цифру.', 'wp-personal-account' ) ),
+			'password_no_special'   => array( 'error', __( 'Пароль должен содержать хотя бы один спецсимвол: ! @ # $ % и т. п.', 'wp-personal-account' ) ),
+			'password_variety'      => array(
+				'error',
+				sprintf(
+					/* translators: %d: минимальное число разных символов */
+					__( 'Пароль слишком однообразный: нужно не меньше %d разных символов.', 'wp-personal-account' ),
+					WPPA_Password::MIN_UNIQUE
+				),
+			),
+			'password_repeat'       => array( 'error', __( 'Пароль не должен содержать повторов вида «aaa» или «111».', 'wp-personal-account' ) ),
+			'password_sequence'     => array( 'error', __( 'Пароль не должен содержать последовательностей вида «1234», «abcd» или «qwer».', 'wp-personal-account' ) ),
+			'password_common'       => array( 'error', __( 'Этот пароль слишком распространён — выберите другой.', 'wp-personal-account' ) ),
+			'password_personal'     => array( 'error', __( 'Пароль не должен содержать ваш email, логин или имя.', 'wp-personal-account' ) ),
+			'password_weak'         => array( 'error', __( 'Пароль не соответствует требованиям безопасности.', 'wp-personal-account' ) ),
 			'password_wrong'        => array( 'error', __( 'Текущий пароль указан неверно.', 'wp-personal-account' ) ),
 			'password_same'         => array( 'error', __( 'Новый пароль должен отличаться от текущего.', 'wp-personal-account' ) ),
 			'field_required'        => array( 'error', __( 'Заполните все обязательные поля.', 'wp-personal-account' ) ),

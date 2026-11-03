@@ -110,8 +110,19 @@ class WPPA_Profile {
 			WPPA_Notices::redirect( 'password_mismatch', $tab_url );
 		}
 
-		if ( WPPA_Plugin::password_too_short( $new ) ) {
-			WPPA_Notices::redirect( 'password_short', $tab_url );
+		$password_error = WPPA_Password::error_code(
+			$new,
+			array(
+				'email'      => $user->user_email,
+				'login'      => $user->user_login,
+				'name'       => $user->display_name,
+				'first_name' => $user->first_name,
+				'last_name'  => $user->last_name,
+			)
+		);
+
+		if ( '' !== $password_error ) {
+			WPPA_Notices::redirect( $password_error, $tab_url );
 		}
 
 		if ( $new === $current ) {

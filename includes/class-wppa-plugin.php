@@ -140,6 +140,7 @@ class WPPA_Plugin {
 			'max_team_members'     => 10,
 			'min_team_members'     => 2,
 			'fields'               => array(),
+			'password_rules'       => array(),
 			'delete_data_on_uninstall' => 0,
 		);
 	}

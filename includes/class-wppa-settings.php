@@ -106,6 +106,16 @@ class WPPA_Settings {
 
 		$out['fields'] = $fields_out;
 
+		// Требования к паролю.
+		$rules_saved = isset( $input['password_rules'] ) && is_array( $input['password_rules'] ) ? $input['password_rules'] : array();
+		$rules_out   = array();
+
+		foreach ( array_keys( WPPA_Password::rules() ) as $rule_id ) {
+			$rules_out[ $rule_id ] = empty( $rules_saved[ $rule_id ] ) ? 0 : 1;
+		}
+
+		$out['password_rules'] = $rules_out;
+
 		return wp_parse_args( $out, $defaults );
 	}
 
@@ -196,6 +206,34 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="<?php echo esc_attr( (int) $s['max_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Требования к паролю', 'wp-personal-account' ); ?></th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text"><?php esc_html_e( 'Правила проверки пароля', 'wp-personal-account' ); ?></legend>
+								<?php
+								$wppa_enabled_rules = WPPA_Password::enabled_rules();
+								$wppa_all_rules     = WPPA_Password::rules();
+								?>
+								<?php foreach ( $wppa_all_rules as $wppa_rule_id => $wppa_rule ) : ?>
+									<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][<?php echo esc_attr( $wppa_rule_id ); ?>]"
+												value="1"
+												<?php checked( isset( $wppa_enabled_rules[ $wppa_rule_id ] ) ); ?>
+											/>
+											<?php echo esc_html( $wppa_rule['label'] ); ?>
+										</label>
+									</p>
+								<?php endforeach; ?>
+								<p class="description">
+									<?php esc_html_e( 'Правила действуют при регистрации и при смене пароля: и на сервере, и в браузере (подсказки под полем). Минимальная длина пароля задаётся отдельно — константой MIN_PASSWORD_LENGTH и фильтром wppa_min_password_length.', 'wp-personal-account' ); ?>
+								</p>
+							</fieldset>
 						</td>
 					</tr>
 					<tr>

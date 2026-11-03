@@ -28,15 +28,7 @@ defined( 'ABSPATH' ) || exit;
 					<input type="password" id="wppa-new-password" name="new_password" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 					<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-new-password" aria-label="<?php esc_attr_e( 'Показать пароль', 'wp-personal-account' ); ?>">👁</button>
 				</span>
-				<span class="wppa-hint">
-					<?php
-					printf(
-						/* translators: %d: минимальная длина пароля */
-						esc_html__( 'Минимум %d символов.', 'wp-personal-account' ),
-						(int) WPPA_Plugin::min_password_length()
-					);
-					?>
-				</span>
+				<?php WPPA_Password::render_requirements( 'wppa-new-password' ); ?>
 			</p>
 
 			<p class="wppa-field">
