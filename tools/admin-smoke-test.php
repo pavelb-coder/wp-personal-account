@@ -68,6 +68,9 @@ echo "teams: команд {$stats['teams']}, участников {$stats['team_
 
 // Страница «Команды»: редактируемое поле лимита.
 $demo_team_id = WPPA_Teams::create( 'Команда для теста', 7 );
+$demo_member  = new WP_User( 8 );
+update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team_id );
+update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
 WPPA_Teams::set_team_limit( $demo_team_id, 5 );
 ob_start();
 WPPA_Admin::page_teams();
@@ -105,6 +108,26 @@ $fields_sanitize_ok = 1 === $sanitized['fields']['phone']['enabled']
 
 echo ( $fields_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: обязательность снимается вместе с показом\n";
 if ( ! $fields_sanitize_ok ) {
+	$fail++;
+}
+
+// Наставники: страница «Команды» до назначения и после.
+$mentor_before = false !== strpos( $teams_html, 'value="set_team_mentor"' );
+
+WPPA_Teams::make_mentor( $demo_team_id, 8 );
+
+ob_start();
+WPPA_Admin::page_teams();
+$teams_mentor_html = ob_get_clean();
+
+$mentor_ok = $mentor_before
+	&& 'mentor' === WPPA_Teams::role( 8 )
+	&& 1 === count( WPPA_Teams::mentors( $demo_team_id ) )
+	&& false !== strpos( $teams_mentor_html, 'value="remove_team_mentor"' )
+	&& false !== strpos( $teams_mentor_html, 'wppa-badge--mentor' );
+
+echo ( $mentor_ok ? 'OK    ' : 'FAIL  ' ) . "teams: назначение и снятие наставника в админке\n";
+if ( ! $mentor_ok ) {
 	$fail++;
 }
 

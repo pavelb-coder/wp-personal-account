@@ -110,6 +110,8 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 								<?php echo esc_html( get_the_title( $wppa_team ) ); ?>
 								<?php if ( WPPA_Teams::is_owner( $wppa_user->ID ) ) : ?>
 									<span class="wppa-badge wppa-badge--owner"><?php esc_html_e( 'капитан', 'wp-personal-account' ); ?></span>
+								<?php elseif ( WPPA_Teams::is_mentor( $wppa_user->ID ) ) : ?>
+									<span class="wppa-badge wppa-badge--mentor"><?php esc_html_e( 'наставник', 'wp-personal-account' ); ?></span>
 								<?php endif; ?>
 							<?php else : ?>
 								<span class="wppa-admin__muted">—</span>

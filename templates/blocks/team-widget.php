@@ -11,7 +11,10 @@ defined( 'ABSPATH' ) || exit;
 
 $wppa_team_id  = WPPA_Teams::team_id( $user->ID );
 $wppa_team     = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
-$wppa_is_owner = $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
+$wppa_is_owner   = $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
+$wppa_is_mentor  = $wppa_team_id && WPPA_Teams::is_mentor( $user->ID );
+$wppa_is_manager = $wppa_team_id && WPPA_Teams::is_manager( $user->ID );
+$wppa_my_role    = $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '';
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 $wppa_min      = WPPA_Teams::team_min( $wppa_team_id );
 $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
@@ -91,8 +94,8 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 				?>
 			</p>
 		</div>
-		<span class="wppa-badge <?php echo $wppa_is_owner ? 'wppa-badge--owner' : ''; ?>">
-			<?php echo $wppa_is_owner ? esc_html__( 'Капитан', 'wp-personal-account' ) : esc_html__( 'Участник', 'wp-personal-account' ); ?>
+		<span class="wppa-badge <?php echo esc_attr( 'owner' === $wppa_my_role ? 'wppa-badge--owner' : ( 'mentor' === $wppa_my_role ? 'wppa-badge--mentor' : '' ) ); ?>">
+			<?php echo esc_html( WPPA_Teams::role_label( $wppa_my_role ) ); ?>
 		</span>
 	</div>
 
@@ -109,6 +112,12 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 		</div>
 	<?php endif; ?>
 
+	<?php if ( $wppa_is_mentor ) : ?>
+		<div class="wppa-notice wppa-notice--info">
+			<?php esc_html_e( 'Вы наставник команды: можете приглашать и исключать участников. Переименовать или распустить команду может только капитан.', 'wp-personal-account' ); ?>
+		</div>
+	<?php endif; ?>
+
 	<h3 class="wppa-subtitle"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></h3>
 
 	<div class="wppa-table-wrap">
@@ -118,7 +127,7 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 					<th><?php esc_html_e( 'Участник', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></th>
-					<?php if ( $wppa_is_owner ) : ?>
+					<?php if ( $wppa_is_manager ) : ?>
 						<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
 					<?php endif; ?>
 				</tr>
@@ -136,18 +145,38 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 						</td>
 						<td data-label="<?php esc_attr_e( 'Email', 'wp-personal-account' ); ?>"><?php echo esc_html( $wppa_member->user_email ); ?></td>
 						<td data-label="<?php esc_attr_e( 'Роль', 'wp-personal-account' ); ?>">
-							<?php echo 'owner' === $wppa_member_role ? esc_html__( 'Капитан', 'wp-personal-account' ) : esc_html__( 'Участник', 'wp-personal-account' ); ?>
+							<span class="wppa-badge <?php echo esc_attr( 'owner' === $wppa_member_role ? 'wppa-badge--owner' : ( 'mentor' === $wppa_member_role ? 'wppa-badge--mentor' : '' ) ); ?>">
+								<?php echo esc_html( WPPA_Teams::role_label( $wppa_member_role ) ); ?>
+							</span>
 						</td>
-						<?php if ( $wppa_is_owner ) : ?>
+						<?php if ( $wppa_is_manager ) : ?>
+							<?php
+							$wppa_can_act = 'owner' !== $wppa_member_role
+								&& ( $wppa_is_owner || 'member' === $wppa_member_role );
+							?>
 							<td data-label="<?php esc_attr_e( 'Действия', 'wp-personal-account' ); ?>">
-								<?php if ( 'owner' !== $wppa_member_role ) : ?>
-									<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
-										<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
-										<input type="hidden" name="wppa_action" value="team" />
-										<input type="hidden" name="wppa_team_action" value="remove_member" />
-										<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
-										<button type="submit" class="wppa-link-button"><?php esc_html_e( 'Исключить', 'wp-personal-account' ); ?></button>
-									</form>
+								<?php if ( $wppa_can_act ) : ?>
+									<div class="wppa-actions">
+										<?php if ( $wppa_is_owner ) : ?>
+											<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+												<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+												<input type="hidden" name="wppa_action" value="team" />
+												<input type="hidden" name="wppa_team_action" value="<?php echo 'mentor' === $wppa_member_role ? 'dismiss_mentor' : 'make_mentor'; ?>" />
+												<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
+												<button type="submit" class="wppa-link-button">
+													<?php echo 'mentor' === $wppa_member_role ? esc_html__( 'Снять наставника', 'wp-personal-account' ) : esc_html__( 'Сделать наставником', 'wp-personal-account' ); ?>
+												</button>
+											</form>
+										<?php endif; ?>
+
+										<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+											<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+											<input type="hidden" name="wppa_action" value="team" />
+											<input type="hidden" name="wppa_team_action" value="remove_member" />
+											<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
+											<button type="submit" class="wppa-link-button"><?php esc_html_e( 'Исключить', 'wp-personal-account' ); ?></button>
+										</form>
+									</div>
 								<?php else : ?>
 									<span class="wppa-hint">—</span>
 								<?php endif; ?>
@@ -159,7 +188,7 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 		</table>
 	</div>
 
-	<?php if ( $wppa_is_owner ) : ?>
+	<?php if ( $wppa_is_manager ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Пригласить участников', 'wp-personal-account' ); ?></h3>
@@ -199,6 +228,10 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Отправить приглашение', 'wp-personal-account' ); ?></button>
 			</form>
 		</section>
+
+	<?php endif; ?>
+
+	<?php if ( $wppa_is_owner ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Название команды', 'wp-personal-account' ); ?></h3>

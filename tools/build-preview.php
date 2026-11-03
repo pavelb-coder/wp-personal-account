@@ -48,9 +48,10 @@ $tabs = WPPA_Template::all_tabs();
 // Демо-команда: капитан — Иван, участники — Мария и Пётр.
 $demo_team = WPPA_Teams::create( 'Студия «Вектор»', 7 );
 if ( ! is_wp_error( $demo_team ) ) {
+	// Мария — наставник команды.
 	update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team );
 	update_user_meta( 9, WPPA_Teams::META_TEAM, $demo_team );
-	update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
+	update_user_meta( 8, WPPA_Teams::META_ROLE, 'mentor' );
 	update_user_meta( 9, WPPA_Teams::META_ROLE, 'member' );
 }
 
@@ -88,8 +89,16 @@ $sections .= demo_section(
 
 $sections .= demo_section(
 	'Команда (капитан)',
-	'Вкладка team: состав команды, ссылка-приглашение, приглашение по email, переименование, роспуск',
+	'Вкладка team: состав с ролями, назначение наставника, ссылка-приглашение, приглашение по email, переименование, роспуск',
 	WPPA_Template::get( 'tab-team', array( 'user' => $user, 'tabs' => $tabs ) )
+);
+
+// Вид глазами наставника: приглашения есть, переименования и роспуска нет.
+$mentor_user = get_userdata( 8 );
+$sections   .= demo_section(
+	'Команда (наставник)',
+	'Так команду видит наставник: может приглашать и исключать участников, но не переименовать и не распустить команду',
+	WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
 );
 
 $sections .= demo_section(

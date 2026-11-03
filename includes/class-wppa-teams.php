@@ -4,7 +4,7 @@
  *
  * Модель данных:
  * - команда — запись типа wppa_team (post_title = название, post_author = капитан);
- * - участник — мета пользователя _wppa_team_id + _wppa_team_role (owner|member);
+ * - участник — мета пользователя _wppa_team_id + _wppa_team_role (owner|mentor|member);
  * - приглашение — токен в мета команды, ссылка вида ?wppa_team_join=<токен>.
  *
  * @package WP_Personal_Account
@@ -31,6 +31,11 @@ class WPPA_Teams {
 	 * Мета: роль пользователя в команде.
 	 */
 	const META_ROLE = '_wppa_team_role';
+
+	/**
+	 * Допустимые роли в команде.
+	 */
+	const ROLES = array( 'owner', 'mentor', 'member' );
 
 	/**
 	 * Мета: токен приглашения.
@@ -285,7 +290,24 @@ class WPPA_Teams {
 	 */
 	public static function role( $user_id ) {
 		$role = (string) get_user_meta( $user_id, self::META_ROLE, true );
-		return in_array( $role, array( 'owner', 'member' ), true ) ? $role : '';
+		return in_array( $role, self::ROLES, true ) ? $role : '';
+	}
+
+	/**
+	 * Человекочитаемое название роли.
+	 *
+	 * @param string $role owner|mentor|member.
+	 * @return string
+	 */
+	public static function role_label( $role ) {
+		switch ( $role ) {
+			case 'owner':
+				return __( 'Капитан', 'wp-personal-account' );
+			case 'mentor':
+				return __( 'Наставник', 'wp-personal-account' );
+			default:
+				return __( 'Участник', 'wp-personal-account' );
+		}
 	}
 
 	/**
@@ -296,6 +318,94 @@ class WPPA_Teams {
 	 */
 	public static function is_owner( $user_id ) {
 		return 'owner' === self::role( $user_id ) && self::team_id( $user_id ) > 0;
+	}
+
+	/**
+	 * Является ли пользователь наставником своей команды.
+	 *
+	 * @param int $user_id ID пользователя.
+	 * @return bool
+	 */
+	public static function is_mentor( $user_id ) {
+		return 'mentor' === self::role( $user_id ) && self::team_id( $user_id ) > 0;
+	}
+
+	/**
+	 * Может ли пользователь управлять составом: капитан или наставник.
+	 *
+	 * @param int $user_id ID пользователя.
+	 * @return bool
+	 */
+	public static function is_manager( $user_id ) {
+		return self::is_owner( $user_id ) || self::is_mentor( $user_id );
+	}
+
+	/**
+	 * Наставники команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return WP_User[]
+	 */
+	public static function mentors( $team_id ) {
+		$mentors = array();
+
+		foreach ( self::members( $team_id ) as $member ) {
+			if ( 'mentor' === self::role( $member->ID ) ) {
+				$mentors[] = $member;
+			}
+		}
+
+		return $mentors;
+	}
+
+	/**
+	 * Смена роли участника команды. Капитана изменить нельзя.
+	 *
+	 * @param int    $team_id ID команды.
+	 * @param int    $user_id ID пользователя.
+	 * @param string $role    mentor|member (капитан так не назначается).
+	 * @return bool
+	 */
+	public static function set_role( $team_id, $user_id, $role ) {
+		// Роль капитана через этот метод не выдаётся.
+		if ( ! in_array( $role, array( 'mentor', 'member' ), true ) ) {
+			return false;
+		}
+
+		if ( (int) self::team_id( $user_id ) !== (int) $team_id ) {
+			return false;
+		}
+
+		// Капитан назначается только при создании/передаче команды.
+		if ( 'owner' === self::role( $user_id ) ) {
+			return false;
+		}
+
+		update_user_meta( (int) $user_id, self::META_ROLE, 'mentor' === $role ? 'mentor' : 'member' );
+
+		return true;
+	}
+
+	/**
+	 * Назначение наставника.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id ID пользователя.
+	 * @return bool
+	 */
+	public static function make_mentor( $team_id, $user_id ) {
+		return self::set_role( $team_id, $user_id, 'mentor' );
+	}
+
+	/**
+	 * Снятие роли наставника.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id ID пользователя.
+	 * @return bool
+	 */
+	public static function dismiss_mentor( $team_id, $user_id ) {
+		return self::set_role( $team_id, $user_id, 'member' );
 	}
 
 	/**
@@ -319,6 +429,7 @@ class WPPA_Teams {
 			'token'   => (string) get_post_meta( $post->ID, self::META_TOKEN, true ),
 			'expires' => (int) get_post_meta( $post->ID, self::META_TOKEN_EXPIRES, true ),
 			'members' => self::members( $post->ID ),
+			'mentors' => self::mentors( $post->ID ),
 		);
 	}
 
@@ -648,8 +759,8 @@ class WPPA_Teams {
 			case 'refresh_token':
 				$team_id = self::team_id( $user_id );
 
-				if ( ! $team_id || ! self::is_owner( $user_id ) ) {
-					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
+				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
 				self::refresh_token( $team_id );
@@ -659,8 +770,8 @@ class WPPA_Teams {
 				$team_id = self::team_id( $user_id );
 				$email   = isset( $_POST['invite_email'] ) ? sanitize_email( wp_unslash( $_POST['invite_email'] ) ) : '';
 
-				if ( ! $team_id || ! self::is_owner( $user_id ) ) {
-					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
+				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
 				if ( ! is_email( $email ) ) {
@@ -683,12 +794,42 @@ class WPPA_Teams {
 				$team_id  = self::team_id( $user_id );
 				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
+				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
+				}
+
+				// Наставник не может исключать капитана и других наставников.
+				if ( ! self::is_owner( $user_id ) && in_array( self::role( $member_id ), array( 'owner', 'mentor' ), true ) ) {
+					WPPA_Notices::redirect( 'team_mentor_denied', $tab_url );
+				}
+
+				if ( ! self::remove_member( $team_id, $member_id ) ) {
+					WPPA_Notices::redirect( 'team_mentor_invalid', $tab_url );
+				}
+
+				WPPA_Notices::redirect( 'team_member_removed', $tab_url );
+
+			case 'make_mentor':
+			case 'dismiss_mentor':
+				$team_id   = self::team_id( $user_id );
+				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+
+				// Наставников назначает только капитан.
 				if ( ! $team_id || ! self::is_owner( $user_id ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
 				}
 
-				self::remove_member( $team_id, $member_id );
-				WPPA_Notices::redirect( 'team_member_removed', $tab_url );
+				if ( (int) self::team_id( $member_id ) !== (int) $team_id || 'owner' === self::role( $member_id ) ) {
+					WPPA_Notices::redirect( 'team_mentor_invalid', $tab_url );
+				}
+
+				if ( 'make_mentor' === $sub ) {
+					self::make_mentor( $team_id, $member_id );
+					WPPA_Notices::redirect( 'team_mentor_added', $tab_url );
+				}
+
+				self::dismiss_mentor( $team_id, $member_id );
+				WPPA_Notices::redirect( 'team_mentor_removed', $tab_url );
 
 			case 'join_code':
 				$raw  = isset( $_POST['team_code'] ) ? sanitize_text_field( wp_unslash( $_POST['team_code'] ) ) : '';

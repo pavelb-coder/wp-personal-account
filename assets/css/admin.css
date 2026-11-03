@@ -283,6 +283,18 @@
 	color: #3730a3;
 }
 
+.wppa-badge--mentor {
+	background: #ecfdf5;
+	color: #047857;
+}
+
+.wppa-mentors {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 4px;
+}
+
 .wppa-inline-form {
 	display: inline-block;
 	margin: 0;

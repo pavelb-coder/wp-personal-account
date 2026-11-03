@@ -668,6 +668,18 @@
 	color: #3730a3;
 }
 
+.wppa-badge--mentor {
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+	color: #047857;
+}
+
+.wppa-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+}
+
 .wppa-avatar--inline {
 	width: 28px;
 	height: 28px;
@@ -685,7 +697,7 @@
 	padding: 0;
 	border: 0;
 	background: none;
-	color: #b91c1c;
+	color: var(--wppa-accent, #2563eb);
 	font: inherit;
 	font-weight: 600;
 	cursor: pointer;
@@ -693,7 +705,11 @@
 }
 
 .wppa-link-button:hover {
-	color: #991b1b;
+	opacity: .8;
+}
+
+.wppa-actions form:last-child .wppa-link-button {
+	color: #b91c1c;
 }
 
 .wppa-copy {

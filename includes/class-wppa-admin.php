@@ -275,6 +275,8 @@ class WPPA_Admin {
 				'members' => WPPA_Teams::members_count( (int) $team->ID ),
 				'limit'   => WPPA_Teams::team_limit( (int) $team->ID ),
 				'own_limit' => WPPA_Teams::raw_team_limit( (int) $team->ID ),
+				'mentors'   => WPPA_Teams::mentors( (int) $team->ID ),
+				'members_list' => WPPA_Teams::members( (int) $team->ID ),
 				'min'       => WPPA_Teams::team_min( (int) $team->ID ),
 				'own_min'   => WPPA_Teams::raw_team_min( (int) $team->ID ),
 				'missing'   => WPPA_Teams::missing_members( (int) $team->ID ),
@@ -537,6 +539,9 @@ class WPPA_Admin {
 			'team_limit_saved' => array( 'success', __( 'Лимит участников команды обновлён.', 'wp-personal-account' ) ),
 			'team_min_saved'   => array( 'success', __( 'Минимум участников команды обновлён.', 'wp-personal-account' ) ),
 			'team_settings_saved' => array( 'success', __( 'Минимум и лимит участников команды обновлены.', 'wp-personal-account' ) ),
+			'team_mentor_added'   => array( 'success', __( 'Наставник назначен.', 'wp-personal-account' ) ),
+			'team_mentor_removed' => array( 'success', __( 'Роль наставника снята.', 'wp-personal-account' ) ),
+			'team_mentor_invalid' => array( 'warning', __( 'Наставником можно назначить только участника этой команды, кроме капитана.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -617,6 +622,28 @@ class WPPA_Admin {
 				}
 
 				self::redirect_tool( 'team_min_saved' );
+				break;
+
+			case 'set_team_mentor':
+			case 'remove_team_mentor':
+				$team_id   = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+
+				if ( $team_id && $member_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
+					if ( (int) WPPA_Teams::team_id( $member_id ) !== $team_id || 'owner' === WPPA_Teams::role( $member_id ) ) {
+						self::redirect_tool( 'team_mentor_invalid' );
+					}
+
+					if ( 'set_team_mentor' === $tool ) {
+						WPPA_Teams::make_mentor( $team_id, $member_id );
+						self::redirect_tool( 'team_mentor_added' );
+					}
+
+					WPPA_Teams::dismiss_mentor( $team_id, $member_id );
+					self::redirect_tool( 'team_mentor_removed' );
+				}
+
+				self::redirect_tool( 'team_mentor_invalid' );
 				break;
 
 			case 'dissolve_team':

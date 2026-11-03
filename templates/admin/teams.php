@@ -80,6 +80,7 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 					<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Капитан', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
+					<th><?php esc_html_e( 'Наставники', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Мин. / лимит', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Создана', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
@@ -117,6 +118,57 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 									);
 									?>
 								</span>
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php if ( ! empty( $wppa_row['mentors'] ) ) : ?>
+								<div class="wppa-mentors">
+									<?php foreach ( $wppa_row['mentors'] as $wppa_mentor ) : ?>
+										<span class="wppa-badge wppa-badge--mentor">
+											<?php echo esc_html( $wppa_mentor->display_name ); ?>
+										</span>
+										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline-form">
+											<?php wp_nonce_field( 'wppa_tool' ); ?>
+											<input type="hidden" name="action" value="wppa_tool" />
+											<input type="hidden" name="wppa_tool" value="remove_team_mentor" />
+											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
+											<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_mentor->ID ); ?>" />
+											<button type="submit" class="button button-small"><?php esc_html_e( 'снять', 'wp-personal-account' ); ?></button>
+										</form>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
+
+							<?php
+							// Кандидаты: участники команды, кроме капитана и действующих наставников.
+							$wppa_candidates = array();
+
+							foreach ( $wppa_row['members_list'] as $wppa_member ) {
+								if ( 'owner' === WPPA_Teams::role( $wppa_member->ID ) || 'mentor' === WPPA_Teams::role( $wppa_member->ID ) ) {
+									continue;
+								}
+								$wppa_candidates[] = $wppa_member;
+							}
+							?>
+
+							<?php if ( $wppa_candidates ) : ?>
+								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline-form">
+									<?php wp_nonce_field( 'wppa_tool' ); ?>
+									<input type="hidden" name="action" value="wppa_tool" />
+									<input type="hidden" name="wppa_tool" value="set_team_mentor" />
+									<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
+									<label>
+										<span class="screen-reader-text"><?php esc_html_e( 'Кого сделать наставником', 'wp-personal-account' ); ?></span>
+										<select name="member_id">
+											<?php foreach ( $wppa_candidates as $wppa_candidate ) : ?>
+												<option value="<?php echo esc_attr( (string) $wppa_candidate->ID ); ?>"><?php echo esc_html( $wppa_candidate->display_name ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</label>
+									<button type="submit" class="button button-small"><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></button>
+								</form>
+							<?php elseif ( empty( $wppa_row['mentors'] ) ) : ?>
+								<span class="wppa-admin__muted"><?php esc_html_e( 'нет участников', 'wp-personal-account' ); ?></span>
 							<?php endif; ?>
 						</td>
 						<td>
@@ -184,6 +236,9 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 		<h2><?php esc_html_e( 'Как это работает', 'wp-personal-account' ); ?></h2>
 		<p class="wppa-admin__muted">
 			<?php esc_html_e( 'Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.', 'wp-personal-account' ); ?>
+		</p>
+		<p class="wppa-admin__muted">
+			<?php esc_html_e( 'Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор.', 'wp-personal-account' ); ?>
 		</p>
 		<p class="wppa-admin__muted">
 			<?php esc_html_e( 'Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.', 'wp-personal-account' ); ?>

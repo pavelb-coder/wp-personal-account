@@ -149,6 +149,64 @@ if ( is_wp_error( $team_id ) ) {
 		}
 	}
 
+	// Наставник: назначение, права, снятие.
+	$mentor_checks = array(
+		'капитан не становится наставником' => false === WPPA_Teams::make_mentor( $team_id, 7 ) && false === WPPA_Teams::is_mentor( 7 ),
+		'посторонний не становится наставником' => false === WPPA_Teams::make_mentor( $team_id, 15 ),
+	);
+
+	$mentor_checks['наставник назначен']        = true === WPPA_Teams::make_mentor( $team_id, 8 );
+	$mentor_checks['роль = mentor']             = 'mentor' === WPPA_Teams::role( 8 );
+	$mentor_checks['is_mentor']                 = true === WPPA_Teams::is_mentor( 8 );
+	$mentor_checks['is_manager у наставника']   = true === WPPA_Teams::is_manager( 8 );
+	$mentor_checks['капитан тоже manager']      = true === WPPA_Teams::is_manager( 7 );
+	$mentor_checks['обычный участник не manager'] = false === WPPA_Teams::is_manager( 9 );
+	$mentor_checks['наставник в списке команды'] = 1 === count( WPPA_Teams::mentors( $team_id ) );
+	$mentor_checks['наставник не может сменить роль на owner'] = false === WPPA_Teams::set_role( $team_id, 8, 'owner' );
+	$mentor_checks['наставник может исключить участника'] = true === WPPA_Teams::remove_member( $team_id, 9 );
+	$mentor_checks['капитана исключить нельзя']  = false === WPPA_Teams::remove_member( $team_id, 7 );
+	$mentor_checks['роль снята']                = true === WPPA_Teams::dismiss_mentor( $team_id, 8 ) && 'member' === WPPA_Teams::role( 8 );
+
+	foreach ( $mentor_checks as $check_name => $ok ) {
+		echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team mentor: ' . $check_name . "\n";
+		if ( ! $ok ) {
+			$fail++;
+		}
+	}
+
+	// Наставник в интерфейсе кабинета.
+	WPPA_Teams::add_member( $team_id, 9 );
+	WPPA_Teams::make_mentor( $team_id, 9 );
+
+	$mentor_html = WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'team-widget', 'title' => '' ),
+		array( 'user' => get_userdata( 9 ), 'tabs' => $tabs )
+	);
+
+	$mentor_ui = array(
+		'кабинет: бейдж «Наставник»'        => false !== strpos( $mentor_html, 'wppa-badge--mentor' ) && false !== strpos( $mentor_html, 'Наставник' ),
+		'кабинет: подсказка наставнику'      => false !== strpos( $mentor_html, 'Вы наставник команды' ),
+		'кабинет: приглашения доступны'      => false !== strpos( $mentor_html, 'Пригласить участников' ),
+		'кабинет: переименование недоступно' => false === strpos( $mentor_html, 'value="rename"' ),
+		'кабинет: выход вместо роспуска'     => false !== strpos( $mentor_html, 'Выйти из команды' ),
+	);
+
+	// Капитан видит управление наставниками.
+	$owner_html = WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'team-widget', 'title' => '' ),
+		array( 'user' => get_userdata( 7 ), 'tabs' => $tabs )
+	);
+
+	$mentor_ui['капитан: кнопка снятия наставника'] = false !== strpos( $owner_html, 'value="dismiss_mentor"' );
+	$mentor_ui['капитан: назначение наставника']    = false !== strpos( $owner_html, 'value="make_mentor"' ) || false !== strpos( $owner_html, 'Сделать наставником' );
+
+	foreach ( $mentor_ui as $check_name => $ok ) {
+		echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team mentor ui: ' . $check_name . "\n";
+		if ( ! $ok ) {
+			$fail++;
+		}
+	}
+
 	WPPA_Teams::dissolve( $team_id );
 	echo 'team: после роспуска команда ' . ( get_post( $team_id ) ? 'осталась' : 'удалена' ) . ", мета пользователя «" . get_user_meta( 7, WPPA_Teams::META_TEAM, true ) . "»\n";
 }

@@ -290,6 +290,18 @@
 	color: #3730a3;
 }
 
+.wppa-badge--mentor {
+	background: #ecfdf5;
+	color: #047857;
+}
+
+.wppa-mentors {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 4px;
+}
+
 .wppa-inline-form {
 	display: inline-block;
 	margin: 0;
@@ -1243,6 +1255,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					<th>Команда</th>
 					<th>Капитан</th>
 					<th>Участников</th>
+					<th>Наставники</th>
 					<th>Мин. / лимит</th>
 					<th>Создана</th>
 					<th>Действия</th>
@@ -1258,6 +1271,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							0 / 10															<br />
 								<span class="wppa-badge wppa-badge--warn">
 									недобор: 2 до 2								</span>
+													</td>
+						<td>
+							
+							
+															<span class="wppa-admin__muted">нет участников</span>
 													</td>
 						<td>
 							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form wppa-team-limits">
@@ -1319,6 +1337,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 									недобор: 2 до 2								</span>
 													</td>
 						<td>
+							
+							
+															<span class="wppa-admin__muted">нет участников</span>
+													</td>
+						<td>
 							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form wppa-team-limits">
 								<input type="hidden" name="_wpnonce" value="nonce" />								<input type="hidden" name="action" value="wppa_tool" />
 								<input type="hidden" name="wppa_tool" value="update_team_settings" />
@@ -1378,6 +1401,22 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 									недобор: 1 до 2								</span>
 													</td>
 						<td>
+							
+							
+															<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
+									<input type="hidden" name="_wpnonce" value="nonce" />									<input type="hidden" name="action" value="wppa_tool" />
+									<input type="hidden" name="wppa_tool" value="set_team_mentor" />
+									<input type="hidden" name="team_id" value="103" />
+									<label>
+										<span class="screen-reader-text">Кого сделать наставником</span>
+										<select name="member_id">
+																							<option value="8">Мария Соколова</option>
+																					</select>
+									</label>
+									<button type="submit" class="button button-small">Наставник</button>
+								</form>
+													</td>
+						<td>
 							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form wppa-team-limits">
 								<input type="hidden" name="_wpnonce" value="nonce" />								<input type="hidden" name="action" value="wppa_tool" />
 								<input type="hidden" name="wppa_tool" value="update_team_settings" />
@@ -1433,6 +1472,8 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 		<h2>Как это работает</h2>
 		<p class="wppa-admin__muted">
 			Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.		</p>
+		<p class="wppa-admin__muted">
+			Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор.		</p>
 		<p class="wppa-admin__muted">
 			Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.		</p>
 	</section>
