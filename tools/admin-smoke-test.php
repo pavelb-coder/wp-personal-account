@@ -802,7 +802,9 @@ $export_olympiad_checks['в заголовке нет «Работ зачтен�
 	&& false === strpos( WPPA_Export::header( WPPA_Export::columns() ), 'На проверке' );
 $export_olympiad_checks['колонок «зачтено» и «на проверке» нет'] = ! in_array( 'olympiad_tests', $all_columns, true )
 	&& ! in_array( 'olympiad_pending', $all_columns, true );
-$export_olympiad_checks['колонки баллов в конце'] = 'olympiad' === end( WPPA_Export::columns() )['group'];
+$last_column = WPPA_Export::columns();
+$last_column = end( $last_column );
+$export_olympiad_checks['колонки баллов в конце'] = 'olympiad' === $last_column['group'];
 
 $account_columns = array_column( WPPA_Export::columns( array( 'account' ) ), 'key' );
 $export_olympiad_checks['без группы баллов нет колонок'] = ! in_array( 'olympiad_score', $account_columns, true )
@@ -1032,6 +1034,48 @@ $percent_checks['заголовок колонки с единицей'] = false
 
 $GLOBALS['wppa_test']['locale'] = 'ru_RU';
 
+// NAN и INF не должны превращаться в «100» — это лучший результат.
+$percent_checks['NAN не даёт 100']  = '0' === WPPA_Export::percent( NAN );
+$percent_checks['INF не даёт 100']  = '0' === WPPA_Export::percent( INF );
+$percent_checks['-INF не даёт минус'] = '0' === WPPA_Export::percent( -INF );
+$percent_checks['отрицательный ноль'] = '0' === WPPA_Export::percent( -0.0 );
+
+// Группы: пустой и неизвестный набор не должны давать файл без колонок.
+$build_empty_groups = WPPA_Export::build( array( 'groups' => array(), 'users' => array( get_userdata( 7 ) ), 'limit' => 5 ) );
+$percent_checks['пустой набор групп: только «Учётная запись»'] = array( 'account' ) === $build_empty_groups['groups'] && $build_empty_groups['columns'] > 0;
+
+$build_unknown = WPPA_Export::build( array( 'groups' => array( 'нет такой' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 5 ) );
+$percent_checks['неизвестная группа отброшена'] = array( 'account' ) === $build_unknown['groups'] && 3 === $build_unknown['columns'];
+
+$build_order = WPPA_Export::build( array( 'groups' => array( 'olympiad', 'account' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 5 ) );
+$percent_checks['порядок групп канонический'] = array( 'account', 'olympiad' ) === $build_order['groups'];
+
+// Excel-формулы в значениях: имя пользователя не должно выполниться в Excel.
+$injection_checks = array(
+	'знак равенства'   => "'=cmd|' /C calc'!A0" === WPPA_Export::safe_cell( "=cmd|' /C calc'!A0" ),
+	'плюс в начале'    => "'+7-999" === WPPA_Export::safe_cell( '+7-999' ),
+	'минус со буквами' => "'-2+3" === WPPA_Export::safe_cell( '-2+3' ),
+	'собака'           => "'@SUM(1+1)" === WPPA_Export::safe_cell( '@SUM(1+1)' ),
+	'табуляция'        => "'\tданные" === WPPA_Export::safe_cell( "\tданные" ),
+	'обычный текст'    => 'Иван' === WPPA_Export::safe_cell( 'Иван' ),
+	'отрицательное число не трогаем' => '-5' === WPPA_Export::safe_cell( '-5' ),
+	'процент не трогаем'   => '67,5' === WPPA_Export::safe_cell( '67,5' ),
+	'пустое значение'      => '' === WPPA_Export::safe_cell( '' ),
+);
+
+$injection_user             = new WP_User( 7 );
+$injection_user->display_name = '=HYPERLINK("http://зло")';
+$injection_csv              = WPPA_Export::csv( array( 'users' => array( $injection_user ), 'limit' => 5, 'groups' => array( 'profile' ) ) );
+$injection_checks['в файле значение обезврежено'] = false !== strpos( $injection_csv, "'=HYPERLINK" );
+$injection_checks['в файле нет голой формулы']    = false === strpos( $injection_csv, ';=HYPERLINK' );
+
+foreach ( $injection_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'csv injection: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 foreach ( $percent_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'percent: ' . $check_name . "\n";
 	if ( ! $ok ) {
@@ -1044,7 +1088,7 @@ $snapshot = array(
 	'meta'     => $GLOBALS['wppa_test']['meta'],
 	'postmeta' => $GLOBALS['wppa_test']['postmeta'],
 	'posts'    => $GLOBALS['wppa_test']['posts'],
-	'users'    => $GLOBALS['wppa_test']['users'],
+	'users'    => isset( $GLOBALS['wppa_test']['users'] ) ? $GLOBALS['wppa_test']['users'] : array(),
 );
 
 $GLOBALS['wppa_test']['posts'] = array(
@@ -1127,6 +1171,25 @@ $GLOBALS['wppa_test']['users']    = $snapshot['users'];
 
 foreach ( $team_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team order: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Сетевой путь: конфиг массивом и строкой, без фатальных ошибок.
+$smb_checks = array(
+	'detect_type: массив'   => 'smb' === WPPA_SMB::detect_type( array( 'path' => '\\\\server\\share' ) ),
+	'detect_type: строка'   => 'smb' === WPPA_SMB::detect_type( 'smb://server/share' ),
+	'detect_type: пусто'    => 'filesystem' === WPPA_SMB::detect_type( '' ),
+	'detect_type: локальный путь' => 'filesystem' === WPPA_SMB::detect_type( array( 'path' => '/mnt/share' ) ),
+	'path_of: массив'       => '/mnt/share' === WPPA_SMB::path_of( array( 'path' => '/mnt/share' ) ),
+	'path_of: строка'       => 'smb://s/s' === WPPA_SMB::path_of( 'smb://s/s' ),
+	'is_configured: пустой' => false === WPPA_SMB::is_configured( array( 'path' => '' ) ),
+	'is_configured: путь есть' => true === WPPA_SMB::is_configured( array( 'path' => '\\\\server\\share' ) ),
+);
+
+foreach ( $smb_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'smb config: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

@@ -87,9 +87,7 @@ class WPPA_SMB {
 	 * @return bool
 	 */
 	public static function is_configured( $config = array() ) {
-		$config = $config ? $config : self::config();
-
-		return '' !== $config['path'];
+		return '' !== self::path_of( $config );
 	}
 
 	/**
@@ -99,8 +97,7 @@ class WPPA_SMB {
 	 * @return string filesystem|smb
 	 */
 	public static function detect_type( $config = array() ) {
-		$config = $config ? $config : self::config();
-		$path   = (string) $config['path'];
+		$path = self::path_of( $config );
 
 		if ( preg_match( '#^smb://#i', $path ) ) {
 			return 'smb';
@@ -117,6 +114,26 @@ class WPPA_SMB {
 		}
 
 		return 'filesystem';
+	}
+
+	/**
+	 * Путь из настроек: массив настроек или готовая строка.
+	 *
+	 * Раньше сюда можно было передать только массив: строка давала
+	 * «Cannot access offset of type string on string» — фатальную ошибку
+	 * на странице инструментов, если опция повреждена.
+	 *
+	 * @param array|string $config Настройки или путь.
+	 * @return string
+	 */
+	public static function path_of( $config = array() ) {
+		if ( is_string( $config ) ) {
+			return trim( $config );
+		}
+
+		$config = $config ? (array) $config : self::config();
+
+		return isset( $config['path'] ) ? trim( (string) $config['path'] ) : '';
 	}
 
 	/**
@@ -477,7 +494,7 @@ class WPPA_SMB {
 			);
 		}
 
-		$parsed = self::parse_path( $config['path'] );
+		$parsed = self::parse_path( self::path_of( $config ) );
 
 		if ( ! $parsed ) {
 			return array(
@@ -639,7 +656,7 @@ class WPPA_SMB {
 			);
 		}
 
-		$parsed = 'smb' === self::detect_type( $config ) ? self::parse_path( $config['path'] ) : null;
+		$parsed = 'smb' === self::detect_type( $config ) ? self::parse_path( self::path_of( $config ) ) : null;
 
 		if ( $parsed ) {
 			$remote = $parsed['unc'] . ( '' !== $parsed['subdir'] ? '\\' : '' ) . $name;
@@ -820,7 +837,7 @@ class WPPA_SMB {
 	 */
 	public static function mount_command( $config = array() ) {
 		$config = $config ? $config : self::config();
-		$parsed = self::parse_path( $config['path'] );
+		$parsed = self::parse_path( self::path_of( $config ) );
 		$login  = self::split_user( $config['user'], $parsed ? $parsed['user'] : '' );
 		$pass   = '' !== $config['pass'] ? $config['pass'] : ( $parsed ? $parsed['password'] : '' );
 		$file   = '/etc/wppa-smb-credentials';

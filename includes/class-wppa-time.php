@@ -69,11 +69,23 @@ class WPPA_Time {
 			return '';
 		}
 
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value ) ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/', $value, $parts ) ) {
 			return '';
 		}
 
-		return '' === self::to_timestamp( $value ) ? '' : $value;
+		$year   = (int) $parts[1];
+		$month  = (int) $parts[2];
+		$day    = (int) $parts[3];
+		$hour   = (int) $parts[4];
+		$minute = (int) $parts[5];
+
+		// date_create() «додумывает» несуществующие даты: 30 февраля становится
+		// 2 марта, 99 часов — следующими сутками. Такую дату сохранять нельзя.
+		if ( $year < 1970 || $year > 2100 || ! checkdate( $month, $day, $year ) || $hour > 23 || $minute > 59 ) {
+			return '';
+		}
+
+		return 0 === self::to_timestamp( $value ) ? '' : $value;
 	}
 
 	/**

@@ -290,12 +290,39 @@ class WPPA_Fields {
 			case 'email':
 				return sanitize_email( $raw );
 			case 'date':
-				return preg_match( '/^\d{4}-\d{2}-\d{2}$/', trim( $raw ) ) ? trim( $raw ) : '';
+				return self::sanitize_date( $raw );
 			case 'tel':
 				return trim( preg_replace( '/[^0-9+()\-\s]/', '', $raw ) );
 			default:
 				return sanitize_text_field( $raw );
 		}
+	}
+
+	/**
+	 * Дата в формате YYYY-MM-DD с проверкой календаря.
+	 *
+	 * Регулярка пропускала 2026-02-30 и 2026-13-01: такие значения сохранялись
+	 * и потом не разбирались нигде.
+	 *
+	 * @param string $raw Значение из формы.
+	 * @return string Пустая строка, если дата неверная.
+	 */
+	public static function sanitize_date( $raw ) {
+		$raw = trim( (string) $raw );
+
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $parts ) ) {
+			return '';
+		}
+
+		$year  = (int) $parts[1];
+		$month = (int) $parts[2];
+		$day   = (int) $parts[3];
+
+		if ( $year < 1900 || $year > ( (int) gmdate( 'Y' ) + 1 ) || ! checkdate( $month, $day, $year ) ) {
+			return '';
+		}
+
+		return $raw;
 	}
 
 	/**

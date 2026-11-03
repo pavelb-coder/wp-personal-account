@@ -785,6 +785,31 @@ $link_checks['отсчёт: часы и минуты']      = '01:01:01' === WPP
 $link_checks['отсчёт: дни']                = '1 д 01:00:00' === WPPA_Link_Button::countdown_text( 90000 );
 $link_checks['отсчёт: не уходит в минус']  = '00:00:00' === WPPA_Link_Button::countdown_text( -50 );
 
+// Проверка календаря: date_create() «додумывал» несуществующие даты.
+$date_checks = array(
+	'30 февраля отклонено'        => '' === WPPA_Link_Button::sanitize_datetime( '2026-02-30T10:00' ),
+	'месяц 13 отклонён'           => '' === WPPA_Link_Button::sanitize_datetime( '2026-13-01T10:00' ),
+	'часы 99 отклонены'           => '' === WPPA_Link_Button::sanitize_datetime( '2026-11-05T99:99' ),
+	'минуты 60 отклонены'         => '' === WPPA_Link_Button::sanitize_datetime( '2026-11-05T10:60' ),
+	'29 февраля високосного года' => '2028-02-29T10:00' === WPPA_Link_Button::sanitize_datetime( '2028-02-29T10:00' ),
+	'29 февраля невисокосного'    => '' === WPPA_Link_Button::sanitize_datetime( '2027-02-29T10:00' ),
+	'год 1900 отклонён'           => '' === WPPA_Link_Button::sanitize_datetime( '1900-01-01T00:00' ),
+	'корректная дата сохраняется' => '2026-11-05T10:00' === WPPA_Link_Button::sanitize_datetime( '2026-11-05T10:00' ),
+	'пустое значение остаётся пустым' => '' === WPPA_Link_Button::sanitize_datetime( '' ),
+);
+
+// Даты личных полей: та же проблема с регуляркой.
+$date_checks['поле birthdate: 30 февраля'] = '' === WPPA_Fields::sanitize_value( 'birthdate', '2026-02-30' );
+$date_checks['поле birthdate: месяц 13']   = '' === WPPA_Fields::sanitize_value( 'birthdate', '2026-13-01' );
+$date_checks['поле birthdate: верная дата'] = '1990-05-05' === WPPA_Fields::sanitize_value( 'birthdate', '1990-05-05' );
+
+foreach ( $date_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'date check: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Блок в конструкторе и на «Обзоре» по умолчанию.
 $link_checks['блок есть в конструкторе'] = isset( WPPA_Builder::blocks()['link-button'] );
 $link_checks['блок стоит на «Обзоре» по умолчанию'] = in_array(

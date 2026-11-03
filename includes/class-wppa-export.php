@@ -271,6 +271,13 @@ class WPPA_Export {
 	 */
 	public static function percent( $value, $delimiter = ';' ) {
 		$value = is_numeric( $value ) ? (float) $value : 0.0;
+
+		// NAN и INF — не числа в отчёте: min()/max() с ними дают мусор,
+		// а NAN превращался в «100», то есть в лучший результат.
+		if ( ! is_finite( $value ) ) {
+			$value = 0.0;
+		}
+
 		$value = max( 0.0, min( 100.0, $value ) );
 
 		$separator = ',' === $delimiter ? '.' : self::decimal_separator();
@@ -281,6 +288,42 @@ class WPPA_Export {
 
 		if ( substr( $text, -strlen( $tail ) ) === $tail ) {
 			$text = substr( $text, 0, -strlen( $tail ) );
+		}
+
+		return $text;
+	}
+
+	/**
+	 * Значение для ячейки CSV без риска формул.
+	 *
+	 * Excel и LibreOffice считают формулой всё, что начинается с «=», «+»,
+	 * «-», «@», табуляции или возврата каретки. Имя пользователя вида
+	 * =cmd|'/C calc'!A0 в файле выгрузки — исполняемая команда на машине
+	 * того, кто файл откроет. Такие значения помечаем апострофом: Excel
+	 * покажет текст как есть, а формулу не выполнит.
+	 *
+	 * Числа не трогаем: минус перед числом — знак, а не формула.
+	 *
+	 * @param mixed $value Значение.
+	 * @return string
+	 */
+	public static function safe_cell( $value ) {
+		$text = (string) $value;
+
+		if ( '' === $text || is_numeric( $text ) ) {
+			return $text;
+		}
+
+		if ( preg_match( '/^[=+\-@\t\r]/', $text ) ) {
+			/**
+			 * Фильтр префикса защиты от формул Excel.
+			 *
+			 * @param string $prefix Что подставить перед значением.
+			 * @param string $text   Значение.
+			 */
+			$prefix = (string) apply_filters( 'wppa_export_cell_prefix', "'", $text );
+
+			return $prefix . $text;
 		}
 
 		return $text;
@@ -436,8 +479,18 @@ class WPPA_Export {
 		) );
 
 		$delimiter = ',' === $args['delimiter'] ? ',' : ';';
-		$columns   = self::columns( (array) $args['groups'] );
-		$users     = null === $args['users'] ? self::users( $args ) : array_slice( (array) $args['users'], 0, max( 1, (int) $args['limit'] ) );
+
+		// Группы приводим к известным и к каноническому порядку. Раньше пустой
+		// или неизвестный набор давал 0 колонок, но ненулевое число строк:
+		// файл из одних переводов строки. «Учётная запись» выгружается всегда.
+		$groups = array_values( array_intersect( self::default_groups(), (array) $args['groups'] ) );
+
+		if ( ! $groups ) {
+			$groups = array( 'account' );
+		}
+
+		$columns = self::columns( $groups );
+		$users   = null === $args['users'] ? self::users( $args ) : array_slice( (array) $args['users'], 0, max( 1, (int) $args['limit'] ) );
 
 		// Участники одной команды должны стоять рядом, а не вперемешку по дате
 		// регистрации: иначе по файлу не видно, кто в какой команде.
@@ -447,7 +500,7 @@ class WPPA_Export {
 
 		$context = array();
 
-		if ( WPPA_Olympiad::is_active() && in_array( 'olympiad', (array) $args['groups'], true ) ) {
+		if ( WPPA_Olympiad::is_active() && in_array( 'olympiad', $groups, true ) ) {
 			$ids                 = array_map( static function ( $item ) { return (int) $item->ID; }, $users );
 			$context['olympiad'] = WPPA_Olympiad::summary_map( $ids );
 		}
@@ -466,7 +519,7 @@ class WPPA_Export {
 					$value = self::percent( $value, $delimiter );
 				}
 
-				$line[] = $value;
+				$line[] = self::safe_cell( $value );
 			}
 
 			$csv .= self::line( $line, $delimiter );
@@ -476,7 +529,7 @@ class WPPA_Export {
 			'csv'       => $csv,
 			'rows'      => count( $users ),
 			'columns'   => count( $columns ),
-			'groups'    => array_values( (array) $args['groups'] ),
+			'groups'    => $groups,
 			'truncated' => count( $users ) >= max( 1, (int) $args['limit'] ),
 		);
 	}
