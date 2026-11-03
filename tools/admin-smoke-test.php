@@ -863,6 +863,116 @@ foreach ( $export_olympiad_checks as $check_name => $ok ) {
 	}
 }
 
+
+// ---------- Полнота автоматической выгрузки ----------
+$auto_checks = array();
+
+// Новая группа сама попадает в сохранённый состав выгрузки.
+$saved_groups = array( 'account', 'profile', 'personal', 'team', 'status' );
+$seen_old     = array( 'account', 'profile', 'personal', 'team', 'status' );
+
+$auto_checks['новая группа добавляется'] = in_array( 'olympiad', WPPA_Export_Folder::groups_for_export( $saved_groups, $seen_old ), true );
+$auto_checks['порядок групп как в форме'] = array( 'account', 'profile', 'personal', 'team', 'status', 'olympiad' ) === WPPA_Export_Folder::groups_for_export( $saved_groups, $seen_old );
+
+// Снятую галочку уважаем: группа была показана — значит выключили сознательно.
+$auto_checks['снятая галочка не возвращается'] = ! in_array( 'personal', WPPA_Export_Folder::groups_for_export(
+	array( 'account', 'olympiad' ),
+	array( 'account', 'profile', 'personal', 'team', 'status', 'olympiad' )
+), true );
+
+$auto_checks['учётная запись всегда есть'] = in_array( 'account', WPPA_Export_Folder::groups_for_export( array( 'team' ), array( 'team' ) ), true );
+$auto_checks['несуществующая группа отброшена'] = ! in_array( 'nonsense', WPPA_Export_Folder::groups_for_export( array( 'account', 'nonsense' ), array() ), true );
+
+// Через настройки: сохранённый состав без баллов всё равно получает новую группу.
+$GLOBALS['wppa_test']['olympiad_force'] = true;
+$wpdb->data = array( 'var' => 'wp_olympiad_attempts' );
+WPPA_Olympiad::flush();
+
+$auto_snapshot = get_option( 'wppa_settings', array() );
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $auto_snapshot,
+		array(
+			'export_folder' => array_merge(
+				WPPA_Export_Folder::defaults(),
+				array( 'groups' => array( 'account', 'team' ), 'groups_seen' => array( 'account', 'team' ) )
+			),
+		)
+	)
+);
+
+$auto_checks['config добирает новые группы'] = in_array( 'olympiad', WPPA_Export_Folder::config()['groups'], true );
+
+// build(): сколько строк и колонок реально попало в файл.
+$build_users = array( get_userdata( 7 ), get_userdata( 8 ) );
+
+$build_all = WPPA_Export::build(
+	array( 'groups' => array( 'account', 'olympiad' ), 'users' => $build_users, 'limit' => 10 )
+);
+
+$auto_checks['build: число строк']    = 2 === $build_all['rows'];
+$auto_checks['build: число колонок']  = 10 === $build_all['columns'];
+$auto_checks['build: лимит не достигнут'] = false === $build_all['truncated'];
+$auto_checks['build: csv совпадает с csv()'] = $build_all['csv'] === WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => $build_users, 'limit' => 10 ) );
+
+$build_cut = WPPA_Export::build( array( 'groups' => array( 'account' ), 'users' => $build_users, 'limit' => 1 ) );
+$auto_checks['build: лимит достигнут'] = true === $build_cut['truncated'] && 1 === $build_cut['rows'];
+
+$auto_checks['описание состава']       = false !== strpos( WPPA_Export_Folder::describe( $build_all ), 'Строк: 2' );
+$auto_checks['описание про лимит']     = false !== strpos( WPPA_Export_Folder::describe( $build_cut ), 'лимит' );
+
+// Автоматическая выгрузка: полнота состава и запись в журнал.
+$auto_dir = sys_get_temp_dir() . '/wppa-auto-' . uniqid();
+mkdir( $auto_dir, 0777, true );
+
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+
+$auto_result = WPPA_Export_Folder::write(
+	array_merge(
+		WPPA_Export_Folder::config(),
+		array(
+			'mode'   => 'path',
+			'path'   => $auto_dir,
+			'file'   => 'auto-{datetime}.csv',
+			'keep'   => 0,
+			'groups' => array( 'account', 'profile', 'personal', 'team', 'status', 'olympiad' ),
+			'limit'  => 100,
+		)
+	)
+);
+
+$auto_files = glob( $auto_dir . '/auto-*.csv' );
+$auto_csv   = $auto_files ? file_get_contents( $auto_files[0] ) : '';
+
+$auto_checks['авто-выгрузка: файл создан']        = $auto_result['ok'] && 1 === count( $auto_files );
+$auto_checks['авто-выгрузка: все группы в файле']  = false !== strpos( $auto_csv, 'Учётная запись' )
+	&& false !== strpos( $auto_csv, 'Профиль' )
+	&& false !== strpos( $auto_csv, 'Команда' )
+	&& false !== strpos( $auto_csv, 'Статусы' )
+	&& false !== strpos( $auto_csv, 'Баллы за тесты' );
+
+$auto_log = WPPA_Export_Folder::logs();
+$auto_checks['журнал: состав выгрузки'] = ! empty( $auto_log ) && false !== strpos( $auto_log[0]['message'], 'Строк:' );
+
+// Лимит строк: охват применяется до лимита, а не после.
+$many_users = array();
+for ( $i = 1; $i <= 5; $i++ ) {
+	$many_users[] = get_userdata( 100 + $i );
+}
+
+$auto_checks['лимит режет строки'] = 3 === WPPA_Export::build( array( 'groups' => array( 'account' ), 'users' => $many_users, 'limit' => 3 ) )['rows'];
+$auto_checks['лимит применяется и в users()'] = 1 === count( WPPA_Export::users( array( 'scope' => 'all', 'limit' => 1 ) ) );
+
+update_option( 'wppa_settings', $auto_snapshot );
+
+foreach ( $auto_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'auto export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );
 

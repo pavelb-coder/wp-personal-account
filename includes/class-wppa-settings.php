@@ -154,6 +154,7 @@ class WPPA_Settings {
 			'time'      => $folder_time,
 			'keep'      => isset( $folder_saved['keep'] ) ? min( 365, absint( $folder_saved['keep'] ) ) : 30,
 			'groups'    => $folder_groups,
+			'groups_seen' => array_keys( WPPA_Export::groups() ),
 			'scope'     => $folder_scope,
 			'delimiter' => isset( $folder_saved['delimiter'] ) && ',' === $folder_saved['delimiter'] ? ',' : ';',
 			'limit'     => isset( $folder_saved['limit'] ) ? min( 20000, absint( $folder_saved['limit'] ) ) : 5000,
@@ -656,6 +657,16 @@ class WPPA_Settings {
 									</label>
 								<?php endforeach; ?>
 							</fieldset>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: число групп, 2: число колонок */
+									esc_html__( 'Сейчас в файл попадает %1$d групп и %2$d колонок. Новые группы (например, «Баллы за тесты») добавляются в выгрузку сами; снятая галочка сохраняется.', 'wp-personal-account' ),
+									count( (array) $wppa_folder['groups'] ),
+									count( WPPA_Export::columns( (array) $wppa_folder['groups'] ) )
+								);
+								?>
+							</p>
 							<p>
 								<label for="wppa-folder-scope"><?php esc_html_e( 'Кого', 'wp-personal-account' ); ?></label>
 								<select id="wppa-folder-scope" name="wppa_settings[export_folder][scope]">

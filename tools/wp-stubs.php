@@ -641,3 +641,17 @@ if ( ! function_exists( '_n' ) ) {
 		return 1 === (int) $number ? $single : $plural;
 	}
 }
+
+function size_format( $bytes, $decimals = 0 ) {
+	$bytes = (int) $bytes;
+
+	if ( $bytes >= 1048576 ) {
+		return number_format( $bytes / 1048576, $decimals ) . ' MB';
+	}
+
+	if ( $bytes >= 1024 ) {
+		return number_format( $bytes / 1024, $decimals ) . ' KB';
+	}
+
+	return $bytes . ' B';
+}

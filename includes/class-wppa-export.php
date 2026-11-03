@@ -213,9 +213,13 @@ class WPPA_Export {
 		$limit = max( 1, min( 20000, (int) $args['limit'] ) );
 		$scope = isset( self::scopes()[ $args['scope'] ] ) ? $args['scope'] : 'all';
 
+		// Лимит применяем после отбора по охвату: иначе «только с командой»
+		// вернуло бы меньше строк, чем просили.
+		$fetch = 'all' === $scope ? $limit : 20000;
+
 		$users = get_users(
 			array(
-				'number'  => $limit,
+				'number'  => $fetch,
 				'orderby' => 'registered',
 				'order'   => 'DESC',
 			)
@@ -224,7 +228,7 @@ class WPPA_Export {
 		$users = is_array( $users ) ? $users : array();
 
 		if ( 'all' === $scope ) {
-			return $users;
+			return array_slice( $users, 0, $limit );
 		}
 
 		$out = array();
@@ -296,6 +300,54 @@ class WPPA_Export {
 	 * Готовый CSV.
 	 *
 	 * @param array $args Аргументы: groups, scope, limit, delimiter, users.
+	 * @return string
+	 */
+	public static function build( $args = array() ) {
+		$args = wp_parse_args( $args, array(
+			'groups'    => self::default_groups(),
+			'scope'     => 'all',
+			'limit'     => 5000,
+			'delimiter' => ';',
+			'users'     => null,
+		) );
+
+		$delimiter = ',' === $args['delimiter'] ? ',' : ';';
+		$columns   = self::columns( (array) $args['groups'] );
+		$users     = null === $args['users'] ? self::users( $args ) : array_slice( (array) $args['users'], 0, max( 1, (int) $args['limit'] ) );
+
+		$context = array();
+
+		if ( WPPA_Olympiad::is_active() && in_array( 'olympiad', (array) $args['groups'], true ) ) {
+			$ids                 = array_map( static function ( $item ) { return (int) $item->ID; }, $users );
+			$context['olympiad'] = WPPA_Olympiad::summary_map( $ids );
+		}
+
+		$csv = "\xEF\xBB\xBF" . self::header( $columns, $delimiter );
+
+		foreach ( $users as $user ) {
+			$data = self::row( $user, $context );
+			$line = array();
+
+			foreach ( $columns as $column ) {
+				$line[] = isset( $data[ $column['key'] ] ) ? $data[ $column['key'] ] : '';
+			}
+
+			$csv .= self::line( $line, $delimiter );
+		}
+
+		return array(
+			'csv'       => $csv,
+			'rows'      => count( $users ),
+			'columns'   => count( $columns ),
+			'groups'    => array_values( (array) $args['groups'] ),
+			'truncated' => count( $users ) >= max( 1, (int) $args['limit'] ),
+		);
+	}
+
+	/**
+	 * Готовый CSV.
+	 *
+	 * @param array $args Аргументы.
 	 * @return string
 	 */
 	public static function csv( $args = array() ) {

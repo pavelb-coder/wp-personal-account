@@ -98,6 +98,46 @@ class WPPA_Export_Folder {
 	}
 
 	/**
+	 * Состав выгрузки: сохранённые группы плюс те, что появились позже.
+	 *
+	 * Новые группы (например, «Баллы за тесты») сами попадают в выгрузку,
+	 * но снятую админом галочку уважаем: если группа была ему показана
+	 * и он её выключил, обратно она не включается.
+	 *
+	 * @param array $groups Сохранённые группы.
+	 * @param array $seen   Группы, которые были доступны при сохранении.
+	 * @return array
+	 */
+	public static function groups_for_export( $groups, $seen = array() ) {
+		$available = array_keys( WPPA_Export::groups() );
+		$groups    = array_values( array_intersect( $available, array_map( 'strval', (array) $groups ) ) );
+		$seen      = array_map( 'strval', (array) $seen );
+
+		foreach ( $available as $key ) {
+			if ( in_array( $key, $seen, true ) || in_array( $key, $groups, true ) ) {
+				continue;
+			}
+
+			$groups[] = $key;
+		}
+
+		if ( ! in_array( 'account', $groups, true ) ) {
+			array_unshift( $groups, 'account' );
+		}
+
+		// Сохраняем порядок групп, как в форме.
+		$ordered = array();
+
+		foreach ( $available as $key ) {
+			if ( in_array( $key, $groups, true ) ) {
+				$ordered[] = $key;
+			}
+		}
+
+		return $ordered;
+	}
+
+	/**
 	 * Варианты расписания.
 	 *
 	 * @return array
@@ -128,6 +168,8 @@ class WPPA_Export_Folder {
 
 		$out['enabled']   = empty( $out['enabled'] ) ? 0 : 1;
 		$out['mode']      = 'smb' === $out['mode'] ? 'smb' : 'path';
+
+		$out['groups'] = self::groups_for_export( (array) $out['groups'], isset( $saved['groups_seen'] ) ? (array) $saved['groups_seen'] : array() );
 
 		$out['on_change']    = empty( $out['on_change'] ) ? 0 : 1;
 		$out['change_delay'] = array_key_exists( (int) $out['change_delay'], self::delays() ) ? (int) $out['change_delay'] : 5;
@@ -284,7 +326,7 @@ class WPPA_Export_Folder {
 
 		// Режим SMB: путь может быть шарой, логин и пароль — в настройках.
 		if ( 'smb' === $args['mode'] ) {
-			$csv    = WPPA_Export::csv(
+			$build  = WPPA_Export::build(
 				array(
 					'groups'    => (array) $args['groups'],
 					'scope'     => (string) $args['scope'],
@@ -292,9 +334,9 @@ class WPPA_Export_Folder {
 					'limit'     => (int) $args['limit'],
 				)
 			);
-			$result = WPPA_SMB::write( $name, $csv, WPPA_SMB::config() );
+			$result = WPPA_SMB::write( $name, $build['csv'], WPPA_SMB::config() );
 
-			self::log_entry( $result['ok'], $result['file'], (int) $result['bytes'], $result['message'] );
+			self::log_entry( $result['ok'], $result['file'], (int) $result['bytes'], $result['message'] . ' ' . self::describe( $build ) );
 
 			return array(
 				'ok'      => $result['ok'],
@@ -318,7 +360,7 @@ class WPPA_Export_Folder {
 			);
 		}
 
-		$csv  = WPPA_Export::csv(
+		$build = WPPA_Export::build(
 			array(
 				'groups'    => (array) $args['groups'],
 				'scope'     => (string) $args['scope'],
@@ -326,6 +368,7 @@ class WPPA_Export_Folder {
 				'limit'     => (int) $args['limit'],
 			)
 		);
+		$csv = $build['csv'];
 		$name = self::filename( (string) $args['file'], isset( $args['timestamp'] ) ? (int) $args['timestamp'] : 0 );
 		$full = $path . DIRECTORY_SEPARATOR . $name;
 		$temp = $full . '.tmp';
@@ -370,12 +413,14 @@ class WPPA_Export_Folder {
 
 		$bytes = (int) filesize( $full );
 		$kept  = self::rotate( $path, (int) $args['keep'] );
-		$note  = sprintf(
-			/* translators: 1: файл, 2: размер в килобайтах */
-			__( 'Файл %1$s записан (%2$d КБ).', 'wp-personal-account' ),
-			$full,
-			(int) round( $bytes / 1024 )
-		);
+		$note  = trim(
+			sprintf(
+				/* translators: 1: файл, 2: размер */
+				__( 'Файл %1$s записан (%2$s).', 'wp-personal-account' ),
+				$full,
+				size_format( $bytes, 2 )
+			)
+		) . ' ' . self::describe( $build );
 
 		if ( $kept > 0 ) {
 			$note .= ' ' . sprintf(
@@ -650,6 +695,32 @@ class WPPA_Export_Folder {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Строка о составе выгрузки для журнала.
+	 *
+	 * @param array $build Результат WPPA_Export::build().
+	 * @return string
+	 */
+	public static function describe( $build ) {
+		$text = sprintf(
+			/* translators: 1: строк, 2: колонок, 3: групп */
+			__( 'Строк: %1$d, колонок: %2$d, групп: %3$d.', 'wp-personal-account' ),
+			(int) $build['rows'],
+			(int) $build['columns'],
+			count( (array) $build['groups'] )
+		);
+
+		if ( ! empty( $build['truncated'] ) ) {
+			$text .= ' ' . sprintf(
+				/* translators: %d: лимит */
+				__( 'Достигнут лимит строк (%d) — возможно, часть аккаунтов не попала в файл.', 'wp-personal-account' ),
+				(int) $build['rows']
+			);
+		}
+
+		return $text;
 	}
 
 	/**
