@@ -429,8 +429,45 @@ function register_activation_hook( $f, $cb ) {}
 function register_deactivation_hook( $f, $cb ) {}
 function load_plugin_textdomain( $d, $dep = false, $path = '' ) {}
 function add_action( $h, $cb, $p = 10, $a = 1 ) {}
-function add_filter( $h, $cb, $p = 10, $a = 1 ) {}
-function apply_filters( $h, $v ) { return $v; }
+function add_filter( $h, $cb, $p = 10, $a = 1 ) {
+	$GLOBALS['wppa_test']['filters'][ $h ][ (int) $p ][] = array( $cb, (int) $a );
+	return true;
+}
+
+function remove_filter( $h, $cb, $p = 10 ) {
+	if ( empty( $GLOBALS['wppa_test']['filters'][ $h ][ (int) $p ] ) ) {
+		return false;
+	}
+
+	foreach ( $GLOBALS['wppa_test']['filters'][ $h ][ (int) $p ] as $index => $entry ) {
+		if ( $entry[0] === $cb ) {
+			unset( $GLOBALS['wppa_test']['filters'][ $h ][ (int) $p ][ $index ] );
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function apply_filters( $h, $v ) {
+	if ( empty( $GLOBALS['wppa_test']['filters'][ $h ] ) ) {
+		return $v;
+	}
+
+	$hooks = $GLOBALS['wppa_test']['filters'][ $h ];
+	ksort( $hooks );
+
+	$extra = array_slice( func_get_args(), 2 );
+
+	foreach ( $hooks as $entries ) {
+		foreach ( (array) $entries as $entry ) {
+			$v = call_user_func_array( $entry[0], array_merge( array( $v ), $extra ) );
+		}
+	}
+
+	return $v;
+}
+
 function do_action( $h ) {}
 
 if ( ! defined( 'DAY_IN_SECONDS' ) ) {
@@ -527,4 +564,10 @@ function sanitize_title( $title, $fallback = '', $context = 'save' ) {
 
 function wp_mkdir_p( $target ) {
 	return is_dir( $target ) || mkdir( $target, 0777, true );
+}
+
+function wp_tempnam( $filename = '', $dir = '' ) {
+	$dir = '' !== $dir ? $dir : sys_get_temp_dir();
+	$tmp = rtrim( $dir, '/\\' ) . DIRECTORY_SEPARATOR . uniqid( 'wppa-', true ) . '-' . preg_replace( '/[^A-Za-z0-9._-]/', '', (string) $filename );
+	return touch( $tmp ) ? $tmp : false;
 }

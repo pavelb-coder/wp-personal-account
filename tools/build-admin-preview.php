@@ -29,6 +29,8 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
+require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 
@@ -97,6 +99,31 @@ delete_option( WPPA_Export_Folder::LOG_OPTION );
 WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-' . gmdate( 'Y-m-d' ) . '.csv', 51200, 'Файл записан (50 КБ).' );
 WPPA_Export_Folder::log_entry( false, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 0, 'Не удалось записать файл: нет прав на запись.' );
 WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 50120, 'Файл записан (49 КБ). Удалён 1 старый файл по правилу ротации.' );
+
+// Настройки: авторизация SMB и выгрузка в папку.
+$wppa_smb_snapshot = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $wppa_smb_snapshot,
+		array(
+			'smb' => array(
+				'host'   => 'fileserver',
+				'share'  => 'exchange',
+				'dir'    => 'reports/wppa',
+				'user'   => 'svc_wppa',
+				'pass'   => '********',
+				'domain' => 'WORKGROUP',
+				'port'   => 445,
+			),
+		)
+	)
+);
+
+$sections .= demo_page( 'Настройки', 'Параметры кабинета, регистрации, команд, паролей и доступ к сетевой папке SMB с логином и паролем', static function () { WPPA_Settings::render_page(); } );
+
+update_option( 'wppa_settings', $wppa_smb_snapshot );
 
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
 

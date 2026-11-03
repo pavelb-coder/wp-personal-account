@@ -221,6 +221,7 @@ includes/
   class-wppa-time.php        даты и время: разбор datetime-local, форматирование, отсчёт
   class-wppa-reset.php       восстановление пароля: заявка, письмо, ссылка, новый пароль
   class-wppa-export-folder.php выгрузка CSV в папку/SMB: расписание, ротация, журнал
+  class-wppa-smb.php         доступ к SMB: авторизация, php-smbclient, smbclient CLI, монтирование
   class-wppa-teams.php       команды: создание, приглашения, состав, роли (капитан/наставник), роспуск
   class-wppa-builder.php     конструктор: блоки, раскладка, рендер вкладок
   class-wppa-widget.php      виджет «Вход и регистрация» + общий рендер форм
@@ -312,6 +313,34 @@ add_filter( 'wppa_link_button', function ( $config ) {
 ```
 
 Хелперы: `WPPA_Link_Button::config()`, `WPPA_Link_Button::state()`, `WPPA_Link_Button::team_progress()`, `WPPA_Link_Button::countdown_text()`.
+
+## Авторизация в сетевой папке (SMB)
+
+Настройки → **«Авторизация SMB»**: сервер, шара, папка внутри шары, домен (рабочая группа), пользователь, пароль. Плюс переключатель «Способ записи» в разделе «Экспорт в папку»: *папка на сервере* или *SMB напрямую*.
+
+Три пути, плагин выбирает автоматически:
+
+| Что есть на сервере | Как пишет |
+| --- | --- |
+| расширение `php-smbclient` | `smbclient_state_init()` → `smbclient_open()` → `smbclient_write()`, без монтирования |
+| утилита `smbclient` (CLI) | `smbclient //host/share -U DOMAIN\user%pass -c 'cd dir; put …'` |
+| ничего | показывается готовая команда `mount -t cifs` с файлом учётных данных |
+
+* Пароль берётся из настроек, но **константа в `wp-config.php` важнее**: `define( 'WPPA_SMB_PASSWORD', '…' );` — так он не попадает в базу.
+* Команда монтирования, которую показывает плагин, выносит пароль в отдельный файл `/etc/wppa-smb-credentials` (chmod 600) — иначе он виден в `ps`.
+* Кнопка **«Проверить доступ к SMB»** в «Инструментах» проверяет авторизацию и пишет результат в журнал.
+* Всё, что уходит в консоль, экранируется `escapeshellarg()`; значения из настроек чистятся (схема `smb://` отбрасывается, `..` из папки удаляется).
+
+```php
+WPPA_SMB::config();           // сервер, шара, папка, домен, пользователь
+WPPA_SMB::test();             // ok, message, method (extension|cli)
+WPPA_SMB::write( $name, $csv );
+WPPA_SMB::mount_command();    // готовая команда + файл учётных данных
+WPPA_SMB::has_extension();    // есть ли php-smbclient
+WPPA_SMB::has_cli();          // есть ли утилита smbclient
+```
+
+Фильтр `wppa_smb_runner` подменяет запуск команд (используется в тестах и при нестандартном окружении).
 
 ## Экспорт в сетевую папку (SMB)
 

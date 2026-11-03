@@ -133,6 +133,35 @@ defined( 'ABSPATH' ) || exit;
 				<?php esc_html_e( 'Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».', 'wp-personal-account' ); ?>
 			</p>
 
+			<?php
+			$wppa_smb_test = isset( $smb_test ) && is_array( $smb_test ) ? $smb_test : null;
+			$wppa_smb_conf = isset( $smb_config ) && is_array( $smb_config ) ? $smb_config : WPPA_SMB::config();
+			?>
+
+			<?php if ( 'smb' === $wppa_folder['mode'] ) : ?>
+				<p>
+					<span class="wppa-badge <?php echo ( $wppa_smb_test && $wppa_smb_test['ok'] ) ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+						<?php echo ( $wppa_smb_test && $wppa_smb_test['ok'] ) ? esc_html__( 'SMB: доступ есть', 'wp-personal-account' ) : esc_html__( 'SMB: доступа нет', 'wp-personal-account' ); ?>
+					</span>
+					<span class="wppa-admin__muted">
+						<?php echo $wppa_smb_test ? esc_html( $wppa_smb_test['message'] ) : ''; ?>
+					</span>
+				</p>
+				<p>
+					<span class="wppa-admin__muted">
+						<?php
+						printf(
+							/* translators: 1: сервер, 2: шара, 3: пользователь */
+							esc_html__( 'Запись идёт в //%1$s/%2$s под пользователем %3$s — без монтирования.', 'wp-personal-account' ),
+							esc_html( $wppa_smb_conf['host'] ),
+							esc_html( $wppa_smb_conf['share'] ),
+							esc_html( '' !== $wppa_smb_conf['user'] ? $wppa_smb_conf['user'] : '—' )
+						);
+						?>
+					</span>
+				</p>
+			<?php endif; ?>
+
 			<?php if ( isset( $export_check ) && is_array( $export_check ) ) : ?>
 				<p>
 					<span class="wppa-badge <?php echo $export_check['ok'] ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
@@ -169,6 +198,12 @@ defined( 'ABSPATH' ) || exit;
 					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_folder_check" />
 					<button type="submit" class="button"><?php esc_html_e( 'Проверить папку', 'wp-personal-account' ); ?></button>
+				</form>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'wppa_tool' ); ?>
+					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="smb_check" />
+					<button type="submit" class="button"><?php esc_html_e( 'Проверить доступ к SMB', 'wp-personal-account' ); ?></button>
 				</form>
 				<?php if ( $wppa_log ) : ?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

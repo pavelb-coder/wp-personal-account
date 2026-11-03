@@ -1541,7 +1541,693 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.		</p>
 	</section>
 </div>
-</div></section><section class="demo-section"><div class="demo-section__head"><h2>Инструменты</h2><p>Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Настройки</h2><p>Параметры кабинета, регистрации, команд, паролей и доступ к сетевой папке SMB с логином и паролем</p></div><div class="demo-frame">		<div class="wrap">
+			<h1>Личный кабинет</h1>
+			<p class="description">
+				Шорткоды: [wppa_account] — кабинет, [wppa_login] — форма входа, [wppa_register] — форма регистрации.			</p>
+
+			<form action="options.php" method="post">
+				<input type="hidden" name="option_page" value="wppa_settings_group" />
+				<h2>Основное</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-page">Страница кабинета</label></th>
+						<td>
+							<select name="wppa_settings[account_page_id]" id="wppa-page">
+								<option value="0">— не выбрана —</option>
+																	<option value="3" >
+										Личный кабинет									</option>
+																	<option value="4" >
+										Контакты									</option>
+															</select>
+							<p class="description">Страница должна содержать шорткод [wppa_account].</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Регистрация</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[registration_enabled]" value="1"  checked="checked" />
+								Разрешить регистрацию через форму плагина							</label>
+							<p class="description">
+								В WordPress регистрация сейчас: включена							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Приём заявок</th>
+						<td>
+							<label for="wppa-reg-start">с</label>
+							<input type="datetime-local" id="wppa-reg-start" name="wppa_settings[registration_start]" value="" />
+							<label for="wppa-reg-end">по</label>
+							<input type="datetime-local" id="wppa-reg-end" name="wppa_settings[registration_end]" value="" />
+							<p class="description">
+								Время по часовому поясу сайта (UTC). Пустое поле — без ограничения. До начала и после окончания кнопка «Регистрация» неактивна и показывает отсчёт, а форма заменяется заглушкой; отправка формы на сервере также блокируется.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Панель WordPress</th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[hide_admin_bar]" value="1"  checked="checked" />
+									Скрывать панель WordPress (админ-бар) в личном кабинете								</label>
+							</p>
+							<p class="description">Скрывается только на страницах кабинета — в остальных разделах сайта панель остаётся. Доступ в админку это не ограничивает: если нужно запретить участникам вход в wp-admin, используйте отдельный плагин или роль.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-redirect">Редирект после входа</label></th>
+						<td>
+							<input type="url" class="regular-text" id="wppa-redirect" name="wppa_settings[login_redirect]" value="" placeholder="https://example.com/" />
+							<p class="description">Пусто — остаться на текущей странице.</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Вкладки кабинета</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">Отображать</th>
+						<td>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="dashboard"  checked="checked" />
+									Обзор								</label>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="profile"  checked="checked" />
+									Профиль								</label>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="team"  checked="checked" />
+									Команда								</label>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="security"  checked="checked" />
+									Безопасность								</label>
+													</td>
+					</tr>
+				</table>
+
+				<h2>Команды</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-max-team">Максимум участников</label></th>
+						<td>
+							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="10" />
+							<p class="description">Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Наставник</th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[require_mentor]" value="1"  checked="checked" />
+									Требовать наставника: команда без наставника считается несформированной								</label>
+							</p>
+							<p class="description">
+								Действует во всех статусах команды: отметка «недобор» в кабинете и в админке, а также условие «команда сформирована» у кнопки со ссылкой. Наставник по-прежнему не занимает место в лимите и не идёт в зачёт минимума участников.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Требования к паролю</th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text">Правила проверки пароля</legend>
+																									<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][length]"
+												value="1"
+												 checked="checked"											/>
+											Минимум 16 символов										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][uppercase]"
+												value="1"
+												 checked="checked"											/>
+											Заглавная буква										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][lowercase]"
+												value="1"
+												 checked="checked"											/>
+											Строчная буква										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][digit]"
+												value="1"
+												 checked="checked"											/>
+											Цифра										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][special]"
+												value="1"
+												 checked="checked"											/>
+											Спецсимвол (! @ # $ % и т. п.)										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][variety]"
+												value="1"
+												 checked="checked"											/>
+											Не меньше 8 разных символов										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][no_repeat]"
+												value="1"
+												 checked="checked"											/>
+											Без повторов вида «aaa» и «111»										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][no_sequence]"
+												value="1"
+												 checked="checked"											/>
+											Без последовательностей «1234», «abcd», «qwer»										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][not_common]"
+												value="1"
+												 checked="checked"											/>
+											Не из списка частых паролей										</label>
+									</p>
+																	<p>
+										<label>
+											<input
+												type="checkbox"
+												name="wppa_settings[password_rules][not_personal]"
+												value="1"
+												 checked="checked"											/>
+											Без email, логина и имени										</label>
+									</p>
+																<p class="description">
+									Правила действуют при регистрации и при смене пароля: и на сервере, и в браузере (подсказки под полем). Минимальная длина пароля задаётся отдельно — константой MIN_PASSWORD_LENGTH и фильтром wppa_min_password_length.								</p>
+							</fieldset>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Персональные данные</th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text">Поля регистрации и профиля</legend>
+								<table class="widefat striped wppa-admin__fields">
+									<thead>
+										<tr>
+											<th>Поле</th>
+											<th>Показывать</th>
+											<th>Обязательное</th>
+										</tr>
+									</thead>
+									<tbody>
+																					<tr>
+												<td>Имя</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-first_name"
+														name="wppa_settings[fields][first_name][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][first_name][required]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Фамилия</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-last_name"
+														name="wppa_settings[fields][last_name][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][last_name][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Отчество</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-patronymic"
+														name="wppa_settings[fields][patronymic][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][patronymic][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Телефон</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-phone"
+														name="wppa_settings[fields][phone][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][phone][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Дата рождения</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-birthdate"
+														name="wppa_settings[fields][birthdate][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][birthdate][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Город</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-city"
+														name="wppa_settings[fields][city][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][city][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Организация</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-company"
+														name="wppa_settings[fields][company][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][company][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Должность</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-position"
+														name="wppa_settings[fields][position][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][position][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Сайт</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-website"
+														name="wppa_settings[fields][website][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][website][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>Telegram</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-telegram"
+														name="wppa_settings[fields][telegram][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][telegram][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																					<tr>
+												<td>О себе</td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-about"
+														name="wppa_settings[fields][about][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][about][required]"
+														value="1"
+																											/>
+												</td>
+											</tr>
+																			</tbody>
+								</table>
+								<p class="description">Эти поля выводятся в форме регистрации и в профиле. Снятая галочка «Обязательное» делает поле необязательным; поле, исключённое из показа, скрывается везде и его значения не выводятся.</p>
+							</fieldset>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-min-team">Минимум участников</label></th>
+						<td>
+							<input type="number" min="1" max="100" id="wppa-min-team" name="wppa_settings[min_team_members]" value="2" />
+							<p class="description">Сколько человек должно быть в команде, чтобы она считалась набранной. Не может быть больше максимума. Команды ниже минимума получают отметку «недобор» в кабинете и в админке.</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Кнопка со ссылкой</h2>
+								<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-link-url">Ссылка</label></th>
+						<td>
+							<input type="url" class="regular-text code" id="wppa-link-url" name="wppa_settings[link_button][url]" value="" placeholder="https://" />
+							<p class="description">Внешний адрес, только http или https. Пусто — блок в кабинете скрыт.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-link-text">Текст кнопки</label></th>
+						<td>
+							<input type="text" class="regular-text" id="wppa-link-text" name="wppa_settings[link_button][text]" value="Перейти по ссылке" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Период активности</th>
+						<td>
+							<label for="wppa-link-start">С</label>
+							<input type="datetime-local" id="wppa-link-start" name="wppa_settings[link_button][start]" value="" />
+							<label for="wppa-link-end">по</label>
+							<input type="datetime-local" id="wppa-link-end" name="wppa_settings[link_button][end]" value="" />
+							<p class="description">
+								Время по часовому поясу сайта (UTC). Пустое поле — без ограничения. До начала и после окончания кнопка видна, но неактивна: показывается отсчёт или сообщение о закрытии.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Условия</th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[link_button][require_team]" value="1"  checked="checked" />
+									Только когда команда сформирована — набран минимум участников								</label>
+							</p>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[link_button][new_tab]" value="1"  checked="checked" />
+									Открывать ссылку в новой вкладке								</label>
+							</p>
+							<p class="description">
+								Минимум участников задаётся ниже и сейчас равен 2. Наставник в зачёт не идёт.							</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Экспорт в папку</h2>
+								<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">Автоматическая выгрузка</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[export_folder][enabled]" value="1"  checked="checked" />
+								Писать CSV в папку по расписанию							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Способ записи</th>
+						<td>
+							<fieldset>
+								<label style="margin-right:16px">
+									<input type="radio" name="wppa_settings[export_folder][mode]" value="path"  checked="checked" />
+									Папка на сервере (в том числе смонтированная шара)								</label>
+								<label>
+									<input type="radio" name="wppa_settings[export_folder][mode]" value="smb"  />
+									SMB напрямую с логином и паролем								</label>
+							</fieldset>
+							<p class="description">
+								Второй способ работает, если на сервере есть расширение <code>php-smbclient</code> или утилита <code>smbclient</code>. Иначе — только монтирование.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-path">Путь к папке</label></th>
+						<td>
+							<input type="text" class="large-text code" id="wppa-folder-path" name="wppa_settings[export_folder][path]" value="/mnt/share/wppa" placeholder="/mnt/share/wppa" />
+							<p class="description">
+								Путь на сервере, доступный процессу PHP. Для сетевой шары SMB её нужно смонтировать заранее, например:								<code>mount -t cifs //server/share /mnt/share -o username=user,password=pass,uid=www-data</code>.
+								На Windows подойдёт UNC-путь \server\share\wppa. Схемы вида smb:// не поддерживаются.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-file">Имя файла</label></th>
+						<td>
+							<input type="text" class="regular-text code" id="wppa-folder-file" name="wppa_settings[export_folder][file]" value="wppa-accounts-{date}.csv" />
+							<p class="description">Подстановки: {date}, {time}, {datetime}, {site}. Расширение .csv добавится само.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Расписание</th>
+						<td>
+							<select name="wppa_settings[export_folder][schedule]">
+																	<option value="off" >Только вручную</option>
+																	<option value="hourly" >Каждый час</option>
+																	<option value="twicedaily" >Дважды в день</option>
+																	<option value="daily"  selected="selected">Раз в день</option>
+																	<option value="weekly" >Раз в неделю</option>
+															</select>
+							<label for="wppa-folder-time" style="margin-left:10px">время</label>
+							<input type="time" id="wppa-folder-time" name="wppa_settings[export_folder][time]" value="03:00" />
+							<p class="description">Время по часовому поясу сайта, учитывается для «раз в день» и «раз в неделю». Запуск делает WP-Cron при обращении к сайту.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-keep">Хранить файлов</label></th>
+						<td>
+							<input type="number" class="small-text" id="wppa-folder-keep" name="wppa_settings[export_folder][keep]" value="30" min="0" max="365" />
+							<p class="description">Старые CSV сверх этого числа удаляются из папки. 0 — не удалять ничего.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Состав выгрузки</th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text">Группы колонок</legend>
+																	<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="account"
+											 checked="checked"											disabled										/>
+										<input type="hidden" name="wppa_settings[export_folder][groups][]" value="account" />Учётная запись									</label>
+																	<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="profile"
+											 checked="checked"																					/>
+										Профиль									</label>
+																	<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="personal"
+											 checked="checked"																					/>
+										Личные данные									</label>
+																	<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="team"
+											 checked="checked"																					/>
+										Команда									</label>
+																	<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="status"
+											 checked="checked"																					/>
+										Статусы									</label>
+															</fieldset>
+							<p>
+								<label for="wppa-folder-scope">Кого</label>
+								<select id="wppa-folder-scope" name="wppa_settings[export_folder][scope]">
+																			<option value="all"  selected="selected">Все пользователи</option>
+																			<option value="team" >Только с командой</option>
+																			<option value="no-team" >Только без команды</option>
+																			<option value="complete" >Только из сформированных команд</option>
+																	</select>
+								<label for="wppa-folder-delimiter" style="margin-left:10px">Разделитель</label>
+								<select id="wppa-folder-delimiter" name="wppa_settings[export_folder][delimiter]">
+									<option value=";"  selected="selected">;</option>
+									<option value="," >,</option>
+								</select>
+								<label for="wppa-folder-limit" style="margin-left:10px">Максимум строк</label>
+								<input type="number" class="small-text" id="wppa-folder-limit" name="wppa_settings[export_folder][limit]" value="5000" min="1" max="20000" />
+							</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Авторизация SMB</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-smb-host">Сервер</label></th>
+						<td>
+							<input type="text" class="regular-text code" id="wppa-smb-host" name="wppa_settings[smb][host]" value="fileserver" placeholder="fileserver" />
+							<label for="wppa-smb-share" style="margin-left:10px">шара</label>
+							<input type="text" class="regular-text code" id="wppa-smb-share" name="wppa_settings[smb][share]" value="exchange" placeholder="exchange" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-smb-dir">Папка внутри шары</label></th>
+						<td>
+							<input type="text" class="regular-text code" id="wppa-smb-dir" name="wppa_settings[smb][dir]" value="reports/wppa" placeholder="reports/wppa" />
+							<p class="description">Можно оставить пустым — файл запишется в корень шары.</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Учётная запись</th>
+						<td>
+							<p>
+								<label for="wppa-smb-domain">Домен</label>
+								<input type="text" class="regular-text" id="wppa-smb-domain" name="wppa_settings[smb][domain]" value="WORKGROUP" placeholder="WORKGROUP" />
+							</p>
+							<p>
+								<label for="wppa-smb-user">Пользователь</label>
+								<input type="text" class="regular-text" id="wppa-smb-user" name="wppa_settings[smb][user]" value="svc_wppa" autocomplete="off" />
+							</p>
+							<p>
+								<label for="wppa-smb-pass">Пароль</label>
+								<input type="password" class="regular-text" id="wppa-smb-pass" name="wppa_settings[smb][pass]" value="********" autocomplete="new-password" />
+							</p>
+							<p class="description">
+								Пароль виден только тому, кто открыл настройки. Чтобы держать его вне базы данных, задайте в wp-config.php: <code>define( 'WPPA_SMB_PASSWORD', 'пароль' );</code> — значение из константы важнее сохранённого.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Проверка</th>
+						<td>
+														<p>
+								<span class="wppa-badge wppa-badge--warn">
+									Доступа нет								</span>
+								<span class="description">На сервере нет ни php-smbclient, ни утилиты smbclient. Смонтируйте шару с логином и паролем — команда есть в подсказке под полями.</span>
+							</p>
+														<p class="description">
+								Если ни расширения, ни утилиты нет — смонтируйте шару с этими учётными данными:							</p>
+							<p><code>cat &gt; /etc/wppa-smb-credentials &lt;&lt;&#039;EOF&#039;
+username=svc_wppa
+password=********
+domain=WORKGROUP
+EOF</code></p>
+							<p><code>mount -t cifs &#039;//fileserver/exchange&#039; /mnt/share -o credentials=&#039;/etc/wppa-smb-credentials&#039;,uid=www-data,gid=www-data,iocharset=utf8,vers=3.0</code></p>
+							<p class="description">Пароль вынесен в отдельный файл учётных данных (chmod 600), иначе он был бы виден в списке процессов.</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Оформление</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-accent">Акцентный цвет</label></th>
+						<td><input type="color" id="wppa-accent" name="wppa_settings[accent_color]" value="#2563eb" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-css">Дополнительный CSS</label></th>
+						<td>
+							<textarea class="large-text code" rows="8" id="wppa-css" name="wppa_settings[custom_css]"></textarea>
+						</td>
+					</tr>
+				</table>
+
+				<h2>Данные</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">Удаление</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[delete_data_on_uninstall]" value="1"  />
+								Удалять настройки плагина при деинсталляции							</label>
+						</td>
+					</tr>
+				</table>
+
+				<button class="button"></button>			</form>
+		</div>
+		</div></section><section class="demo-section"><div class="demo-section__head"><h2>Инструменты</h2><p>Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV</p></div><div class="demo-frame"><div class="wrap wppa-admin">
 	<h1 class="wp-heading-inline">Инструменты</h1>
 	<hr class="wp-header-end" />
 
@@ -1669,6 +2355,8 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			<p class="wppa-admin__muted">
 				Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».			</p>
 
+			
+			
 							<p>
 					<span class="wppa-badge wppa-badge--warn">
 						Папка недоступна					</span>
@@ -1676,7 +2364,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 				</p>
 			
 			<p>
-									Следующая выгрузка: 03.11.2026 17:24 (Раз в день).							</p>
+									Следующая выгрузка: 03.11.2026 17:31 (Раз в день).							</p>
 
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -1688,6 +2376,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_folder_check" />
 					<button type="submit" class="button">Проверить папку</button>
+				</form>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="smb_check" />
+					<button type="submit" class="button">Проверить доступ к SMB</button>
 				</form>
 									<form method="post" action="https://example.com/wp-admin/admin-post.php">
 						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
@@ -1706,7 +2399,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					</thead>
 					<tbody>
 													<tr>
-								<td>03.11.2026 09:24</td>
+								<td>03.11.2026 09:31</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -1715,7 +2408,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 09:24</td>
+								<td>03.11.2026 09:31</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -1724,7 +2417,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 09:24</td>
+								<td>03.11.2026 09:31</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
