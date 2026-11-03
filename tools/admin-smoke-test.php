@@ -28,6 +28,7 @@ require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
+require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
@@ -132,6 +133,130 @@ $export_checks['файл: имя с датой']     = 1 === preg_match( '/^wppa
 
 foreach ( $export_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Экспорт в сетевую папку ----------
+$folder_dir = sys_get_temp_dir() . '/wppa-export-test-' . gmdate( 'His' );
+wp_mkdir_p( $folder_dir );
+
+$folder_checks = array(
+	'расписания: пять вариантов'  => 5 === count( WPPA_Export_Folder::schedules() ),
+	'имя файла: подстановка даты' => 1 === preg_match( '/^wppa-accounts-\d{4}-\d{2}-\d{2}\.csv$/', WPPA_Export_Folder::filename( 'wppa-accounts-{date}.csv' ) ),
+	'имя файла: расширение .csv'  => '.csv' === substr( WPPA_Export_Folder::filename( 'accounts' ), -4 ),
+	'имя файла: подстановки раскрыты' => false === strpos( WPPA_Export_Folder::filename( '{site}-{time}.csv' ), '{' ),
+	'схема smb:// отклоняется'     => '' === WPPA_Export_Folder::normalize_path( 'smb://server/share' ),
+	'обычный путь нормализуется'   => '/mnt/share/wppa' === WPPA_Export_Folder::normalize_path( '/mnt/share/wppa/' ),
+	'несуществующая папка — ошибка' => false === WPPA_Export_Folder::check_folder( $folder_dir . '/nope' )['ok'],
+	'схема smb:// — ошибка проверки' => false === WPPA_Export_Folder::check_folder( 'smb://server/share' )['ok'],
+	'существующая папка доступна'  => true === WPPA_Export_Folder::check_folder( $folder_dir )['ok'],
+);
+
+$folder_config = array(
+	'path'      => $folder_dir,
+	'file'      => 'accounts-{date}.csv',
+	'groups'    => WPPA_Export::default_groups(),
+	'scope'     => 'all',
+	'delimiter' => ';',
+	'limit'     => 100,
+	'keep'      => 2,
+);
+
+$written = WPPA_Export_Folder::write( $folder_config );
+$folder_checks['файл записан']        = $written['ok'] && file_exists( $written['file'] );
+$folder_checks['файл не пустой']      = $written['bytes'] > 0;
+$folder_checks['содержимое — CSV']    = false !== strpos( (string) file_get_contents( $written['file'] ), 'Учётная запись' );
+$folder_checks['временный файл убран'] = ! file_exists( $written['file'] . '.tmp' );
+
+// Ротация: три файла при keep = 2.
+file_put_contents( $folder_dir . '/old-1.csv', 'a' );
+file_put_contents( $folder_dir . '/old-2.csv', 'b' );
+touch( $folder_dir . '/old-1.csv', time() - 300 );
+touch( $folder_dir . '/old-2.csv', time() - 200 );
+$rotated = WPPA_Export_Folder::rotate( $folder_dir, 2 );
+$folder_checks['ротация удаляет лишние'] = $rotated >= 1 && count( (array) glob( $folder_dir . '/*.csv' ) ) === 2;
+$folder_checks['keep = 0 — не удаляет']  = 0 === WPPA_Export_Folder::rotate( $folder_dir, 0 );
+
+// Журнал.
+$folder_log = WPPA_Export_Folder::logs();
+$folder_checks['журнал пишется']       = ! empty( $folder_log ) && $folder_log[0]['ok'];
+$folder_checks['журнал помнит файл']   = isset( $folder_log[0]['file'] ) && $folder_log[0]['file'] === $written['file'];
+
+// Ошибка записи попадает в журнал и не роняет вывод.
+$bad = WPPA_Export_Folder::write( array_merge( $folder_config, array( 'path' => $folder_dir . '/nope' ) ) );
+$folder_checks['плохой путь — ok=false'] = false === $bad['ok'] && '' !== $bad['message'];
+$folder_checks['плохой путь в журнале']  = false === WPPA_Export_Folder::logs()[0]['ok'];
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+
+// Расписание.
+$GLOBALS['wppa_test']['cron'] = array();
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array(
+			'export_folder' => array_merge(
+				$folder_config,
+				array( 'enabled' => 1, 'schedule' => 'daily', 'time' => '03:00' )
+			),
+		)
+	)
+);
+
+WPPA_Export_Folder::reschedule();
+$folder_checks['расписание поставлено']  = WPPA_Export_Folder::next_run() > 0;
+$folder_checks['периодичность daily']    = 'daily' === wp_get_schedule( WPPA_Export_Folder::CRON_HOOK );
+$folder_checks['первый запуск в будущем'] = WPPA_Export_Folder::first_run_timestamp( 'daily', '03:00' ) > time();
+$folder_checks['hourly — без времени']   = WPPA_Export_Folder::first_run_timestamp( 'hourly', '03:00' ) < time() + 120;
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array( 'export_folder' => array_merge( $folder_config, array( 'enabled' => 0 ) ) )
+	)
+);
+
+WPPA_Export_Folder::reschedule();
+$folder_checks['выключено — расписание снято'] = 0 === WPPA_Export_Folder::next_run();
+
+// Настройки папки: поля и сохранение.
+$folder_fields_ok = false !== strpos( $settings_html, 'wppa_settings[export_folder][path]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[export_folder][schedule]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[export_folder][keep]' );
+
+$folder_checks['настройки: поля на месте'] = $folder_fields_ok;
+
+$folder_sanitize = WPPA_Settings::sanitize(
+	array(
+		'export_folder' => array(
+			'enabled'  => '1',
+			'path'     => '/mnt/share/wppa/',
+			'file'     => 'accounts-{date}.csv',
+			'schedule' => 'weekly',
+			'time'     => '25:99',
+			'keep'     => '999',
+			'scope'    => 'unknown',
+		),
+	)
+);
+
+$folder_checks['настройки: путь сохранён']      = '/mnt/share/wppa/' === $folder_sanitize['export_folder']['path'];
+$folder_checks['настройки: шаблон с токеном']   = 'accounts-{date}.csv' === $folder_sanitize['export_folder']['file'];
+$folder_checks['настройки: расписание weekly']  = 'weekly' === $folder_sanitize['export_folder']['schedule'];
+$folder_checks['настройки: мусор времени → 03:00'] = '03:00' === $folder_sanitize['export_folder']['time'];
+$folder_checks['настройки: keep ограничен']     = 365 === $folder_sanitize['export_folder']['keep'];
+$folder_checks['настройки: неизвестный scope → all'] = 'all' === $folder_sanitize['export_folder']['scope'];
+
+foreach ( (array) glob( $folder_dir . '/*' ) as $folder_file_path ) {
+	@unlink( $folder_file_path );
+}
+@rmdir( $folder_dir );
+
+foreach ( $folder_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export folder: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

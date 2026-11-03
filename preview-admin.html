@@ -1663,6 +1663,80 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 		</section>
 
 		<section class="wppa-admin__panel">
+			<h2>Экспорт в сетевую папку (SMB)</h2>
+
+			
+			<p class="wppa-admin__muted">
+				Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».			</p>
+
+							<p>
+					<span class="wppa-badge wppa-badge--warn">
+						Папка недоступна					</span>
+					<span class="wppa-admin__muted">Папка /mnt/share/wppa не найдена или недоступна процессу PHP.</span>
+				</p>
+			
+			<p>
+									Следующая выгрузка: 03.11.2026 17:24 (Раз в день).							</p>
+
+			<div class="wppa-admin__actions">
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="export_folder_now" />
+					<button type="submit" class="button button-primary">Выгрузить в папку сейчас</button>
+				</form>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="export_folder_check" />
+					<button type="submit" class="button">Проверить папку</button>
+				</form>
+									<form method="post" action="https://example.com/wp-admin/admin-post.php">
+						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="export_folder_clear_log" />
+						<button type="submit" class="button">Очистить журнал</button>
+					</form>
+							</div>
+
+							<table class="widefat striped wppa-admin__table">
+					<thead>
+						<tr>
+							<th>Когда</th>
+							<th>Результат</th>
+							<th>Файл</th>
+						</tr>
+					</thead>
+					<tbody>
+													<tr>
+								<td>03.11.2026 09:24</td>
+								<td>
+									<span class="wppa-badge wppa-badge--ok">
+										записан									</span>
+									<span class="wppa-admin__muted">Файл записан (49 КБ). Удалён 1 старый файл по правилу ротации.</span>
+								</td>
+								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
+							</tr>
+													<tr>
+								<td>03.11.2026 09:24</td>
+								<td>
+									<span class="wppa-badge wppa-badge--warn">
+										ошибка									</span>
+									<span class="wppa-admin__muted">Не удалось записать файл: нет прав на запись.</span>
+								</td>
+								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
+							</tr>
+													<tr>
+								<td>03.11.2026 09:24</td>
+								<td>
+									<span class="wppa-badge wppa-badge--ok">
+										записан									</span>
+									<span class="wppa-admin__muted">Файл записан (50 КБ).</span>
+								</td>
+								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-03.csv</code></td>
+							</tr>
+											</tbody>
+				</table>
+					</section>
+
+		<section class="wppa-admin__panel">
 			<h2>Шорткоды</h2>
 
 			<table class="widefat striped wppa-admin__table">

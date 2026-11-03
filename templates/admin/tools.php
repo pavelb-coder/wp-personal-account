@@ -121,6 +121,93 @@ defined( 'ABSPATH' ) || exit;
 		</section>
 
 		<section class="wppa-admin__panel">
+			<h2><?php esc_html_e( 'Экспорт в сетевую папку (SMB)', 'wp-personal-account' ); ?></h2>
+
+			<?php
+			$wppa_folder = isset( $export_folder ) ? $export_folder : WPPA_Export_Folder::config();
+			$wppa_next   = isset( $export_next ) ? (int) $export_next : 0;
+			$wppa_log    = isset( $export_log ) ? (array) $export_log : array();
+			?>
+
+			<p class="wppa-admin__muted">
+				<?php esc_html_e( 'Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».', 'wp-personal-account' ); ?>
+			</p>
+
+			<?php if ( isset( $export_check ) && is_array( $export_check ) ) : ?>
+				<p>
+					<span class="wppa-badge <?php echo $export_check['ok'] ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+						<?php echo $export_check['ok'] ? esc_html__( 'Папка доступна', 'wp-personal-account' ) : esc_html__( 'Папка недоступна', 'wp-personal-account' ); ?>
+					</span>
+					<span class="wppa-admin__muted"><?php echo esc_html( $export_check['message'] ); ?></span>
+				</p>
+			<?php endif; ?>
+
+			<p>
+				<?php if ( $wppa_next ) : ?>
+					<?php
+					printf(
+						/* translators: 1: дата и время, 2: периодичность */
+						esc_html__( 'Следующая выгрузка: %1$s (%2$s).', 'wp-personal-account' ),
+						esc_html( WPPA_Time::format_date( $wppa_next ) ),
+						esc_html( isset( WPPA_Export_Folder::schedules()[ $wppa_folder['schedule'] ] ) ? WPPA_Export_Folder::schedules()[ $wppa_folder['schedule'] ] : '' )
+					);
+					?>
+				<?php else : ?>
+					<?php esc_html_e( 'Автоматическая выгрузка не запланирована — включите её в настройках.', 'wp-personal-account' ); ?>
+				<?php endif; ?>
+			</p>
+
+			<div class="wppa-admin__actions">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'wppa_tool' ); ?>
+					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="export_folder_now" />
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Выгрузить в папку сейчас', 'wp-personal-account' ); ?></button>
+				</form>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'wppa_tool' ); ?>
+					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="export_folder_check" />
+					<button type="submit" class="button"><?php esc_html_e( 'Проверить папку', 'wp-personal-account' ); ?></button>
+				</form>
+				<?php if ( $wppa_log ) : ?>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'wppa_tool' ); ?>
+						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="export_folder_clear_log" />
+						<button type="submit" class="button"><?php esc_html_e( 'Очистить журнал', 'wp-personal-account' ); ?></button>
+					</form>
+				<?php endif; ?>
+			</div>
+
+			<?php if ( $wppa_log ) : ?>
+				<table class="widefat striped wppa-admin__table">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Когда', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Результат', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( array_slice( $wppa_log, 0, 5 ) as $wppa_entry ) : ?>
+							<tr>
+								<td><?php echo esc_html( WPPA_Time::format_date( (int) $wppa_entry['time'] ) ); ?></td>
+								<td>
+									<span class="wppa-badge <?php echo ! empty( $wppa_entry['ok'] ) ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+										<?php echo ! empty( $wppa_entry['ok'] ) ? esc_html__( 'записан', 'wp-personal-account' ) : esc_html__( 'ошибка', 'wp-personal-account' ); ?>
+									</span>
+									<span class="wppa-admin__muted"><?php echo esc_html( $wppa_entry['message'] ); ?></span>
+								</td>
+								<td><code><?php echo esc_html( $wppa_entry['file'] ); ?></code></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</section>
+
+		<section class="wppa-admin__panel">
 			<h2><?php esc_html_e( 'Шорткоды', 'wp-personal-account' ); ?></h2>
 
 			<table class="widefat striped wppa-admin__table">

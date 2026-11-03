@@ -498,3 +498,33 @@ function reset_password( $user, $new_pass ) {
 	$GLOBALS['wppa_test']['reset_done'] = array( $user->ID, $new_pass );
 	return true;
 }
+
+function wp_next_scheduled( $hook, $args = array() ) {
+	$events = isset( $GLOBALS['wppa_test']['cron'] ) ? (array) $GLOBALS['wppa_test']['cron'] : array();
+	return isset( $events[ $hook ] ) ? (int) $events[ $hook ] : false;
+}
+
+function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
+	$GLOBALS['wppa_test']['cron'][ $hook ]        = (int) $timestamp;
+	$GLOBALS['wppa_test']['cron_recurrence'][ $hook ] = $recurrence;
+	return true;
+}
+
+function wp_get_schedule( $hook, $args = array() ) {
+	return isset( $GLOBALS['wppa_test']['cron_recurrence'][ $hook ] ) ? $GLOBALS['wppa_test']['cron_recurrence'][ $hook ] : false;
+}
+
+function wp_clear_scheduled_hook( $hook, $args = array() ) {
+	unset( $GLOBALS['wppa_test']['cron'][ $hook ], $GLOBALS['wppa_test']['cron_recurrence'][ $hook ] );
+	return true;
+}
+
+function sanitize_title( $title, $fallback = '', $context = 'save' ) {
+	$title = strtolower( preg_replace( '/[^A-Za-z0-9]+/', '-', (string) $title ) );
+	$title = trim( $title, '-' );
+	return '' === $title ? (string) $fallback : $title;
+}
+
+function wp_mkdir_p( $target ) {
+	return is_dir( $target ) || mkdir( $target, 0777, true );
+}

@@ -28,6 +28,7 @@ require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
+require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 
@@ -65,6 +66,38 @@ $sections  = demo_page( 'Обзор', 'Меню «Личный кабинет» 
 $sections .= demo_page( 'Аккаунты', 'Поиск, фильтр по роли, число заказов и незавершённые подтверждения email', static function () { WPPA_Admin::page_accounts(); } );
 $sections .= demo_page( 'Конструктор', 'Сборка кабинета из блоков: порядок, включение, заголовки, аудитория и свои HTML-блоки', static function () { WPPA_Builder::page(); } );
 $sections .= demo_page( 'Команды', 'Объединение аккаунтов: состав, капитаны, лимит участников, роспуск команды', static function () { WPPA_Admin::page_teams(); } );
+// Демонстрация панели выгрузки в сетевую папку: настройки, расписание, журнал.
+$wppa_folder_snapshot = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $wppa_folder_snapshot,
+		array(
+			'export_folder' => array(
+				'enabled'   => 1,
+				'path'      => '/mnt/share/wppa',
+				'file'      => 'wppa-accounts-{date}.csv',
+				'schedule'  => 'daily',
+				'time'      => '03:00',
+				'keep'      => 30,
+				'groups'    => WPPA_Export::default_groups(),
+				'scope'     => 'all',
+				'delimiter' => ';',
+				'limit'     => 5000,
+			),
+		)
+	)
+);
+
+$GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CRON_HOOK ] = time() + 3600 * 8;
+$GLOBALS['wppa_test']['cron_recurrence'][ WPPA_Export_Folder::CRON_HOOK ] = 'daily';
+
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-' . gmdate( 'Y-m-d' ) . '.csv', 51200, 'Файл записан (50 КБ).' );
+WPPA_Export_Folder::log_entry( false, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 0, 'Не удалось записать файл: нет прав на запись.' );
+WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 50120, 'Файл записан (49 КБ). Удалён 1 старый файл по правилу ротации.' );
+
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
 
 $admin_css = file_get_contents( $base . 'assets/css/admin.css' );
@@ -180,5 +213,9 @@ $sample_user = new WP_User( 7 );
 $sample = WPPA_Export::csv( array( 'users' => array( $sample_user ) ) );
 file_put_contents( $base . 'export-sample.csv', $sample );
 echo "export-sample.csv: " . strlen( $sample ) . " байт\n";
+
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+update_option( 'wppa_settings', $wppa_folder_snapshot );
+unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CRON_HOOK ], $GLOBALS['wppa_test']['cron_recurrence'][ WPPA_Export_Folder::CRON_HOOK ] );
 
 echo 'preview-admin.html: ' . strlen( $html ) . " байт\n";

@@ -111,6 +111,42 @@ class WPPA_Settings {
 
 		$out['require_mentor'] = empty( $input['require_mentor'] ) ? 0 : 1;
 
+		// Выгрузка в сетевую папку.
+		$folder_saved = isset( $input['export_folder'] ) && is_array( $input['export_folder'] ) ? $input['export_folder'] : array();
+		$folder_path  = isset( $folder_saved['path'] ) ? sanitize_text_field( $folder_saved['path'] ) : '';
+		$folder_path  = preg_replace( '/[^A-Za-z0-9А-Яа-яЁё._\-\/\\\\: ]+/u', '', (string) $folder_path );
+
+		$folder_groups = isset( $folder_saved['groups'] ) && is_array( $folder_saved['groups'] ) ? array_map( 'sanitize_key', $folder_saved['groups'] ) : array();
+		$folder_groups = array_values( array_intersect( array_keys( WPPA_Export::groups() ), $folder_groups ) );
+
+		if ( ! in_array( 'account', $folder_groups, true ) ) {
+			array_unshift( $folder_groups, 'account' );
+		}
+
+		// Шаблон имени: токены {date}, {time} сохраняем как есть.
+		$folder_file = isset( $folder_saved['file'] ) ? sanitize_text_field( $folder_saved['file'] ) : 'wppa-accounts-{date}.csv';
+		$folder_file = preg_replace( '/[^A-Za-z0-9А-Яа-яЁё._\-{}]+/u', '-', (string) $folder_file );
+		$folder_file = '' === trim( $folder_file, '-' ) ? 'wppa-accounts-{date}.csv' : $folder_file;
+
+		$folder_schedule = isset( $folder_saved['schedule'] ) ? sanitize_key( $folder_saved['schedule'] ) : 'daily';
+		$folder_schedule = isset( WPPA_Export_Folder::schedules()[ $folder_schedule ] ) ? $folder_schedule : 'daily';
+		$folder_scope     = isset( $folder_saved['scope'] ) ? sanitize_key( $folder_saved['scope'] ) : 'all';
+		$folder_scope     = isset( WPPA_Export::scopes()[ $folder_scope ] ) ? $folder_scope : 'all';
+		$folder_time     = WPPA_Export_Folder::sanitize_time( isset( $folder_saved['time'] ) ? $folder_saved['time'] : '03:00' );
+
+		$out['export_folder'] = array(
+			'enabled'   => empty( $folder_saved['enabled'] ) ? 0 : 1,
+			'path'      => trim( $folder_path ),
+			'file'      => $folder_file,
+			'schedule'  => $folder_schedule,
+			'time'      => $folder_time,
+			'keep'      => isset( $folder_saved['keep'] ) ? min( 365, absint( $folder_saved['keep'] ) ) : 30,
+			'groups'    => $folder_groups,
+			'scope'     => $folder_scope,
+			'delimiter' => isset( $folder_saved['delimiter'] ) && ',' === $folder_saved['delimiter'] ? ',' : ';',
+			'limit'     => isset( $folder_saved['limit'] ) ? min( 20000, absint( $folder_saved['limit'] ) ) : 5000,
+		);
+
 		// Требования к паролю.
 		$rules_saved = isset( $input['password_rules'] ) && is_array( $input['password_rules'] ) ? $input['password_rules'] : array();
 		$rules_out   = array();
@@ -410,6 +446,98 @@ class WPPA_Settings {
 									(int) WPPA_Teams::min_members()
 								);
 								?>
+							</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Экспорт в папку', 'wp-personal-account' ); ?></h2>
+				<?php $wppa_folder = WPPA_Export_Folder::config(); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Автоматическая выгрузка', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[export_folder][enabled]" value="1" <?php checked( $wppa_folder['enabled'] ); ?> />
+								<?php esc_html_e( 'Писать CSV в папку по расписанию', 'wp-personal-account' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-path"><?php esc_html_e( 'Путь к папке', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" class="large-text code" id="wppa-folder-path" name="wppa_settings[export_folder][path]" value="<?php echo esc_attr( $wppa_folder['path'] ); ?>" placeholder="/mnt/share/wppa" />
+							<p class="description">
+								<?php esc_html_e( 'Путь на сервере, доступный процессу PHP. Для сетевой шары SMB её нужно смонтировать заранее, например:', 'wp-personal-account' ); ?>
+								<code>mount -t cifs //server/share /mnt/share -o username=user,password=pass,uid=www-data</code>.
+								<?php esc_html_e( 'На Windows подойдёт UNC-путь \\server\share\wppa. Схемы вида smb:// не поддерживаются.', 'wp-personal-account' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-file"><?php esc_html_e( 'Имя файла', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" class="regular-text code" id="wppa-folder-file" name="wppa_settings[export_folder][file]" value="<?php echo esc_attr( $wppa_folder['file'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Подстановки: {date}, {time}, {datetime}, {site}. Расширение .csv добавится само.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Расписание', 'wp-personal-account' ); ?></th>
+						<td>
+							<select name="wppa_settings[export_folder][schedule]">
+								<?php foreach ( WPPA_Export_Folder::schedules() as $wppa_schedule_key => $wppa_schedule_label ) : ?>
+									<option value="<?php echo esc_attr( $wppa_schedule_key ); ?>" <?php selected( $wppa_folder['schedule'], $wppa_schedule_key ); ?>><?php echo esc_html( $wppa_schedule_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<label for="wppa-folder-time" style="margin-left:10px"><?php esc_html_e( 'время', 'wp-personal-account' ); ?></label>
+							<input type="time" id="wppa-folder-time" name="wppa_settings[export_folder][time]" value="<?php echo esc_attr( $wppa_folder['time'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Время по часовому поясу сайта, учитывается для «раз в день» и «раз в неделю». Запуск делает WP-Cron при обращении к сайту.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-folder-keep"><?php esc_html_e( 'Хранить файлов', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="number" class="small-text" id="wppa-folder-keep" name="wppa_settings[export_folder][keep]" value="<?php echo esc_attr( $wppa_folder['keep'] ); ?>" min="0" max="365" />
+							<p class="description"><?php esc_html_e( 'Старые CSV сверх этого числа удаляются из папки. 0 — не удалять ничего.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Состав выгрузки', 'wp-personal-account' ); ?></th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text"><?php esc_html_e( 'Группы колонок', 'wp-personal-account' ); ?></legend>
+								<?php foreach ( WPPA_Export::groups() as $wppa_group_key => $wppa_group_label ) : ?>
+									<label style="margin-right:12px">
+										<input
+											type="checkbox"
+											name="wppa_settings[export_folder][groups][]"
+											value="<?php echo esc_attr( $wppa_group_key ); ?>"
+											<?php checked( in_array( $wppa_group_key, (array) $wppa_folder['groups'], true ) ); ?>
+											<?php echo 'account' === $wppa_group_key ? 'disabled' : ''; ?>
+										/>
+										<?php
+										if ( 'account' === $wppa_group_key ) {
+											echo '<input type="hidden" name="wppa_settings[export_folder][groups][]" value="account" />';
+										}
+										echo esc_html( $wppa_group_label );
+										?>
+									</label>
+								<?php endforeach; ?>
+							</fieldset>
+							<p>
+								<label for="wppa-folder-scope"><?php esc_html_e( 'Кого', 'wp-personal-account' ); ?></label>
+								<select id="wppa-folder-scope" name="wppa_settings[export_folder][scope]">
+									<?php foreach ( WPPA_Export::scopes() as $wppa_scope_key => $wppa_scope_label ) : ?>
+										<option value="<?php echo esc_attr( $wppa_scope_key ); ?>" <?php selected( $wppa_folder['scope'], $wppa_scope_key ); ?>><?php echo esc_html( $wppa_scope_label ); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<label for="wppa-folder-delimiter" style="margin-left:10px"><?php esc_html_e( 'Разделитель', 'wp-personal-account' ); ?></label>
+								<select id="wppa-folder-delimiter" name="wppa_settings[export_folder][delimiter]">
+									<option value=";" <?php selected( $wppa_folder['delimiter'], ';' ); ?>>;</option>
+									<option value="," <?php selected( $wppa_folder['delimiter'], ',' ); ?>>,</option>
+								</select>
+								<label for="wppa-folder-limit" style="margin-left:10px"><?php esc_html_e( 'Максимум строк', 'wp-personal-account' ); ?></label>
+								<input type="number" class="small-text" id="wppa-folder-limit" name="wppa_settings[export_folder][limit]" value="<?php echo esc_attr( $wppa_folder['limit'] ); ?>" min="1" max="20000" />
 							</p>
 						</td>
 					</tr>

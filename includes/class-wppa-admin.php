@@ -313,8 +313,14 @@ class WPPA_Admin {
 		self::render(
 			'tools',
 			array(
-				'notice' => self::tool_notice(),
-				'status' => self::system_status(),
+				'notice'        => self::tool_notice(),
+				'status'        => self::system_status(),
+				'export_folder' => WPPA_Export_Folder::config(),
+				'export_log'    => WPPA_Export_Folder::logs(),
+				'export_next'   => WPPA_Export_Folder::next_run(),
+				'export_check'  => '' === WPPA_Export_Folder::normalize_path( WPPA_Export_Folder::config()['path'] )
+					? null
+					: WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
 			)
 		);
 	}
@@ -546,6 +552,11 @@ class WPPA_Admin {
 			'team_mentor_added'   => array( 'success', __( 'Наставник назначен.', 'wp-personal-account' ) ),
 			'team_mentor_removed' => array( 'success', __( 'Роль наставника снята.', 'wp-personal-account' ) ),
 			'team_mentor_invalid' => array( 'warning', __( 'Наставником можно назначить только участника этой команды, кроме капитана.', 'wp-personal-account' ) ),
+			'folder_export_ok'   => array( 'success', __( 'Файл выгрузки записан в папку. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
+			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
+			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
+			'folder_check_fail'  => array( 'error', __( 'Папка недоступна: проверьте путь, права и монтирование сетевой шары.', 'wp-personal-account' ) ),
+			'folder_log_clear'   => array( 'success', __( 'Журнал выгрузок очищен.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -590,6 +601,22 @@ class WPPA_Admin {
 
 			case 'export_csv':
 				self::export_users_csv();
+				break;
+
+			case 'export_folder_now':
+				$result = WPPA_Export_Folder::write( WPPA_Export_Folder::config() );
+				self::redirect_tool( $result['ok'] ? 'folder_export_ok' : 'folder_export_fail' );
+				break;
+
+			case 'export_folder_check':
+				$folder = WPPA_Export_Folder::config();
+				$result = WPPA_Export_Folder::check_folder( $folder['path'] );
+				self::redirect_tool( $result['ok'] ? 'folder_check_ok' : 'folder_check_fail' );
+				break;
+
+			case 'export_folder_clear_log':
+				delete_option( WPPA_Export_Folder::LOG_OPTION );
+				self::redirect_tool( 'folder_log_clear' );
 				break;
 
 			case 'update_team_limit':

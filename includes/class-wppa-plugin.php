@@ -59,6 +59,8 @@ class WPPA_Plugin {
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'template_redirect', array( $this, 'handle_requests' ), 5 );
 		add_action( 'wp', array( __CLASS__, 'maybe_hide_admin_bar' ), 5 );
+		add_action( 'init', array( 'WPPA_Export_Folder', 'reschedule' ), 20 );
+		add_action( WPPA_Export_Folder::CRON_HOOK, array( 'WPPA_Export_Folder', 'run_cron' ) );
 
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
@@ -147,6 +149,7 @@ class WPPA_Plugin {
 			'fields'               => array(),
 			'password_rules'       => array(),
 			'link_button'          => array(),
+			'export_folder'        => array(),
 			'delete_data_on_uninstall' => 0,
 		);
 	}
