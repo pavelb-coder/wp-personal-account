@@ -102,7 +102,7 @@ $export_checks = array(
 );
 
 $account_only = WPPA_Export::columns( array( 'account' ) );
-$export_checks['колонки: только выбранная группа'] = 5 === count( $account_only ) && ! in_array( 'personal', array_column( $account_only, 'group' ), true );
+$export_checks['колонки: только выбранная группа'] = 4 === count( $account_only ) && ! in_array( 'personal', array_column( $account_only, 'group' ), true );
 
 $header    = WPPA_Export::header( WPPA_Export::columns() );
 $header_rows = explode( "\n", trim( $header ) );
@@ -110,10 +110,18 @@ $export_checks['заголовок: две строки']          = 2 === count
 $export_checks['заголовок: названия групп']      = false !== strpos( $header_rows[0], 'Учётная запись' ) && false !== strpos( $header_rows[0], 'Команда' );
 $export_checks['заголовок: подписи полей']       = false !== strpos( $header_rows[1], 'Логин' ) && false !== strpos( $header_rows[1], 'Роль в команде' );
 
+// Убранных колонок не должно остаться ни в заголовке, ни в списке колонок.
+$removed_labels = array( 'Роль WordPress', 'Минимум', 'Лимит', 'Не хватает участников', 'Нет наставника' );
+$all_labels     = array_column( WPPA_Export::columns(), 'label' );
+$header_labels  = explode( ';', trim( $header_rows[1] ) );
+
+$export_checks['колонки: убранные подписи отсутствуют'] = array() === array_intersect( $removed_labels, $all_labels );
+$export_checks['заголовок: убранных подписей нет']      = array() === array_intersect( $removed_labels, $header_labels );
+
 $export_user = new WP_User( 7 );
 $export_row  = WPPA_Export::row( $export_user );
 $export_checks['строка: логин и email']       = 'ivan' === $export_row['login'] && 'ivan@example.com' === $export_row['email'];
-$export_checks['строка: роль WordPress']      = 'subscriber' === $export_row['role'];
+$export_checks['строка: роли WordPress нет']   = ! isset( $export_row['role'] ) && ! in_array( 'role', array_column( WPPA_Export::columns(), 'key' ), true );
 $no_team_row = WPPA_Export::row( new WP_User( 999 ) );
 $export_checks['строка: без команды поля пустые'] = '' === $no_team_row['team'] && '' === $no_team_row['team_role'] && '' === $no_team_row['team_complete'];
 
@@ -789,14 +797,16 @@ $export_olympiad_checks['группа в списке по умолчанию'] 
 $all_columns = array_column( WPPA_Export::columns(), 'key' );
 $export_olympiad_checks['колонки баллов']    = in_array( 'olympiad_score', $all_columns, true )
 	&& in_array( 'olympiad_max', $all_columns, true )
-	&& in_array( 'olympiad_percentage', $all_columns, true )
-	&& in_array( 'olympiad_tests', $all_columns, true )
-	&& in_array( 'olympiad_pending', $all_columns, true );
+	&& in_array( 'olympiad_percentage', $all_columns, true );
+$export_olympiad_checks['в заголовке нет «Работ зачтено» и «На проверке»'] = false === strpos( WPPA_Export::header( WPPA_Export::columns() ), 'Работ зачтено' )
+	&& false === strpos( WPPA_Export::header( WPPA_Export::columns() ), 'На проверке' );
+$export_olympiad_checks['колонок «зачтено» и «на проверке» нет'] = ! in_array( 'olympiad_tests', $all_columns, true )
+	&& ! in_array( 'olympiad_pending', $all_columns, true );
 $export_olympiad_checks['колонки баллов в конце'] = 'olympiad' === end( WPPA_Export::columns() )['group'];
 
 $account_columns = array_column( WPPA_Export::columns( array( 'account' ) ), 'key' );
 $export_olympiad_checks['без группы баллов нет колонок'] = ! in_array( 'olympiad_score', $account_columns, true )
-	&& ! in_array( 'olympiad_tests', $account_columns, true );
+	&& ! in_array( 'olympiad_percentage', $account_columns, true );
 
 $map = WPPA_Olympiad::summary_map( array( 7, 8, 9 ) );
 $export_olympiad_checks['карта по нескольким пользователям'] = 2 === count( $map ) && 27 === $map[7]['score'];
@@ -808,8 +818,7 @@ $export_olympiad_checks['карта: один запрос']                = 1 
 $row = WPPA_Export::row( get_userdata( 7 ), array( 'olympiad' => $map ) );
 $export_olympiad_checks['строка: баллы']       = 27 === $row['olympiad_score'] && 40 === $row['olympiad_max'];
 $export_olympiad_checks['строка: процент']     = 67.5 === $row['olympiad_percentage'];
-$export_olympiad_checks['строка: зачтено']     = 3 === $row['olympiad_tests'];
-$export_olympiad_checks['строка: на проверке'] = 1 === $row['olympiad_pending'];
+$export_olympiad_checks['строка: счётчиков работ нет'] = ! isset( $row['olympiad_tests'] ) && ! isset( $row['olympiad_pending'] );
 
 $csv_users = array( get_userdata( 7 ), get_userdata( 8 ) );
 $csv       = WPPA_Export::csv(
@@ -821,8 +830,8 @@ $csv       = WPPA_Export::csv(
 );
 
 $export_olympiad_checks['csv: заголовок с баллами'] = false !== strpos( $csv, 'Баллы за тесты' ) && false !== strpos( $csv, 'Максимум баллов' );
-$export_olympiad_checks['csv: значения баллов']     = false !== strpos( $csv, '27;40;67,5;3;1' );
-$export_olympiad_checks['csv: второй пользователь'] = false !== strpos( $csv, '5;10;50;1;0' );
+$export_olympiad_checks['csv: значения баллов']     = false !== strpos( $csv, '27;40;67,5' );
+$export_olympiad_checks['csv: второй пользователь'] = false !== strpos( $csv, '5;10;50' );
 
 $wpdb->queries = array();
 WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => $csv_users, 'limit' => 10 ) );
@@ -912,7 +921,7 @@ $build_all = WPPA_Export::build(
 );
 
 $auto_checks['build: число строк']    = 2 === $build_all['rows'];
-$auto_checks['build: число колонок']  = 10 === $build_all['columns'];
+$auto_checks['build: число колонок']  = 7 === $build_all['columns'];
 $auto_checks['build: лимит не достигнут'] = false === $build_all['truncated'];
 $auto_checks['build: csv совпадает с csv()'] = $build_all['csv'] === WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => $build_users, 'limit' => 10 ) );
 
@@ -1013,11 +1022,11 @@ WPPA_Olympiad::flush();
 $csv_semicolon = WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 10, 'delimiter' => ';' ) );
 $csv_comma     = WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 10, 'delimiter' => ',' ) );
 
-$percent_checks['csv с ;: значение процента'] = false !== strpos( $csv_semicolon, ';27;40;67.5;3;1' );
-$percent_checks['csv с ,: значение процента'] = false !== strpos( $csv_comma, ',27,40,67.5,3,1' );
+$percent_checks['csv с ;: значение процента'] = false !== strpos( $csv_semicolon, ';27;40;67.5' );
+$percent_checks['csv с ,: значение процента'] = false !== strpos( $csv_comma, ',27,40,67.5' );
 
 $percent_checks['csv: одинаковое число колонок'] = count( explode( ';', trim( strtok( $csv_semicolon, "\n" ) ) ) ) === count( explode( ',', trim( strtok( $csv_comma, "\n" ) ) ) );
-$percent_checks['csv: 10 колонок в двух группах'] = 10 === count( explode( ';', trim( explode( "\n", $csv_semicolon )[2] ) ) );
+$percent_checks['csv: 7 колонок в двух группах']  = 7 === count( explode( ';', trim( explode( "\n", $csv_semicolon )[2] ) ) );
 
 $percent_checks['заголовок колонки с единицей'] = false !== strpos( $csv_semicolon, 'Процент, %' );
 

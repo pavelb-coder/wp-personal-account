@@ -56,7 +56,6 @@ class WPPA_Export {
 			array( 'group' => 'account', 'label' => __( 'ID', 'wp-personal-account' ), 'key' => 'id' ),
 			array( 'group' => 'account', 'label' => __( 'Логин', 'wp-personal-account' ), 'key' => 'login' ),
 			array( 'group' => 'account', 'label' => __( 'Email', 'wp-personal-account' ), 'key' => 'email' ),
-			array( 'group' => 'account', 'label' => __( 'Роль WordPress', 'wp-personal-account' ), 'key' => 'role' ),
 			array( 'group' => 'account', 'label' => __( 'Дата регистрации', 'wp-personal-account' ), 'key' => 'registered' ),
 			array( 'group' => 'profile', 'label' => __( 'Имя', 'wp-personal-account' ), 'key' => 'first_name' ),
 			array( 'group' => 'profile', 'label' => __( 'Фамилия', 'wp-personal-account' ), 'key' => 'last_name' ),
@@ -67,11 +66,7 @@ class WPPA_Export {
 			array( 'group' => 'team', 'label' => __( 'Капитан', 'wp-personal-account' ), 'key' => 'team_owner' ),
 			array( 'group' => 'team', 'label' => __( 'Наставники', 'wp-personal-account' ), 'key' => 'team_mentors' ),
 			array( 'group' => 'team', 'label' => __( 'Участников', 'wp-personal-account' ), 'key' => 'team_members' ),
-			array( 'group' => 'team', 'label' => __( 'Минимум', 'wp-personal-account' ), 'key' => 'team_min' ),
-			array( 'group' => 'team', 'label' => __( 'Лимит', 'wp-personal-account' ), 'key' => 'team_limit' ),
 			array( 'group' => 'status', 'label' => __( 'Команда сформирована', 'wp-personal-account' ), 'key' => 'team_complete' ),
-			array( 'group' => 'status', 'label' => __( 'Не хватает участников', 'wp-personal-account' ), 'key' => 'team_gap_members' ),
-			array( 'group' => 'status', 'label' => __( 'Нет наставника', 'wp-personal-account' ), 'key' => 'team_gap_mentor' ),
 			array( 'group' => 'status', 'label' => __( 'Email на подтверждении', 'wp-personal-account' ), 'key' => 'email_pending' ),
 		);
 
@@ -79,8 +74,6 @@ class WPPA_Export {
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Баллы за тесты', 'wp-personal-account' ), 'key' => 'olympiad_score' );
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Максимум баллов', 'wp-personal-account' ), 'key' => 'olympiad_max' );
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Процент, %', 'wp-personal-account' ), 'key' => 'olympiad_percentage' );
-			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Работ зачтено', 'wp-personal-account' ), 'key' => 'olympiad_tests' );
-			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'На проверке', 'wp-personal-account' ), 'key' => 'olympiad_pending' );
 		}
 
 		// Личные поля идут отдельной группой, их состав настраивается в «Персональных данных».
@@ -138,7 +131,6 @@ class WPPA_Export {
 			'id'               => (int) $user->ID,
 			'login'            => (string) $user->user_login,
 			'email'            => (string) $user->user_email,
-			'role'             => implode( ', ', (array) $user->roles ),
 			'registered'       => (string) $user->user_registered,
 			'first_name'       => (string) $user->first_name,
 			'last_name'        => (string) $user->last_name,
@@ -149,24 +141,18 @@ class WPPA_Export {
 			'team_owner'       => $owner ? $owner->display_name : '',
 			'team_mentors'     => implode( ', ', $mentors ),
 			'team_members'     => $team_id ? (int) WPPA_Teams::members_count( $team_id ) : '',
-			'team_min'         => $team_id ? (int) WPPA_Teams::team_min( $team_id ) : '',
-			'team_limit'       => $team_id ? (int) WPPA_Teams::team_limit( $team_id ) : '',
 			'team_complete'    => $team_id ? ( WPPA_Teams::is_complete( $team_id ) ? __( 'да', 'wp-personal-account' ) : __( 'нет', 'wp-personal-account' ) ) : '',
-			'team_gap_members' => $team_id ? (int) WPPA_Teams::missing_members( $team_id ) : '',
-			'team_gap_mentor'  => $team_id ? ( WPPA_Teams::is_missing_mentor( $team_id ) ? __( 'да', 'wp-personal-account' ) : __( 'нет', 'wp-personal-account' ) ) : '',
 			'email_pending'    => (string) WPPA_Profile::pending_email( $user->ID ),
 		);
 
 		if ( WPPA_Olympiad::is_active() ) {
 			$scores = isset( $context['olympiad'][ (int) $user->ID ] )
 				? (array) $context['olympiad'][ (int) $user->ID ]
-				: array_merge( WPPA_Olympiad::summary( $user->ID ), array( 'pending' => 0 ) );
+				: (array) WPPA_Olympiad::summary( $user->ID );
 
 			$row['olympiad_score']      = isset( $scores['score'] ) ? (int) $scores['score'] : 0;
 			$row['olympiad_max']        = isset( $scores['max_score'] ) ? (int) $scores['max_score'] : 0;
 			$row['olympiad_percentage'] = isset( $scores['percentage'] ) ? (float) $scores['percentage'] : 0.0;
-			$row['olympiad_tests']      = isset( $scores['tests'] ) ? (int) $scores['tests'] : 0;
-			$row['olympiad_pending']    = isset( $scores['pending'] ) ? (int) $scores['pending'] : 0;
 		}
 
 		foreach ( array_keys( WPPA_Fields::meta_fields() ) as $field_id ) {
