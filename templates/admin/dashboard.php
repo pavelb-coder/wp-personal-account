@@ -9,12 +9,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$wppa_money = static function ( $amount ) {
-	if ( function_exists( 'wc_price' ) ) {
-		return wp_strip_all_tags( html_entity_decode( wc_price( $amount ), ENT_QUOTES, 'UTF-8' ) );
-	}
-	return number_format_i18n( (float) $amount, 0 );
-};
 ?>
 <div class="wrap wppa-admin">
 
@@ -42,23 +36,6 @@ $wppa_money = static function ( $amount ) {
 		<div class="wppa-admin__card">
 			<span class="wppa-admin__card-label"><?php esc_html_e( 'Подписчиков', 'wp-personal-account' ); ?></span>
 			<span class="wppa-admin__card-value"><?php echo esc_html( number_format_i18n( $stats['subscribers'] ) ); ?></span>
-		</div>
-
-		<div class="wppa-admin__card">
-			<span class="wppa-admin__card-label"><?php esc_html_e( 'Заказов всего', 'wp-personal-account' ); ?></span>
-			<span class="wppa-admin__card-value">
-				<?php echo $stats['orders'] ? esc_html( number_format_i18n( $stats['orders']['total'] ) ) : '—'; ?>
-			</span>
-		</div>
-
-		<div class="wppa-admin__card">
-			<span class="wppa-admin__card-label"><?php esc_html_e( 'Оплачено за 30 дней', 'wp-personal-account' ); ?></span>
-			<span class="wppa-admin__card-value">
-				<?php echo $stats['orders'] ? esc_html( $wppa_money( $stats['orders']['revenue_30'] ) ) : '—'; ?>
-			</span>
-			<?php if ( $stats['orders'] && $stats['orders']['revenue_sample'] >= 500 ) : ?>
-				<span class="wppa-admin__card-note"><?php esc_html_e( 'по последним 500 заказам', 'wp-personal-account' ); ?></span>
-			<?php endif; ?>
 		</div>
 
 		<div class="wppa-admin__card">
@@ -113,10 +90,6 @@ $wppa_money = static function ( $amount ) {
 					<?php endif; ?>
 				</li>
 				<li>
-					<span class="wppa-dot <?php echo $status['woocommerce']['ok'] ? 'is-ok' : 'is-warn'; ?>"></span>
-					<?php esc_html_e( 'WooCommerce', 'wp-personal-account' ); ?>: <?php echo esc_html( $status['woocommerce']['label'] ); ?>
-				</li>
-				<li>
 					<span class="wppa-dot <?php echo $status['registration']['ok'] ? 'is-ok' : 'is-warn'; ?>"></span>
 					<?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?>: <?php echo esc_html( $status['registration']['label'] ); ?>
 				</li>
@@ -158,7 +131,6 @@ $wppa_money = static function ( $amount ) {
 						<th><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></th>
 						<th><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></th>
 						<th><?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?></th>
-						<th><?php esc_html_e( 'Заказы', 'wp-personal-account' ); ?></th>
 						<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
 					</tr>
 				</thead>
@@ -173,7 +145,6 @@ $wppa_money = static function ( $amount ) {
 							<td><a href="mailto:<?php echo esc_attr( $wppa_user->user_email ); ?>"><?php echo esc_html( $wppa_user->user_email ); ?></a></td>
 							<td><?php echo esc_html( implode( ', ', array_map( 'translate_user_role', array_intersect_key( wp_roles()->get_names(), array_flip( (array) $wppa_user->roles ) ) ) ) ); ?></td>
 							<td><?php echo esc_html( mysql2date( get_option( 'date_format' ), $wppa_user->user_registered ) ); ?></td>
-							<td><?php echo esc_html( (string) WPPA_Admin::user_orders_count( $wppa_user->ID ) ); ?></td>
 							<td>
 								<a class="button button-small" href="<?php echo esc_url( get_edit_user_link( $wppa_user->ID ) ); ?>"><?php esc_html_e( 'Профиль', 'wp-personal-account' ); ?></a>
 							</td>

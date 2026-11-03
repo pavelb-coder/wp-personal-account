@@ -23,7 +23,6 @@ class WPPA_Notices {
 			'password_changed'      => array( 'success', __( 'Пароль изменён.', 'wp-personal-account' ) ),
 			'email_confirm_sent'    => array( 'success', __( 'Письмо с подтверждением отправлено на новый адрес. Перейдите по ссылке из письма.', 'wp-personal-account' ) ),
 			'email_confirmed'       => array( 'success', __( 'Новый email подтверждён и сохранён.', 'wp-personal-account' ) ),
-			'addresses_saved'       => array( 'success', __( 'Адреса сохранены.', 'wp-personal-account' ) ),
 			'registration_success'  => array( 'success', __( 'Регистрация завершена. Добро пожаловать!', 'wp-personal-account' ) ),
 			'login_success'         => array( 'success', __( 'Вы вошли в аккаунт.', 'wp-personal-account' ) ),
 			'logged_out'            => array( 'success', __( 'Вы вышли из аккаунта.', 'wp-personal-account' ) ),
@@ -44,7 +43,6 @@ class WPPA_Notices {
 			'no_consent'            => array( 'error', __( 'Необходимо согласие на обработку персональных данных.', 'wp-personal-account' ) ),
 			'save_failed'           => array( 'error', __( 'Не удалось сохранить изменения. Попробуйте позже.', 'wp-personal-account' ) ),
 			'email_same'            => array( 'info', __( 'Этот email уже указан в вашем профиле.', 'wp-personal-account' ) ),
-			'woocommerce_required'  => array( 'info', __( 'Для работы этого раздела требуется активный WooCommerce.', 'wp-personal-account' ) ),
 		);
 
 		/**

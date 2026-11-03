@@ -7,7 +7,7 @@ require __DIR__ . '/wp-stubs.php';
 
 $base = dirname( __DIR__ ) . '/';
 
-define( 'WPPA_VERSION', '1.0.0' );
+define( 'WPPA_VERSION', '2.0.0' );
 define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
@@ -18,8 +18,6 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
-require $base . 'includes/class-wppa-orders.php';
-require $base . 'includes/class-wppa-addresses.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 
 // Обход автозагрузки шаблонов: путь к templates.
@@ -30,8 +28,6 @@ $cases = array(
 	'tab-dashboard'   => array( 'user' => $user, 'tabs' => $tabs ),
 	'tab-profile'     => array( 'user' => $user, 'tabs' => $tabs ),
 	'tab-security'    => array( 'user' => $user, 'tabs' => $tabs ),
-	'tab-orders'      => array( 'user' => $user, 'tabs' => $tabs ),
-	'tab-addresses'   => array( 'user' => $user, 'tabs' => $tabs ),
 	'login'           => array( 'redirect' => '', 'title' => '' ),
 	'register'        => array( 'title' => '' ),
 	'logged-in'       => array( 'message' => 'Вы уже авторизованы.' ),
@@ -72,7 +68,7 @@ foreach ( $cases as $name => $args ) {
 
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
-echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'orders', array( 'order' => 12 ) ) . "\n";
+echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";
 echo 'Сообщение: ' . print_r( WPPA_Notices::registry()['profile_saved'], true );
 
 echo $fail ? "\nПРОБЛЕМ: {$fail}\n" : "\nВсе шаблоны отрисованы без ошибок\n";

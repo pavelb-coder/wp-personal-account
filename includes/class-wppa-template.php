@@ -23,8 +23,6 @@ class WPPA_Template {
 		return array(
 			'dashboard' => __( 'Обзор', 'wp-personal-account' ),
 			'profile'   => __( 'Профиль', 'wp-personal-account' ),
-			'orders'    => __( 'Заказы', 'wp-personal-account' ),
-			'addresses' => __( 'Адреса', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
 		);
 	}

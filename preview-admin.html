@@ -398,18 +398,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 		</div>
 
 		<div class="wppa-admin__card">
-			<span class="wppa-admin__card-label">Заказов всего</span>
-			<span class="wppa-admin__card-value">
-				33			</span>
-		</div>
-
-		<div class="wppa-admin__card">
-			<span class="wppa-admin__card-label">Оплачено за 30 дней</span>
-			<span class="wppa-admin__card-value">
-				0 ₽			</span>
-					</div>
-
-		<div class="wppa-admin__card">
 			<span class="wppa-admin__card-label">Ждут подтверждения email</span>
 			<span class="wppa-admin__card-value">2</span>
 		</div>
@@ -520,9 +508,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 									</li>
 				<li>
 					<span class="wppa-dot is-ok"></span>
-					WooCommerce: Активен 9.4.0				</li>
-				<li>
-					<span class="wppa-dot is-ok"></span>
 					Регистрация: Открыта				</li>
 				<li>
 					<span class="wppa-dot is-ok"></span>
@@ -530,7 +515,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			</ul>
 
 			<p class="wppa-admin__muted">
-				WordPress Демо-сайт · PHP 8.3.14 · плагин 1.1.0			</p>
+				WordPress Демо-сайт · PHP 8.3.14 · плагин 2.0.0			</p>
 
 			<p class="wppa-admin__actions">
 				<a class="button" href="https://example.com/wp-admin/admin.php?page=wppa-accounts">Все аккаунты</a>
@@ -549,7 +534,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<th>Email</th>
 						<th>Роль</th>
 						<th>Регистрация</th>
-						<th>Заказы</th>
 						<th>Действия</th>
 					</tr>
 				</thead>
@@ -562,7 +546,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
 							<td>Подписчик</td>
 							<td>10.01.2025</td>
-							<td>2</td>
 							<td>
 								<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
 							</td>
@@ -575,7 +558,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
 							<td>Подписчик</td>
 							<td>10.01.2025</td>
-							<td>2</td>
 							<td>
 								<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
 							</td>
@@ -617,7 +599,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					<th>Email</th>
 					<th>Роль</th>
 					<th>Регистрация</th>
-					<th>Заказы</th>
 					<th>Подтверждение email</th>
 					<th>Действия</th>
 				</tr>
@@ -631,7 +612,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
 						<td>Подписчик</td>
 						<td>10.01.2025</td>
-						<td>2</td>
 						<td>
 															<span class="wppa-admin__muted">—</span>
 													</td>
@@ -647,7 +627,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
 						<td>Подписчик</td>
 						<td>10.01.2025</td>
-						<td>2</td>
 						<td>
 															<span class="wppa-admin__muted">—</span>
 													</td>
@@ -707,7 +686,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			<div class="wppa-tool">
 				<div>
 					<strong>Экспорт аккаунтов</strong>
-					<p class="wppa-admin__muted">CSV с логинами, email, ролями, датой регистрации и числом заказов (до 5000 записей).</p>
+					<p class="wppa-admin__muted">CSV с логинами, email, ролями и датой регистрации (до 5000 записей).</p>
 				</div>
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
@@ -744,9 +723,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					Страница кабинета:
 											<a href="https://example.com/wp-admin/post.php?post=42&amp;action=edit">Личный кабинет</a>
 									</li>
-				<li>
-					<span class="wppa-dot is-ok"></span>
-					WooCommerce: Активен 9.4.0				</li>
 				<li>
 					<span class="wppa-dot is-ok"></span>
 					Версия WordPress: Демо-сайт				</li>

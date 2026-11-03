@@ -11,7 +11,7 @@ require __DIR__ . '/wp-admin-stubs.php';
 
 $base = dirname( __DIR__ ) . '/';
 
-define( 'WPPA_VERSION', '1.1.0' );
+define( 'WPPA_VERSION', '2.0.0' );
 define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
@@ -21,8 +21,6 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
-require $base . 'includes/class-wppa-orders.php';
-require $base . 'includes/class-wppa-addresses.php';
 require $base . 'includes/class-wppa-admin.php';
 
 // Демо-данные графика: разнообразные значения вместо одинаковых.

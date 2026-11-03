@@ -646,7 +646,7 @@ body {
 <body>
 <div class="demo-top">
 	<h1>Личный кабинет — превью интерфейса</h1>
-	<p>Демонстрация шаблонов плагина WP Personal Account на тестовых данных (WooCommerce-заказы и адреса — пример).</p>
+	<p>Демонстрация шаблонов плагина WP Personal Account: обзор, профиль, безопасность, вход и регистрация.</p>
 </div>
 <section class="demo-block"><div class="demo-block__head"><h2>Кабинет целиком (активна вкладка «Обзор»)</h2><p>Шапка с аватаром и кнопкой выхода, навигация по вкладкам, контент активной вкладки</p></div><div class="wppa">
 
@@ -678,16 +678,6 @@ body {
 				Профиль			</a>
 					<a
 				class="wppa-nav__link"
-				href="https://example.com/personal-account/?wppa_tab=orders"
-							>
-				Заказы			</a>
-					<a
-				class="wppa-nav__link"
-				href="https://example.com/personal-account/?wppa_tab=addresses"
-							>
-				Адреса			</a>
-					<a
-				class="wppa-nav__link"
 				href="https://example.com/personal-account/?wppa_tab=security"
 							>
 				Безопасность			</a>
@@ -699,11 +689,6 @@ body {
 
 <div class="wppa-grid">
 	<div class="wppa-card wppa-card--stat">
-		<span class="wppa-card__label">Заказов всего</span>
-		<span class="wppa-card__value">3</span>
-	</div>
-
-	<div class="wppa-card wppa-card--stat">
 		<span class="wppa-card__label">Дата регистрации</span>
 		<span class="wppa-card__value wppa-card__value--small">10.01.2025</span>
 	</div>
@@ -712,164 +697,24 @@ body {
 		<span class="wppa-card__label">Email</span>
 		<span class="wppa-card__value wppa-card__value--small">ivan@example.com</span>
 	</div>
+
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label">Роль</span>
+		<span class="wppa-card__value wppa-card__value--small">
+			Подписчик		</span>
+	</div>
 </div>
 
-	<h3 class="wppa-subtitle">Последний заказ</h3>
-	<div class="wppa-card wppa-order-card">
-		<div>
-			<p class="wppa-order-card__number">
-				Заказ №1042			</p>
-			<p class="wppa-order-card__meta">
-				28.10.2026 ·
-				В обработке			</p>
-		</div>
-		<div class="wppa-order-card__side">
-			<span class="wppa-amount"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></span>
-			<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1042">
-				Подробнее			</a>
-		</div>
-	</div>
 
 <h3 class="wppa-subtitle">Быстрые действия</h3>
 <div class="wppa-actions">
 			<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=profile">Редактировать профиль</a>
 				<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=security">Сменить пароль</a>
-				<a class="wppa-button wppa-button--ghost" href="https://example.com/personal-account/?wppa_tab=orders">Все заказы</a>
-	</div>
+		<a class="wppa-button wppa-button--ghost" data-wppa-confirm-logout href="https://example.com/logout">
+		Выйти	</a>
+</div>
 	</div>
 </div>
-</section><section class="demo-block"><div class="demo-block__head"><h2>Заказы</h2><p>Вкладка orders: таблица заказов WooCommerce со статусами, суммами и пагинацией</p></div><h2 class="wppa-title">Мои заказы</h2>
-
-	<div class="wppa-table-wrap">
-		<table class="wppa-table">
-			<thead>
-				<tr>
-					<th>Заказ</th>
-					<th>Дата</th>
-					<th>Статус</th>
-					<th>Сумма</th>
-					<th>Действия</th>
-				</tr>
-			</thead>
-			<tbody>
-									<tr>
-						<td data-label="Заказ">
-							№1042						</td>
-						<td data-label="Дата">28.10.2026</td>
-						<td data-label="Статус">
-							<span class="wppa-status wppa-status--processing">
-								В обработке							</span>
-						</td>
-						<td data-label="Сумма"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></td>
-						<td data-label="Действия">
-							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1042">
-								Подробнее							</a>
-													</td>
-					</tr>
-									<tr>
-						<td data-label="Заказ">
-							№1031						</td>
-						<td data-label="Дата">28.10.2026</td>
-						<td data-label="Статус">
-							<span class="wppa-status wppa-status--completed">
-								Выполнен							</span>
-						</td>
-						<td data-label="Сумма"><span class="woocommerce-Price-amount">2 490&nbsp;₽</span></td>
-						<td data-label="Действия">
-							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1031">
-								Подробнее							</a>
-													</td>
-					</tr>
-									<tr>
-						<td data-label="Заказ">
-							№1017						</td>
-						<td data-label="Дата">28.10.2026</td>
-						<td data-label="Статус">
-							<span class="wppa-status wppa-status--pending">
-								Ожидает оплаты							</span>
-						</td>
-						<td data-label="Сумма"><span class="woocommerce-Price-amount">890&nbsp;₽</span></td>
-						<td data-label="Действия">
-							<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders&amp;order=1017">
-								Подробнее							</a>
-															<a class="wppa-link" href="#pay">
-									Оплатить								</a>
-													</td>
-					</tr>
-							</tbody>
-		</table>
-	</div>
-
-	</section><section class="demo-block"><div class="demo-block__head"><h2>Детали заказа</h2><p>Просмотр состава заказа, итогов и адреса</p></div><p>
-	<a class="wppa-link" href="https://example.com/personal-account/?wppa_tab=orders">← Ко всем заказам</a>
-</p>
-
-<h2 class="wppa-title">
-	Заказ №1042</h2>
-
-<div class="wppa-order-info">
-	<div class="wppa-card">
-		<span class="wppa-card__label">Дата</span>
-		<span class="wppa-card__value wppa-card__value--small">28.10.2026</span>
-	</div>
-	<div class="wppa-card">
-		<span class="wppa-card__label">Статус</span>
-		<span class="wppa-card__value wppa-card__value--small">В обработке</span>
-	</div>
-	<div class="wppa-card">
-		<span class="wppa-card__label">Итого</span>
-		<span class="wppa-card__value wppa-card__value--small"><span class="woocommerce-Price-amount">5 270&nbsp;₽</span></span>
-	</div>
-	<div class="wppa-card">
-		<span class="wppa-card__label">Оплата</span>
-		<span class="wppa-card__value wppa-card__value--small">Банковская карта</span>
-	</div>
-</div>
-
-
-<div class="wppa-table-wrap">
-	<table class="wppa-table">
-		<thead>
-			<tr>
-				<th>Товар</th>
-				<th>Кол-во</th>
-				<th>Сумма</th>
-			</tr>
-		</thead>
-		<tbody>
-											<tr>
-					<td data-label="Товар">
-						Кофе в зёрнах Ethiopia 1 кг											</td>
-					<td data-label="Кол-во">2</td>
-					<td data-label="Сумма">3 980&nbsp;₽</td>
-				</tr>
-											<tr>
-					<td data-label="Товар">
-						Кружка керамическая 350 мл											</td>
-					<td data-label="Кол-во">1</td>
-					<td data-label="Сумма">1 290&nbsp;₽</td>
-				</tr>
-					</tbody>
-		<tfoot>
-							<tr>
-					<th colspan="2">Товары:</th>
-					<td>5 270&nbsp;₽</td>
-				</tr>
-							<tr>
-					<th colspan="2">Доставка:</th>
-					<td>Бесплатно</td>
-				</tr>
-							<tr>
-					<th colspan="2">Итого:</th>
-					<td><strong>5 270&nbsp;₽</strong></td>
-				</tr>
-					</tfoot>
-	</table>
-</div>
-
-	<h3 class="wppa-subtitle">Адрес плательщика</h3>
-	<address class="wppa-address">Иван Петров<br>ул. Ленина, 12, кв. 5<br>Красноярск, 660000</address>
-
 </section><section class="demo-block"><div class="demo-block__head"><h2>Профиль</h2><p>Вкладка profile: имя, фамилия, отображаемое имя, «о себе»</p></div><h2 class="wppa-title">Профиль</h2>
 
 <form class="wppa-form" method="post" action="https://example.com/personal-account/?wppa_tab=profile">

@@ -303,76 +303,12 @@ class WPPA_Admin {
 			)
 		);
 
-		$orders = self::orders_stats();
-
 		return array(
 			'total_users'   => $total_users,
 			'new_30'        => (int) $new_query->get_total(),
 			'subscribers'   => isset( $avail['subscriber'] ) ? (int) $avail['subscriber'] : 0,
 			'roles'         => count( $avail ),
 			'pending_email' => (int) $pending_query->get_total(),
-			'orders'        => $orders,
-		);
-	}
-
-	/**
-	 * Статистика заказов WooCommerce.
-	 *
-	 * @return array|null
-	 */
-	public static function orders_stats() {
-		if ( ! WPPA_Orders::is_available() ) {
-			return null;
-		}
-
-		$counts = (array) wp_count_posts( 'shop_order' );
-		$by_status = array();
-
-		foreach ( $counts as $status => $count ) {
-			if ( in_array( $status, array( 'auto-draft', 'trash' ), true ) ) {
-				continue;
-			}
-			$count = (int) $count;
-			if ( $count > 0 ) {
-				$by_status[ $status ] = array(
-					'label' => function_exists( 'wc_get_order_status_name' ) ? wc_get_order_status_name( $status ) : $status,
-					'count' => $count,
-				);
-			}
-		}
-
-		uasort(
-			$by_status,
-			static function ( $a, $b ) {
-				return $b['count'] <=> $a['count'];
-			}
-		);
-
-		$paid_statuses = function_exists( 'wc_get_is_paid_statuses' ) ? wc_get_is_paid_statuses() : array( 'completed', 'processing' );
-		$since30       = gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS );
-
-		// Ограниченная выборка: для дашборда достаточно последних 500 оплаченных заказов за 30 дней.
-		$recent_paid = wc_get_orders(
-			array(
-				'limit'        => 500,
-				'status'       => $paid_statuses,
-				'date_created' => '>=' . $since30,
-				'orderby'      => 'date',
-				'order'        => 'DESC',
-			)
-		);
-
-		$revenue = 0.0;
-		foreach ( $recent_paid as $order ) {
-			$revenue += (float) $order->get_total();
-		}
-
-		return array(
-			'total'          => array_sum( wp_list_pluck( $by_status, 'count' ) ),
-			'by_status'      => $by_status,
-			'revenue_30'     => $revenue,
-			'revenue_sample' => count( $recent_paid ),
-			'needs_payment'  => isset( $counts['pending'] ) ? (int) $counts['pending'] : 0,
 		);
 	}
 
@@ -430,9 +366,8 @@ class WPPA_Admin {
 	 * @return array
 	 */
 	public static function system_status() {
-		$page_id   = WPPA_Plugin::account_page_id();
-		$settings  = WPPA_Plugin::get_settings();
-		$wc_active = WPPA_Orders::is_available();
+		$page_id  = WPPA_Plugin::account_page_id();
+		$settings = WPPA_Plugin::get_settings();
 
 		return array(
 			'account_page' => $page_id
@@ -448,16 +383,6 @@ class WPPA_Admin {
 					'link'  => '',
 					'edit'  => '',
 				),
-			'woocommerce'  => array(
-				'ok'    => $wc_active,
-				'label' => $wc_active
-					? sprintf(
-						/* translators: %s: версия WooCommerce */
-						__( 'Активен %s', 'wp-personal-account' ),
-						defined( 'WC_VERSION' ) ? WC_VERSION : ''
-					)
-					: __( 'Не активен', 'wp-personal-account' ),
-			),
 			'registration' => array(
 				'ok'    => (bool) get_option( 'users_can_register' ) && (bool) $settings['registration_enabled'],
 				'label' => ( get_option( 'users_can_register' ) && $settings['registration_enabled'] )
@@ -610,7 +535,6 @@ class WPPA_Admin {
 				__( 'Имя', 'wp-personal-account' ),
 				__( 'Роль', 'wp-personal-account' ),
 				__( 'Регистрация', 'wp-personal-account' ),
-				__( 'Заказов', 'wp-personal-account' ),
 			)
 		);
 
@@ -632,7 +556,6 @@ class WPPA_Admin {
 					$user->display_name,
 					implode( ', ', (array) $user->roles ),
 					$user->user_registered,
-					self::user_orders_count( $user->ID ),
 				)
 			);
 		}
@@ -641,25 +564,4 @@ class WPPA_Admin {
 		exit;
 	}
 
-	/**
-	 * Количество заказов пользователя.
-	 *
-	 * @param int $user_id ID пользователя.
-	 * @return int|string
-	 */
-	public static function user_orders_count( $user_id ) {
-		if ( ! WPPA_Orders::is_available() ) {
-			return '—';
-		}
-
-		$orders = wc_get_orders(
-			array(
-				'customer_id' => (int) $user_id,
-				'limit'       => 1,
-				'paginate'    => true,
-			)
-		);
-
-		return isset( $orders->total ) ? (int) $orders->total : 0;
-	}
 }

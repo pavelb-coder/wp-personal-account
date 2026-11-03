@@ -87,12 +87,11 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'orders', 'addresses', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'security' ),
 			'registration_enabled' => 1,
 			'login_redirect'       => '',
 			'accent_color'         => '#2563eb',
 			'custom_css'           => '',
-			'orders_per_page'      => 10,
 			'delete_data_on_uninstall' => 0,
 		);
 	}
@@ -277,9 +276,6 @@ class WPPA_Plugin {
 				break;
 			case 'email':
 				WPPA_Profile::handle_email_request();
-				break;
-			case 'addresses':
-				WPPA_Addresses::handle_save();
 				break;
 			default:
 				break;

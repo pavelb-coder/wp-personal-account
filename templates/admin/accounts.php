@@ -62,7 +62,6 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 					<th><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?></th>
-					<th><?php esc_html_e( 'Заказы', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Подтверждение email', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
 				</tr>
@@ -79,7 +78,6 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 						<td><a href="mailto:<?php echo esc_attr( $wppa_user->user_email ); ?>"><?php echo esc_html( $wppa_user->user_email ); ?></a></td>
 						<td><?php echo esc_html( implode( ', ', array_map( 'translate_user_role', array_intersect_key( wp_roles()->get_names(), array_flip( (array) $wppa_user->roles ) ) ) ) ); ?></td>
 						<td><?php echo esc_html( mysql2date( get_option( 'date_format' ), $wppa_user->user_registered ) ); ?></td>
-						<td><?php echo esc_html( (string) WPPA_Admin::user_orders_count( $wppa_user->ID ) ); ?></td>
 						<td>
 							<?php if ( $wppa_pending ) : ?>
 								<span class="wppa-badge wppa-badge--warn"><?php echo esc_html( $wppa_pending ); ?></span>

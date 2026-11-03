@@ -3,7 +3,7 @@
  * Plugin Name:       WP Personal Account
  * Plugin URI:        https://github.com/pavelb-coder/wp-personal-account
  * Description:       Личный кабинет пользователя для WordPress: профиль, смена пароля, заказы WooCommerce, адреса доставки, вход и регистрация — всё на шорткодах.
- * Version:           1.1.0
+ * Version:           2.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pavelb-coder
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WPPA_VERSION', '1.1.0' );
+define( 'WPPA_VERSION', '2.0.0' );
 define( 'WPPA_FILE', __FILE__ );
 define( 'WPPA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPPA_URL', plugin_dir_url( __FILE__ ) );
@@ -31,8 +31,6 @@ require_once WPPA_PATH . 'includes/class-wppa-notices.php';
 require_once WPPA_PATH . 'includes/class-wppa-account.php';
 require_once WPPA_PATH . 'includes/class-wppa-auth.php';
 require_once WPPA_PATH . 'includes/class-wppa-profile.php';
-require_once WPPA_PATH . 'includes/class-wppa-orders.php';
-require_once WPPA_PATH . 'includes/class-wppa-addresses.php';
 require_once WPPA_PATH . 'includes/class-wppa-shortcodes.php';
 
 /**

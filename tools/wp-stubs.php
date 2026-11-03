@@ -72,6 +72,40 @@ function get_user_meta( $uid, $key, $single = false ) { return isset( $GLOBALS['
 function update_user_meta( $uid, $key, $value ) { $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] = $value; return true; }
 function delete_user_meta( $uid, $key ) { unset( $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] ); return true; }
 function is_user_logged_in() { return (bool) $GLOBALS['wppa_test']['logged_in']; }
+class WP_Roles_Stub {
+	/**
+	 * Роли демо-пользователя.
+	 *
+	 * @var array
+	 */
+	public $roles = array(
+		'subscriber'    => array( 'name' => 'Подписчик' ),
+		'administrator' => array( 'name' => 'Администратор' ),
+	);
+
+	/**
+	 * Названия ролей.
+	 *
+	 * @return array
+	 */
+	public function get_names() {
+		$names = array();
+		foreach ( $this->roles as $slug => $role ) {
+			$names[ $slug ] = $role['name'];
+		}
+		return $names;
+	}
+}
+
+function wp_roles() {
+	static $roles = null;
+	if ( null === $roles ) {
+		$roles = new WP_Roles_Stub();
+	}
+	return $roles;
+}
+
+function translate_user_role( $name ) { return $name; }
 function wp_get_current_user() { return new WP_User(); }
 function get_current_user_id() { return 7; }
 function wp_set_current_user( $id ) { return new WP_User(); }

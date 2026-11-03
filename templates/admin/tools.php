@@ -65,7 +65,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="wppa-tool">
 				<div>
 					<strong><?php esc_html_e( 'Экспорт аккаунтов', 'wp-personal-account' ); ?></strong>
-					<p class="wppa-admin__muted"><?php esc_html_e( 'CSV с логинами, email, ролями, датой регистрации и числом заказов (до 5000 записей).', 'wp-personal-account' ); ?></p>
+					<p class="wppa-admin__muted"><?php esc_html_e( 'CSV с логинами, email, ролями и датой регистрации (до 5000 записей).', 'wp-personal-account' ); ?></p>
 				</div>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
@@ -106,10 +106,6 @@ defined( 'ABSPATH' ) || exit;
 					<?php else : ?>
 						<?php echo esc_html( $status['account_page']['label'] ); ?>
 					<?php endif; ?>
-				</li>
-				<li>
-					<span class="wppa-dot <?php echo $status['woocommerce']['ok'] ? 'is-ok' : 'is-warn'; ?>"></span>
-					<?php esc_html_e( 'WooCommerce', 'wp-personal-account' ); ?>: <?php echo esc_html( $status['woocommerce']['label'] ); ?>
 				</li>
 				<li>
 					<span class="wppa-dot is-ok"></span>

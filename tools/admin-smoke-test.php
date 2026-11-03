@@ -21,8 +21,6 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
-require $base . 'includes/class-wppa-orders.php';
-require $base . 'includes/class-wppa-addresses.php';
 require $base . 'includes/class-wppa-admin.php';
 
 $fail = 0;
@@ -56,13 +54,13 @@ wppa_check_output( 'admin/tools', static function () { WPPA_Admin::page_tools();
 
 // Расчётные методы.
 $stats = WPPA_Admin::stats();
-echo "\nstats: пользователей {$stats['total_users']}, новых за 30 дней {$stats['new_30']}, заказов " . ( $stats['orders'] ? $stats['orders']['total'] : '—' ) . "\n";
+echo "\nstats: пользователей {$stats['total_users']}, новых за 30 дней {$stats['new_30']}, ждут подтверждения email {$stats['pending_email']}\n";
 
 $chart = WPPA_Admin::registrations_chart( 14 );
 echo 'chart: точек ' . count( $chart['items'] ) . ", максимум {$chart['max']}\n";
 
 $status = WPPA_Admin::system_status();
-echo 'status: страница «' . $status['account_page']['label'] . '», WooCommerce «' . $status['woocommerce']['label'] . "»\n";
+echo 'status: страница «' . $status['account_page']['label'] . '», регистрация «' . $status['registration']['label'] . "»\n";
 
 // Меню: проверяем, что страницы зарегистрированы без ошибок.
 WPPA_Admin::menu();

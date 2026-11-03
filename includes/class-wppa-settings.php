@@ -83,9 +83,6 @@ class WPPA_Settings {
 
 		$out['custom_css']     = isset( $input['custom_css'] ) ? wp_strip_all_tags( (string) $input['custom_css'] ) : '';
 
-		$per_page              = isset( $input['orders_per_page'] ) ? absint( $input['orders_per_page'] ) : 10;
-		$out['orders_per_page'] = min( 50, max( 1, $per_page ) );
-
 		return wp_parse_args( $out, $defaults );
 	}
 
@@ -165,12 +162,6 @@ class WPPA_Settings {
 									<?php echo esc_html( $label ); ?>
 								</label>
 							<?php endforeach; ?>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="wppa-per-page"><?php esc_html_e( 'Заказов на страницу', 'wp-personal-account' ); ?></label></th>
-						<td>
-							<input type="number" min="1" max="50" id="wppa-per-page" name="wppa_settings[orders_per_page]" value="<?php echo esc_attr( (int) $s['orders_per_page'] ); ?>" />
 						</td>
 					</tr>
 				</table>
