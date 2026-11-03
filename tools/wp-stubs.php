@@ -93,7 +93,10 @@ function esc_attr( $t ) { return htmlspecialchars( (string) $t, ENT_QUOTES ); }
 function esc_textarea( $t ) { return htmlspecialchars( (string) $t, ENT_QUOTES ); }
 function esc_url( $u ) { return htmlspecialchars( (string) $u, ENT_QUOTES ); }
 function esc_url_raw( $u ) { return (string) $u; }
-function wp_kses_post( $t ) { return $t; }
+function wp_kses_post( $t ) {
+	$t = preg_replace( '#<script\b.*?</script>#is', '', (string) $t );
+	return preg_replace( '#\son\w+\s*=\s*("[^"]*"|\'[^\']*\')#i', '', $t );
+}
 function sanitize_text_field( $t ) { return trim( strip_tags( (string) $t ) ); }
 function sanitize_textarea_field( $t ) { return trim( strip_tags( (string) $t ) ); }
 function sanitize_key( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ); }

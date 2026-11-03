@@ -1,0 +1,61 @@
+<?php
+/**
+ * Блок «Сводка профиля».
+ *
+ * Доступные переменные: $user, $tabs, $block_title.
+ *
+ * @package WP_Personal_Account
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+$wppa_registered = $user->user_registered ? mysql2date( get_option( 'date_format' ), $user->user_registered ) : '—';
+$wppa_pending    = WPPA_Profile::pending_email( $user->ID );
+$wppa_team_id    = WPPA_Teams::team_id( $user->ID );
+$wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
+$wppa_roles      = array_intersect_key( wp_roles()->get_names(), array_flip( (array) $user->roles ) );
+?>
+<?php if ( isset( $block_title ) && '' !== $block_title ) : ?>
+	<h3 class="wppa-subtitle"><?php echo esc_html( $block_title ); ?></h3>
+<?php endif; ?>
+
+<div class="wppa-grid">
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label"><?php esc_html_e( 'Дата регистрации', 'wp-personal-account' ); ?></span>
+		<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $wppa_registered ); ?></span>
+	</div>
+
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label"><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></span>
+		<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $user->user_email ); ?></span>
+	</div>
+
+	<?php if ( $wppa_team ) : ?>
+		<div class="wppa-card wppa-card--stat">
+			<span class="wppa-card__label"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></span>
+			<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $wppa_team['name'] ); ?></span>
+			<?php if ( isset( $tabs['team'] ) ) : ?>
+				<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+
+	<div class="wppa-card wppa-card--stat">
+		<span class="wppa-card__label"><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></span>
+		<span class="wppa-card__value wppa-card__value--small">
+			<?php echo esc_html( $wppa_roles ? implode( ', ', array_map( 'translate_user_role', $wppa_roles ) ) : '—' ); ?>
+		</span>
+	</div>
+</div>
+
+<?php if ( $wppa_pending ) : ?>
+	<div class="wppa-notice wppa-notice--info">
+		<?php
+		printf(
+			/* translators: %s: новый email, ожидающий подтверждения */
+			esc_html__( 'Ожидает подтверждения адрес %s. Проверьте почту.', 'wp-personal-account' ),
+			esc_html( $wppa_pending )
+		);
+		?>
+	</div>
+<?php endif; ?>

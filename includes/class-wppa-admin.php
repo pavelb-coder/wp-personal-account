@@ -70,6 +70,15 @@ class WPPA_Admin {
 
 		add_submenu_page(
 			self::SLUG,
+			__( 'Конструктор', 'wp-personal-account' ),
+			__( 'Конструктор', 'wp-personal-account' ),
+			self::CAP,
+			'wppa-builder',
+			array( 'WPPA_Builder', 'page' )
+		);
+
+		add_submenu_page(
+			self::SLUG,
 			__( 'Команды', 'wp-personal-account' ),
 			__( 'Команды', 'wp-personal-account' ),
 			self::CAP,
@@ -508,7 +517,7 @@ class WPPA_Admin {
 	 *
 	 * @return array|null
 	 */
-	private static function tool_notice() {
+	public static function tool_notice() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только код для вывода.
 		$code = isset( $_GET['wppa_done'] ) ? sanitize_key( wp_unslash( $_GET['wppa_done'] ) ) : '';
 
@@ -518,6 +527,7 @@ class WPPA_Admin {
 			'emails_clear'  => array( 'success', __( 'Ожидающие подтверждения email очищены.', 'wp-personal-account' ) ),
 			'cache_clear'   => array( 'success', __( 'Кэш статистики сброшен.', 'wp-personal-account' ) ),
 			'team_dissolved' => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
+			'layout_reset'   => array( 'success', __( 'Раскладка кабинета сброшена к стандартной.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -572,6 +582,11 @@ class WPPA_Admin {
 				}
 
 				self::redirect_tool( 'team_dissolved' );
+				break;
+
+			case 'reset_layout':
+				WPPA_Builder::reset();
+				self::redirect_tool( 'layout_reset' );
 				break;
 
 			case 'clear_cache':

@@ -287,3 +287,82 @@
 	display: inline-block;
 	margin: 0;
 }
+
+/* Конструктор */
+
+.wppa-builder__list {
+	margin: 8px 0 12px;
+}
+
+.wppa-builder__row {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px 14px;
+	margin-bottom: 8px;
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 8px;
+}
+
+.wppa-builder__row.is-disabled {
+	opacity: .6;
+}
+
+.wppa-builder__handle {
+	color: #a7aaad;
+	font-size: 16px;
+	line-height: 1.4;
+	cursor: grab;
+	user-select: none;
+}
+
+.wppa-builder__main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.wppa-builder__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 4px;
+}
+
+.wppa-builder__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.wppa-builder__desc {
+	margin: 0 0 8px;
+}
+
+.wppa-builder__fields {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.wppa-builder__fields .regular-text {
+	flex: 1 1 240px;
+	min-width: 180px;
+}
+
+.wppa-builder__html {
+	margin: 8px 0 0;
+}
+
+.wppa-builder__actions {
+	display: flex;
+	gap: 4px;
+	flex-wrap: nowrap;
+}
+
+.wppa-builder__add {
+	margin: 0 0 4px;
+}

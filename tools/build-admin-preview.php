@@ -22,6 +22,7 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-admin.php';
 
 // Демо-данные графика: разнообразные значения вместо одинаковых.
@@ -56,6 +57,7 @@ foreach ( array( 'Студия «Вектор»', 'Отдел закупок', '
 
 $sections  = demo_page( 'Обзор', 'Меню «Личный кабинет» → «Обзор»: метрики, график регистраций, состояние интеграций, последние регистрации', static function () { WPPA_Admin::page_dashboard(); } );
 $sections .= demo_page( 'Аккаунты', 'Поиск, фильтр по роли, число заказов и незавершённые подтверждения email', static function () { WPPA_Admin::page_accounts(); } );
+$sections .= demo_page( 'Конструктор', 'Сборка кабинета из блоков: порядок, включение, заголовки, аудитория и свои HTML-блоки', static function () { WPPA_Builder::page(); } );
 $sections .= demo_page( 'Команды', 'Объединение аккаунтов: состав, капитаны, лимит участников, роспуск команды', static function () { WPPA_Admin::page_teams(); } );
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
 

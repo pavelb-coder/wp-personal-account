@@ -22,6 +22,7 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-builder.php';
 
 $GLOBALS['wppa_test']['users'] = array(
 	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
@@ -45,6 +46,20 @@ function demo_section( $title, $note, $html ) {
 	return '<section class="demo-block"><div class="demo-block__head"><h2>' . htmlspecialchars( $title ) . '</h2>'
 		. ( $note ? '<p>' . htmlspecialchars( $note ) . '</p>' : '' ) . '</div>' . $html . '</section>';
 }
+
+// Демонстрация конструктора: свой HTML-блок в «Обзоре».
+update_option(
+	WPPA_Builder::OPTION,
+	array(
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'custom', 'id' => 'custom-0', 'enabled' => 1, 'title' => 'Памятка', 'audience' => 'all', 'html' => '<p>Профиль и команда заполнены — значит, заказы и документы придут на верный адрес.</p><ul><li>Проверьте email в разделе «Безопасность»</li><li>Пригласите коллег во вкладке «Команда»</li></ul>' ),
+			array( 'type' => 'block', 'id' => 'quick-actions', 'enabled' => 1, 'title' => 'Что дальше', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
 
 $sections  = demo_section(
 	'Кабинет целиком (активна вкладка «Обзор»)',

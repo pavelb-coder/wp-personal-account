@@ -22,6 +22,7 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-admin.php';
 
 $fail = 0;
@@ -53,6 +54,7 @@ wppa_check_output( 'admin/dashboard', static function () { WPPA_Admin::page_dash
 wppa_check_output( 'admin/accounts', static function () { WPPA_Admin::page_accounts(); }, $fail );
 wppa_check_output( 'admin/tools', static function () { WPPA_Admin::page_tools(); }, $fail );
 wppa_check_output( 'admin/teams', static function () { WPPA_Admin::page_teams(); }, $fail );
+wppa_check_output( 'admin/builder', static function () { WPPA_Builder::page(); }, $fail );
 
 // Расчётные методы.
 $stats = WPPA_Admin::stats();
@@ -69,6 +71,28 @@ echo 'status: страница «' . $status['account_page']['label'] . '», р�
 WPPA_Admin::menu();
 WPPA_Admin::assets( 'toplevel_page_wppa-dashboard' );
 echo "menu/assets: ок\n";
+
+// Санитизация раскладки: чужие блоки и вкладки отбрасываются.
+$clean = WPPA_Builder::sanitize(
+	array(
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '  Привет  ', 'audience' => 'хакеры' ),
+			array( 'type' => 'block', 'id' => 'password-form', 'enabled' => 1 ),
+			array( 'type' => 'custom', 'id' => 'custom-1', 'enabled' => 1, 'title' => 'Свой', 'html' => '<p>ok</p><script>alert(1)</script>' ),
+		),
+		'unknown-tab' => array( array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1 ) ),
+	)
+);
+
+$sanitize_ok = 2 === count( $clean['dashboard'] )
+	&& 'Привет' === $clean['dashboard'][0]['title']
+	&& 'all' === $clean['dashboard'][0]['audience']
+	&& false === strpos( $clean['dashboard'][1]['html'], '<script' );
+
+echo ( $sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "builder: sanitize отбрасывает чужие блоки, чистит HTML и нормализует поля\n";
+if ( ! $sanitize_ok ) {
+	$fail++;
+}
 
 echo $fail ? "\nПРОБЛЕМ: {$fail}\n" : "\nАдмин-панель отрисована без ошибок\n";
 exit( $fail ? 1 : 0 );

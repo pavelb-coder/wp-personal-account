@@ -19,6 +19,7 @@ require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 
 // Обход автозагрузки шаблонов: путь к templates.
@@ -95,6 +96,41 @@ if ( is_wp_error( $team_id ) ) {
 	WPPA_Teams::dissolve( $team_id );
 	echo 'team: после роспуска команда ' . ( get_post( $team_id ) ? 'осталась' : 'удалена' ) . ", мета пользователя «" . get_user_meta( 7, WPPA_Teams::META_TEAM, true ) . "»\n";
 }
+
+// Конструктор: раскладка по умолчанию и свой HTML-блок.
+$layout = WPPA_Builder::layout();
+echo "builder: вкладки " . implode( ', ', array_keys( $layout ) ) . ", блоков " . array_sum( array_map( 'count', $layout ) ) . "\n";
+
+update_option(
+	WPPA_Builder::OPTION,
+	array(
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => 'С возвращением', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'custom', 'id' => 'custom-1', 'enabled' => 1, 'title' => 'Инструкция', 'audience' => 'all', 'html' => '<p>Заполните профиль.</p>' ),
+			array( 'type' => 'block', 'id' => 'quick-actions', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
+
+ob_start();
+WPPA_Builder::render_tab( 'dashboard', array( 'user' => new WP_User(), 'tabs' => WPPA_Template::tabs() ) );
+$built = ob_get_clean();
+
+$checks = array(
+	'заголовок-переопределение' => false !== strpos( $built, 'С возвращением' ),
+	'свой HTML-блок'            => false !== strpos( $built, 'Заполните профиль.' ),
+	'выключенный блок скрыт'    => false === strpos( $built, 'Быстрые действия' ),
+);
+
+foreach ( $checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'builder: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Очистка раскладки, чтобы не влиять на другие проверки.
+delete_option( WPPA_Builder::OPTION );
 
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";

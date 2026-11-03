@@ -295,6 +295,85 @@
 	margin: 0;
 }
 
+/* Конструктор */
+
+.wppa-builder__list {
+	margin: 8px 0 12px;
+}
+
+.wppa-builder__row {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px 14px;
+	margin-bottom: 8px;
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 8px;
+}
+
+.wppa-builder__row.is-disabled {
+	opacity: .6;
+}
+
+.wppa-builder__handle {
+	color: #a7aaad;
+	font-size: 16px;
+	line-height: 1.4;
+	cursor: grab;
+	user-select: none;
+}
+
+.wppa-builder__main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.wppa-builder__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 4px;
+}
+
+.wppa-builder__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.wppa-builder__desc {
+	margin: 0 0 8px;
+}
+
+.wppa-builder__fields {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.wppa-builder__fields .regular-text {
+	flex: 1 1 240px;
+	min-width: 180px;
+}
+
+.wppa-builder__html {
+	margin: 8px 0 0;
+}
+
+.wppa-builder__actions {
+	display: flex;
+	gap: 4px;
+	flex-wrap: nowrap;
+}
+
+.wppa-builder__add {
+	margin: 0 0 4px;
+}
+
 /* Минимальные стили WordPress admin для автономного превью. */
 body {
 	margin: 0;
@@ -665,6 +744,419 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 		</table>
 
 			</div>
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Конструктор</h2><p>Сборка кабинета из блоков: порядок, включение, заголовки, аудитория и свои HTML-блоки</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+	<h1 class="wp-heading-inline">Конструктор личного кабинета</h1>
+	<a class="page-title-action" href="https://example.com/" target="_blank" rel="noopener">Открыть кабинет</a>
+	<hr class="wp-header-end" />
+
+	
+	<p class="wppa-admin__muted" style="max-width:760px;">
+		Соберите каждую вкладку из блоков: включите нужные, переставьте стрелками, переименуйте заголовок или добавьте свой HTML-блок. Порядок блоков на сайте совпадает с порядком в списке.	</p>
+
+	<form method="post" action="options.php">
+		<input type="hidden" name="option_page" value="wppa_layout_group" />
+								<section class="wppa-admin__panel wppa-builder" data-tab="dashboard">
+				<h2>Обзор</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[dashboard][0][enabled]" value="1"  checked="checked" />
+										<strong>Приветствие</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Имя пользователя и заголовок вкладки</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[dashboard][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[dashboard][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[dashboard][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[dashboard][0][id]" value="greeting" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[dashboard][1][enabled]" value="1"  checked="checked" />
+										<strong>Сводка профиля</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Дата регистрации, email, роль, команда</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[dashboard][1][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[dashboard][1][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[dashboard][1][type]" value="block" />
+							<input type="hidden" name="wppa_layout[dashboard][1][id]" value="profile-summary" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[dashboard][2][enabled]" value="1"  checked="checked" />
+										<strong>Быстрые действия</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Ссылки на профиль, смену пароля и выход</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[dashboard][2][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[dashboard][2][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[dashboard][2][type]" value="block" />
+							<input type="hidden" name="wppa_layout[dashboard][2][id]" value="quick-actions" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="dashboard"
+						data-index="3"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
+								<section class="wppa-admin__panel wppa-builder" data-tab="profile">
+				<h2>Профиль</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[profile][0][enabled]" value="1"  checked="checked" />
+										<strong>Форма профиля</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Имя, фамилия, отображаемое имя, «о себе»</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[profile][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[profile][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[profile][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[profile][0][id]" value="profile-form" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="profile"
+						data-index="1"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
+								<section class="wppa-admin__panel wppa-builder" data-tab="team">
+				<h2>Команда</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[team][0][enabled]" value="1"  checked="checked" />
+										<strong>Команда</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Состав команды, приглашения, управление</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[team][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[team][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[team][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[team][0][id]" value="team-widget" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="team"
+						data-index="1"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
+								<section class="wppa-admin__panel wppa-builder" data-tab="security">
+				<h2>Безопасность</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[security][0][enabled]" value="1"  checked="checked" />
+										<strong>Смена пароля</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Текущий и новый пароль</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[security][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[security][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[security][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[security][0][id]" value="password-form" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[security][1][enabled]" value="1"  checked="checked" />
+										<strong>Смена email</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Запрос нового адреса с подтверждением по почте</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[security][1][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[security][1][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[security][1][type]" value="block" />
+							<input type="hidden" name="wppa_layout[security][1][id]" value="email-form" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[security][2][enabled]" value="1"  checked="checked" />
+										<strong>Сессия и выход</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Кнопка выхода из аккаунта</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[security][2][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[security][2][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[security][2][type]" value="block" />
+							<input type="hidden" name="wppa_layout[security][2][id]" value="session-card" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="security"
+						data-index="3"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
+		
+		<button class="button">Сохранить раскладку</button>	</form>
+
+	<section class="wppa-admin__panel">
+		<h2>Сброс</h2>
+		<p class="wppa-admin__muted">Вернуть стандартный набор и порядок блоков во всех вкладках.</p>
+		<form method="post" action="https://example.com/wp-admin/admin-post.php">
+			<input type="hidden" name="_wpnonce" value="nonce" />			<input type="hidden" name="action" value="wppa_tool" />
+			<input type="hidden" name="wppa_tool" value="reset_layout" />
+			<button type="submit" class="button" data-wppa-confirm="Сбросить раскладку к стандартной?">
+				Сбросить к стандартной			</button>
+		</form>
+	</section>
+</div>
 </div></section><section class="demo-section"><div class="demo-section__head"><h2>Команды</h2><p>Объединение аккаунтов: состав, капитаны, лимит участников, роспуск команды</p></div><div class="demo-frame"><div class="wrap wppa-admin">
 	<h1 class="wp-heading-inline">Команды</h1>
 	<hr class="wp-header-end" />

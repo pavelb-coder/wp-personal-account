@@ -818,7 +818,7 @@ body {
 		<span class="wppa-card__value wppa-card__value--small">ivan@example.com</span>
 	</div>
 
-					<div class="wppa-card wppa-card--stat">
+			<div class="wppa-card wppa-card--stat">
 			<span class="wppa-card__label">Команда</span>
 			<span class="wppa-card__value wppa-card__value--small">Студия «Вектор»</span>
 							<a class="wppa-link" href="https://example.com/?wppa_tab=team">Состав команды</a>
@@ -831,17 +831,19 @@ body {
 	</div>
 </div>
 
+<section class="wppa-card wppa-custom-block"><h3 class="wppa-subtitle">Памятка</h3><div class="wppa-custom-block__content"><p>Профиль и команда заполнены — значит, заказы и документы придут на верный адрес.</p><ul><li>Проверьте email в разделе «Безопасность»</li><li>Пригласите коллег во вкладке «Команда»</li></ul></div></section>	<h3 class="wppa-subtitle">Что дальше</h3>
 
-<h3 class="wppa-subtitle">Быстрые действия</h3>
 <div class="wppa-actions">
 			<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_tab=profile">Редактировать профиль</a>
 				<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_tab=security">Сменить пароль</a>
+				<a class="wppa-button wppa-button--ghost" href="https://example.com/?wppa_tab=team">Моя команда</a>
 		<a class="wppa-button wppa-button--ghost" data-wppa-confirm-logout href="https://example.com/logout">
 		Выйти	</a>
 </div>
 	</div>
 </div>
-</section><section class="demo-block"><div class="demo-block__head"><h2>Профиль</h2><p>Вкладка profile: имя, фамилия, отображаемое имя, «о себе»</p></div><h2 class="wppa-title">Профиль</h2>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Профиль</h2><p>Вкладка profile: имя, фамилия, отображаемое имя, «о себе»</p></div><h2 class="wppa-title">
+	Профиль</h2>
 
 <form class="wppa-form" method="post" action="https://example.com/?wppa_tab=profile">
 	<input type="hidden" name="wppa_nonce" value="nonce" />	<input type="hidden" name="wppa_action" value="profile" />
@@ -879,7 +881,9 @@ body {
 </form>
 <div class="wppa-notice wppa-notice--success" role="status">
 	Профиль обновлён.</div>
-</section><section class="demo-block"><div class="demo-block__head"><h2>Команда (капитан)</h2><p>Вкладка team: состав команды, ссылка-приглашение, приглашение по email, переименование, роспуск</p></div><h2 class="wppa-title">Команда</h2>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Команда (капитан)</h2><p>Вкладка team: состав команды, ссылка-приглашение, приглашение по email, переименование, роспуск</p></div>
+<h2 class="wppa-title">
+	Команда</h2>
 
 
 	<div class="wppa-card wppa-team-head">
@@ -1019,9 +1023,7 @@ body {
 		</form>
 	</section>
 
-</section><section class="demo-block"><div class="demo-block__head"><h2>Безопасность</h2><p>Вкладка security: смена пароля, смена email с подтверждением, выход</p></div><h2 class="wppa-title">Безопасность</h2>
-
-<section class="wppa-card">
+</section><section class="demo-block"><div class="demo-block__head"><h2>Безопасность</h2><p>Вкладка security: смена пароля, смена email с подтверждением, выход</p></div><section class="wppa-card">
 	<h3 class="wppa-subtitle">Смена пароля</h3>
 
 	<form class="wppa-form" method="post" action="https://example.com/?wppa_tab=security">

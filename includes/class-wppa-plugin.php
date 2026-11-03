@@ -51,6 +51,7 @@ class WPPA_Plugin {
 
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
+		WPPA_Builder::init();
 
 		if ( is_admin() ) {
 			WPPA_Admin::init();
