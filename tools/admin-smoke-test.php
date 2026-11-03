@@ -1030,6 +1030,99 @@ foreach ( $percent_checks as $check_name => $ok ) {
 	}
 }
 
+// Порядок строк в выгрузке: командами, а не по дате регистрации.
+$snapshot = array(
+	'meta'     => $GLOBALS['wppa_test']['meta'],
+	'postmeta' => $GLOBALS['wppa_test']['postmeta'],
+	'posts'    => $GLOBALS['wppa_test']['posts'],
+	'users'    => $GLOBALS['wppa_test']['users'],
+);
+
+$GLOBALS['wppa_test']['posts'] = array(
+	901 => (object) array( 'ID' => 901, 'post_type' => 'wppa_team', 'post_title' => 'Бета', 'post_author' => 21 ),
+	902 => (object) array( 'ID' => 902, 'post_type' => 'wppa_team', 'post_title' => 'альфа', 'post_author' => 22 ),
+	903 => (object) array( 'ID' => 903, 'post_type' => 'wppa_team', 'post_title' => 'Гамма', 'post_author' => 23 ),
+);
+
+$GLOBALS['wppa_test']['meta'] = array(
+	9001 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'owner' ),
+	9002 => array( '_wppa_team_id' => 902, '_wppa_team_role' => 'owner' ),
+	9003 => array( '_wppa_team_id' => 903, '_wppa_team_role' => 'member' ),
+	9004 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'member' ),
+	9005 => array( '_wppa_team_id' => 901, '_wppa_team_role' => 'mentor' ),
+	9006 => array( '_wppa_team_id' => 902, '_wppa_team_role' => 'member' ),
+	9007 => array(),
+);
+
+$GLOBALS['wppa_test']['users'] = array(
+	9001 => array( 'Яков Бета', 'yakov@example.com' ),
+	9002 => array( 'Борис Альфа', 'boris@example.com' ),
+	9003 => array( 'Анна Гамма', 'anna@example.com' ),
+	9004 => array( 'Виктор Бета', 'viktor@example.com' ),
+	9005 => array( 'Мария Наставник', 'maria@example.com' ),
+	9006 => array( 'Алексей Альфа', 'alexey@example.com' ),
+	9007 => array( 'Без Команды', 'solo@example.com' ),
+);
+
+$order_users = array( get_userdata( 9007 ), get_userdata( 9005 ), get_userdata( 9004 ), get_userdata( 9003 ), get_userdata( 9006 ), get_userdata( 9002 ), get_userdata( 9001 ) );
+$order_ids   = array_map(
+	static function ( $user ) {
+		return (int) $user->ID;
+	},
+	WPPA_Export::sort_by_team( $order_users )
+);
+
+$team_checks = array();
+
+$team_checks['все строки на месте, без дублей'] = 7 === count( $order_ids ) && array() === array_diff( array( 9001, 9002, 9003, 9004, 9005, 9006, 9007 ), $order_ids );
+
+// «альфа» и «Бета» — по алфавиту без учёта регистра, «Гамма» после, без команды — в конце.
+$team_checks['команды по алфавиту']      = array( 9002, 9006, 9001, 9005, 9004, 9003, 9007 ) === $order_ids;
+$team_checks['капитан первым']           = 9002 === $order_ids[0] && 9001 === $order_ids[2];
+$team_checks['наставник после капитана'] = 9005 === $order_ids[3];
+$team_checks['без команды в конце']      = 9007 === end( $order_ids );
+$team_checks['строки команды подряд']    = array( 9001, 9005, 9004 ) === array_values( array_intersect( $order_ids, array( 9001, 9005, 9004 ) ) );
+
+// Команда без названия (удалённая запись) не ломает порядок и не теряет строк.
+$GLOBALS['wppa_test']['posts'][901]->post_title = '';
+$team_unnamed = WPPA_Export::sort_by_team( $order_users );
+$GLOBALS['wppa_test']['posts'][901]->post_title = 'Бета';
+
+$team_checks['команда без названия: строки целы'] = 7 === count( $team_unnamed );
+
+// Тот же порядок в самом файле: первая колонка — ID.
+$team_csv = WPPA_Export::csv(
+	array(
+		'groups' => array( 'account', 'team' ),
+		'users'  => $order_users,
+		'limit'  => 20,
+	)
+);
+
+$team_lines = explode( "\n", trim( $team_csv ) );
+$team_file  = array_slice( $team_lines, 2 );
+$team_idd   = array();
+
+foreach ( $team_file as $team_line ) {
+	$team_cells = explode( ';', $team_line );
+	$team_idd[] = (int) trim( $team_cells[0], "\"\xEF\xBB\xBF " );
+}
+
+$team_checks['в файле 7 строк данных']  = 7 === count( $team_file );
+$team_checks['в файле тот же порядок']  = array( 9002, 9006, 9001, 9005, 9004, 9003, 9007 ) === $team_idd;
+
+$GLOBALS['wppa_test']['meta']     = $snapshot['meta'];
+$GLOBALS['wppa_test']['postmeta'] = $snapshot['postmeta'];
+$GLOBALS['wppa_test']['posts']    = $snapshot['posts'];
+$GLOBALS['wppa_test']['users']    = $snapshot['users'];
+
+foreach ( $team_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team order: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );
 

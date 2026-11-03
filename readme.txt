@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.4.2
+Stable tag: 3.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.5.0 =
+* Участники в выгрузке группируются по названию команды: команды по алфавиту, внутри команды капитан, наставник, затем участники по имени.
+* Пользователи без команды идут в конце файла; удалённая команда не оставляет пользователя в чужой группе.
+* Порядок меняется только у строк — состав, охват и лимит остаются прежними.
+* Отключается фильтром `wppa_export_group_by_team`.
+* Новые методы `WPPA_Export::sort_by_team()` и `WPPA_Export::sort_key()`.
 
 = 3.4.2 =
 * Исправлено отображение процентов в выгрузке: десятичный разделитель теперь соответствует локали сайта (`67,5` для русской), иначе Excel показывал значение как текст.

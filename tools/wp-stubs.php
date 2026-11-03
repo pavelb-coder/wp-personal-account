@@ -108,6 +108,14 @@ class WP_User {
 			$this->user_email   = $registry[ $this->ID ]['email'] ?? $registry[ $this->ID ][1];
 			$this->first_name   = $registry[ $this->ID ]['first_name'] ?? $this->first_name;
 			$this->last_name    = $registry[ $this->ID ]['last_name'] ?? $this->last_name;
+
+			if ( isset( $registry[ $this->ID ]['login'] ) ) {
+				$this->user_login = (string) $registry[ $this->ID ]['login'];
+			}
+
+			if ( isset( $registry[ $this->ID ]['registered'] ) ) {
+				$this->user_registered = (string) $registry[ $this->ID ]['registered'];
+			}
 		}
 	}
 }
@@ -331,6 +339,14 @@ function get_userdata( $id ) {
 	$user             = new WP_User();
 	$user->ID         = (int) $id;
 	$user->user_login = 'user' . $id;
+
+	// Имя берём из реестра демо-пользователей, если он задан.
+	$registry = isset( $GLOBALS['wppa_test']['users'] ) ? (array) $GLOBALS['wppa_test']['users'] : array();
+
+	if ( isset( $registry[ (int) $id ][0] ) ) {
+		$user->display_name = $registry[ (int) $id ][0];
+	}
+
 	return $user;
 }
 

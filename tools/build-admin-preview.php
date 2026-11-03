@@ -258,8 +258,41 @@ if ( $wpdb instanceof WPPA_Test_WPDB ) {
 	WPPA_Olympiad::flush();
 }
 
-$sample_user = new WP_User( 7 );
-$sample = WPPA_Export::csv( array( 'users' => array( $sample_user ) ) );
+// Демо-участники трёх команд, чтобы в образце был виден порядок группировки.
+$GLOBALS['wppa_test']['users'][7]  = array( 'Иван Петров', 'email' => 'ivan@example.com', 'login' => 'ivan', 'first_name' => 'Иван', 'last_name' => 'Петров', 'registered' => '2025-09-02 10:15:00' );
+$GLOBALS['wppa_test']['users'][8]  = array( 'Мария Соколова', 'email' => 'maria@example.com', 'login' => 'maria', 'first_name' => 'Мария', 'last_name' => 'Соколова', 'registered' => '2025-09-04 12:40:00' );
+$GLOBALS['wppa_test']['users'][9]  = array( 'Алексей Громов', 'email' => 'gromov@example.com', 'login' => 'gromov', 'first_name' => 'Алексей', 'last_name' => 'Громов', 'registered' => '2025-09-07 09:05:00' );
+$GLOBALS['wppa_test']['users'][10] = array( 'Ольга Ким', 'email' => 'kim@example.com', 'login' => 'kim', 'first_name' => 'Ольга', 'last_name' => 'Ким', 'registered' => '2025-09-11 18:20:00' );
+$GLOBALS['wppa_test']['users'][11] = array( 'Павел Безруков', 'email' => 'bezrukov@example.com', 'login' => 'bezrukov', 'first_name' => 'Павел', 'last_name' => 'Безруков', 'registered' => '2025-09-15 08:00:00' );
+
+$GLOBALS['wppa_test']['meta'][7]  = array( WPPA_Teams::META_TEAM => 102, WPPA_Teams::META_ROLE => 'owner' );
+$GLOBALS['wppa_test']['meta'][8]  = array( WPPA_Teams::META_TEAM => 102, WPPA_Teams::META_ROLE => 'member' );
+$GLOBALS['wppa_test']['meta'][9]  = array( WPPA_Teams::META_TEAM => 101, WPPA_Teams::META_ROLE => 'owner' );
+$GLOBALS['wppa_test']['meta'][10] = array( WPPA_Teams::META_TEAM => 101, WPPA_Teams::META_ROLE => 'member' );
+$GLOBALS['wppa_test']['meta'][11] = array();
+
+// Капитаны демо-команд — те, кто в фикстуре помечен owner.
+if ( isset( $GLOBALS['wppa_test']['posts'][101] ) ) {
+	$GLOBALS['wppa_test']['posts'][101]->post_author = 9;
+	$GLOBALS['wppa_test']['posts'][102]->post_author = 7;
+	$GLOBALS['wppa_test']['posts'][103]->post_author = 11;
+}
+
+if ( $wpdb instanceof WPPA_Test_WPDB ) {
+	$wpdb->data = array(
+		'var'      => $wpdb->prefix . 'olympiad_attempts',
+		'attempts' => array(
+			(object) array( 'user_id' => 7, 'score' => 27, 'max_score' => 40, 'tests' => 3, 'pending' => 1 ),
+			(object) array( 'user_id' => 9, 'score' => 34, 'max_score' => 40, 'tests' => 4, 'pending' => 0 ),
+			(object) array( 'user_id' => 10, 'score' => 18, 'max_score' => 30, 'tests' => 3, 'pending' => 2 ),
+		),
+	);
+
+	WPPA_Olympiad::flush();
+}
+
+$sample_users = array( new WP_User( 11 ), new WP_User( 7 ), new WP_User( 9 ), new WP_User( 8 ), new WP_User( 10 ) );
+$sample = WPPA_Export::csv( array( 'users' => $sample_users ) );
 file_put_contents( $base . 'export-sample.csv', $sample );
 echo "export-sample.csv: " . strlen( $sample ) . " байт\n";
 

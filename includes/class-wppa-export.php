@@ -345,6 +345,98 @@ class WPPA_Export {
 	}
 
 	/**
+	 * Ключ для сортировки строк: без регистра и лишних пробелов.
+	 *
+	 * @param string $text Текст.
+	 * @return string
+	 */
+	public static function sort_key( $text ) {
+		$text = trim( (string) $text );
+
+		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $text, 'UTF-8' ) : strtolower( $text );
+	}
+
+	/**
+	 * Порядок участников: командами.
+	 *
+	 * Строки одной команды идут подряд, команды — по названию, внутри команды
+	 * сначала капитан, потом наставник, потом участники по имени. Пользователи
+	 * без команды — в конце, по имени. Порядок записей не меняется: сортировка
+	 * не добавляет и не убирает строк.
+	 *
+	 * @param array $users Пользователи.
+	 * @return array
+	 */
+	public static function sort_by_team( $users ) {
+		$users  = array_values( (array) $users );
+		$names  = array();
+		$sorted = array();
+
+		foreach ( $users as $index => $user ) {
+			$user_id = isset( $user->ID ) ? (int) $user->ID : 0;
+			$team_id = $user_id ? (int) WPPA_Teams::team_id( $user_id ) : 0;
+			$title   = $team_id ? trim( (string) get_the_title( $team_id ) ) : '';
+
+			// Команду без названия (удалённая запись) считаем отсутствующей.
+			if ( '' === $title ) {
+				$team_id = 0;
+			}
+
+			if ( $team_id && ! isset( $names[ $team_id ] ) ) {
+				$names[ $team_id ] = self::sort_key( $title );
+			}
+
+			$role = $team_id ? WPPA_Teams::role( $user_id ) : '';
+			$rank = 'owner' === $role ? 0 : ( 'mentor' === $role ? 1 : 2 );
+
+			$sorted[] = array(
+				'position' => $index,
+				'user'     => $user,
+				'group'    => $team_id ? 0 : 1,
+				'team'     => $team_id ? $names[ $team_id ] : '',
+				'rank'     => $rank,
+				'name'     => self::sort_key( isset( $user->display_name ) ? $user->display_name : '' ),
+			);
+		}
+
+		usort(
+			$sorted,
+			static function ( $a, $b ) {
+				// Сначала команды по названию, без команды — в конце.
+				if ( $a['group'] !== $b['group'] ) {
+					return $a['group'] - $b['group'];
+				}
+
+				$team = strcmp( $a['team'], $b['team'] );
+
+				if ( 0 !== $team ) {
+					return $team;
+				}
+
+				if ( $a['rank'] !== $b['rank'] ) {
+					return $a['rank'] - $b['rank'];
+				}
+
+				$name = strcmp( $a['name'], $b['name'] );
+
+				if ( 0 !== $name ) {
+					return $name;
+				}
+
+				return $a['position'] - $b['position'];
+			}
+		);
+
+		$out = array();
+
+		foreach ( $sorted as $item ) {
+			$out[] = $item['user'];
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Готовый CSV.
 	 *
 	 * @param array $args Аргументы: groups, scope, limit, delimiter, users.
@@ -362,6 +454,12 @@ class WPPA_Export {
 		$delimiter = ',' === $args['delimiter'] ? ',' : ';';
 		$columns   = self::columns( (array) $args['groups'] );
 		$users     = null === $args['users'] ? self::users( $args ) : array_slice( (array) $args['users'], 0, max( 1, (int) $args['limit'] ) );
+
+		// Участники одной команды должны стоять рядом, а не вперемешку по дате
+		// регистрации: иначе по файлу не видно, кто в какой команде.
+		if ( apply_filters( 'wppa_export_group_by_team', true ) ) {
+			$users = self::sort_by_team( $users );
+		}
 
 		$context = array();
 
