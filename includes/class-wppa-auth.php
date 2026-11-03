@@ -91,9 +91,9 @@ class WPPA_Auth {
 	public static function handle_register() {
 		check_admin_referer( 'wppa_register', 'wppa_nonce' );
 
-		$tab_url = WPPA_Plugin::account_url( array( 'wppa_view' => 'register' ) );
+		$tab_url = WPPA_Plugin::register_url();
 
-		if ( ! WPPA_Plugin::setting( 'registration_enabled', 1 ) || ! get_option( 'users_can_register' ) ) {
+		if ( ! WPPA_Plugin::registration_open() ) {
 			WPPA_Notices::redirect( 'registration_closed', $tab_url );
 		}
 

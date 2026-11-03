@@ -12,6 +12,8 @@ defined( 'ABSPATH' ) || exit;
 $wppa_redirect = isset( $redirect ) ? $redirect : '';
 $wppa_title    = isset( $title ) && '' !== $title ? $title : __( 'Вход в личный кабинет', 'wp-personal-account' );
 $wppa_action   = WPPA_Plugin::account_url();
+$wppa_register = ! isset( $hide_register ) || ! $hide_register;
+$wppa_register = $wppa_register && WPPA_Plugin::registration_open();
 ?>
 <div class="wppa-form-wrap">
 	<h2 class="wppa-title"><?php echo esc_html( $wppa_title ); ?></h2>
@@ -46,4 +48,13 @@ $wppa_action   = WPPA_Plugin::account_url();
 
 		<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Войти', 'wp-personal-account' ); ?></button>
 	</form>
+
+	<?php if ( $wppa_register ) : ?>
+		<div class="wppa-switch wppa-switch--button">
+			<span class="wppa-switch__text"><?php esc_html_e( 'Нет аккаунта?', 'wp-personal-account' ); ?></span>
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( WPPA_Plugin::register_url() ); ?>">
+				<?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?>
+			</a>
+		</div>
+	<?php endif; ?>
 </div>

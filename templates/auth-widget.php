@@ -29,7 +29,14 @@ $wppa_mode = isset( $mode ) ? $mode : 'both';
 	<div class="wppa-widget__panel" id="wppa-panel-login" data-wppa-panel="login">
 		<?php
 		if ( 'register' !== $wppa_mode ) {
-			WPPA_Template::render( 'login', array( 'redirect' => isset( $redirect ) ? $redirect : '', 'title' => '' ) );
+			WPPA_Template::render(
+				'login',
+				array(
+					'redirect'      => isset( $redirect ) ? $redirect : '',
+					'title'         => '',
+					'hide_register' => 'both' === $wppa_mode,
+				)
+			);
 		}
 		?>
 	</div>
@@ -42,7 +49,13 @@ $wppa_mode = isset( $mode ) ? $mode : 'both';
 		>
 			<?php
 			if ( 'login' !== $wppa_mode ) {
-				WPPA_Template::render( 'register', array( 'title' => '' ) );
+				WPPA_Template::render(
+					'register',
+					array(
+						'title'      => '',
+						'hide_login' => 'both' === $wppa_mode,
+					)
+				);
 			}
 			?>
 		</div>

@@ -60,7 +60,7 @@ class WPPA_Account {
 	 * @return void
 	 */
 	private static function render_guest() {
-		$registration = (bool) WPPA_Plugin::setting( 'registration_enabled', 1 ) && get_option( 'users_can_register' );
+		$registration = WPPA_Plugin::registration_open();
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор отображаемой формы.
 		$view = isset( $_GET['wppa_view'] ) ? sanitize_key( wp_unslash( $_GET['wppa_view'] ) ) : 'login';

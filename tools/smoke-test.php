@@ -361,6 +361,45 @@ foreach ( $fields_checks as $check_name => $ok ) {
 	}
 }
 
+// ---------- Кнопка «Регистрация» на форме входа ----------
+$GLOBALS['wppa_test']['logged_in'] = false;
+
+$login_html = WPPA_Template::get( 'login', array( 'redirect' => '', 'title' => 'Вход' ) );
+$reg_btn_checks = array(
+	'вход: кнопка «Регистрация»'        => false !== strpos( $login_html, 'wppa-switch--button' ) && false !== strpos( $login_html, 'Регистрация' ),
+	'вход: ссылка на форму регистрации' => false !== strpos( $login_html, 'wppa_view=register' ),
+	'вход: кнопка «Войти» на месте'     => false !== strpos( $login_html, 'type="submit"' ),
+);
+
+$login_hidden = WPPA_Template::get( 'login', array( 'hide_register' => true ) );
+$reg_btn_checks['вход: кнопку можно отключить'] = false === strpos( $login_hidden, 'wppa_view=register' );
+
+$register_html = WPPA_Template::get( 'register', array( 'title' => '' ) );
+$reg_btn_checks['регистрация: кнопка «Войти»'] = false !== strpos( $register_html, 'wppa_view=login' );
+$reg_btn_checks['регистрация: кнопку можно отключить'] = false === strpos( WPPA_Template::get( 'register', array( 'hide_login' => true ) ), 'wppa_view=login' );
+
+// Регистрация закрыта — кнопки нет.
+update_option( 'users_can_register', 0 );
+$reg_btn_checks['регистрация закрыта: кнопки нет'] = false === strpos( WPPA_Template::get( 'login', array() ), 'wppa_view=register' );
+update_option( 'users_can_register', 1 );
+
+$reg_btn_checks['хелпер registration_open()'] = true === WPPA_Plugin::registration_open();
+
+// Шорткод [wppa_login]: кнопка по умолчанию и скрытие атрибутом.
+$short_login    = WPPA_Shortcodes::login( array() );
+$short_login_no = WPPA_Shortcodes::login( array( 'hide_register' => '1' ) );
+$reg_btn_checks['шорткод: кнопка по умолчанию'] = false !== strpos( $short_login, 'wppa_view=register' );
+$reg_btn_checks['шорткод: hide_register="1"']   = false === strpos( $short_login_no, 'wppa_view=register' );
+
+foreach ( $reg_btn_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'register button: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+$GLOBALS['wppa_test']['logged_in'] = true;
+
 WPPA_Auth_Widget::register();
 echo 'widget: зарегистрирован ' . implode( ', ', (array) ( $GLOBALS['wppa_test']['widgets'] ?? array() ) ) . "\n";
 
@@ -384,7 +423,14 @@ $widget_checks = array(
 	'панель входа'               => false !== strpos( $widget_html, 'wppa-panel-login' ),
 	'панель регистрации'         => false !== strpos( $widget_html, 'wppa-panel-register' ),
 	'переключатель вкладок'      => false !== strpos( $widget_html, 'data-wppa-panel-btn' ),
+	'режим «оба»: кнопка не дублирует вкладки' => false === strpos( $widget_html, 'wppa_view=register' ),
 );
+
+// Режим «только вход»: кнопка регистрации внутри виджета нужна.
+ob_start();
+WPPA_Auth_Form::render( array( 'mode' => 'login' ) );
+$widget_login_only = ob_get_clean();
+$widget_checks['режим «только вход»: кнопка регистрации'] = false !== strpos( $widget_login_only, 'wppa_view=register' );
 
 foreach ( $widget_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'widget: ' . $check_name . "\n";

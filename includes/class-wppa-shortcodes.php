@@ -42,8 +42,9 @@ class WPPA_Shortcodes {
 	public static function login( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'redirect' => '',
-				'title'    => '',
+				'redirect'      => '',
+				'title'         => '',
+				'hide_register' => '',
 			),
 			$atts,
 			'wppa_login'
@@ -61,8 +62,9 @@ class WPPA_Shortcodes {
 		return WPPA_Template::get(
 			'login',
 			array(
-				'redirect' => esc_url_raw( $atts['redirect'] ),
-				'title'    => sanitize_text_field( $atts['title'] ),
+				'redirect'      => esc_url_raw( $atts['redirect'] ),
+				'title'         => sanitize_text_field( $atts['title'] ),
+				'hide_register' => (bool) absint( $atts['hide_register'] ),
 			)
 		);
 	}
@@ -105,7 +107,8 @@ class WPPA_Shortcodes {
 	public static function register( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'title' => '',
+				'title'      => '',
+				'hide_login' => '',
 			),
 			$atts,
 			'wppa_register'
@@ -120,7 +123,7 @@ class WPPA_Shortcodes {
 			);
 		}
 
-		$allowed = (bool) WPPA_Plugin::setting( 'registration_enabled', 1 ) && get_option( 'users_can_register' );
+		$allowed = WPPA_Plugin::registration_open();
 
 		if ( ! $allowed ) {
 			return WPPA_Template::get(
@@ -135,7 +138,8 @@ class WPPA_Shortcodes {
 		return WPPA_Template::get(
 			'register',
 			array(
-				'title' => sanitize_text_field( $atts['title'] ),
+				'title'      => sanitize_text_field( $atts['title'] ),
+				'hide_login' => (bool) absint( $atts['hide_login'] ),
 			)
 		);
 	}

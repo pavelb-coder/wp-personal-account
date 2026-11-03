@@ -52,4 +52,13 @@ $wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистра�
 
 		<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Создать аккаунт', 'wp-personal-account' ); ?></button>
 	</form>
+
+	<?php if ( ! isset( $hide_login ) || ! $hide_login ) : ?>
+		<div class="wppa-switch wppa-switch--button">
+			<span class="wppa-switch__text"><?php esc_html_e( 'Уже есть аккаунт?', 'wp-personal-account' ); ?></span>
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( WPPA_Plugin::login_url() ); ?>">
+				<?php esc_html_e( 'Войти', 'wp-personal-account' ); ?>
+			</a>
+		</div>
+	<?php endif; ?>
 </div>

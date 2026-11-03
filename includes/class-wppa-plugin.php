@@ -130,6 +130,33 @@ class WPPA_Plugin {
 	}
 
 	/**
+	 * Открыта ли регистрация: включена в настройках плагина и в настройках WordPress.
+	 *
+	 * @return bool
+	 */
+	public static function registration_open() {
+		return (bool) self::setting( 'registration_enabled', 1 ) && (bool) get_option( 'users_can_register' );
+	}
+
+	/**
+	 * Ссылка на форму регистрации.
+	 *
+	 * @return string
+	 */
+	public static function register_url() {
+		return self::account_url( array( 'wppa_view' => 'register' ) );
+	}
+
+	/**
+	 * Ссылка на форму входа.
+	 *
+	 * @return string
+	 */
+	public static function login_url() {
+		return self::account_url( array( 'wppa_view' => 'login' ) );
+	}
+
+	/**
 	 * ID страницы личного кабинета.
 	 *
 	 * @return int

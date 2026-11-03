@@ -132,8 +132,17 @@ $sections .= demo_section(
 );
 
 $sections .= demo_section(
+	'Экран гостя',
+	'Страница кабинета для неавторизованных: кнопка «Регистрация» под формой входа',
+	'<div class="demo-two">'
+		. '<div>' . WPPA_Template::get( 'guest', array( 'view' => 'login', 'registration' => true ) ) . '</div>'
+		. '<div>' . WPPA_Template::get( 'guest', array( 'view' => 'register', 'registration' => true ) ) . '</div>'
+		. '</div>'
+);
+
+$sections .= demo_section(
 	'Вход и регистрация',
-	'Экран для гостей: формы [wppa_login] и [wppa_register]',
+	'Формы [wppa_login] и [wppa_register] с кнопками перехода',
 	'<div class="demo-two">'
 		. '<div>' . WPPA_Template::get( 'login', array( 'redirect' => '', 'title' => '' ) ) . '</div>'
 		. '<div>' . WPPA_Template::get( 'register', array( 'title' => '' ) ) . '</div>'

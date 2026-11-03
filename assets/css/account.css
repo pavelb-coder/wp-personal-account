@@ -573,6 +573,28 @@
 	text-align: center;
 }
 
+.wppa-switch--button {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-switch__text {
+	font-size: .92em;
+	color: var(--wppa-muted);
+	text-align: center;
+}
+
+.wppa-switch--button .wppa-button {
+	margin: 0;
+	text-align: center;
+	text-decoration: none;
+}
+
 /* Адаптив */
 
 @media (max-width: 640px) {

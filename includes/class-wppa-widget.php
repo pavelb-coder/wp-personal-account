@@ -204,7 +204,7 @@ class WPPA_Auth_Form {
 	public static function render( $args = array() ) {
 		$args = wp_parse_args( $args, self::defaults() );
 
-		$registration = (bool) WPPA_Plugin::setting( 'registration_enabled', 1 ) && get_option( 'users_can_register' );
+		$registration = WPPA_Plugin::registration_open();
 		$mode         = in_array( $args['mode'], array( 'both', 'login', 'register' ), true ) ? $args['mode'] : 'both';
 
 		if ( 'register' === $mode && ! $registration ) {
