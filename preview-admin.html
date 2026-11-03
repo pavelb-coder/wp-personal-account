@@ -1546,6 +1546,34 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			<p class="description">
 				Шорткоды: [wppa_account] — кабинет, [wppa_login] — форма входа, [wppa_register] — форма регистрации.			</p>
 
+			
+			
+			<div class="wppa-admin" style="margin:16px 0 24px;padding:16px 20px;border:1px solid #dcdcde;border-radius:8px;background:#fff;max-width:900px">
+				<h2 style="margin-top:0">Сетевая папка</h2>
+				<p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px">
+					<span class="wppa-badge wppa-badge--warn">
+						Подключения нет					</span>
+					<span class="wppa-admin__muted">
+						Папка на сервере: <code>/mnt/share/wppa</code>					</span>
+				</p>
+				<p class="wppa-admin__muted" style="margin:0 0 12px">Папка /mnt/share/wppa не найдена или недоступна процессу PHP.</p>
+
+				<div style="display:flex;gap:10px;flex-wrap:wrap">
+					<form method="post" action="https://example.com/wp-admin/admin-post.php">
+						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="folder_verify" />
+						<button type="submit" class="button">Проверить подключение к сетевой папке</button>
+					</form>
+					<form method="post" action="https://example.com/wp-admin/admin-post.php">
+						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="export_folder_now" />
+						<button type="submit" class="button button-primary">Экспортировать</button>
+					</form>
+				</div>
+				<p class="description" style="margin:10px 0 0">
+					Кнопки используют сохранённые настройки: если меняли поля ниже — сначала сохраните изменения. Результат обеих операций попадает в журнал в «Инструментах».				</p>
+			</div>
+
 			<form action="options.php" method="post">
 				<input type="hidden" name="option_page" value="wppa_settings_group" />
 				<h2>Основное</h2>
@@ -2364,23 +2392,18 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 03.11.2026 17:31 (Раз в день).							</p>
+									Следующая выгрузка: 03.11.2026 20:32 (Раз в день).							</p>
 
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_folder_now" />
-					<button type="submit" class="button button-primary">Выгрузить в папку сейчас</button>
+					<button type="submit" class="button button-primary">Экспортировать</button>
 				</form>
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="export_folder_check" />
-					<button type="submit" class="button">Проверить папку</button>
-				</form>
-				<form method="post" action="https://example.com/wp-admin/admin-post.php">
-					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="smb_check" />
-					<button type="submit" class="button">Проверить доступ к SMB</button>
+					<input type="hidden" name="wppa_tool" value="folder_verify" />
+					<button type="submit" class="button">Проверить подключение к сетевой папке</button>
 				</form>
 									<form method="post" action="https://example.com/wp-admin/admin-post.php">
 						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
@@ -2399,7 +2422,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>03.11.2026 09:31</td>
+								<td>03.11.2026 12:32</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -2408,7 +2431,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 09:31</td>
+								<td>03.11.2026 12:32</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -2417,7 +2440,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 09:31</td>
+								<td>03.11.2026 12:32</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

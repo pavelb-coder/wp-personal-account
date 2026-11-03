@@ -88,6 +88,10 @@ ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
 
+ob_start();
+WPPA_Admin::page_tools();
+$tools_html = ob_get_clean();
+
 // ---------- Экспорт аккаунтов ----------
 $export_groups = WPPA_Export::groups();
 $export_checks = array(
@@ -343,6 +347,23 @@ $smb_fields_ok = false !== strpos( $settings_html, 'wppa_settings[smb][user]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[export_folder][mode]' );
 
 $smb_checks['настройки: поля авторизации'] = $smb_fields_ok;
+
+// Кнопки «Проверить подключение» и «Экспортировать».
+$smb_checks['настройки: кнопка проверки подключения'] = false !== strpos( $settings_html, 'Проверить подключение к сетевой папке' )
+	&& false !== strpos( $settings_html, 'value="folder_verify"' );
+$smb_checks['настройки: кнопка экспорта'] = false !== strpos( $settings_html, 'value="export_folder_now"' )
+	&& false !== strpos( $settings_html, '>Экспортировать<' );
+$smb_checks['настройки: кнопки не вложены в форму настроек'] = ( false === strpos( $settings_html, '<form action="options.php" method="post">\n\t\t\t\t\t\t\t<form' ) );
+$smb_checks['инструменты: кнопка проверки подключения'] = false !== strpos( $tools_html, 'value="folder_verify"' );
+$smb_checks['инструменты: кнопка экспорта'] = false !== strpos( $tools_html, '>Экспортировать<' );
+$smb_checks['уведомления: проверка подключения'] = ( function () {
+	$_GET['wppa_done'] = 'folder_verify_ok';
+	$ok = WPPA_Admin::tool_notice();
+	$_GET['wppa_done'] = 'folder_verify_fail';
+	$bad = WPPA_Admin::tool_notice();
+	unset( $_GET['wppa_done'] );
+	return is_array( $ok ) && 'success' === $ok[0] && is_array( $bad ) && 'error' === $bad[0];
+} )();
 
 $smb_sanitize = WPPA_Settings::sanitize(
 	array(

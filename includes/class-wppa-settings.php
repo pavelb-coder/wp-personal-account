@@ -217,6 +217,59 @@ class WPPA_Settings {
 				<?php esc_html_e( 'Шорткоды: [wppa_account] — кабинет, [wppa_login] — форма входа, [wppa_register] — форма регистрации.', 'wp-personal-account' ); ?>
 			</p>
 
+			<?php
+			$wppa_notice  = WPPA_Admin::tool_notice();
+			$wppa_mode    = WPPA_Export_Folder::config();
+			$wppa_state   = 'smb' === $wppa_mode['mode']
+				? WPPA_SMB::test( WPPA_SMB::config() )
+				: WPPA_Export_Folder::check_folder( $wppa_mode['path'] );
+			$wppa_target  = 'smb' === $wppa_mode['mode'] ? WPPA_SMB::target() : $wppa_mode['path'];
+			?>
+
+			<?php if ( $wppa_notice ) : ?>
+				<div class="notice notice-<?php echo esc_attr( 'success' === $wppa_notice[0] ? 'success' : 'error' ); ?> is-dismissible">
+					<p><?php echo esc_html( $wppa_notice[1] ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<div class="wppa-admin" style="margin:16px 0 24px;padding:16px 20px;border:1px solid #dcdcde;border-radius:8px;background:#fff;max-width:900px">
+				<h2 style="margin-top:0"><?php esc_html_e( 'Сетевая папка', 'wp-personal-account' ); ?></h2>
+				<p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px">
+					<span class="wppa-badge <?php echo $wppa_state['ok'] ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+						<?php echo $wppa_state['ok'] ? esc_html__( 'Подключение есть', 'wp-personal-account' ) : esc_html__( 'Подключения нет', 'wp-personal-account' ); ?>
+					</span>
+					<span class="wppa-admin__muted">
+						<?php
+						printf(
+							/* translators: 1: способ записи, 2: путь */
+							esc_html__( '%1$s: %2$s', 'wp-personal-account' ),
+							'smb' === $wppa_mode['mode'] ? esc_html__( 'SMB напрямую', 'wp-personal-account' ) : esc_html__( 'Папка на сервере', 'wp-personal-account' ),
+							'<code>' . esc_html( '' !== $wppa_target ? $wppa_target : '—' ) . '</code>'
+						);
+						?>
+					</span>
+				</p>
+				<p class="wppa-admin__muted" style="margin:0 0 12px"><?php echo esc_html( $wppa_state['message'] ); ?></p>
+
+				<div style="display:flex;gap:10px;flex-wrap:wrap">
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'wppa_tool' ); ?>
+						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="folder_verify" />
+						<button type="submit" class="button"><?php esc_html_e( 'Проверить подключение к сетевой папке', 'wp-personal-account' ); ?></button>
+					</form>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'wppa_tool' ); ?>
+						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="export_folder_now" />
+						<button type="submit" class="button button-primary"><?php esc_html_e( 'Экспортировать', 'wp-personal-account' ); ?></button>
+					</form>
+				</div>
+				<p class="description" style="margin:10px 0 0">
+					<?php esc_html_e( 'Кнопки используют сохранённые настройки: если меняли поля ниже — сначала сохраните изменения. Результат обеих операций попадает в журнал в «Инструментах».', 'wp-personal-account' ); ?>
+				</p>
+			</div>
+
 			<form action="options.php" method="post">
 				<?php settings_fields( 'wppa_settings_group' ); ?>
 

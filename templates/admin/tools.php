@@ -191,19 +191,13 @@ defined( 'ABSPATH' ) || exit;
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
 					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_folder_now" />
-					<button type="submit" class="button button-primary"><?php esc_html_e( 'Выгрузить в папку сейчас', 'wp-personal-account' ); ?></button>
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Экспортировать', 'wp-personal-account' ); ?></button>
 				</form>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
 					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="export_folder_check" />
-					<button type="submit" class="button"><?php esc_html_e( 'Проверить папку', 'wp-personal-account' ); ?></button>
-				</form>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<?php wp_nonce_field( 'wppa_tool' ); ?>
-					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="smb_check" />
-					<button type="submit" class="button"><?php esc_html_e( 'Проверить доступ к SMB', 'wp-personal-account' ); ?></button>
+					<input type="hidden" name="wppa_tool" value="folder_verify" />
+					<button type="submit" class="button"><?php esc_html_e( 'Проверить подключение к сетевой папке', 'wp-personal-account' ); ?></button>
 				</form>
 				<?php if ( $wppa_log ) : ?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
