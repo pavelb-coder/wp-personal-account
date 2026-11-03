@@ -29,7 +29,6 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
-require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
@@ -267,128 +266,35 @@ foreach ( $folder_checks as $check_name => $ok ) {
 	}
 }
 
-// ---------- Авторизация SMB ----------
-$smb_config = array(
-	'host'   => 'fileserver',
-	'share'  => 'exchange',
-	'dir'    => 'reports/wppa',
-	'user'   => 'svc_wppa',
-	'pass'   => 'secret-pass',
-	'domain' => 'WORKGROUP',
-	'port'   => 445,
+// ---------- Кнопки сетевой папки ----------
+$folder_buttons_checks = array(
+	'настройки: кнопка проверки подключения' => false !== strpos( $settings_html, 'Проверить подключение к сетевой папке' )
+		&& false !== strpos( $settings_html, 'value="folder_verify"' ),
+	'настройки: кнопка экспорта'            => false !== strpos( $settings_html, 'value="export_folder_now"' )
+		&& false !== strpos( $settings_html, '>Экспортировать<' ),
+	'настройки: карточка сетевой папки'      => false !== strpos( $settings_html, 'Папка на сервере:' ),
+	'инструменты: кнопка проверки подключения' => false !== strpos( $tools_html, 'value="folder_verify"' ),
+	'инструменты: кнопка экспорта'           => false !== strpos( $tools_html, '>Экспортировать<' ),
+	'уведомления: проверка подключения'      => ( function () {
+		$_GET['wppa_done'] = 'folder_verify_ok';
+		$ok = WPPA_Admin::tool_notice();
+		$_GET['wppa_done'] = 'folder_verify_fail';
+		$bad = WPPA_Admin::tool_notice();
+		unset( $_GET['wppa_done'] );
+		return is_array( $ok ) && 'success' === $ok[0] && is_array( $bad ) && 'error' === $bad[0];
+	} )(),
+	'SMB: класс удалён'                      => ! class_exists( 'WPPA_SMB' ),
+	'SMB: поля авторизации убраны'           => false === strpos( $settings_html, 'wppa_settings[smb]' )
+		&& false === strpos( $settings_html, 'Авторизация SMB' ),
+	'SMB: режим записи убран'                => false === strpos( $settings_html, 'wppa_settings[export_folder][mode]' )
+		&& ! array_key_exists( 'mode', WPPA_Export_Folder::config() ),
+	'SMB: настройки не хранят ключ smb'      => ! array_key_exists( 'smb', WPPA_Plugin::get_settings() ),
 );
-
-$smb_checks = array(
-	'цель: //сервер/шара/папка'      => '//fileserver/exchange/reports/wppa' === WPPA_SMB::target( $smb_config ),
-	'цель без папки'                 => '//fileserver/exchange' === WPPA_SMB::target( array_merge( $smb_config, array( 'dir' => '' ) ) ),
-	'учётные данные: домен\логин%пароль' => 'WORKGROUP\svc_wppa%secret-pass' === WPPA_SMB::auth_string( $smb_config ),
-	'учётные данные без домена'      => 'svc_wppa%secret-pass' === WPPA_SMB::auth_string( array_merge( $smb_config, array( 'domain' => '' ) ) ),
-	'шара указана — настроено'       => true === WPPA_SMB::is_configured( $smb_config ),
-	'пустой сервер — не настроено'   => false === WPPA_SMB::is_configured( array( 'host' => '', 'share' => 'x', 'user' => 'u' ) ),
-);
-
-// Пароль из константы важнее сохранённого.
-define( 'WPPA_SMB_PASSWORD', 'from-constant' );
-$smb_checks['пароль из константы'] = 'from-constant' === WPPA_SMB::password( 'from-db' ) && 'from-constant' === WPPA_SMB::config()['pass'];
-
-// Команда монтирования: пароль не в командной строке.
-$mount = WPPA_SMB::mount_command( $smb_config );
-$smb_checks['монтирование: credentials-файл'] = false !== strpos( $mount['command'], 'credentials=' )
-	&& false === strpos( $mount['command'], 'secret-pass' );
-$smb_checks['монтирование: пароль в файле']   = false !== strpos( $mount['credentials'], 'password=secret-pass' );
-$smb_checks['монтирование: домен в файле']    = false !== strpos( $mount['credentials'], 'domain=WORKGROUP' );
-
-// Проверка доступа без расширения и без утилиты.
-$smb_checks['нет средств — понятная ошибка'] = false === WPPA_SMB::test( $smb_config )['ok']
-	&& false !== strpos( WPPA_SMB::test( $smb_config )['message'], 'smbclient' );
-
-// Проверка доступа через утилиту smbclient (подменяем запуск команд).
-add_filter( 'wppa_smb_runner', function ( $result, $command ) {
-	$GLOBALS['wppa_test']['smb_command'] = $command;
-
-	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
-		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
-	}
-
-	return array( 'code' => 0, 'output' => 'NT_STATUS_OK' );
-}, 10, 2 );
-
-$GLOBALS['wppa_test']['smb_runner'] = true;
-$smb_test_result = WPPA_SMB::test( $smb_config );
-$smb_checks['smbclient: доступ получен']      = $smb_test_result['ok'] && 'cli' === $smb_test_result['method'];
-$smb_checks['smbclient: логин с паролем в вызове'] = false !== strpos( (string) $GLOBALS['wppa_test']['smb_command'], 'WORKGROUP\\svc_wppa%secret-pass' );
-
-$smb_write = WPPA_SMB::write( 'accounts.csv', "id;email\n", $smb_config );
-$smb_checks['smbclient: файл записан']        = $smb_write['ok'] && '//fileserver/exchange/reports/wppa/accounts.csv' === $smb_write['file'];
-$smb_checks['smbclient: cd в папку шары']     = false !== strpos( (string) $GLOBALS['wppa_test']['smb_command'], 'cd' );
-
-// Выгрузка в режиме SMB идёт через WPPA_SMB и пишет журнал.
-$smb_settings_snapshot = get_option( 'wppa_settings', array() );
-update_option( 'wppa_settings', array_merge( (array) $smb_settings_snapshot, array( 'smb' => array_merge( $smb_config, array( 'pass' => 'from-db' ) ) ) ) );
-
-$smb_export = WPPA_Export_Folder::write(
-	array_merge(
-		WPPA_Export_Folder::config(),
-		array(
-			'mode'   => 'smb',
-			'file'   => 'accounts-{date}.csv',
-			'groups' => WPPA_Export::default_groups(),
-			'keep'   => 0,
-		)
-	)
-);
-$smb_checks['выгрузка в режиме SMB'] = $smb_export['ok'] && false !== strpos( $smb_export['file'], '//fileserver/exchange/reports/wppa/' );
-$smb_checks['журнал помнит режим SMB'] = ! empty( WPPA_Export_Folder::logs() );
-update_option( 'wppa_settings', $smb_settings_snapshot );
-
-// Настройки: поля авторизации и очистка значений.
-$smb_fields_ok = false !== strpos( $settings_html, 'wppa_settings[smb][user]' )
-	&& false !== strpos( $settings_html, 'wppa_settings[smb][pass]' )
-	&& false !== strpos( $settings_html, 'wppa_settings[export_folder][mode]' );
-
-$smb_checks['настройки: поля авторизации'] = $smb_fields_ok;
-
-// Кнопки «Проверить подключение» и «Экспортировать».
-$smb_checks['настройки: кнопка проверки подключения'] = false !== strpos( $settings_html, 'Проверить подключение к сетевой папке' )
-	&& false !== strpos( $settings_html, 'value="folder_verify"' );
-$smb_checks['настройки: кнопка экспорта'] = false !== strpos( $settings_html, 'value="export_folder_now"' )
-	&& false !== strpos( $settings_html, '>Экспортировать<' );
-$smb_checks['настройки: кнопки не вложены в форму настроек'] = ( false === strpos( $settings_html, '<form action="options.php" method="post">\n\t\t\t\t\t\t\t<form' ) );
-$smb_checks['инструменты: кнопка проверки подключения'] = false !== strpos( $tools_html, 'value="folder_verify"' );
-$smb_checks['инструменты: кнопка экспорта'] = false !== strpos( $tools_html, '>Экспортировать<' );
-$smb_checks['уведомления: проверка подключения'] = ( function () {
-	$_GET['wppa_done'] = 'folder_verify_ok';
-	$ok = WPPA_Admin::tool_notice();
-	$_GET['wppa_done'] = 'folder_verify_fail';
-	$bad = WPPA_Admin::tool_notice();
-	unset( $_GET['wppa_done'] );
-	return is_array( $ok ) && 'success' === $ok[0] && is_array( $bad ) && 'error' === $bad[0];
-} )();
-
-$smb_sanitize = WPPA_Settings::sanitize(
-	array(
-		'smb' => array(
-			'host'   => 'smb://fileserver/share',
-			'share'  => 'exchange',
-			'dir'    => '/reports/../wppa/',
-			'user'   => 'svc_wppa',
-			'pass'   => 'p@ss word',
-			'domain' => 'WORKGROUP',
-			'port'   => '0',
-		),
-		'export_folder' => array( 'mode' => 'smb' ),
-	)
-);
-
-$smb_checks['настройки: хост очищен']    = 'fileserver' === $smb_sanitize['smb']['host'];
-$smb_checks['настройки: папка без ..']   = false === strpos( $smb_sanitize['smb']['dir'], '..' );
-$smb_checks['настройки: пароль сохранён'] = 'p@ss word' === $smb_sanitize['smb']['pass'];
-$smb_checks['настройки: режим smb']      = 'smb' === $smb_sanitize['export_folder']['mode'];
 
 delete_option( WPPA_Export_Folder::LOG_OPTION );
 
-foreach ( $smb_checks as $check_name => $ok ) {
-	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'smb: ' . $check_name . "\n";
+foreach ( $folder_buttons_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'folder buttons: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

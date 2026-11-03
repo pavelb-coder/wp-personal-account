@@ -1541,7 +1541,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.		</p>
 	</section>
 </div>
-</div></section><section class="demo-section"><div class="demo-section__head"><h2>Настройки</h2><p>Параметры кабинета, регистрации, команд, паролей и доступ к сетевой папке SMB с логином и паролем</p></div><div class="demo-frame">		<div class="wrap">
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Настройки</h2><p>Параметры кабинета, регистрации, команд, паролей и выгрузка в сетевую папку</p></div><div class="demo-frame">		<div class="wrap">
 			<h1>Личный кабинет</h1>
 			<p class="description">
 				Шорткоды: [wppa_account] — кабинет, [wppa_login] — форма входа, [wppa_register] — форма регистрации.			</p>
@@ -2057,21 +2057,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						</td>
 					</tr>
 					<tr>
-						<th scope="row">Способ записи</th>
-						<td>
-							<fieldset>
-								<label style="margin-right:16px">
-									<input type="radio" name="wppa_settings[export_folder][mode]" value="path"  checked="checked" />
-									Папка на сервере (в том числе смонтированная шара)								</label>
-								<label>
-									<input type="radio" name="wppa_settings[export_folder][mode]" value="smb"  />
-									SMB напрямую с логином и паролем								</label>
-							</fieldset>
-							<p class="description">
-								Второй способ работает, если на сервере есть расширение <code>php-smbclient</code> или утилита <code>smbclient</code>. Иначе — только монтирование.							</p>
-						</td>
-					</tr>
-					<tr>
 						<th scope="row"><label for="wppa-folder-path">Путь к папке</label></th>
 						<td>
 							<input type="text" class="large-text code" id="wppa-folder-path" name="wppa_settings[export_folder][path]" value="/mnt/share/wppa" placeholder="/mnt/share/wppa" />
@@ -2166,63 +2151,6 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 								<label for="wppa-folder-limit" style="margin-left:10px">Максимум строк</label>
 								<input type="number" class="small-text" id="wppa-folder-limit" name="wppa_settings[export_folder][limit]" value="5000" min="1" max="20000" />
 							</p>
-						</td>
-					</tr>
-				</table>
-
-				<h2>Авторизация SMB</h2>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><label for="wppa-smb-host">Сервер</label></th>
-						<td>
-							<input type="text" class="regular-text code" id="wppa-smb-host" name="wppa_settings[smb][host]" value="fileserver" placeholder="fileserver" />
-							<label for="wppa-smb-share" style="margin-left:10px">шара</label>
-							<input type="text" class="regular-text code" id="wppa-smb-share" name="wppa_settings[smb][share]" value="exchange" placeholder="exchange" />
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="wppa-smb-dir">Папка внутри шары</label></th>
-						<td>
-							<input type="text" class="regular-text code" id="wppa-smb-dir" name="wppa_settings[smb][dir]" value="reports/wppa" placeholder="reports/wppa" />
-							<p class="description">Можно оставить пустым — файл запишется в корень шары.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row">Учётная запись</th>
-						<td>
-							<p>
-								<label for="wppa-smb-domain">Домен</label>
-								<input type="text" class="regular-text" id="wppa-smb-domain" name="wppa_settings[smb][domain]" value="WORKGROUP" placeholder="WORKGROUP" />
-							</p>
-							<p>
-								<label for="wppa-smb-user">Пользователь</label>
-								<input type="text" class="regular-text" id="wppa-smb-user" name="wppa_settings[smb][user]" value="svc_wppa" autocomplete="off" />
-							</p>
-							<p>
-								<label for="wppa-smb-pass">Пароль</label>
-								<input type="password" class="regular-text" id="wppa-smb-pass" name="wppa_settings[smb][pass]" value="********" autocomplete="new-password" />
-							</p>
-							<p class="description">
-								Пароль виден только тому, кто открыл настройки. Чтобы держать его вне базы данных, задайте в wp-config.php: <code>define( 'WPPA_SMB_PASSWORD', 'пароль' );</code> — значение из константы важнее сохранённого.							</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row">Проверка</th>
-						<td>
-														<p>
-								<span class="wppa-badge wppa-badge--warn">
-									Доступа нет								</span>
-								<span class="description">На сервере нет ни php-smbclient, ни утилиты smbclient. Смонтируйте шару с логином и паролем — команда есть в подсказке под полями.</span>
-							</p>
-														<p class="description">
-								Если ни расширения, ни утилиты нет — смонтируйте шару с этими учётными данными:							</p>
-							<p><code>cat &gt; /etc/wppa-smb-credentials &lt;&lt;&#039;EOF&#039;
-username=svc_wppa
-password=********
-domain=WORKGROUP
-EOF</code></p>
-							<p><code>mount -t cifs &#039;//fileserver/exchange&#039; /mnt/share -o credentials=&#039;/etc/wppa-smb-credentials&#039;,uid=www-data,gid=www-data,iocharset=utf8,vers=3.0</code></p>
-							<p class="description">Пароль вынесен в отдельный файл учётных данных (chmod 600), иначе он был бы виден в списке процессов.</p>
 						</td>
 					</tr>
 				</table>
@@ -2383,8 +2311,6 @@ EOF</code></p>
 			<p class="wppa-admin__muted">
 				Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».			</p>
 
-			
-			
 							<p>
 					<span class="wppa-badge wppa-badge--warn">
 						Папка недоступна					</span>
@@ -2392,7 +2318,7 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 03.11.2026 20:32 (Раз в день).							</p>
+									Следующая выгрузка: 03.11.2026 20:36 (Раз в день).							</p>
 
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -2422,7 +2348,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>03.11.2026 12:32</td>
+								<td>03.11.2026 12:36</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -2431,7 +2357,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 12:32</td>
+								<td>03.11.2026 12:36</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -2440,7 +2366,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 12:32</td>
+								<td>03.11.2026 12:36</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
