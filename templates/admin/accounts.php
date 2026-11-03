@@ -62,6 +62,7 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 					<th><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?></th>
+					<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Подтверждение email', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
 				</tr>
@@ -78,6 +79,17 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 						<td><a href="mailto:<?php echo esc_attr( $wppa_user->user_email ); ?>"><?php echo esc_html( $wppa_user->user_email ); ?></a></td>
 						<td><?php echo esc_html( implode( ', ', array_map( 'translate_user_role', array_intersect_key( wp_roles()->get_names(), array_flip( (array) $wppa_user->roles ) ) ) ) ); ?></td>
 						<td><?php echo esc_html( mysql2date( get_option( 'date_format' ), $wppa_user->user_registered ) ); ?></td>
+						<td>
+							<?php $wppa_team = WPPA_Teams::team_id( $wppa_user->ID ); ?>
+							<?php if ( $wppa_team ) : ?>
+								<?php echo esc_html( get_the_title( $wppa_team ) ); ?>
+								<?php if ( WPPA_Teams::is_owner( $wppa_user->ID ) ) : ?>
+									<span class="wppa-badge wppa-badge--owner"><?php esc_html_e( 'капитан', 'wp-personal-account' ); ?></span>
+								<?php endif; ?>
+							<?php else : ?>
+								<span class="wppa-admin__muted">—</span>
+							<?php endif; ?>
+						</td>
 						<td>
 							<?php if ( $wppa_pending ) : ?>
 								<span class="wppa-badge wppa-badge--warn"><?php echo esc_html( $wppa_pending ); ?></span>

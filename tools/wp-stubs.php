@@ -15,18 +15,38 @@ $GLOBALS['wppa_test'] = array(
 		'users_can_register' => 1,
 		'wppa_settings' => array(
 			'account_page_id'      => 42,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'orders', 'addresses', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'security' ),
 			'registration_enabled' => 1,
 			'accent_color'         => '#2563eb',
 		),
 	),
 	'logged_in' => true,
 	'meta'      => array(),
+	'posts'     => array(),
+	'postmeta'  => array(),
+	'cpt'       => array(),
+	'next_id'   => 100,
 );
+
+class WP_Query {
+	public $found_posts = 2;
+
+	public function __construct( $args = array() ) {}
+}
 
 class WP_Post {
 	public $ID = 42;
 	public $post_content = '[wppa_account]';
+	public $post_title = 'Личный кабинет';
+	public $post_type = 'page';
+	public $post_author = 7;
+	public $post_status = 'publish';
+
+	public function __construct( $args = array() ) {
+		foreach ( (array) $args as $key => $value ) {
+			$this->$key = $value;
+		}
+	}
 }
 
 class WP_User {
@@ -40,6 +60,26 @@ class WP_User {
 	public $user_pass = 'hash';
 	public $user_registered = '2025-01-10 12:00:00';
 	public $roles = array( 'subscriber' );
+
+	/**
+	 * Конструктор: подставляет данные из демо-реестра, если он задан.
+	 *
+	 * @param int $id ID пользователя.
+	 */
+	public function __construct( $id = 0 ) {
+		if ( $id ) {
+			$this->ID = (int) $id;
+		}
+
+		$registry = isset( $GLOBALS['wppa_test']['users'] ) ? (array) $GLOBALS['wppa_test']['users'] : array();
+
+		if ( isset( $registry[ $this->ID ] ) ) {
+			$this->display_name = $registry[ $this->ID ][0];
+			$this->user_email   = $registry[ $this->ID ]['email'] ?? $registry[ $this->ID ][1];
+			$this->first_name   = $registry[ $this->ID ]['first_name'] ?? $this->first_name;
+			$this->last_name    = $registry[ $this->ID ]['last_name'] ?? $this->last_name;
+		}
+	}
 }
 
 function __( $t, $d = null ) { return $t; }
@@ -128,9 +168,142 @@ function wp_validate_redirect( $u, $d = '' ) { return $u ? $u : $d; }
 function get_transient( $k ) { return 0; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function delete_transient( $k ) { return true; }
-function get_post( $id = null ) { return new WP_Post(); }
-function get_post_type( $id = null ) { return 'page'; }
-function get_post_status( $id = null ) { return 'publish'; }
+function wppa_stub_post( $id ) {
+	return isset( $GLOBALS['wppa_test']['posts'][ (int) $id ] ) ? $GLOBALS['wppa_test']['posts'][ (int) $id ] : null;
+}
+
+function get_post( $id = null ) {
+	if ( null === $id ) {
+		return new WP_Post();
+	}
+	return wppa_stub_post( $id );
+}
+
+function get_post_type( $id = null ) {
+	$post = get_post( $id );
+	return $post ? $post->post_type : false;
+}
+
+function get_post_status( $id = null ) {
+	$post = get_post( $id );
+	return $post ? $post->post_status : false;
+}
+
+function get_the_title( $id = 0 ) {
+	$post = get_post( $id );
+	return $post ? $post->post_title : '';
+}
+
+function register_post_type( $type, $args = array() ) {
+	$GLOBALS['wppa_test']['cpt'][ $type ] = $args;
+	return (object) $args;
+}
+
+function wp_insert_post( $args, $wp_error = false ) {
+	$id   = ++$GLOBALS['wppa_test']['next_id'];
+	$post = new WP_Post(
+		array(
+			'ID'          => $id,
+			'post_type'   => isset( $args['post_type'] ) ? $args['post_type'] : 'post',
+			'post_title'  => isset( $args['post_title'] ) ? $args['post_title'] : '',
+			'post_author' => isset( $args['post_author'] ) ? (int) $args['post_author'] : 0,
+			'post_status' => isset( $args['post_status'] ) ? $args['post_status'] : 'publish',
+		)
+	);
+	$GLOBALS['wppa_test']['posts'][ $id ] = $post;
+
+	if ( ! empty( $args['meta_input'] ) ) {
+		foreach ( (array) $args['meta_input'] as $key => $value ) {
+			$GLOBALS['wppa_test']['postmeta'][ $id ][ $key ] = $value;
+		}
+	}
+
+	return $wp_error ? $id : $id;
+}
+
+function wp_update_post( $args, $wp_error = false ) {
+	$id = isset( $args['ID'] ) ? (int) $args['ID'] : 0;
+
+	if ( ! wppa_stub_post( $id ) ) {
+		return $wp_error ? new WP_Error( 'not_found' ) : 0;
+	}
+
+	if ( isset( $args['post_title'] ) ) {
+		$GLOBALS['wppa_test']['posts'][ $id ]->post_title = $args['post_title'];
+	}
+
+	return $id;
+}
+
+function wp_delete_post( $id, $force = false ) {
+	unset( $GLOBALS['wppa_test']['posts'][ (int) $id ], $GLOBALS['wppa_test']['postmeta'][ (int) $id ] );
+	return true;
+}
+
+function get_post_meta( $id, $key = '', $single = false ) {
+	$meta = isset( $GLOBALS['wppa_test']['postmeta'][ (int) $id ] ) ? $GLOBALS['wppa_test']['postmeta'][ (int) $id ] : array();
+	return isset( $meta[ $key ] ) ? $meta[ $key ] : '';
+}
+
+function update_post_meta( $id, $key, $value ) {
+	$GLOBALS['wppa_test']['postmeta'][ (int) $id ][ $key ] = $value;
+	return true;
+}
+
+function delete_post_meta( $id, $key ) {
+	unset( $GLOBALS['wppa_test']['postmeta'][ (int) $id ][ $key ] );
+	return true;
+}
+
+function get_posts( $args = array() ) {
+	$out = array();
+
+	foreach ( (array) $GLOBALS['wppa_test']['posts'] as $id => $post ) {
+		if ( isset( $args['post_type'] ) && $post->post_type !== $args['post_type'] ) {
+			continue;
+		}
+
+		if ( ! empty( $args['meta_key'] ) && ( ! isset( $GLOBALS['wppa_test']['postmeta'][ $id ][ $args['meta_key'] ] )
+			|| (string) $GLOBALS['wppa_test']['postmeta'][ $id ][ $args['meta_key'] ] !== (string) $args['meta_value'] ) ) {
+			continue;
+		}
+
+		$out[] = ( isset( $args['fields'] ) && 'ids' === $args['fields'] ) ? $id : $post;
+	}
+
+	return $out;
+}
+
+function get_users( $args = array() ) {
+	if ( ! empty( $args['meta_key'] ) ) {
+		$out = array();
+
+		foreach ( (array) $GLOBALS['wppa_test']['meta'] as $user_id => $meta ) {
+			if ( ! isset( $meta[ $args['meta_key'] ] ) ) {
+				continue;
+			}
+			if ( isset( $args['meta_value'] ) && (string) $meta[ $args['meta_key'] ] !== (string) $args['meta_value'] ) {
+				continue;
+			}
+			$out[]      = new WP_User( (int) $user_id );
+		}
+
+		return $out;
+	}
+
+	return array( new WP_User(), new WP_User() );
+}
+
+function get_userdata( $id ) {
+	$user             = new WP_User();
+	$user->ID         = (int) $id;
+	$user->user_login = 'user' . $id;
+	return $user;
+}
+
+function get_the_permalink( $id = 0 ) { return 'https://example.com/?p=' . (int) $id; }
+function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
+function parse_str_stub() {}
 function is_page( $id = null ) { return true; }
 function has_shortcode( $content, $tag ) { return false !== strpos( (string) $content, '[' . $tag ); }
 function get_permalink( $id = null ) { return 'https://example.com/personal-account/'; }
@@ -148,6 +321,8 @@ function get_avatar( $id, $size = 56, $d = '', $a = '', $args = array() ) {
 	$svg = '<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="28" fill="#dbeafe"/><circle cx="28" cy="22" r="9" fill="#2563eb"/><path d="M8 52c4-11 13-16 20-16s16 5 20 16z" fill="#2563eb"/></svg>';
 	return '<img class="avatar" width="' . $size . '" height="' . $size . '" src="data:image/svg+xml;base64,' . base64_encode( $svg ) . '" alt="" />';
 }
+function date_i18n( $format, $timestamp = null ) { return date( $format, $timestamp ? $timestamp : time() ); }
+function number_format_i18n( $number, $decimals = 0 ) { return number_format( (float) $number, (int) $decimals, '.', ' ' ); }
 function mysql2date( $format, $date ) { return date( $format, strtotime( $date ) ); }
 function locate_template( $files ) { return ''; }
 function wp_parse_args( $args, $defaults ) { return array_merge( $defaults, (array) $args ); }

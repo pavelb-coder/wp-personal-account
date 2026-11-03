@@ -75,6 +75,62 @@
 	}
 
 	/**
+	 * Копирование в буфер обмена.
+	 */
+	function initCopyButtons() {
+		var buttons = document.querySelectorAll( '[data-wppa-copy]' );
+
+		Array.prototype.forEach.call( buttons, function ( button ) {
+			button.addEventListener( 'click', function () {
+				var input = document.getElementById( button.getAttribute( 'data-wppa-copy' ) );
+
+				if ( ! input ) {
+					return;
+				}
+
+				var original = button.textContent;
+
+				function done( ok ) {
+					button.textContent = ok ? ( l10n.copied || 'Скопировано' ) : ( l10n.copyFailed || 'Не удалось' );
+					window.setTimeout( function () {
+						button.textContent = original;
+					}, 1600 );
+				}
+
+				if ( navigator.clipboard && navigator.clipboard.writeText ) {
+					navigator.clipboard.writeText( input.value ).then( function () {
+						done( true );
+					} ).catch( function () {
+						input.select();
+						done( document.execCommand( 'copy' ) );
+					} );
+					return;
+				}
+
+				input.select();
+				done( document.execCommand( 'copy' ) );
+			} );
+		} );
+	}
+
+	/**
+	 * Подтверждение потенциально опасных действий.
+	 */
+	function initConfirmActions() {
+		var items = document.querySelectorAll( '[data-wppa-confirm]' );
+
+		Array.prototype.forEach.call( items, function ( item ) {
+			item.addEventListener( 'click', function ( event ) {
+				var message = item.getAttribute( 'data-wppa-confirm' );
+
+				if ( message && ! window.confirm( message ) ) {
+					event.preventDefault();
+				}
+			} );
+		} );
+	}
+
+	/**
 	 * Отключение повторной отправки формы.
 	 */
 	function initSubmitGuard() {
@@ -100,6 +156,8 @@
 		initPasswordToggles();
 		initPasswordMatch();
 		initLogoutConfirm();
+		initCopyButtons();
+		initConfirmActions();
 		initSubmitGuard();
 	}
 

@@ -33,6 +33,17 @@ $wppa_pending    = WPPA_Profile::pending_email( $user->ID );
 		<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $user->user_email ); ?></span>
 	</div>
 
+	<?php if ( WPPA_Teams::team_id( $user->ID ) ) : ?>
+		<?php $wppa_team_post = WPPA_Teams::get( WPPA_Teams::team_id( $user->ID ) ); ?>
+		<div class="wppa-card wppa-card--stat">
+			<span class="wppa-card__label"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></span>
+			<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $wppa_team_post ? $wppa_team_post['name'] : '—' ); ?></span>
+			<?php if ( $wppa_team_post && isset( $tabs['team'] ) ) : ?>
+				<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+
 	<div class="wppa-card wppa-card--stat">
 		<span class="wppa-card__label"><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></span>
 		<span class="wppa-card__value wppa-card__value--small">

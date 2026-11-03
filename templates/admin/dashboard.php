@@ -42,6 +42,20 @@ defined( 'ABSPATH' ) || exit;
 			<span class="wppa-admin__card-label"><?php esc_html_e( 'Ждут подтверждения email', 'wp-personal-account' ); ?></span>
 			<span class="wppa-admin__card-value"><?php echo esc_html( number_format_i18n( $stats['pending_email'] ) ); ?></span>
 		</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label"><?php esc_html_e( 'Команд', 'wp-personal-account' ); ?></span>
+			<span class="wppa-admin__card-value"><?php echo esc_html( number_format_i18n( $stats['teams'] ) ); ?></span>
+			<span class="wppa-admin__card-note">
+				<?php
+				printf(
+					/* translators: %d: количество пользователей в командах */
+					esc_html__( 'участников: %d', 'wp-personal-account' ),
+					(int) $stats['team_members']
+				);
+				?>
+			</span>
+		</div>
 	</div>
 
 	<div class="wppa-admin__grid">
@@ -113,6 +127,7 @@ defined( 'ABSPATH' ) || exit;
 
 			<p class="wppa-admin__actions">
 				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=wppa-accounts' ) ); ?>"><?php esc_html_e( 'Все аккаунты', 'wp-personal-account' ); ?></a>
+				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=wppa-teams' ) ); ?>"><?php esc_html_e( 'Команды', 'wp-personal-account' ); ?></a>
 				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=wppa-tools' ) ); ?>"><?php esc_html_e( 'Инструменты', 'wp-personal-account' ); ?></a>
 			</p>
 		</section>

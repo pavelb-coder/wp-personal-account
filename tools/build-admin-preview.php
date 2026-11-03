@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
+require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-admin.php';
 
 // Демо-данные графика: разнообразные значения вместо одинаковых.
@@ -36,8 +37,26 @@ function demo_page( $title, $note, $callback ) {
 		. '<div class="demo-frame">' . $html . '</div></section>';
 }
 
+// Демо-команды для страницы «Команды».
+$GLOBALS['wppa_test']['users'] = array(
+	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
+	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
+);
+
+foreach ( array( 'Студия «Вектор»', 'Отдел закупок', 'Фриланс-группа' ) as $demo_name ) {
+	$demo_team = WPPA_Teams::create( $demo_name, 7 );
+	if ( ! is_wp_error( $demo_team ) ) {
+		update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team );
+		update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
+		// «Выходим» из команды, чтобы можно было создать следующую.
+		update_user_meta( 7, WPPA_Teams::META_TEAM, 0 );
+		update_user_meta( 7, WPPA_Teams::META_ROLE, '' );
+	}
+}
+
 $sections  = demo_page( 'Обзор', 'Меню «Личный кабинет» → «Обзор»: метрики, график регистраций, состояние интеграций, последние регистрации', static function () { WPPA_Admin::page_dashboard(); } );
 $sections .= demo_page( 'Аккаунты', 'Поиск, фильтр по роли, число заказов и незавершённые подтверждения email', static function () { WPPA_Admin::page_accounts(); } );
+$sections .= demo_page( 'Команды', 'Объединение аккаунтов: состав, капитаны, лимит участников, роспуск команды', static function () { WPPA_Admin::page_teams(); } );
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
 
 $admin_css = file_get_contents( $base . 'assets/css/admin.css' );

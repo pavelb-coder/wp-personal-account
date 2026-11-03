@@ -78,6 +78,9 @@ class WPPA_Settings {
 		$redirect               = isset( $input['login_redirect'] ) ? esc_url_raw( trim( (string) $input['login_redirect'] ) ) : '';
 		$out['login_redirect']  = $redirect;
 
+		$max_team              = isset( $input['max_team_members'] ) ? absint( $input['max_team_members'] ) : 10;
+		$out['max_team_members'] = min( 100, max( 2, $max_team ) );
+
 		$accent                = isset( $input['accent_color'] ) ? sanitize_hex_color( $input['accent_color'] ) : '';
 		$out['accent_color']   = $accent ? $accent : $defaults['accent_color'];
 
@@ -162,6 +165,17 @@ class WPPA_Settings {
 									<?php echo esc_html( $label ); ?>
 								</label>
 							<?php endforeach; ?>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Команды', 'wp-personal-account' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-max-team"><?php esc_html_e( 'Максимум участников', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="<?php echo esc_attr( (int) $s['max_team_members'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 				</table>

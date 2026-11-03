@@ -41,14 +41,10 @@ class WP_User_Query {
 
 function count_users() { return array( 'total_users' => 128, 'avail_roles' => array( 'subscriber' => 110, 'administrator' => 1 ) ); }
 function wp_list_pluck( $list, $field ) { return array_map( static function ( $item ) use ( $field ) { return is_array( $item ) ? ( $item[ $field ] ?? null ) : ( $item->$field ?? null ); }, (array) $list ); }
-function get_users( $args = array() ) { return array( new WP_User(), new WP_User() ); }
 function current_user_can( $cap ) { return true; }
 function get_current_screen() { return (object) array( 'id' => 'toplevel_page_wppa-dashboard' ); }
-function get_the_title( $id = 0 ) { return 'Личный кабинет'; }
 function get_edit_post_link( $id = 0, $context = 'display' ) { return 'https://example.com/wp-admin/post.php?post=' . $id . '&action=edit'; }
 function get_edit_user_link( $id = 0 ) { return 'https://example.com/wp-admin/user-edit.php?user_id=' . $id; }
-function number_format_i18n( $number, $decimals = 0 ) { return number_format( (float) $number, (int) $decimals, '.', ' ' ); }
-function date_i18n( $format, $timestamp = null ) { return date( $format, $timestamp ? $timestamp : time() ); }
 function _n( $single, $plural, $number, $domain = null ) { return 1 === (int) $number ? $single : $plural; }
 function submit_button( $text = '', $type = 'primary', $name = 'submit', $wrap = true, $other = null ) { echo '<button class="button">' . htmlspecialchars( $text ) . '</button>'; }
 function checked( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' checked="checked"' : ''; if ( $echo ) { echo $r; } return $r; }

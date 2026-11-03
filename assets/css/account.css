@@ -617,3 +617,118 @@
 		font-size: .9em;
 	}
 }
+
+/* Команды */
+
+.wppa-team-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 16px;
+}
+
+.wppa-team-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.wppa-team-name {
+	margin: 0 0 4px;
+	font-size: 1.15em;
+	font-weight: 650;
+	line-height: 1.3;
+}
+
+.wppa-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	font-size: .82em;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wppa-badge--owner {
+	background: #eef2ff;
+	border-color: #c7d2fe;
+	color: #3730a3;
+}
+
+.wppa-avatar--inline {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	vertical-align: middle;
+	margin-right: 8px;
+}
+
+.wppa-inline-form {
+	display: inline-block;
+	margin: 0;
+}
+
+.wppa-link-button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #b91c1c;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.wppa-link-button:hover {
+	color: #991b1b;
+}
+
+.wppa-copy {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+}
+
+.wppa-copy input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 10px 12px;
+	font: inherit;
+	font-size: .9em;
+	color: var(--wppa-muted);
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	border-radius: 10px;
+}
+
+.wppa-copy .wppa-button {
+	flex: 0 0 auto;
+}
+
+.wppa-divider {
+	margin: 18px 0;
+	border: 0;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-button--danger {
+	background: #fee2e2;
+	border-color: #fecaca;
+	color: #b91c1c !important;
+}
+
+.wppa-button--danger:hover {
+	background: #fecaca;
+}
+
+.wppa-card--danger {
+	border-color: #fecaca;
+}
+
+.wppa-card--danger .wppa-subtitle {
+	color: #b91c1c;
+}

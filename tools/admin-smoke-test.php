@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
+require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-admin.php';
 
 $fail = 0;
@@ -51,6 +52,7 @@ function wppa_check_output( $name, $callback, &$fail ) {
 wppa_check_output( 'admin/dashboard', static function () { WPPA_Admin::page_dashboard(); }, $fail );
 wppa_check_output( 'admin/accounts', static function () { WPPA_Admin::page_accounts(); }, $fail );
 wppa_check_output( 'admin/tools', static function () { WPPA_Admin::page_tools(); }, $fail );
+wppa_check_output( 'admin/teams', static function () { WPPA_Admin::page_teams(); }, $fail );
 
 // Расчётные методы.
 $stats = WPPA_Admin::stats();
@@ -58,6 +60,7 @@ echo "\nstats: пользователей {$stats['total_users']}, новых з
 
 $chart = WPPA_Admin::registrations_chart( 14 );
 echo 'chart: точек ' . count( $chart['items'] ) . ", максимум {$chart['max']}\n";
+echo "teams: команд {$stats['teams']}, участников {$stats['team_members']}\n";
 
 $status = WPPA_Admin::system_status();
 echo 'status: страница «' . $status['account_page']['label'] . '», регистрация «' . $status['registration']['label'] . "»\n";

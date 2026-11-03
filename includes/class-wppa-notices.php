@@ -43,6 +43,21 @@ class WPPA_Notices {
 			'no_consent'            => array( 'error', __( 'Необходимо согласие на обработку персональных данных.', 'wp-personal-account' ) ),
 			'save_failed'           => array( 'error', __( 'Не удалось сохранить изменения. Попробуйте позже.', 'wp-personal-account' ) ),
 			'email_same'            => array( 'info', __( 'Этот email уже указан в вашем профиле.', 'wp-personal-account' ) ),
+			'team_created'          => array( 'success', __( 'Команда создана. Пригласите участников по ссылке.', 'wp-personal-account' ) ),
+			'team_renamed'          => array( 'success', __( 'Название команды обновлено.', 'wp-personal-account' ) ),
+			'team_joined'           => array( 'success', __( 'Вы присоединились к команде.', 'wp-personal-account' ) ),
+			'team_left'             => array( 'success', __( 'Вы вышли из команды.', 'wp-personal-account' ) ),
+			'team_dissolved'        => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
+			'team_member_removed'   => array( 'success', __( 'Участник удалён из команды.', 'wp-personal-account' ) ),
+			'team_invite_sent'      => array( 'success', __( 'Приглашение отправлено на указанный email.', 'wp-personal-account' ) ),
+			'team_token_refreshed'  => array( 'success', __( 'Ссылка-приглашение обновлена. Старая больше не действует.', 'wp-personal-account' ) ),
+			'team_name_required'    => array( 'error', __( 'Укажите название команды.', 'wp-personal-account' ) ),
+			'team_owner_only'       => array( 'error', __( 'Это действие доступно только капитану команды.', 'wp-personal-account' ) ),
+			'team_full'             => array( 'error', __( 'В команде уже максимальное число участников.', 'wp-personal-account' ) ),
+			'team_invalid_token'    => array( 'error', __( 'Ссылка-приглашение недействительна или истекла.', 'wp-personal-account' ) ),
+			'team_already_member'   => array( 'info', __( 'Вы уже состоите в этой команде.', 'wp-personal-account' ) ),
+			'team_other'            => array( 'error', __( 'Вы уже состоите в другой команде. Сначала выйдите из неё.', 'wp-personal-account' ) ),
+			'team_login_required'   => array( 'info', __( 'Войдите в аккаунт, чтобы присоединиться к команде.', 'wp-personal-account' ) ),
 		);
 
 		/**

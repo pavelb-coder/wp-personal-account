@@ -21,9 +21,25 @@ require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
+require $base . 'includes/class-wppa-teams.php';
+
+$GLOBALS['wppa_test']['users'] = array(
+	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
+	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
+	9 => array( 'Пётр Сидоров', 'email' => 'petr@example.com' ),
+);
 
 $user = new WP_User();
 $tabs = WPPA_Template::all_tabs();
+
+// Демо-команда: капитан — Иван, участники — Мария и Пётр.
+$demo_team = WPPA_Teams::create( 'Студия «Вектор»', 7 );
+if ( ! is_wp_error( $demo_team ) ) {
+	update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team );
+	update_user_meta( 9, WPPA_Teams::META_TEAM, $demo_team );
+	update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
+	update_user_meta( 9, WPPA_Teams::META_ROLE, 'member' );
+}
 
 function demo_section( $title, $note, $html ) {
 	return '<section class="demo-block"><div class="demo-block__head"><h2>' . htmlspecialchars( $title ) . '</h2>'
@@ -41,6 +57,12 @@ $sections .= demo_section(
 	'Вкладка profile: имя, фамилия, отображаемое имя, «о себе»',
 	WPPA_Template::get( 'tab-profile', array( 'user' => $user, 'tabs' => $tabs ) )
 		. WPPA_Template::get( 'notice', array( 'type' => 'success', 'text' => 'Профиль обновлён.' ) )
+);
+
+$sections .= demo_section(
+	'Команда (капитан)',
+	'Вкладка team: состав команды, ссылка-приглашение, приглашение по email, переименование, роспуск',
+	WPPA_Template::get( 'tab-team', array( 'user' => $user, 'tabs' => $tabs ) )
 );
 
 $sections .= demo_section(

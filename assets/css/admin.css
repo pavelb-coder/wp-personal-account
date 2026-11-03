@@ -275,3 +275,15 @@
 	flex-wrap: wrap;
 	margin: 12px 0 0;
 }
+
+/* Команды */
+
+.wppa-badge--owner {
+	background: #eef2ff;
+	color: #3730a3;
+}
+
+.wppa-inline-form {
+	display: inline-block;
+	margin: 0;
+}

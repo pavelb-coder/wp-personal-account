@@ -70,6 +70,15 @@ class WPPA_Admin {
 
 		add_submenu_page(
 			self::SLUG,
+			__( 'Команды', 'wp-personal-account' ),
+			__( 'Команды', 'wp-personal-account' ),
+			self::CAP,
+			'wppa-teams',
+			array( __CLASS__, 'page_teams' )
+		);
+
+		add_submenu_page(
+			self::SLUG,
 			__( 'Инструменты', 'wp-personal-account' ),
 			__( 'Инструменты', 'wp-personal-account' ),
 			self::CAP,
@@ -225,6 +234,52 @@ class WPPA_Admin {
 	}
 
 	/**
+	 * Страница «Команды».
+	 *
+	 * @return void
+	 */
+	public static function page_teams() {
+		if ( ! current_user_can( self::CAP ) ) {
+			return;
+		}
+
+		$teams = get_posts(
+			array(
+				'post_type'   => WPPA_Teams::CPT,
+				'post_status' => 'publish',
+				'numberposts' => 200,
+				'orderby'     => 'date',
+				'order'       => 'DESC',
+			)
+		);
+
+		$rows = array();
+
+		foreach ( $teams as $team ) {
+			$owner = get_userdata( (int) $team->post_author );
+
+			$rows[] = array(
+				'id'      => (int) $team->ID,
+				'name'    => $team->post_title,
+				'owner'   => $owner ? $owner->display_name : __( '— удалён —', 'wp-personal-account' ),
+				'owner_id' => (int) $team->post_author,
+				'members' => WPPA_Teams::members_count( (int) $team->ID ),
+				'created' => (int) get_post_meta( (int) $team->ID, WPPA_Teams::META_CREATED, true ),
+			);
+		}
+
+		self::render(
+			'teams',
+			array(
+				'rows'         => $rows,
+				'max_members'  => WPPA_Teams::max_members(),
+				'total_users'  => count_users(),
+				'notice'       => self::tool_notice(),
+			)
+		);
+	}
+
+	/**
 	 * Страница «Инструменты».
 	 *
 	 * @return void
@@ -309,7 +364,50 @@ class WPPA_Admin {
 			'subscribers'   => isset( $avail['subscriber'] ) ? (int) $avail['subscriber'] : 0,
 			'roles'         => count( $avail ),
 			'pending_email' => (int) $pending_query->get_total(),
+			'teams'         => self::teams_count(),
+			'team_members'  => self::team_members_count(),
 		);
+	}
+
+	/**
+	 * Количество команд.
+	 *
+	 * @return int
+	 */
+	public static function teams_count() {
+		$query = new WP_Query(
+			array(
+				'post_type'      => WPPA_Teams::CPT,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		return (int) $query->found_posts;
+	}
+
+	/**
+	 * Количество пользователей в командах.
+	 *
+	 * @return int
+	 */
+	public static function team_members_count() {
+		$query = new WP_User_Query(
+			array(
+				'fields'      => 'ID',
+				'number'      => 1,
+				'count_total' => true,
+				'meta_query'  => array(
+					array(
+						'key'     => WPPA_Teams::META_TEAM,
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		return (int) $query->get_total();
 	}
 
 	/**
@@ -419,6 +517,7 @@ class WPPA_Admin {
 			'limits_clear'  => array( 'success', __( 'Счётчики попыток входа сброшены.', 'wp-personal-account' ) ),
 			'emails_clear'  => array( 'success', __( 'Ожидающие подтверждения email очищены.', 'wp-personal-account' ) ),
 			'cache_clear'   => array( 'success', __( 'Кэш статистики сброшен.', 'wp-personal-account' ) ),
+			'team_dissolved' => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -463,6 +562,16 @@ class WPPA_Admin {
 
 			case 'export_csv':
 				self::export_users_csv();
+				break;
+
+			case 'dissolve_team':
+				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+
+				if ( $team_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
+					WPPA_Teams::dissolve( $team_id );
+				}
+
+				self::redirect_tool( 'team_dissolved' );
 				break;
 
 			case 'clear_cache':
@@ -535,6 +644,7 @@ class WPPA_Admin {
 				__( 'Имя', 'wp-personal-account' ),
 				__( 'Роль', 'wp-personal-account' ),
 				__( 'Регистрация', 'wp-personal-account' ),
+				__( 'Команда', 'wp-personal-account' ),
 			)
 		);
 
@@ -556,6 +666,7 @@ class WPPA_Admin {
 					$user->display_name,
 					implode( ', ', (array) $user->roles ),
 					$user->user_registered,
+					WPPA_Teams::team_id( $user->ID ) ? get_the_title( WPPA_Teams::team_id( $user->ID ) ) : '',
 				)
 			);
 		}

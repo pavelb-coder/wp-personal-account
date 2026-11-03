@@ -45,10 +45,12 @@ class WPPA_Plugin {
 	 */
 	private function __construct() {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'template_redirect', array( $this, 'handle_requests' ), 5 );
 
 		WPPA_Shortcodes::init();
+		WPPA_Teams::init();
 
 		if ( is_admin() ) {
 			WPPA_Admin::init();
@@ -87,11 +89,12 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'security' ),
 			'registration_enabled' => 1,
 			'login_redirect'       => '',
 			'accent_color'         => '#2563eb',
 			'custom_css'           => '',
+			'max_team_members'     => 10,
 			'delete_data_on_uninstall' => 0,
 		);
 	}
@@ -242,6 +245,8 @@ class WPPA_Plugin {
 				'confirmLogout'    => __( 'Выйти из аккаунта?', 'wp-personal-account' ),
 				'toggleShow'       => __( 'Показать пароль', 'wp-personal-account' ),
 				'toggleHide'       => __( 'Скрыть пароль', 'wp-personal-account' ),
+				'copied'           => __( 'Скопировано', 'wp-personal-account' ),
+				'copyFailed'       => __( 'Не удалось', 'wp-personal-account' ),
 			)
 		);
 	}
@@ -252,6 +257,10 @@ class WPPA_Plugin {
 	 * @return void
 	 */
 	public function handle_requests() {
+		if ( ! empty( $_GET['wppa_team_join'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- приглашение по токену.
+			WPPA_Teams::handle_join( sanitize_text_field( wp_unslash( $_GET['wppa_team_join'] ) ) );
+		}
+
 		if ( ! empty( $_GET['wppa_confirm_email'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- одноразовый токен подтверждения.
 			WPPA_Profile::handle_email_confirm( sanitize_text_field( wp_unslash( $_GET['wppa_confirm_email'] ) ) );
 		}
@@ -268,6 +277,9 @@ class WPPA_Plugin {
 			case 'register':
 				WPPA_Auth::handle_register();
 				break;
+			case 'team':
+				WPPA_Teams::handle_request();
+				break;
 			case 'profile':
 				WPPA_Profile::handle_update();
 				break;
@@ -283,6 +295,35 @@ class WPPA_Plugin {
 	}
 
 	/**
+	 * Миграция настроек между версиями.
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade() {
+		$installed = (string) get_option( 'wppa_version', '' );
+
+		if ( WPPA_VERSION === $installed ) {
+			return;
+		}
+
+		$settings = self::get_settings();
+		$defaults = self::defaults();
+
+		// Новые вкладки, появившиеся в обновлении, включаем автоматически.
+		$enabled = array_values( array_unique( array_merge( (array) $settings['enabled_tabs'], (array) $defaults['enabled_tabs'] ) ) );
+		$allowed = array_keys( WPPA_Template::all_tabs() );
+		$settings['enabled_tabs'] = array_values( array_intersect( $allowed, $enabled ) );
+
+		// Новые числовые настройки.
+		if ( empty( $settings['max_team_members'] ) ) {
+			$settings['max_team_members'] = $defaults['max_team_members'];
+		}
+
+		update_option( 'wppa_settings', $settings );
+		update_option( 'wppa_version', WPPA_VERSION );
+	}
+
+	/**
 	 * Создание страницы кабинета при активации.
 	 *
 	 * @return void
@@ -290,6 +331,7 @@ class WPPA_Plugin {
 	public static function activate() {
 		$settings = self::get_settings();
 		update_option( 'wppa_settings', $settings );
+		update_option( 'wppa_version', WPPA_VERSION );
 
 		$page_id = (int) $settings['account_page_id'];
 		if ( ! $page_id || ! get_post( $page_id ) ) {
