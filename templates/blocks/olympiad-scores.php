@@ -37,8 +37,8 @@ $wppa_title   = isset( $block_title ) && '' !== $block_title ? $block_title : __
 				<span class="wppa-scores__label"><?php esc_html_e( 'работ зачтено', 'wp-personal-account' ); ?></span>
 			</div>
 			<div class="wppa-scores__metric">
-				<span class="wppa-scores__value"><?php echo esc_html( $wppa_totals['percentage'] ); ?>%</span>
-				<span class="wppa-scores__label"><?php esc_html_e( 'средний результат', 'wp-personal-account' ); ?></span>
+				<span class="wppa-scores__value"><?php echo esc_html( WPPA_Olympiad::format_percentage( $wppa_totals['percentage'] ) ); ?>%</span>
+				<span class="wppa-scores__label"><?php esc_html_e( 'общий результат', 'wp-personal-account' ); ?></span>
 			</div>
 		</div>
 
@@ -80,7 +80,7 @@ $wppa_title   = isset( $block_title ) && '' !== $block_title ? $block_title : __
 							);
 							?>
 						</td>
-						<td><?php echo esc_html( $wppa_result['percentage'] ); ?>%</td>
+						<td><?php echo esc_html( WPPA_Olympiad::format_percentage( $wppa_result['percentage'] ) ); ?>%</td>
 						<td>
 							<span class="wppa-scores__status wppa-scores__status--<?php echo esc_attr( $wppa_result['counted'] ? 'ok' : 'muted' ); ?>">
 								<?php echo esc_html( $wppa_result['status_label'] ); ?>

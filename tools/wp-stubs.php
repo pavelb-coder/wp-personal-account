@@ -655,3 +655,7 @@ function size_format( $bytes, $decimals = 0 ) {
 
 	return $bytes . ' B';
 }
+
+function get_locale() {
+	return isset( $GLOBALS['wppa_test']['locale'] ) ? $GLOBALS['wppa_test']['locale'] : 'ru_RU';
+}

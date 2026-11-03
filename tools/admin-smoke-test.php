@@ -733,7 +733,7 @@ $olympiad_html = ob_get_clean();
 $olympiad_checks['вывод: баллы в кабинете']  = false !== strpos( $olympiad_html, '27' ) && false !== strpos( $olympiad_html, 'баллов всего' );
 $olympiad_checks['вывод: список тестов']      = false !== strpos( $olympiad_html, 'Математика' ) && false !== strpos( $olympiad_html, '8 из 10' );
 $olympiad_checks['вывод: статус на проверке'] = false !== strpos( $olympiad_html, 'На проверке' );
-$olympiad_checks['вывод: процент']            = false !== strpos( $olympiad_html, '67.5%' );
+$olympiad_checks['вывод: процент']            = false !== strpos( $olympiad_html, '67,5%' );
 
 // 5. Настройка вкладки.
 update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'olympiad_tab' => 0 ) ) );
@@ -821,7 +821,7 @@ $csv       = WPPA_Export::csv(
 );
 
 $export_olympiad_checks['csv: заголовок с баллами'] = false !== strpos( $csv, 'Баллы за тесты' ) && false !== strpos( $csv, 'Максимум баллов' );
-$export_olympiad_checks['csv: значения баллов']     = false !== strpos( $csv, '27;40;67.5;3;1' );
+$export_olympiad_checks['csv: значения баллов']     = false !== strpos( $csv, '27;40;67,5;3;1' );
 $export_olympiad_checks['csv: второй пользователь'] = false !== strpos( $csv, '5;10;50;1;0' );
 
 $wpdb->queries = array();
@@ -968,6 +968,63 @@ update_option( 'wppa_settings', $auto_snapshot );
 
 foreach ( $auto_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'auto export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+
+// ---------- Проценты в выгрузке: локаль и разделитель ----------
+$percent_checks = array();
+
+$GLOBALS['wppa_test']['locale'] = 'ru_RU';
+$percent_checks['русская локаль: запятая']   = ',' === WPPA_Export::decimal_separator();
+$percent_checks['русская локаль: 67,5']      = '67,5' === WPPA_Export::percent( 67.5 );
+
+$GLOBALS['wppa_test']['locale'] = 'en_US';
+$percent_checks['английская локаль: точка']  = '.' === WPPA_Export::decimal_separator();
+$percent_checks['английская локаль: 67.5']   = '67.5' === WPPA_Export::percent( 67.5 );
+
+$GLOBALS['wppa_test']['locale'] = 'ru_RU';
+$percent_checks['целый процент без ,0']      = '67' === WPPA_Export::percent( 67.0 );
+$percent_checks['округление до одного знака'] = '66,7' === WPPA_Export::percent( 66.666 );
+$percent_checks['ноль']                      = '0' === WPPA_Export::percent( 0 );
+$percent_checks['отрицательный не выводится'] = '0' === WPPA_Export::percent( -12.5 );
+$percent_checks['больше ста не выводится']    = '100' === WPPA_Export::percent( 148.2 );
+$percent_checks['мусор вместо числа']         = '0' === WPPA_Export::percent( '—' );
+
+// Разделитель колонок «,» — десятичная точка обязательна, иначе колонки разъедутся.
+$percent_checks['запятая как разделитель: точка'] = '67.5' === WPPA_Export::percent( 67.5, ',' );
+
+// Фильтр десятичного разделителя.
+add_filter( 'wppa_export_decimal_separator', static function () {
+	return '.';
+} );
+$percent_checks['фильтр разделителя работает'] = '67.5' === WPPA_Export::percent( 67.5 );
+
+// Выгрузка сохраняет число колонок при любом разделителе.
+$wpdb->data = array(
+	'var'      => 'wp_olympiad_attempts',
+	'attempts' => array( (object) array( 'user_id' => 7, 'score' => 27, 'max_score' => 40, 'tests' => 3, 'pending' => 1 ) ),
+);
+$GLOBALS['wppa_test']['olympiad_force'] = true;
+WPPA_Olympiad::flush();
+
+$csv_semicolon = WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 10, 'delimiter' => ';' ) );
+$csv_comma     = WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => array( get_userdata( 7 ) ), 'limit' => 10, 'delimiter' => ',' ) );
+
+$percent_checks['csv с ;: значение процента'] = false !== strpos( $csv_semicolon, ';27;40;67.5;3;1' );
+$percent_checks['csv с ,: значение процента'] = false !== strpos( $csv_comma, ',27,40,67.5,3,1' );
+
+$percent_checks['csv: одинаковое число колонок'] = count( explode( ';', trim( strtok( $csv_semicolon, "\n" ) ) ) ) === count( explode( ',', trim( strtok( $csv_comma, "\n" ) ) ) );
+$percent_checks['csv: 10 колонок в двух группах'] = 10 === count( explode( ';', trim( explode( "\n", $csv_semicolon )[2] ) ) );
+
+$percent_checks['заголовок колонки с единицей'] = false !== strpos( $csv_semicolon, 'Процент, %' );
+
+$GLOBALS['wppa_test']['locale'] = 'ru_RU';
+
+foreach ( $percent_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'percent: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

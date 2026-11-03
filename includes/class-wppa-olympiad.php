@@ -304,6 +304,16 @@ class WPPA_Olympiad {
 	}
 
 	/**
+	 * Процент в виде для вывода: 67,5 на русской локали, 67.5 на английской.
+	 *
+	 * @param mixed $value Значение.
+	 * @return string
+	 */
+	public static function format_percentage( $value ) {
+		return WPPA_Export::percent( $value, ';' );
+	}
+
+	/**
 	 * Баллы одного пользователя одной строкой (для сводок и экспорта).
 	 *
 	 * @param int $user_id ID пользователя.

@@ -78,7 +78,7 @@ class WPPA_Export {
 		if ( WPPA_Olympiad::is_active() ) {
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Баллы за тесты', 'wp-personal-account' ), 'key' => 'olympiad_score' );
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Максимум баллов', 'wp-personal-account' ), 'key' => 'olympiad_max' );
-			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Процент', 'wp-personal-account' ), 'key' => 'olympiad_percentage' );
+			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Процент, %', 'wp-personal-account' ), 'key' => 'olympiad_percentage' );
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'Работ зачтено', 'wp-personal-account' ), 'key' => 'olympiad_tests' );
 			$columns[] = array( 'group' => 'olympiad', 'label' => __( 'На проверке', 'wp-personal-account' ), 'key' => 'olympiad_pending' );
 		}
@@ -255,6 +255,54 @@ class WPPA_Export {
 	}
 
 	/**
+	 * Десятичный разделитель для чисел в файле.
+	 *
+	 * Excel берёт его из локали системы: в русской это запятая, в английской —
+	 * точка. «67.5» в русском Excel превращается в текст, поэтому разделитель
+	 * подбираем по локали сайта. При разделителе колонок «,» точка обязательна,
+	 * иначе число развалится на две колонки.
+	 *
+	 * @return string
+	 */
+	public static function decimal_separator() {
+		$comma_locales = array( 'ru', 'uk', 'be', 'kk', 'bg', 'cs', 'da', 'de', 'es', 'et', 'fi', 'fr', 'hr', 'hu', 'it', 'lt', 'lv', 'nl', 'no', 'pl', 'pt', 'ro', 'sk', 'sl', 'sr', 'sv', 'tr', 'vi', 'id' );
+		$locale        = function_exists( 'get_locale' ) ? strtolower( (string) get_locale() ) : 'en_us';
+		$separator     = in_array( substr( $locale, 0, 2 ), $comma_locales, true ) ? ',' : '.';
+
+		/**
+		 * Фильтр десятичного разделителя в выгрузке.
+		 *
+		 * @param string $separator «,» или «.».
+		 * @param string $locale    Локаль сайта.
+		 */
+		return (string) apply_filters( 'wppa_export_decimal_separator', $separator, $locale );
+	}
+
+	/**
+	 * Процент в виде числа для CSV: 67.5 → «67,5» на русской локали.
+	 *
+	 * @param mixed  $value     Значение.
+	 * @param string $delimiter Разделитель колонок.
+	 * @return string
+	 */
+	public static function percent( $value, $delimiter = ';' ) {
+		$value = is_numeric( $value ) ? (float) $value : 0.0;
+		$value = max( 0.0, min( 100.0, $value ) );
+
+		$separator = ',' === $delimiter ? '.' : self::decimal_separator();
+		$text      = number_format( $value, 1, $separator, '' );
+
+		// Целые проценты пишем без «,0».
+		$tail = $separator . '0';
+
+		if ( substr( $text, -strlen( $tail ) ) === $tail ) {
+			$text = substr( $text, 0, -strlen( $tail ) );
+		}
+
+		return $text;
+	}
+
+	/**
 	 * CSV-строка заголовков в две строки: группы и подписи полей.
 	 *
 	 * @param array  $columns   Колонки.
@@ -329,7 +377,14 @@ class WPPA_Export {
 			$line = array();
 
 			foreach ( $columns as $column ) {
-				$line[] = isset( $data[ $column['key'] ] ) ? $data[ $column['key'] ] : '';
+				$value = isset( $data[ $column['key'] ] ) ? $data[ $column['key'] ] : '';
+
+				// Проценты — единственные дробные числа в файле.
+				if ( '_percentage' === substr( $column['key'], -11 ) ) {
+					$value = self::percent( $value, $delimiter );
+				}
+
+				$line[] = $value;
 			}
 
 			$csv .= self::line( $line, $delimiter );
@@ -351,45 +406,9 @@ class WPPA_Export {
 	 * @return string
 	 */
 	public static function csv( $args = array() ) {
-		$args = wp_parse_args(
-			$args,
-			array(
-				'groups'    => self::default_groups(),
-				'scope'     => 'all',
-				'limit'     => 5000,
-				'delimiter' => ';',
-				'users'     => null,
-			)
-		);
+		$build = self::build( $args );
 
-		$delimiter = ',' === $args['delimiter'] ? ',' : ';';
-		$columns   = self::columns( (array) $args['groups'] );
-		$users     = null === $args['users'] ? self::users( $args ) : (array) $args['users'];
-
-		// Баллы за тесты — одним запросом на всю выгрузку, а не на каждого пользователя.
-		$context = array();
-
-		if ( WPPA_Olympiad::is_active() && in_array( 'olympiad', (array) $args['groups'], true ) ) {
-			$ids             = array_map( static function ( $item ) { return (int) $item->ID; }, $users );
-			$context['olympiad'] = WPPA_Olympiad::summary_map( $ids );
-		}
-
-		// BOM, чтобы Excel открыл UTF-8 без «кракозябр».
-		$csv = "\xEF\xBB\xBF";
-		$csv .= self::header( $columns, $delimiter );
-
-		foreach ( $users as $user ) {
-			$data = self::row( $user, $context );
-			$line = array();
-
-			foreach ( $columns as $column ) {
-				$line[] = isset( $data[ $column['key'] ] ) ? $data[ $column['key'] ] : '';
-			}
-
-			$csv .= self::line( $line, $delimiter );
-		}
-
-		return $csv;
+		return $build['csv'];
 	}
 
 	/**
