@@ -93,8 +93,20 @@ defined( 'ABSPATH' ) || exit;
 						<td><code>[wppa_register]</code></td>
 						<td><?php esc_html_e( 'Форма регистрации', 'wp-personal-account' ); ?></td>
 					</tr>
+					<tr>
+						<td><code>[wppa_auth]</code></td>
+						<td><?php esc_html_e( 'Вход и регистрация одним блоком (атрибуты mode, redirect)', 'wp-personal-account' ); ?></td>
+					</tr>
 				</tbody>
 			</table>
+
+			<h2><?php esc_html_e( 'Виджет на главной', 'wp-personal-account' ); ?></h2>
+			<p class="wppa-admin__muted">
+				<?php esc_html_e( 'Виджет «Личный кабинет: вход и регистрация» добавляется в «Внешний вид → Виджеты» (в блочных темах — блок «Классический виджет»). Если главная собрана блоками, вставьте шорткод [wppa_auth].', 'wp-personal-account' ); ?>
+			</p>
+			<p class="wppa-admin__actions">
+				<a class="button" href="<?php echo esc_url( admin_url( 'widgets.php' ) ); ?>"><?php esc_html_e( 'Открыть виджеты', 'wp-personal-account' ); ?></a>
+			</p>
 
 			<h2><?php esc_html_e( 'Среда', 'wp-personal-account' ); ?></h2>
 			<ul class="wppa-admin__status">

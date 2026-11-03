@@ -740,6 +740,81 @@
 	color: #b91c1c;
 }
 
+/* Виджет входа и регистрации */
+
+.wppa--widget {
+	max-width: 100%;
+	padding: 0;
+}
+
+.wppa--widget .wppa-title {
+	margin: 0 0 12px;
+	font-size: 1.1em;
+}
+
+.wppa--widget .wppa-field {
+	margin-bottom: 12px;
+}
+
+.wppa--widget .wppa-field > label {
+	font-size: .85em;
+	margin-bottom: 4px;
+}
+
+.wppa--widget .wppa-field input[type="text"],
+.wppa--widget .wppa-field input[type="email"],
+.wppa--widget .wppa-field input[type="password"] {
+	padding: 8px 10px;
+	font-size: .95em;
+}
+
+.wppa--widget .wppa-button {
+	width: 100%;
+	min-height: 40px;
+}
+
+.wppa--widget .wppa-field--inline {
+	font-size: .85em;
+}
+
+.wppa-widget__tabs {
+	display: flex;
+	gap: 4px;
+	margin: 0 0 16px;
+	padding: 4px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	border-radius: 999px;
+}
+
+.wppa-widget__tab {
+	flex: 1 1 0;
+	min-height: 34px;
+	padding: 6px 12px;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--wppa-muted);
+	font: inherit;
+	font-size: .9em;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.wppa-widget__tab:hover {
+	color: var(--wppa-text);
+}
+
+.wppa-widget__tab.is-active {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast);
+}
+
+.wppa-widget__panel.is-hidden {
+	display: none;
+}
+
 body {
 	margin: 0;
 	padding: 32px 20px 64px;
@@ -756,6 +831,8 @@ body {
 .demo-block__head p { margin: 0; font-size: .88rem; color: #7c8798; }
 .demo-block > .wppa, .demo-block > .demo-two { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 .demo-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+.demo-sidebar { max-width: 340px; margin: 0 auto; }
+.demo-block > .demo-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 </style>
 </head>
 <body>
@@ -1075,7 +1152,95 @@ body {
 	<a class="wppa-button wppa-button--ghost" data-wppa-confirm-logout href="https://example.com/logout">
 		Выйти из аккаунта	</a>
 </section>
-</section><section class="demo-block"><div class="demo-block__head"><h2>Вход и регистрация</h2><p>Экран для гостей: формы [wppa_login] и [wppa_register]</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
+</section><section class="demo-block"><div class="demo-block__head"><h2>Виджет на главной странице</h2><p>Виджет «Личный кабинет: вход и регистрация»: вкладки «Вход» и «Регистрация» в одном компактном блоке</p></div><div class="demo-sidebar"><div class="widget-title" style="margin:0 0 10px;font-size:1rem;font-weight:650;">Личный кабинет</div><div class="widget widget_wppa_auth"><div class="wppa wppa--widget">
+
+	
+			<div class="wppa-widget__tabs" role="tablist">
+			<button type="button" class="wppa-widget__tab is-active" data-wppa-panel-btn="login" role="tab" aria-selected="true" aria-controls="wppa-panel-login">
+				Вход			</button>
+			<button type="button" class="wppa-widget__tab" data-wppa-panel-btn="register" role="tab" aria-selected="false" aria-controls="wppa-panel-register">
+				Регистрация			</button>
+		</div>
+	
+	<div class="wppa-widget__panel" id="wppa-panel-login" data-wppa-panel="login">
+		<div class="wppa-form-wrap">
+	<h2 class="wppa-title">Вход в личный кабинет</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
+		
+		<p class="wppa-field">
+			<label for="wppa-login">Логин или email</label>
+			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
+			</span>
+		</p>
+
+		<p class="wppa-field wppa-field--inline">
+			<label>
+				<input type="checkbox" name="rememberme" value="1" />
+				Запомнить меня			</label>
+			<a href="https://example.com/lost">Забыли пароль?</a>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Войти</button>
+	</form>
+</div>
+	</div>
+
+			<div
+			class="wppa-widget__panel is-hidden"
+			id="wppa-panel-register"
+			data-wppa-panel="register"
+		>
+			<div class="wppa-form-wrap">
+	<h2 class="wppa-title">Регистрация</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
+
+		<p class="wppa-field">
+			<label for="wppa-name">Имя</label>
+			<input type="text" id="wppa-name" name="display_name" autocomplete="name" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-email">Email</label>
+			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
+			</span>
+			<span class="wppa-hint">Минимум 8 символов.</span>
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password2">Пароль ещё раз</label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+		</p>
+
+		<p class="wppa-field wppa-field--check">
+			<label>
+				<input type="checkbox" name="consent" value="1" required />
+				Согласен на обработку персональных данных			</label>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
+	</form>
+</div>
+		</div>
+	</div>
+</div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Вход и регистрация</h2><p>Экран для гостей: формы [wppa_login] и [wppa_register]</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
 	<h2 class="wppa-title">Вход в личный кабинет</h2>
 
 	<form class="wppa-form" method="post" action="https://example.com/">

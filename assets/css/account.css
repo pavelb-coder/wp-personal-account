@@ -732,3 +732,78 @@
 .wppa-card--danger .wppa-subtitle {
 	color: #b91c1c;
 }
+
+/* Виджет входа и регистрации */
+
+.wppa--widget {
+	max-width: 100%;
+	padding: 0;
+}
+
+.wppa--widget .wppa-title {
+	margin: 0 0 12px;
+	font-size: 1.1em;
+}
+
+.wppa--widget .wppa-field {
+	margin-bottom: 12px;
+}
+
+.wppa--widget .wppa-field > label {
+	font-size: .85em;
+	margin-bottom: 4px;
+}
+
+.wppa--widget .wppa-field input[type="text"],
+.wppa--widget .wppa-field input[type="email"],
+.wppa--widget .wppa-field input[type="password"] {
+	padding: 8px 10px;
+	font-size: .95em;
+}
+
+.wppa--widget .wppa-button {
+	width: 100%;
+	min-height: 40px;
+}
+
+.wppa--widget .wppa-field--inline {
+	font-size: .85em;
+}
+
+.wppa-widget__tabs {
+	display: flex;
+	gap: 4px;
+	margin: 0 0 16px;
+	padding: 4px;
+	background: var(--wppa-bg);
+	border: 1px solid var(--wppa-border);
+	border-radius: 999px;
+}
+
+.wppa-widget__tab {
+	flex: 1 1 0;
+	min-height: 34px;
+	padding: 6px 12px;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--wppa-muted);
+	font: inherit;
+	font-size: .9em;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color .15s ease, color .15s ease;
+}
+
+.wppa-widget__tab:hover {
+	color: var(--wppa-text);
+}
+
+.wppa-widget__tab.is-active {
+	background: var(--wppa-accent);
+	color: var(--wppa-accent-contrast);
+}
+
+.wppa-widget__panel.is-hidden {
+	display: none;
+}

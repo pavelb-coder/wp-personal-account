@@ -52,6 +52,7 @@ class WPPA_Plugin {
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
 		WPPA_Builder::init();
+		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
 
 		if ( is_admin() ) {
 			WPPA_Admin::init();
@@ -188,9 +189,13 @@ class WPPA_Plugin {
 			return true;
 		}
 
+		if ( function_exists( 'is_active_widget' ) && is_active_widget( false, false, 'wppa_auth' ) ) {
+			return true;
+		}
+
 		$post = get_post();
 		if ( $post instanceof WP_Post ) {
-			foreach ( array( 'wppa_account', 'wppa_login', 'wppa_register' ) as $tag ) {
+			foreach ( array( 'wppa_account', 'wppa_login', 'wppa_register', 'wppa_auth' ) as $tag ) {
 				if ( has_shortcode( $post->post_content, $tag ) ) {
 					return true;
 				}

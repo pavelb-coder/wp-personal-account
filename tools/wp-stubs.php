@@ -28,6 +28,34 @@ $GLOBALS['wppa_test'] = array(
 	'next_id'   => 100,
 );
 
+class WP_Widget {
+	public $id_base;
+	public $name;
+	public $widget_options;
+	public $number = 2;
+
+	public function __construct( $id_base = '', $name = '', $options = array() ) {
+		$this->id_base        = $id_base;
+		$this->name           = $name;
+		$this->widget_options = $options;
+	}
+
+	public function get_field_id( $field ) { return $this->id_base . '-' . $field; }
+	public function get_field_name( $field ) { return 'widget_' . $this->id_base . '[' . $field . ']'; }
+	public function widget( $args, $instance ) {}
+	public function form( $instance ) {}
+	public function update( $new_instance, $old_instance ) { return $new_instance; }
+}
+
+function register_widget( $class ) {
+	$GLOBALS['wppa_test']['widgets'][] = $class;
+	return true;
+}
+
+function is_active_widget( $callback = false, $widget_id = false, $id_base = false, $skip_inactive = true ) {
+	return ! empty( $GLOBALS['wppa_test']['widget_active'] );
+}
+
 class WP_Query {
 	public $found_posts = 2;
 
@@ -329,6 +357,15 @@ function number_format_i18n( $number, $decimals = 0 ) { return number_format( (f
 function mysql2date( $format, $date ) { return date( $format, strtotime( $date ) ); }
 function locate_template( $files ) { return ''; }
 function wp_parse_args( $args, $defaults ) { return array_merge( $defaults, (array) $args ); }
+function shortcode_atts( $defaults, $atts, $shortcode = '' ) {
+	$atts = (array) $atts;
+	$out  = array();
+	foreach ( $defaults as $name => $default ) {
+		$out[ $name ] = array_key_exists( $name, $atts ) ? $atts[ $name ] : $default;
+	}
+	return $out;
+}
+function add_shortcode( $tag, $callback ) { $GLOBALS['wppa_test']['shortcodes'][ $tag ] = $callback; }
 function get_page_by_path( $path ) { return null; }
 function is_wp_error( $t ) { return $t instanceof WP_Error; }
 function paginate_links( $args = array() ) {

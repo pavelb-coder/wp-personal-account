@@ -23,6 +23,8 @@ require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
+require $base . 'includes/class-wppa-shortcodes.php';
+require $base . 'includes/class-wppa-widget.php';
 
 $GLOBALS['wppa_test']['users'] = array(
 	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
@@ -86,6 +88,30 @@ $sections .= demo_section(
 	WPPA_Template::get( 'tab-security', array( 'user' => $user, 'tabs' => $tabs ) )
 );
 
+// Виджет для главной страницы.
+$GLOBALS['wppa_test']['logged_in'] = false;
+ob_start();
+$demo_widget = new WPPA_Auth_Widget();
+$demo_widget->widget(
+	array(
+		'before_widget' => '<div class="widget widget_wppa_auth">',
+		'before_title'  => '<h2 class="widget-title">',
+		'after_title'   => '</h2>',
+		'after_widget'  => '</div>',
+	),
+	array( 'title' => 'Личный кабинет', 'mode' => 'both' )
+);
+$widget_demo = ob_get_clean();
+$GLOBALS['wppa_test']['logged_in'] = true;
+
+$sections .= demo_section(
+	'Виджет на главной странице',
+	'Виджет «Личный кабинет: вход и регистрация»: вкладки «Вход» и «Регистрация» в одном компактном блоке',
+	'<div class="demo-sidebar"><div class="widget-title" style="margin:0 0 10px;font-size:1rem;font-weight:650;">Личный кабинет</div>'
+		. str_replace( array( '<h2 class="widget-title">Личный кабинет</h2>' ), '', $widget_demo )
+		. '</div>'
+);
+
 $sections .= demo_section(
 	'Вход и регистрация',
 	'Экран для гостей: формы [wppa_login] и [wppa_register]',
@@ -121,6 +147,8 @@ body {
 .demo-block__head p { margin: 0; font-size: .88rem; color: #7c8798; }
 .demo-block > .wppa, .demo-block > .demo-two { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 .demo-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+.demo-sidebar { max-width: 340px; margin: 0 auto; }
+.demo-block > .demo-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 </style>
 </head>
 <body>

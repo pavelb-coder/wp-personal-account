@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
+require $base . 'includes/class-wppa-widget.php';
 
 // Обход автозагрузки шаблонов: путь к templates.
 $user  = new WP_User();
@@ -131,6 +132,60 @@ foreach ( $checks as $check_name => $ok ) {
 
 // Очистка раскладки, чтобы не влиять на другие проверки.
 delete_option( WPPA_Builder::OPTION );
+
+// Виджет входа и регистрации.
+WPPA_Auth_Widget::register();
+echo 'widget: зарегистрирован ' . implode( ', ', (array) ( $GLOBALS['wppa_test']['widgets'] ?? array() ) ) . "\n";
+
+$GLOBALS['wppa_test']['logged_in'] = false;
+
+ob_start();
+$widget = new WPPA_Auth_Widget();
+$widget->widget(
+	array(
+		'before_widget' => '<section class="widget">',
+		'before_title'  => '<h2 class="widget-title">',
+		'after_title'   => '</h2>',
+		'after_widget'  => '</section>',
+	),
+	array( 'title' => 'Вход на сайт', 'mode' => 'both' )
+);
+$widget_html = ob_get_clean();
+
+$widget_checks = array(
+	'заголовок виджета'          => false !== strpos( $widget_html, 'Вход на сайт' ),
+	'панель входа'               => false !== strpos( $widget_html, 'wppa-panel-login' ),
+	'панель регистрации'         => false !== strpos( $widget_html, 'wppa-panel-register' ),
+	'переключатель вкладок'      => false !== strpos( $widget_html, 'data-wppa-panel-btn' ),
+);
+
+foreach ( $widget_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'widget: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Виджет скрывается от авторизованных.
+$GLOBALS['wppa_test']['logged_in'] = true;
+ob_start();
+$widget->widget( array( 'before_widget' => '<section>', 'after_widget' => '</section>' ), array( 'hide_for_members' => 1 ) );
+$hidden = ob_get_clean();
+echo ( '' === trim( $hidden ) ? 'OK    ' : 'FAIL  ' ) . "widget: скрыт от авторизованных\n";
+if ( '' !== trim( $hidden ) ) {
+	$fail++;
+}
+
+// Шорткод [wppa_auth].
+$GLOBALS['wppa_test']['logged_in'] = false;
+$short = WPPA_Shortcodes::auth( array( 'mode' => 'login' ) );
+$short_ok = false !== strpos( $short, 'wppa-panel-login' ) && false === strpos( $short, 'wppa-panel-register' );
+echo ( $short_ok ? 'OK    ' : 'FAIL  ' ) . "shortcode: [wppa_auth mode=login] выводит только вход\n";
+if ( ! $short_ok ) {
+	$fail++;
+}
+
+$GLOBALS['wppa_test']['logged_in'] = true;
 
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";

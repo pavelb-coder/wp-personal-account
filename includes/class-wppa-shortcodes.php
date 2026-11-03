@@ -21,6 +21,7 @@ class WPPA_Shortcodes {
 		add_shortcode( 'wppa_account', array( __CLASS__, 'account' ) );
 		add_shortcode( 'wppa_login', array( __CLASS__, 'login' ) );
 		add_shortcode( 'wppa_register', array( __CLASS__, 'register' ) );
+		add_shortcode( 'wppa_auth', array( __CLASS__, 'auth' ) );
 	}
 
 	/**
@@ -64,6 +65,35 @@ class WPPA_Shortcodes {
 				'title'    => sanitize_text_field( $atts['title'] ),
 			)
 		);
+	}
+
+	/**
+	 * [wppa_auth] — вход и регистрация одним блоком (как виджет).
+	 *
+	 * @param array $atts Атрибуты.
+	 * @return string
+	 */
+	public static function auth( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'mode'     => 'both',
+				'redirect' => '',
+				'hide'     => '', // hide="0" — показывать и авторизованным.
+			),
+			$atts,
+			'wppa_auth'
+		);
+
+		ob_start();
+		WPPA_Auth_Form::render(
+			array(
+				'mode'             => sanitize_key( $atts['mode'] ),
+				'redirect'         => esc_url_raw( $atts['redirect'] ),
+				'hide_for_members' => '' === $atts['hide'] ? 1 : (int) $atts['hide'],
+			)
+		);
+
+		return (string) ob_get_clean();
 	}
 
 	/**

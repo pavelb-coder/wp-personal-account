@@ -75,6 +75,34 @@
 	}
 
 	/**
+	 * Переключение панелей «Вход / Регистрация» в виджете.
+	 */
+	function initWidgetPanels() {
+		var buttons = document.querySelectorAll( '[data-wppa-panel-btn]' );
+
+		Array.prototype.forEach.call( buttons, function ( button ) {
+			button.addEventListener( 'click', function () {
+				var name = button.getAttribute( 'data-wppa-panel-btn' );
+				var root = button.closest( '.wppa--widget' );
+
+				if ( ! root || ! name ) {
+					return;
+				}
+
+				Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel-btn]' ), function ( item ) {
+					var active = item === button;
+					item.classList.toggle( 'is-active', active );
+					item.setAttribute( 'aria-selected', active ? 'true' : 'false' );
+				} );
+
+				Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel]' ), function ( panel ) {
+					panel.classList.toggle( 'is-hidden', panel.getAttribute( 'data-wppa-panel' ) !== name );
+				} );
+			} );
+		} );
+	}
+
+	/**
 	 * Копирование в буфер обмена.
 	 */
 	function initCopyButtons() {
@@ -157,6 +185,7 @@
 		initPasswordMatch();
 		initLogoutConfirm();
 		initCopyButtons();
+		initWidgetPanels();
 		initConfirmActions();
 		initSubmitGuard();
 	}
