@@ -225,10 +225,10 @@ $sections .= demo_section(
 // Кнопка со ссылкой: четыре состояния в одном ряду.
 $link_states   = '';
 $link_variants = array(
-	'Ссылка открыта'      => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => '', 'new_tab' => 1, 'require_team' => 0 ),
+	'Ссылка открыта'      => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => '', 'new_tab' => 1, 'require_team' => 0, 'note' => "Вход по логину и паролю от платформы.\nПароль выдаёт наставник." ),
 	'Ждём состав команды' => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => '', 'new_tab' => 1, 'require_team' => 1 ),
 	'До открытия'         => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => gmdate( 'Y-m-d\TH:i', time() + 7200 ), 'end' => '', 'new_tab' => 1, 'require_team' => 0 ),
-	'Срок истёк'          => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => gmdate( 'Y-m-d\TH:i', time() - 3600 ), 'new_tab' => 1, 'require_team' => 0 ),
+	'Срок истёк'          => array( 'url' => 'https://example.com/stream', 'text' => 'Перейти к трансляции', 'start' => '', 'end' => gmdate( 'Y-m-d\TH:i', time() - 3600 ), 'new_tab' => 1, 'require_team' => 0, 'note' => 'Ссылка работала до окончания приёма работ.' ),
 );
 
 $wppa_settings_snapshot = get_option( 'wppa_settings', array() );

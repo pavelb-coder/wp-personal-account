@@ -586,6 +586,7 @@ $link_base = array(
 	'end'          => '',
 	'new_tab'      => 1,
 	'require_team' => 0,
+	'note'         => '',
 );
 
 $link_settings_snapshot = get_option( 'wppa_settings', array() );
@@ -717,6 +718,39 @@ $link_html = WPPA_Builder::render_block(
 );
 $link_checks['закрытая кнопка — без href']         = false === strpos( $link_html, 'href="https://example.com/go"' );
 $link_checks['закрытая кнопка — aria-disabled']    = false !== strpos( $link_html, 'aria-disabled="true"' );
+
+// Комментарий к кнопке: необязательный текст под кнопкой.
+$link_checks['комментарий: пусто — блока нет'] = false === strpos( $link_html, 'wppa-link-block__note' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'note' => "Ссылка ведёт на платформу.\nЛогин — ваш email." ) ) );
+$link_checks['комментарий: есть в состоянии'] = "Ссылка ведёт на платформу.\nЛогин — ваш email." === $state['note'];
+
+$note_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['комментарий: выведен под кнопкой']    = false !== strpos( $note_html, 'wppa-link-block__note' );
+$link_checks['комментарий: перенос строки — <br />'] = false !== strpos( $note_html, 'платформу.<br />' );
+
+$state = wppa_link_state( array_merge( $link_base, array( 'end' => gmdate( 'Y-m-d\\TH:i', time() - 60 ), 'note' => 'Доступ закроется вместе с приёмом работ.' ) ) );
+
+$note_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+$link_checks['комментарий: виден и у закрытой кнопки'] = false !== strpos( $note_html, 'Доступ закроется вместе с приёмом работ.' );
+
+$note_saved = WPPA_Settings::sanitize(
+	array(
+		'link_button' => array(
+			'url'  => 'https://example.com/go',
+			'note' => "  <b>Курсив</b> и текст\nвторая строка  ",
+		),
+	)
+);
+$link_checks['комментарий: разметка вырезается'] = "Курсив и текст\nвторая строка" === $note_saved['link_button']['note'];
+$link_checks['комментарий: по умолчанию пусто']  = '' === WPPA_Link_Button::defaults()['note'];
+
 
 $state = wppa_link_state( array_merge( $link_base, array( 'start' => gmdate( 'Y-m-d\TH:i', time() + 7200 ) ) ) );
 $link_html = WPPA_Builder::render_block(

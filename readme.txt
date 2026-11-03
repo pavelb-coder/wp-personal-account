@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.8.1
+Stable tag: 3.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.9.0 =
+* У кнопки перехода на внешнюю ссылку появился необязательный комментарий: текст выводится под кнопкой.
+* Комментарий виден и у открытой, и у закрытой кнопки; переносы строк сохраняются, разметка вырезается.
+* Настройка «Кнопка со ссылкой» → «Комментарий»; в состоянии кнопки появился ключ `note`.
 
 = 3.8.1 =
 * Из выгрузки аккаунтов убраны колонки «Отображаемое имя», «О себе» и «Email на подтверждении».

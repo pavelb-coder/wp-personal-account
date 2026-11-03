@@ -45,6 +45,12 @@ $wppa_text = $wppa_link['text'];
 		</p>
 	<?php endif; ?>
 
+	<?php if ( '' !== $wppa_link['note'] ) : ?>
+		<p class="wppa-link-block__note">
+			<?php echo nl2br( esc_html( $wppa_link['note'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- текст экранирован, добавлены только переносы. ?>
+		</p>
+	<?php endif; ?>
+
 	<?php if ( $wppa_link['countdown'] ) : ?>
 		<p class="wppa-link-block__timer">
 			<span class="wppa-link-block__timer-label">

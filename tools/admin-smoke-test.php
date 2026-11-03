@@ -1212,6 +1212,25 @@ foreach ( $smb_checks as $check_name => $ok ) {
 	}
 }
 
+// Комментарий к кнопке со ссылкой: поле есть в форме и сохраняется.
+$link_note_checks = array(
+	'настройки: поле комментария к кнопке' => false !== strpos( $settings_html, 'wppa_settings[link_button][note]' )
+		&& false !== strpos( $settings_html, 'wppa-link-note' ),
+	'настройки: комментарий сохраняется'   => 'Вход по email' === WPPA_Settings::sanitize(
+		array( 'link_button' => array( 'url' => 'https://example.com', 'note' => ' Вход по email ' ) )
+	)['link_button']['note'],
+	'настройки: пустой комментарий'        => '' === WPPA_Settings::sanitize(
+		array( 'link_button' => array( 'url' => 'https://example.com' ) )
+	)['link_button']['note'],
+);
+
+foreach ( $link_note_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );
 

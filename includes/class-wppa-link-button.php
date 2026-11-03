@@ -30,6 +30,7 @@ class WPPA_Link_Button {
 			'end'          => '',
 			'new_tab'      => 1,
 			'require_team' => 1,
+			'note'         => '',
 		);
 	}
 
@@ -53,6 +54,9 @@ class WPPA_Link_Button {
 		$out['end']          = (string) $out['end'];
 		$out['new_tab']      = empty( $out['new_tab'] ) ? 0 : 1;
 		$out['require_team'] = empty( $out['require_team'] ) ? 0 : 1;
+
+		// Комментарий под кнопкой: обычный текст с переносами строк, без разметки.
+		$out['note'] = trim( (string) $out['note'] );
 
 		/**
 		 * Фильтр настроек кнопки со ссылкой.
@@ -158,6 +162,7 @@ class WPPA_Link_Button {
 			'team'         => array(),
 			'is_open'      => false,
 			'is_mentor'    => false,
+			'note'         => (string) $config['note'],
 		);
 
 		// Наставнику кнопка не выдаётся: ссылка предназначена участникам.

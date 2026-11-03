@@ -331,6 +331,7 @@ class WPPA_Settings {
 		$out['link_button'] = array(
 			'url'          => isset( $link_saved['url'] ) ? esc_url_raw( trim( (string) $link_saved['url'] ) ) : '',
 			'text'         => isset( $link_saved['text'] ) ? sanitize_text_field( $link_saved['text'] ) : '',
+			'note'         => isset( $link_saved['note'] ) ? sanitize_textarea_field( (string) $link_saved['note'] ) : '',
 			'start'        => isset( $link_saved['start'] ) ? WPPA_Link_Button::sanitize_datetime( $link_saved['start'] ) : '',
 			'end'          => isset( $link_saved['end'] ) ? WPPA_Link_Button::sanitize_datetime( $link_saved['end'] ) : '',
 			'new_tab'      => empty( $link_saved['new_tab'] ) ? 0 : 1,
@@ -778,6 +779,13 @@ class WPPA_Settings {
 						<th scope="row"><label for="wppa-link-text"><?php esc_html_e( 'Текст кнопки', 'wp-personal-account' ); ?></label></th>
 						<td>
 							<input type="text" class="regular-text" id="wppa-link-text" name="wppa_settings[link_button][text]" value="<?php echo esc_attr( $wppa_link['text'] ); ?>" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-link-note"><?php esc_html_e( 'Комментарий', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<textarea id="wppa-link-note" name="wppa_settings[link_button][note]" rows="3" class="large-text"><?php echo esc_textarea( $wppa_link['note'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Необязательный текст под кнопкой: например, куда ведёт ссылка или что понадобится для входа. Выводится под кнопкой в любом её состоянии — и открытом, и закрытом. Переносы строк сохраняются, разметка вырезается.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 					<tr>
