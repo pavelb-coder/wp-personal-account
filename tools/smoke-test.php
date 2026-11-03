@@ -561,6 +561,45 @@ update_option( 'users_can_register', 1 );
 $login_no_switch = WPPA_Blocks::render( array( 'mode' => 'login', 'hideOther' => true ) );
 $separate_checks['hideOther скрывает кнопку перехода'] = false === strpos( $login_no_switch, 'wppa_view=register' );
 
+// Оформление блока: пресеты, ширина, кнопки, акцент.
+$look_card = WPPA_Blocks::render(
+	array(
+		'mode'            => 'login',
+		'appearance'      => 'card',
+		'maxWidth'        => 'medium',
+		'buttonSize'      => 'lg',
+		'buttonFullWidth' => true,
+		'accentColor'     => '#16a34a',
+		'cornerRadius'    => 20,
+	)
+);
+
+$separate_checks['оформление: карточка']           = false !== strpos( $look_card, 'wppa-block--card' );
+$separate_checks['оформление: ширина']             = false !== strpos( $look_card, 'wppa-block--w-medium' );
+$separate_checks['оформление: размер кнопок']      = false !== strpos( $look_card, 'wppa-block--btn-lg' );
+$separate_checks['оформление: кнопки во всю ширину'] = false !== strpos( $look_card, 'wppa-block--btn-full' );
+$separate_checks['оформление: акцентная переменная'] = false !== strpos( $look_card, '--wppa-accent:#16a34a' );
+$separate_checks['оформление: радиус']             = false !== strpos( $look_card, '--wppa-radius:20px' );
+$separate_checks['оформление: по умолчанию без карточки'] = false !== strpos( WPPA_Blocks::render( array( 'mode' => 'login' ) ), 'wppa-block--plain' );
+
+// Кнопка-ссылка с оформлением.
+$look_button = WPPA_Blocks::render(
+	array(
+		'mode'            => 'register',
+		'display'         => 'button',
+		'buttonStyle'     => 'ghost',
+		'buttonSize'      => 'lg',
+		'buttonFullWidth' => true,
+		'appearance'      => 'bordered',
+	)
+);
+
+$separate_checks['кнопка: вторичный стиль']   = false !== strpos( $look_button, 'wppa-button--ghost' );
+$separate_checks['кнопка: крупный размер']    = false !== strpos( $look_button, 'wppa-button--lg' );
+$separate_checks['кнопка: во всю ширину']     = false !== strpos( $look_button, 'wppa-button--block' );
+$separate_checks['кнопка: рамка обёртки']     = false !== strpos( $look_button, 'wppa-block--bordered' );
+$separate_checks['некорректный акцент игнорируется'] = false === strpos( WPPA_Blocks::render( array( 'mode' => 'login', 'accentColor' => 'javascript:alert(1)' ) ), 'javascript' );
+
 foreach ( $separate_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'blocks separate: ' . $check_name . "\n";
 	if ( ! $ok ) {

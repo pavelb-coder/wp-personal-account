@@ -894,3 +894,88 @@
 	font-weight: 500;
 	word-break: break-word;
 }
+
+/* Оформление блоков в редакторе и на сайте */
+
+.wp-block-wppa-auth,
+.wp-block-wppa-login,
+.wp-block-wppa-register {
+	box-sizing: border-box;
+}
+
+.wppa-block--card {
+	background: #fff;
+	border: 1px solid var(--wppa-border, #e5e7eb);
+	border-radius: var(--wppa-radius, 14px);
+	padding: 24px;
+	box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+}
+
+.wppa-block--bordered {
+	background: #fff;
+	border: 1px solid var(--wppa-border, #e5e7eb);
+	border-radius: var(--wppa-radius, 14px);
+	padding: 20px;
+}
+
+.wppa-block--w-small {
+	max-width: 320px;
+}
+
+.wppa-block--w-medium {
+	max-width: 420px;
+}
+
+.wppa-block--w-large {
+	max-width: 560px;
+}
+
+.wppa-block--w-full {
+	max-width: none;
+	width: 100%;
+}
+
+/* Кнопки внутри блока: размер и ширина */
+
+.wppa-block--btn-sm .wppa-button {
+	min-height: 34px;
+	padding: 6px 14px;
+	font-size: .88em;
+}
+
+.wppa-block--btn-lg .wppa-button {
+	min-height: 50px;
+	padding: 13px 22px;
+	font-size: 1.05em;
+}
+
+.wppa-block--btn-full .wppa-button,
+.wppa-block--btn-full .wppa-form > .wppa-button {
+	width: 100%;
+}
+
+.wppa-button--block {
+	width: 100%;
+	text-align: center;
+	text-decoration: none;
+}
+
+.wppa-button--sm {
+	min-height: 34px;
+	padding: 6px 14px;
+	font-size: .88em;
+}
+
+.wppa-button--lg {
+	min-height: 50px;
+	padding: 13px 22px;
+	font-size: 1.05em;
+}
+
+/* В редакторе: чтобы превью не «прыгало» */
+
+.wp-block-wppa-auth .wppa-title,
+.wp-block-wppa-login .wppa-title,
+.wp-block-wppa-register .wppa-title {
+	margin-top: 0;
+}

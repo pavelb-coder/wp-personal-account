@@ -137,6 +137,20 @@ $sections .= demo_section(
 		. '</div>'
 );
 
+$sections .= demo_section(
+	'Настройка внешнего вида блока',
+	'Панель «Внешний вид»: оформление (без оформления / карточка / рамка), ширина, размер кнопок, акцент и радиус',
+	'<div class="demo-three">'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'login', 'appearance' => 'card', 'maxWidth' => 'small', 'showTitle' => true, 'title' => 'Карточка', 'hideOther' => true ) ) . '</div>'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'login', 'appearance' => 'bordered', 'maxWidth' => 'small', 'showTitle' => true, 'title' => 'Рамка', 'hideOther' => true, 'accentColor' => '#16a34a' ) ) . '</div>'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'login', 'appearance' => 'plain', 'maxWidth' => 'small', 'showTitle' => true, 'title' => 'Без оформления', 'hideOther' => true, 'buttonFullWidth' => true, 'buttonSize' => 'lg' ) ) . '</div>'
+		. '</div>'
+		. '<div class="demo-two" style="margin-top:24px;">'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'login', 'display' => 'button', 'buttonSize' => 'lg', 'buttonText' => 'Кнопка: крупная' ) ) . '</div>'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button', 'buttonStyle' => 'ghost', 'buttonSize' => 'lg', 'buttonText' => 'Кнопка: обводка' ) ) . '</div>'
+		. '</div>'
+);
+
 $GLOBALS['wppa_test']['logged_in'] = true;
 
 $sections .= demo_section(
@@ -191,6 +205,8 @@ body {
 .demo-block__head p { margin: 0; font-size: .88rem; color: #7c8798; }
 .demo-block > .wppa, .demo-block > .demo-two { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 .demo-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+.demo-block > .demo-three { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+.demo-three { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; align-items: start; }
 .demo-sidebar { max-width: 340px; margin: 0 auto; }
 .demo-block > .demo-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
 </style>

@@ -21,6 +21,110 @@
 		{ value: 'register', label: __( 'Только регистрация', 'wp-personal-account' ) }
 	];
 
+	/**
+	 * Панель «Внешний вид» для всех блоков плагина.
+	 *
+	 * @param {Object} props Свойства блока.
+	 * @return {Object} Элемент панели.
+	 */
+	function appearancePanel( props ) {
+		var attrs = props.attributes;
+		var ColorPalette = components.ColorPalette;
+
+		return el(
+			PanelBody,
+			{ title: __( 'Внешний вид', 'wp-personal-account' ), initialOpen: true },
+			el( SelectControl, {
+				label: __( 'Оформление', 'wp-personal-account' ),
+				help: __( 'Карточка с тенью, только рамка или без оформления (наследует стили темы).', 'wp-personal-account' ),
+				value: attrs.appearance || 'plain',
+				options: [
+					{ value: 'plain', label: __( 'Без оформления', 'wp-personal-account' ) },
+					{ value: 'card', label: __( 'Карточка', 'wp-personal-account' ) },
+					{ value: 'bordered', label: __( 'Рамка', 'wp-personal-account' ) }
+				],
+				onChange: function ( value ) {
+					props.setAttributes( { appearance: value } );
+				}
+			} ),
+			el( SelectControl, {
+				label: __( 'Ширина', 'wp-personal-account' ),
+				value: attrs.maxWidth || 'auto',
+				options: [
+					{ value: 'auto', label: __( 'По содержимому', 'wp-personal-account' ) },
+					{ value: 'small', label: __( 'Узкая — 320 px', 'wp-personal-account' ) },
+					{ value: 'medium', label: __( 'Средняя — 420 px', 'wp-personal-account' ) },
+					{ value: 'large', label: __( 'Широкая — 560 px', 'wp-personal-account' ) },
+					{ value: 'full', label: __( 'На всю ширину', 'wp-personal-account' ) }
+				],
+				onChange: function ( value ) {
+					props.setAttributes( { maxWidth: value } );
+				}
+			} ),
+			el( SelectControl, {
+				label: __( 'Размер кнопок', 'wp-personal-account' ),
+				value: attrs.buttonSize || 'md',
+				options: [
+					{ value: 'sm', label: __( 'Компактный', 'wp-personal-account' ) },
+					{ value: 'md', label: __( 'Обычный', 'wp-personal-account' ) },
+					{ value: 'lg', label: __( 'Крупный', 'wp-personal-account' ) }
+				],
+				onChange: function ( value ) {
+					props.setAttributes( { buttonSize: value } );
+				}
+			} ),
+			el( ToggleControl, {
+				label: __( 'Кнопки на всю ширину', 'wp-personal-account' ),
+				checked: !! attrs.buttonFullWidth,
+				onChange: function ( value ) {
+					props.setAttributes( { buttonFullWidth: value } );
+				}
+			} ),
+			'button' === attrs.display
+				? el( SelectControl, {
+						label: __( 'Стиль кнопки', 'wp-personal-account' ),
+						value: attrs.buttonStyle || 'primary',
+						options: [
+							{ value: 'primary', label: __( 'Основная (заливка)', 'wp-personal-account' ) },
+							{ value: 'ghost', label: __( 'Вторичная (обводка)', 'wp-personal-account' ) }
+						],
+						onChange: function ( value ) {
+							props.setAttributes( { buttonStyle: value } );
+						}
+				  } )
+				: null,
+			ColorPalette
+				? el( components.BaseControl, {
+						label: __( 'Акцентный цвет', 'wp-personal-account' ),
+						help: __( 'Пусто — цвет из настроек плагина.', 'wp-personal-account' )
+				  },
+					el( ColorPalette, {
+						value: attrs.accentColor,
+						onChange: function ( value ) {
+							props.setAttributes( { accentColor: value || '' } );
+						}
+					} )
+				  )
+				: el( TextControl, {
+						label: __( 'Акцентный цвет', 'wp-personal-account' ),
+						help: __( 'HEX, например #2563eb. Пусто — из настроек плагина.', 'wp-personal-account' ),
+						value: attrs.accentColor,
+						onChange: function ( value ) {
+							props.setAttributes( { accentColor: value } );
+						}
+				  } ),
+			el( TextControl, {
+				label: __( 'Радиус скругления, px', 'wp-personal-account' ),
+				help: __( '0 — значение по умолчанию.', 'wp-personal-account' ),
+				type: 'number',
+				value: attrs.cornerRadius,
+				onChange: function ( value ) {
+					props.setAttributes( { cornerRadius: parseInt( value, 10 ) || 0 } );
+				}
+			} )
+		);
+	}
+
 	function edit( props ) {
 		var attrs = props.attributes;
 		var blockProps = useBlockProps ? useBlockProps() : { className: 'wp-block-wppa-auth' };
@@ -39,6 +143,7 @@
 			el(
 				InspectorControls,
 				{},
+				appearancePanel( props ),
 				el(
 					PanelBody,
 					{ title: __( 'Форма входа', 'wp-personal-account' ), initialOpen: true },

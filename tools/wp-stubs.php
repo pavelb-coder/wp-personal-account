@@ -367,6 +367,18 @@ function shortcode_atts( $defaults, $atts, $shortcode = '' ) {
 }
 function add_shortcode( $tag, $callback ) { $GLOBALS['wppa_test']['shortcodes'][ $tag ] = $callback; }
 
+function get_block_wrapper_attributes( $extra = array() ) {
+	$classes = isset( $extra['class'] ) ? $extra['class'] : '';
+	$styles  = isset( $extra['style'] ) ? $extra['style'] : '';
+	$out     = 'class="' . htmlspecialchars( $classes ) . '"';
+
+	if ( '' !== $styles ) {
+		$out .= ' style="' . htmlspecialchars( $styles ) . '"';
+	}
+
+	return $out;
+}
+
 function register_block_type( $name, $args = array() ) {
 	$key = is_string( $name ) ? $name : ( isset( $args['render_callback'] ) ? $name : $name );
 	$GLOBALS['wppa_test']['blocks'][] = is_string( $name ) ? $name : $name;

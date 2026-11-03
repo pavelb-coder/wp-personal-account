@@ -49,6 +49,34 @@
 		},
 		"align": {
 			"type": "string"
+		},
+		"appearance": {
+			"type": "string",
+			"default": "plain"
+		},
+		"maxWidth": {
+			"type": "string",
+			"default": "auto"
+		},
+		"buttonSize": {
+			"type": "string",
+			"default": "md"
+		},
+		"buttonFullWidth": {
+			"type": "boolean",
+			"default": false
+		},
+		"buttonStyle": {
+			"type": "string",
+			"default": "primary"
+		},
+		"accentColor": {
+			"type": "string",
+			"default": ""
+		},
+		"cornerRadius": {
+			"type": "number",
+			"default": 0
 		}
 	},
 	"supports": {
@@ -57,9 +85,33 @@
 			"wide",
 			"full"
 		],
+		"anchor": true,
+		"color": {
+			"background": true,
+			"text": true,
+			"gradients": true,
+			"heading": true,
+			"button": true
+		},
 		"spacing": {
 			"margin": true,
-			"padding": true
+			"padding": true,
+			"blockGap": null
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"fontFamily": false,
+			"fontStyle": false,
+			"fontWeight": true,
+			"letterSpacing": false,
+			"textTransform": false
 		}
 	}
 }

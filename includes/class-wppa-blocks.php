@@ -165,16 +165,14 @@ class WPPA_Blocks {
 			$title = 'register' === $mode ? __( 'Регистрация', 'wp-personal-account' ) : ( 'login' === $mode ? __( 'Вход', 'wp-personal-account' ) : __( 'Личный кабинет', 'wp-personal-account' ) );
 		}
 
-		$wrapper = 'wp-block-wppa-' . ( 'both' === $mode ? 'auth' : $mode );
-
 		// Вариант «кнопка-ссылка» — для шапки сайта и меню.
 		if ( 'button' === $attributes['display'] && 'both' !== $mode ) {
-			return self::render_button( $mode, $attributes, $wrapper );
+			return self::render_button( $mode, $attributes );
 		}
 
 		ob_start();
 		?>
-		<div class="<?php echo esc_attr( $wrapper ); ?>">
+		<div <?php echo self::wrapper_attributes( $mode, $attributes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- готовые атрибуты WordPress. ?>>
 			<?php if ( ! empty( $attributes['showTitle'] ) ) : ?>
 				<h2 class="wppa-title"><?php echo esc_html( $title ); ?></h2>
 			<?php endif; ?>
@@ -199,10 +197,9 @@ class WPPA_Blocks {
 	 *
 	 * @param string $mode       login|register.
 	 * @param array  $attributes Атрибуты блока.
-	 * @param string $wrapper    CSS-класс обёртки.
 	 * @return string
 	 */
-	private static function render_button( $mode, $attributes, $wrapper ) {
+	private static function render_button( $mode, $attributes ) {
 		if ( 'register' === $mode && ! WPPA_Plugin::registration_open() ) {
 			return '';
 		}
@@ -213,14 +210,87 @@ class WPPA_Blocks {
 			$text = 'register' === $mode ? __( 'Регистрация', 'wp-personal-account' ) : __( 'Войти', 'wp-personal-account' );
 		}
 
-		$url = 'register' === $mode ? WPPA_Plugin::register_url() : WPPA_Plugin::login_url();
+		$url   = 'register' === $mode ? WPPA_Plugin::register_url() : WPPA_Plugin::login_url();
+		$style = isset( $attributes['buttonStyle'] ) && 'ghost' === $attributes['buttonStyle'] ? 'ghost' : 'primary';
+
+		$button_classes = array( 'wppa-button', 'wppa-button--' . $style );
+
+		$size = isset( $attributes['buttonSize'] ) ? (string) $attributes['buttonSize'] : 'md';
+		if ( in_array( $size, array( 'sm', 'lg' ), true ) ) {
+			$button_classes[] = 'wppa-button--' . $size;
+		}
+
+		if ( ! empty( $attributes['buttonFullWidth'] ) ) {
+			$button_classes[] = 'wppa-button--block';
+		}
 
 		return sprintf(
-			'<div class="%1$s"><a class="wppa-button wppa-button--primary" href="%2$s">%3$s</a></div>',
-			esc_attr( $wrapper ),
+			'<div %1$s><a class="%2$s" href="%3$s">%4$s</a></div>',
+			self::wrapper_attributes( $mode, $attributes ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_attr( implode( ' ', $button_classes ) ),
 			esc_url( $url ),
 			esc_html( $text )
 		);
+	}
+
+	/**
+	 * Атрибуты обёртки блока: классы оформления, инлайн-переменные и
+	 * настройки из supports (цвет, отступы, рамка, типографика).
+	 *
+	 * @param string $mode       both|login|register.
+	 * @param array  $attributes Атрибуты блока.
+	 * @return string
+	 */
+	private static function wrapper_attributes( $mode, $attributes ) {
+		$classes = array( 'wp-block-wppa-' . ( 'both' === $mode ? 'auth' : $mode ) );
+
+		$appearance = isset( $attributes['appearance'] ) ? (string) $attributes['appearance'] : 'plain';
+		$classes[]  = 'wppa-block--' . ( in_array( $appearance, array( 'plain', 'card', 'bordered' ), true ) ? $appearance : 'plain' );
+
+		$width = isset( $attributes['maxWidth'] ) ? (string) $attributes['maxWidth'] : 'auto';
+		if ( in_array( $width, array( 'small', 'medium', 'large', 'full' ), true ) ) {
+			$classes[] = 'wppa-block--w-' . $width;
+		}
+
+		$size = isset( $attributes['buttonSize'] ) ? (string) $attributes['buttonSize'] : 'md';
+		if ( in_array( $size, array( 'sm', 'lg' ), true ) ) {
+			$classes[] = 'wppa-block--btn-' . $size;
+		}
+
+		if ( ! empty( $attributes['buttonFullWidth'] ) ) {
+			$classes[] = 'wppa-block--btn-full';
+		}
+
+		$styles = array();
+
+		$accent = isset( $attributes['accentColor'] ) ? sanitize_hex_color( (string) $attributes['accentColor'] ) : '';
+		if ( $accent ) {
+			$styles[] = '--wppa-accent:' . $accent;
+		}
+
+		$radius = isset( $attributes['cornerRadius'] ) ? (int) $attributes['cornerRadius'] : 0;
+		if ( $radius > 0 ) {
+			$styles[] = '--wppa-radius:' . min( 40, $radius ) . 'px';
+		}
+
+		$extra = array( 'class' => implode( ' ', $classes ) );
+
+		if ( $styles ) {
+			$extra['style'] = implode( ';', $styles ) . ';';
+		}
+
+		if ( function_exists( 'get_block_wrapper_attributes' ) ) {
+			return get_block_wrapper_attributes( $extra );
+		}
+
+		// Запасной вариант, если функция недоступна.
+		$out = 'class="' . esc_attr( $extra['class'] ) . '"';
+
+		if ( ! empty( $extra['style'] ) ) {
+			$out .= ' style="' . esc_attr( $extra['style'] ) . '"';
+		}
+
+		return $out;
 	}
 
 	/**
