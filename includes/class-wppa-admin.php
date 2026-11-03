@@ -273,6 +273,8 @@ class WPPA_Admin {
 				'owner'   => $owner ? $owner->display_name : __( '— удалён —', 'wp-personal-account' ),
 				'owner_id' => (int) $team->post_author,
 				'members' => WPPA_Teams::members_count( (int) $team->ID ),
+				'mentors_count' => WPPA_Teams::mentors_count( (int) $team->ID ),
+				'people'  => count( WPPA_Teams::members( (int) $team->ID ) ),
 				'limit'   => WPPA_Teams::team_limit( (int) $team->ID ),
 				'own_limit' => WPPA_Teams::raw_team_limit( (int) $team->ID ),
 				'mentors'   => WPPA_Teams::mentors( (int) $team->ID ),

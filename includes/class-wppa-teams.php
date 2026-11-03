@@ -428,8 +428,10 @@ class WPPA_Teams {
 			'created' => (int) get_post_meta( $post->ID, self::META_CREATED, true ),
 			'token'   => (string) get_post_meta( $post->ID, self::META_TOKEN, true ),
 			'expires' => (int) get_post_meta( $post->ID, self::META_TOKEN_EXPIRES, true ),
-			'members' => self::members( $post->ID ),
-			'mentors' => self::mentors( $post->ID ),
+			'members'         => self::members( $post->ID ),
+			'participants'    => self::members_count( $post->ID ),
+			'mentors'         => self::mentors( $post->ID ),
+			'mentors_count'   => self::mentors_count( $post->ID ),
 		);
 	}
 
@@ -454,13 +456,45 @@ class WPPA_Teams {
 	}
 
 	/**
-	 * Количество участников.
+	 * Участники команды без наставников (наставник не считается участником).
+	 *
+	 * @param int $team_id ID команды.
+	 * @return WP_User[]
+	 */
+	public static function participants( $team_id ) {
+		$participants = array();
+
+		foreach ( self::members( $team_id ) as $member ) {
+			if ( 'mentor' === self::role( $member->ID ) ) {
+				continue;
+			}
+
+			$participants[] = $member;
+		}
+
+		return $participants;
+	}
+
+	/**
+	 * Количество участников команды (без наставников): капитан + обычные участники.
+	 *
+	 * Именно это число сравнивается с минимумом и лимитом команды.
 	 *
 	 * @param int $team_id ID команды.
 	 * @return int
 	 */
 	public static function members_count( $team_id ) {
-		return count( self::members( $team_id ) );
+		return count( self::participants( $team_id ) );
+	}
+
+	/**
+	 * Количество наставников команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function mentors_count( $team_id ) {
+		return count( self::mentors( $team_id ) );
 	}
 
 	/**
@@ -622,6 +656,7 @@ class WPPA_Teams {
 			return new WP_Error( 'wppa_team_other' );
 		}
 
+		// Наставники не считаются участниками и не занимают место в лимите.
 		if ( self::members_count( $team_id ) >= self::team_limit( $team_id ) ) {
 			return new WP_Error( 'wppa_team_full' );
 		}

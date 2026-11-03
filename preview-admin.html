@@ -1254,7 +1254,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 				<tr>
 					<th>Команда</th>
 					<th>Капитан</th>
-					<th>Участников</th>
+					<th>Участников (без наставников)</th>
 					<th>Наставники</th>
 					<th>Мин. / лимит</th>
 					<th>Создана</th>
@@ -1268,7 +1268,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 															<a href="https://example.com/wp-admin/user-edit.php?user_id=7">Иван Петров</a>
 													</td>
 						<td>
-							0 / 10															<br />
+							0 / 10																						<br />
 								<span class="wppa-badge wppa-badge--warn">
 									недобор: 2 до 2								</span>
 													</td>
@@ -1332,7 +1332,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 															<a href="https://example.com/wp-admin/user-edit.php?user_id=7">Иван Петров</a>
 													</td>
 						<td>
-							0 / 10															<br />
+							0 / 10																						<br />
 								<span class="wppa-badge wppa-badge--warn">
 									недобор: 2 до 2								</span>
 													</td>
@@ -1396,7 +1396,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 															<a href="https://example.com/wp-admin/user-edit.php?user_id=7">Иван Петров</a>
 													</td>
 						<td>
-							1 / 10															<br />
+							1 / 10																						<br />
 								<span class="wppa-badge wppa-badge--warn">
 									недобор: 1 до 2								</span>
 													</td>
@@ -1473,7 +1473,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 		<p class="wppa-admin__muted">
 			Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.		</p>
 		<p class="wppa-admin__muted">
-			Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор.		</p>
+			Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор. Наставник не считается участником: он не занимает место в лимите и не идёт в зачёт минимума.		</p>
 		<p class="wppa-admin__muted">
 			Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.		</p>
 	</section>

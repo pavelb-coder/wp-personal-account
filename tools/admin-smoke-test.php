@@ -124,7 +124,10 @@ $mentor_ok = $mentor_before
 	&& 'mentor' === WPPA_Teams::role( 8 )
 	&& 1 === count( WPPA_Teams::mentors( $demo_team_id ) )
 	&& false !== strpos( $teams_mentor_html, 'value="remove_team_mentor"' )
-	&& false !== strpos( $teams_mentor_html, 'wppa-badge--mentor' );
+	&& false !== strpos( $teams_mentor_html, 'wppa-badge--mentor' )
+	&& false !== strpos( $teams_mentor_html, 'Участников (без наставников)' )
+	&& false !== strpos( $teams_mentor_html, 'наставников: 1' )
+	&& 1 === WPPA_Teams::members_count( $demo_team_id );
 
 echo ( $mentor_ok ? 'OK    ' : 'FAIL  ' ) . "teams: назначение и снятие наставника в админке\n";
 if ( ! $mentor_ok ) {

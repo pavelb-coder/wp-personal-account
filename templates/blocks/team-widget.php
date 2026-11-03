@@ -18,6 +18,8 @@ $wppa_my_role    = $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '';
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 $wppa_min      = WPPA_Teams::team_min( $wppa_team_id );
 $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
+$wppa_members  = $wppa_team_id ? WPPA_Teams::members_count( $wppa_team_id ) : 0;
+$wppa_mentors  = $wppa_team_id ? WPPA_Teams::mentors_count( $wppa_team_id ) : 0;
 ?>
 
 <h2 class="wppa-title">
@@ -77,12 +79,20 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 			<p class="wppa-hint">
 				<?php
 				printf(
-					/* translators: 1: количество участников, 2: лимит, 3: минимум */
+					/* translators: 1: количество участников (без наставников), 2: лимит, 3: минимум */
 					esc_html__( 'Участников: %1$d из %2$d (минимум %3$d)', 'wp-personal-account' ),
-					count( $wppa_team['members'] ),
+					(int) $wppa_members,
 					$wppa_max,
 					$wppa_min
 				);
+				if ( $wppa_mentors > 0 ) {
+					echo ' · ';
+					printf(
+						/* translators: %d: количество наставников */
+						esc_html__( 'наставников: %d (в лимит не входят)', 'wp-personal-account' ),
+						(int) $wppa_mentors
+					);
+				}
 				if ( $wppa_team['created'] ) {
 					echo ' · ';
 					printf(
@@ -104,12 +114,18 @@ $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
 			<?php
 			printf(
 				/* translators: 1: сколько не хватает, 2: минимум */
-				esc_html__( 'Команда ещё не набрана: не хватает %1$d участник(ов) до минимума %2$d. Пригласите коллег по ссылке ниже.', 'wp-personal-account' ),
+				esc_html__( 'Команда ещё не набрана: не хватает %1$d участник(ов) до минимума %2$d (наставники в зачёт не идут). Пригласите коллег по ссылке ниже.', 'wp-personal-account' ),
 				(int) $wppa_missing,
 				(int) $wppa_min
 			);
 			?>
 		</div>
+	<?php endif; ?>
+
+	<?php if ( $wppa_mentors > 0 ) : ?>
+		<p class="wppa-hint">
+			<?php esc_html_e( 'Наставники входят в состав, но не считаются участниками: не занимают место в лимите и не идут в зачёт минимума.', 'wp-personal-account' ); ?>
+		</p>
 	<?php endif; ?>
 
 	<?php if ( $wppa_is_mentor ) : ?>

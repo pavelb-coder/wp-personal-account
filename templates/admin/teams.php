@@ -79,7 +79,7 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 				<tr>
 					<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Капитан', 'wp-personal-account' ); ?></th>
-					<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
+					<th><?php esc_html_e( 'Участников (без наставников)', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Наставники', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Мин. / лимит', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Создана', 'wp-personal-account' ); ?></th>
@@ -100,12 +100,25 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 						<td>
 							<?php
 							printf(
-								/* translators: 1: участников, 2: лимит */
+								/* translators: 1: участников (без наставников), 2: лимит */
 								esc_html__( '%1$d / %2$d', 'wp-personal-account' ),
 								(int) $wppa_row['members'],
 								(int) $wppa_row['limit']
 							);
 							?>
+							<?php if ( $wppa_row['people'] > $wppa_row['members'] ) : ?>
+								<br />
+								<span class="wppa-admin__muted">
+									<?php
+									printf(
+										/* translators: 1: всего человек в команде, 2: наставников */
+										esc_html__( 'всего человек: %1$d (наставников: %2$d)', 'wp-personal-account' ),
+										(int) $wppa_row['people'],
+										(int) $wppa_row['mentors_count']
+									);
+									?>
+								</span>
+							<?php endif; ?>
 							<?php if ( $wppa_row['missing'] > 0 ) : ?>
 								<br />
 								<span class="wppa-badge wppa-badge--warn">
@@ -238,7 +251,7 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 			<?php esc_html_e( 'Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.', 'wp-personal-account' ); ?>
 		</p>
 		<p class="wppa-admin__muted">
-			<?php esc_html_e( 'Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Наставник — участник команды с расширенными правами: приглашает и исключает участников (кроме капитана и других наставников), но не может переименовать или распустить команду. В кабинете наставника назначает капитан, здесь — администратор. Наставник не считается участником: он не занимает место в лимите и не идёт в зачёт минимума.', 'wp-personal-account' ); ?>
 		</p>
 		<p class="wppa-admin__muted">
 			<?php esc_html_e( 'Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.', 'wp-personal-account' ); ?>

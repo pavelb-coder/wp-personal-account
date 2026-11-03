@@ -174,6 +174,49 @@ if ( is_wp_error( $team_id ) ) {
 		}
 	}
 
+	// Наставник не считается участником: не занимает лимит и не идёт в минимум.
+	// Приводим состав к известному виду: капитан 7 + наставник 8.
+	WPPA_Teams::dismiss_mentor( $team_id, 9 );
+	WPPA_Teams::remove_member( $team_id, 9 );
+	WPPA_Teams::set_team_limit( $team_id, 2 );
+	WPPA_Teams::set_team_min( $team_id, 2 );
+	WPPA_Teams::make_mentor( $team_id, 8 );
+
+	$count_checks = array(
+		'участник в команде только капитан'  => 1 === WPPA_Teams::members_count( $team_id ),
+		'participants = капитан'             => 1 === count( WPPA_Teams::participants( $team_id ) ),
+		'наставников = 1'                    => 1 === WPPA_Teams::mentors_count( $team_id ),
+		'всего человек в команде = 2'        => 2 === count( WPPA_Teams::members( $team_id ) ),
+		'наставник не закрывает минимум'     => 1 === WPPA_Teams::missing_members( $team_id ),
+	);
+
+	// Наставник не занимает место в лимите: при лимите 2 можно добрать участника.
+	$extra = WPPA_Teams::add_member( $team_id, 15 );
+	$count_checks['место наставника свободно для участника'] = 'joined' === $extra;
+	$count_checks['участников стало 2']                      = 2 === WPPA_Teams::members_count( $team_id );
+	$count_checks['минимум набран участниками']              = 0 === WPPA_Teams::missing_members( $team_id );
+
+	// Лимит считается только по участникам: 2 из 2 — следующий не пройдёт.
+	$overflow = WPPA_Teams::add_member( $team_id, 16 );
+	$count_checks['лимит закрыт участниками'] = is_wp_error( $overflow ) && 'wppa_team_full' === $overflow->get_error_code();
+
+	// Снятие роли возвращает человека в счёт участников.
+	WPPA_Teams::dismiss_mentor( $team_id, 8 );
+	$count_checks['после снятия роли участников 3']  = 3 === WPPA_Teams::members_count( $team_id );
+	$count_checks['наставников не осталось']         = 0 === WPPA_Teams::mentors_count( $team_id );
+
+	foreach ( $count_checks as $check_name => $ok ) {
+		echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team count: ' . $check_name . "\n";
+		if ( ! $ok ) {
+			$fail++;
+		}
+	}
+
+	// Возвращаем наставника 9 и участника 8 для проверок интерфейса.
+	WPPA_Teams::make_mentor( $team_id, 9 );
+	WPPA_Teams::set_team_min( $team_id, 0 );
+	WPPA_Teams::set_team_limit( $team_id, 0 );
+
 	// Наставник в интерфейсе кабинета.
 	WPPA_Teams::add_member( $team_id, 9 );
 	WPPA_Teams::make_mentor( $team_id, 9 );
