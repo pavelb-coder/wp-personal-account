@@ -273,6 +273,8 @@ class WPPA_Admin {
 				'owner'   => $owner ? $owner->display_name : __( '— удалён —', 'wp-personal-account' ),
 				'owner_id' => (int) $team->post_author,
 				'members' => WPPA_Teams::members_count( (int) $team->ID ),
+				'limit'   => WPPA_Teams::team_limit( (int) $team->ID ),
+				'own_limit' => WPPA_Teams::raw_team_limit( (int) $team->ID ),
 				'created' => (int) get_post_meta( (int) $team->ID, WPPA_Teams::META_CREATED, true ),
 			);
 		}
@@ -528,6 +530,7 @@ class WPPA_Admin {
 			'cache_clear'   => array( 'success', __( 'Кэш статистики сброшен.', 'wp-personal-account' ) ),
 			'team_dissolved' => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
 			'layout_reset'   => array( 'success', __( 'Раскладка кабинета сброшена к стандартной.', 'wp-personal-account' ) ),
+			'team_limit_saved' => array( 'success', __( 'Лимит участников команды обновлён.', 'wp-personal-account' ) ),
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : null;
@@ -572,6 +575,17 @@ class WPPA_Admin {
 
 			case 'export_csv':
 				self::export_users_csv();
+				break;
+
+			case 'update_team_limit':
+				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+				$limit   = isset( $_POST['team_limit'] ) ? absint( wp_unslash( $_POST['team_limit'] ) ) : 0;
+
+				if ( $team_id && WPPA_Teams::CPT === get_post_type( $team_id ) ) {
+					WPPA_Teams::set_team_limit( $team_id, $limit );
+				}
+
+				self::redirect_tool( 'team_limit_saved' );
 				break;
 
 			case 'dissolve_team':

@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 $wppa_team_id  = WPPA_Teams::team_id( $user->ID );
 $wppa_team     = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 $wppa_is_owner = $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
-$wppa_max      = WPPA_Teams::max_members();
+$wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 ?>
 
 <h2 class="wppa-title">

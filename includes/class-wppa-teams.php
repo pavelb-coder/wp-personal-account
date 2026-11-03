@@ -48,6 +48,11 @@ class WPPA_Teams {
 	const META_CREATED = '_wppa_team_created';
 
 	/**
+	 * Мета: индивидуальный лимит участников (0 или пусто — общий).
+	 */
+	const META_LIMIT = '_wppa_team_limit';
+
+	/**
 	 * Срок жизни приглашения (7 дней).
 	 */
 	const TOKEN_TTL = 604800;
@@ -97,6 +102,57 @@ class WPPA_Teams {
 		 * @param int $max Лимит.
 		 */
 		return (int) apply_filters( 'wppa_team_max_members', $max );
+	}
+
+	/**
+	 * Лимит участников конкретной команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function team_limit( $team_id ) {
+		$limit = (int) get_post_meta( (int) $team_id, self::META_LIMIT, true );
+
+		if ( $limit >= 2 ) {
+			/**
+			 * Фильтр лимита конкретной команды.
+			 *
+			 * @param int $limit   Лимит команды.
+			 * @param int $team_id ID команды.
+			 */
+			return (int) apply_filters( 'wppa_team_limit', min( 100, $limit ), (int) $team_id );
+		}
+
+		return self::max_members();
+	}
+
+	/**
+	 * Индивидуальный лимит команды (0 — если используется общий).
+	 *
+	 * @param int $team_id ID команды.
+	 * @return int
+	 */
+	public static function raw_team_limit( $team_id ) {
+		$limit = (int) get_post_meta( (int) $team_id, self::META_LIMIT, true );
+		return $limit >= 2 ? $limit : 0;
+	}
+
+	/**
+	 * Установка лимита команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $limit   Новый лимит; 0 — вернуть общий лимит из настроек.
+	 * @return void
+	 */
+	public static function set_team_limit( $team_id, $limit ) {
+		$limit = (int) $limit;
+
+		if ( $limit < 2 ) {
+			delete_post_meta( (int) $team_id, self::META_LIMIT );
+			return;
+		}
+
+		update_post_meta( (int) $team_id, self::META_LIMIT, min( 100, $limit ) );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -353,7 +409,7 @@ class WPPA_Teams {
 			return new WP_Error( 'wppa_team_other' );
 		}
 
-		if ( self::members_count( $team_id ) >= self::max_members() ) {
+		if ( self::members_count( $team_id ) >= self::team_limit( $team_id ) ) {
 			return new WP_Error( 'wppa_team_full' );
 		}
 

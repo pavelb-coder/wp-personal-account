@@ -59,6 +59,7 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 					<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Капитан', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
+					<th><?php esc_html_e( 'Лимит', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Создана', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
 				</tr>
@@ -80,9 +81,31 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 								/* translators: 1: участников, 2: лимит */
 								esc_html__( '%1$d / %2$d', 'wp-personal-account' ),
 								(int) $wppa_row['members'],
-								(int) $max_members
+								(int) $wppa_row['limit']
 							);
 							?>
+						</td>
+						<td>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline-form">
+								<?php wp_nonce_field( 'wppa_tool' ); ?>
+								<input type="hidden" name="action" value="wppa_tool" />
+								<input type="hidden" name="wppa_tool" value="update_team_limit" />
+								<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
+								<input
+									type="number"
+									name="team_limit"
+									min="2"
+									max="100"
+									class="small-text"
+									value="<?php echo esc_attr( $wppa_row['own_limit'] ? (string) $wppa_row['own_limit'] : '' ); ?>"
+									placeholder="<?php echo esc_attr( (string) $max_members ); ?>"
+									title="<?php esc_attr_e( 'Пусто — использовать общий лимит из настроек', 'wp-personal-account' ); ?>"
+								/>
+								<button type="submit" class="button button-small"><?php esc_html_e( 'Сохранить', 'wp-personal-account' ); ?></button>
+							</form>
+							<?php if ( $wppa_row['own_limit'] ) : ?>
+								<span class="wppa-badge"><?php esc_html_e( 'свой лимит', 'wp-personal-account' ); ?></span>
+							<?php endif; ?>
 						</td>
 						<td>
 							<?php echo $wppa_row['created'] ? esc_html( date_i18n( get_option( 'date_format' ), $wppa_row['created'] ) ) : '—'; ?>
@@ -107,7 +130,10 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 	<section class="wppa-admin__panel" style="margin-top:20px;">
 		<h2><?php esc_html_e( 'Как это работает', 'wp-personal-account' ); ?></h2>
 		<p class="wppa-admin__muted">
-			<?php esc_html_e( 'Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно. Лимит участников задаётся в настройках.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.', 'wp-personal-account' ); ?>
+		</p>
+		<p class="wppa-admin__muted">
+			<?php esc_html_e( 'Лимит участников можно задать для каждой команды отдельно — поле «Лимит». Пустое поле означает общий лимит из настроек; чтобы вернуть общий, очистите поле и сохраните.', 'wp-personal-account' ); ?>
 		</p>
 	</section>
 </div>

@@ -95,6 +95,29 @@ if ( is_wp_error( $team_id ) ) {
 	echo 'team: id=' . $team_id . ', токен ' . ( $token ? 'есть' : 'нет' ) . ', поиск по токену → ' . $found . "\n";
 	echo 'team: участников ' . WPPA_Teams::members_count( $team_id ) . ', капитан=' . ( WPPA_Teams::is_owner( 7 ) ? 'да' : 'нет' ) . "\n";
 
+	// Индивидуальный лимит участников.
+	WPPA_Teams::set_team_limit( $team_id, 2 );
+	$first  = WPPA_Teams::add_member( $team_id, 8 );
+	$second = WPPA_Teams::add_member( $team_id, 9 );
+
+	$limit_checks = array(
+		'лимит команды = 2'              => 2 === WPPA_Teams::team_limit( $team_id ),
+		'свой лимит записан'             => 2 === WPPA_Teams::raw_team_limit( $team_id ),
+		'второй участник добавлен'       => 'joined' === $first,
+		'третий не прошёл (team_full)'   => is_wp_error( $second ) && 'wppa_team_full' === $second->get_error_code(),
+		'участников стало 2 (капитан + 1)' => 2 === WPPA_Teams::members_count( $team_id ),
+	);
+
+	WPPA_Teams::set_team_limit( $team_id, 0 );
+	$limit_checks['сброс к общему лимиту'] = 0 === WPPA_Teams::raw_team_limit( $team_id ) && 10 === WPPA_Teams::team_limit( $team_id );
+
+	foreach ( $limit_checks as $check_name => $ok ) {
+		echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team limit: ' . $check_name . "\n";
+		if ( ! $ok ) {
+			$fail++;
+		}
+	}
+
 	WPPA_Teams::dissolve( $team_id );
 	echo 'team: после роспуска команда ' . ( get_post( $team_id ) ? 'осталась' : 'удалена' ) . ", мета пользователя «" . get_user_meta( 7, WPPA_Teams::META_TEAM, true ) . "»\n";
 }

@@ -64,6 +64,18 @@ $chart = WPPA_Admin::registrations_chart( 14 );
 echo 'chart: точек ' . count( $chart['items'] ) . ", максимум {$chart['max']}\n";
 echo "teams: команд {$stats['teams']}, участников {$stats['team_members']}\n";
 
+// Страница «Команды»: редактируемое поле лимита.
+$demo_team_id = WPPA_Teams::create( 'Команда для теста', 7 );
+WPPA_Teams::set_team_limit( $demo_team_id, 5 );
+ob_start();
+WPPA_Admin::page_teams();
+$teams_html = ob_get_clean();
+$limit_ok = false !== strpos( $teams_html, 'name="team_limit"' ) && 5 === WPPA_Teams::team_limit( $demo_team_id );
+echo ( $limit_ok ? 'OK    ' : 'FAIL  ' ) . "teams: поле лимита в таблице и лимит команды применён\n";
+if ( ! $limit_ok ) {
+	$fail++;
+}
+
 $status = WPPA_Admin::system_status();
 echo 'status: страница «' . $status['account_page']['label'] . '», регистрация «' . $status['registration']['label'] . "»\n";
 

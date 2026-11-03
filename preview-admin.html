@@ -374,6 +374,17 @@
 	margin: 0 0 4px;
 }
 
+.wppa-admin__steps {
+	margin: 8px 0 12px 18px;
+	padding: 0;
+	font-size: 13px;
+}
+
+.wppa-admin__steps li {
+	margin-bottom: 6px;
+	line-height: 1.5;
+}
+
 /* Минимальные стили WordPress admin для автономного превью. */
 body {
 	margin: 0;
@@ -811,7 +822,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 
 																	</div>
 
-																	<p class="wppa-admin__muted wppa-builder__desc">Дата регистрации, email, роль, команда</p>
+																	<p class="wppa-admin__muted wppa-builder__desc">Дата регистрации, email, команда</p>
 								
 								<div class="wppa-builder__fields">
 									<input
@@ -1185,6 +1196,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					<th>Команда</th>
 					<th>Капитан</th>
 					<th>Участников</th>
+					<th>Лимит</th>
 					<th>Создана</th>
 					<th>Действия</th>
 				</tr>
@@ -1197,6 +1209,24 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 													</td>
 						<td>
 							0 / 10						</td>
+						<td>
+							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
+								<input type="hidden" name="_wpnonce" value="nonce" />								<input type="hidden" name="action" value="wppa_tool" />
+								<input type="hidden" name="wppa_tool" value="update_team_limit" />
+								<input type="hidden" name="team_id" value="101" />
+								<input
+									type="number"
+									name="team_limit"
+									min="2"
+									max="100"
+									class="small-text"
+									value=""
+									placeholder="10"
+									title="Пусто — использовать общий лимит из настроек"
+								/>
+								<button type="submit" class="button button-small">Сохранить</button>
+							</form>
+													</td>
 						<td>
 							03.11.2026						</td>
 						<td>
@@ -1217,6 +1247,24 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<td>
 							0 / 10						</td>
 						<td>
+							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
+								<input type="hidden" name="_wpnonce" value="nonce" />								<input type="hidden" name="action" value="wppa_tool" />
+								<input type="hidden" name="wppa_tool" value="update_team_limit" />
+								<input type="hidden" name="team_id" value="102" />
+								<input
+									type="number"
+									name="team_limit"
+									min="2"
+									max="100"
+									class="small-text"
+									value=""
+									placeholder="10"
+									title="Пусто — использовать общий лимит из настроек"
+								/>
+								<button type="submit" class="button button-small">Сохранить</button>
+							</form>
+													</td>
+						<td>
 							03.11.2026						</td>
 						<td>
 							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
@@ -1236,6 +1284,24 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<td>
 							1 / 10						</td>
 						<td>
+							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
+								<input type="hidden" name="_wpnonce" value="nonce" />								<input type="hidden" name="action" value="wppa_tool" />
+								<input type="hidden" name="wppa_tool" value="update_team_limit" />
+								<input type="hidden" name="team_id" value="103" />
+								<input
+									type="number"
+									name="team_limit"
+									min="2"
+									max="100"
+									class="small-text"
+									value=""
+									placeholder="10"
+									title="Пусто — использовать общий лимит из настроек"
+								/>
+								<button type="submit" class="button button-small">Сохранить</button>
+							</form>
+													</td>
+						<td>
 							03.11.2026						</td>
 						<td>
 							<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline-form">
@@ -1253,7 +1319,9 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 	<section class="wppa-admin__panel" style="margin-top:20px;">
 		<h2>Как это работает</h2>
 		<p class="wppa-admin__muted">
-			Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно. Лимит участников задаётся в настройках.		</p>
+			Пользователь создаёт команду и становится капитаном: он приглашает участников ссылкой (действует 7 дней) или письмом, исключает их и распускает команду. Участник может выйти самостоятельно.		</p>
+		<p class="wppa-admin__muted">
+			Лимит участников можно задать для каждой команды отдельно — поле «Лимит». Пустое поле означает общий лимит из настроек; чтобы вернуть общий, очистите поле и сохраните.		</p>
 	</section>
 </div>
 </div></section><section class="demo-section"><div class="demo-section__head"><h2>Инструменты</h2><p>Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV</p></div><div class="demo-frame"><div class="wrap wppa-admin">
@@ -1331,8 +1399,33 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<td><code>[wppa_register]</code></td>
 						<td>Форма регистрации</td>
 					</tr>
+					<tr>
+						<td><code>[wppa_auth]</code></td>
+						<td>Вход и регистрация одним блоком (атрибуты mode, redirect)</td>
+					</tr>
+					<tr>
+						<td><code>wppa/auth</code></td>
+						<td>Блок Gutenberg «Вход и регистрация» — для блочных тем и Site Editor</td>
+					</tr>
 				</tbody>
 			</table>
+
+			<h2>Вход на главной странице</h2>
+			<ol class="wppa-admin__steps">
+				<li>
+					<strong>Блочная тема (FSE):</strong>
+					вставьте блок «Вход и регистрация (личный кабинет)» в Site Editor или в редакторе страницы — раздел «Виджеты» в списке блоков.				</li>
+				<li>
+					<strong>Классическая тема:</strong>
+					виджет «Личный кабинет: вход и регистрация» в «Внешний вид → Виджеты».				</li>
+				<li>
+					<strong>Любой вариант:</strong>
+					шорткод [wppa_auth] в блоке «Шорткод».				</li>
+			</ol>
+			<p class="wppa-admin__actions">
+				<a class="button" href="https://example.com/wp-admin/site-editor.php">Открыть Site Editor</a>
+				<a class="button" href="https://example.com/wp-admin/widgets.php">Виджеты</a>
+			</p>
 
 			<h2>Среда</h2>
 			<ul class="wppa-admin__status">
