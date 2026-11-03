@@ -150,6 +150,7 @@ class WPPA_Plugin {
 			'min_team_members'     => 2,
 			'require_mentor'       => 1,
 			'fields'               => array(),
+			'field_sections'       => array(),
 			'password_rules'       => array(),
 			'link_button'          => array(),
 			'export_folder'        => array(),

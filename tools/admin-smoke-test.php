@@ -1216,6 +1216,79 @@ if ( ! $bar_sanitize_ok ) {
 	$fail++;
 }
 
+// Редактор персональных данных: подписи, разделы, свои поля и разделы.
+$personal_ui_checks = array(
+	'настройки: таблица полей с подписью'    => false !== strpos( $settings_html, 'wppa_settings[fields][first_name][label]' ),
+	'настройки: выбор раздела у поля'        => false !== strpos( $settings_html, 'wppa_settings[fields][first_name][section]' ),
+	'настройки: порядок поля'                => false !== strpos( $settings_html, 'wppa_settings[fields][first_name][order]' ),
+	'настройки: блок «Добавить поле»'        => false !== strpos( $settings_html, 'wppa_settings[fields_new][0][key]' )
+		&& false !== strpos( $settings_html, 'Добавить поле' ),
+	'настройки: таблица разделов'            => false !== strpos( $settings_html, 'wppa_settings[field_sections][main][label]' ),
+	'настройки: блок «Добавить раздел»'      => false !== strpos( $settings_html, 'wppa_settings[field_sections_new][0][key]' )
+		&& false !== strpos( $settings_html, 'Добавить раздел' ),
+	'настройки: основной раздел не удаляется' => false === strpos( $settings_html, 'wppa_settings[field_sections][main][delete]' ),
+);
+
+foreach ( $personal_ui_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+$personal_sanitize = WPPA_Settings::sanitize(
+	array(
+		'fields'             => array(
+			'first_name' => array( 'enabled' => '1', 'required' => '1', 'label' => '  Имя  ', 'section' => 'contacts', 'order' => '5' ),
+		),
+		'fields_new'         => array(
+			array( 'key' => 'SNILS', 'label' => 'СНИЛС', 'type' => 'text', 'section' => 'main', 'enabled' => '1', 'required' => '1' ),
+		),
+		'field_sections'     => array(
+			'main' => array( 'label' => '', 'order' => '10' ),
+		),
+		'field_sections_new' => array(
+			array( 'key' => 'study', 'label' => 'Учёба', 'order' => '25' ),
+		),
+	)
+);
+
+// Мета-ключ своего поля проверяем на сохранённых настройках.
+$personal_backup = get_option( 'wppa_settings', array() );
+update_option(
+	'wppa_settings',
+	array_merge(
+		$personal_backup,
+		array(
+			'fields'         => $personal_sanitize['fields'],
+			'field_sections' => $personal_sanitize['field_sections'],
+		)
+	)
+);
+$personal_meta = isset( WPPA_Fields::all()['custom_snils']['meta'] ) ? WPPA_Fields::all()['custom_snils']['meta'] : '';
+update_option( 'wppa_settings', $personal_backup );
+
+$personal_sanitize_checks = array(
+	'санитизация: подпись обрезана'            => 'Имя' === $personal_sanitize['fields']['first_name']['label'],
+	'санитизация: раздел поля сохранён'        => 'contacts' === $personal_sanitize['fields']['first_name']['section'],
+	'санитизация: порядок сохранён'            => 5 === $personal_sanitize['fields']['first_name']['order'],
+	'санитизация: ключ своего поля в нижнем регистре' => isset( $personal_sanitize['fields']['custom_snils'] ),
+	'санитизация: своё поле обязательное'      => 1 === $personal_sanitize['fields']['custom_snils']['required'],
+	'санитизация: мета-ключ своего поля'       => '_wppa_custom_snils' === $personal_meta,
+	'санитизация: пустое название раздела → прежнее' => 'Основные данные' === $personal_sanitize['field_sections']['main']['label'],
+	'санитизация: свой раздел сохранён'        => isset( $personal_sanitize['field_sections']['study'] ),
+	'санитизация: поле без существующего раздела → main' => 'main' === WPPA_Settings::sanitize(
+		array( 'fields' => array( 'city' => array( 'enabled' => '1', 'section' => 'нет-такого' ) ) )
+	)['fields']['city']['section'],
+);
+
+foreach ( $personal_sanitize_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $reg_window_fields_ok = false !== strpos( $settings_html, 'wppa_settings[registration_start]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[registration_end]' );
 

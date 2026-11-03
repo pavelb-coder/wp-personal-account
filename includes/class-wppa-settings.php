@@ -92,18 +92,172 @@ class WPPA_Settings {
 
 		$out['custom_css']     = isset( $input['custom_css'] ) ? wp_strip_all_tags( (string) $input['custom_css'] ) : '';
 
-		// Поля персональных данных: показывать / обязательно.
-		$fields_saved = isset( $input['fields'] ) && is_array( $input['fields'] ) ? $input['fields'] : array();
-		$fields_out   = array();
+		// Персональные данные: разделы и поля (подпись, раздел, порядок, показ, обязательность,
+		// добавление своих полей и разделов, удаление своих).
+		$fields_saved   = isset( $input['fields'] ) && is_array( $input['fields'] ) ? $input['fields'] : array();
+		$fields_new     = isset( $input['fields_new'] ) && is_array( $input['fields_new'] ) ? $input['fields_new'] : array();
+		$sections_saved = isset( $input['field_sections'] ) && is_array( $input['field_sections'] ) ? $input['field_sections'] : array();
+		$sections_new   = isset( $input['field_sections_new'] ) && is_array( $input['field_sections_new'] ) ? $input['field_sections_new'] : array();
 
-		foreach ( array_keys( WPPA_Fields::all() ) as $field_id ) {
-			$row      = isset( $fields_saved[ $field_id ] ) && is_array( $fields_saved[ $field_id ] ) ? $fields_saved[ $field_id ] : array();
+		$sections_out     = array();
+		$sections_removed = array();
+
+		foreach ( WPPA_Fields::sections() as $section_id => $section ) {
+			$row = isset( $sections_saved[ $section_id ] ) && is_array( $sections_saved[ $section_id ] ) ? $sections_saved[ $section_id ] : null;
+
+			// Формы раздела нет в запросе — оставляем как было.
+			if ( null === $row ) {
+				continue;
+			}
+
+			$deleted = ! empty( $row['delete'] ) && 'main' !== $section_id;
+
+			// Свой раздел удаляем совсем, у встроенного ставим отметку.
+			if ( $deleted && ! empty( $section['custom'] ) ) {
+				$sections_removed[] = $section_id;
+				continue;
+			}
+
+			$label = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+
+			$sections_out[ $section_id ] = array(
+				'label'   => '' !== trim( $label ) ? $label : $section['label'],
+				'order'   => isset( $row['order'] ) ? (int) $row['order'] : (int) $section['order'],
+				'deleted' => $deleted ? 1 : 0,
+			);
+		}
+
+		// Новые разделы из пустых строк формы.
+		foreach ( $sections_new as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$key   = sanitize_key( isset( $row['key'] ) ? (string) $row['key'] : '' );
+			$label = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+
+			if ( '' === $key || '' === trim( $label ) || isset( $sections_out[ $key ] ) || isset( WPPA_Fields::default_sections()[ $key ] ) ) {
+				continue;
+			}
+
+			$sections_out[ $key ] = array(
+				'label'   => $label,
+				'order'   => isset( $row['order'] ) ? (int) $row['order'] : 100,
+				'deleted' => 0,
+			);
+		}
+
+		$out['field_sections'] = $sections_out;
+
+		// Куда можно положить поле: разделы, которые существуют после сохранения.
+		// Разделы, формы которых не было в запросе, считаются прежними.
+		$valid_sections = array();
+
+		foreach ( WPPA_Fields::sections() as $section_id => $section ) {
+			if ( in_array( $section_id, $sections_removed, true ) ) {
+				continue;
+			}
+
+			if ( ! isset( $sections_out[ $section_id ] ) || empty( $sections_out[ $section_id ]['deleted'] ) ) {
+				$valid_sections[] = $section_id;
+			}
+		}
+
+		foreach ( $sections_out as $section_id => $row ) {
+			if ( empty( $row['deleted'] ) && ! in_array( $section_id, $valid_sections, true ) ) {
+				$valid_sections[] = $section_id;
+			}
+		}
+
+		$fields_out = array();
+		$layout     = WPPA_Fields::default_layout();
+		$types      = array_keys( WPPA_Fields::types() );
+
+		foreach ( WPPA_Fields::all() as $field_id => $def ) {
+			$row       = isset( $fields_saved[ $field_id ] ) && is_array( $fields_saved[ $field_id ] ) ? $fields_saved[ $field_id ] : array();
+			$is_custom = ! empty( $def['custom'] );
+
+			// Своё поле помечено на удаление — значения остаются в базе, но поле больше не выводится.
+			if ( $is_custom && ! empty( $row['delete'] ) ) {
+				continue;
+			}
+
 			$enabled  = empty( $row['enabled'] ) ? 0 : 1;
 			$required = $enabled && ! empty( $row['required'] ) ? 1 : 0;
+			$label    = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+			$section  = isset( $row['section'] ) ? sanitize_key( (string) $row['section'] ) : '';
+			$order    = isset( $row['order'] ) ? (int) $row['order'] : 0;
 
-			$fields_out[ $field_id ] = array(
+			if ( '' === trim( $label ) ) {
+				$label = isset( $def['label'] ) ? (string) $def['label'] : $field_id;
+			}
+
+			if ( ! in_array( $section, $valid_sections, true ) ) {
+				$section = 'main';
+			}
+
+			if ( $order <= 0 ) {
+				$order = isset( $layout[ $field_id ] ) ? (int) $layout[ $field_id ][1] : 500;
+			}
+
+			$entry = array(
 				'enabled'  => $enabled,
 				'required' => $required,
+				'label'    => $label,
+				'section'  => $section,
+				'order'    => $order,
+				'custom'   => $is_custom ? 1 : 0,
+			);
+
+			if ( $is_custom ) {
+				$type = isset( $row['type'] ) ? sanitize_key( (string) $row['type'] ) : '';
+
+				$entry['type']        = in_array( $type, $types, true ) ? $type : ( isset( $def['type'] ) ? (string) $def['type'] : 'text' );
+				$entry['placeholder'] = isset( $row['placeholder'] ) ? sanitize_text_field( (string) $row['placeholder'] ) : '';
+				$entry['hint']        = isset( $row['hint'] ) ? sanitize_text_field( (string) $row['hint'] ) : '';
+				$entry['options']     = isset( $row['options'] ) ? sanitize_textarea_field( (string) $row['options'] ) : '';
+			}
+
+			$fields_out[ $field_id ] = $entry;
+		}
+
+		// Новые поля из пустых строк формы.
+		foreach ( $fields_new as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$key   = preg_replace( '/^custom_/', '', sanitize_key( isset( $row['key'] ) ? (string) $row['key'] : '' ) );
+			$label = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+
+			if ( '' === $key || '' === trim( $label ) ) {
+				continue;
+			}
+
+			$id = 'custom_' . $key;
+
+			if ( isset( $fields_out[ $id ] ) || isset( WPPA_Fields::registry()[ $id ] ) ) {
+				continue;
+			}
+
+			$type    = isset( $row['type'] ) ? sanitize_key( (string) $row['type'] ) : 'text';
+			$section = isset( $row['section'] ) ? sanitize_key( (string) $row['section'] ) : 'main';
+
+			if ( ! in_array( $section, $valid_sections, true ) ) {
+				$section = 'main';
+			}
+
+			$fields_out[ $id ] = array(
+				'enabled'     => empty( $row['enabled'] ) ? 0 : 1,
+				'required'    => empty( $row['enabled'] ) || empty( $row['required'] ) ? 0 : 1,
+				'label'       => $label,
+				'section'     => $section,
+				'order'       => isset( $row['order'] ) && (int) $row['order'] > 0 ? (int) $row['order'] : 500,
+				'custom'      => 1,
+				'type'        => in_array( $type, $types, true ) ? $type : 'text',
+				'placeholder' => '',
+				'hint'        => '',
+				'options'     => '',
 			);
 		}
 
@@ -412,36 +566,192 @@ class WPPA_Settings {
 									<thead>
 										<tr>
 											<th><?php esc_html_e( 'Поле', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Подпись', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Раздел', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Порядок', 'wp-personal-account' ); ?></th>
 											<th><?php esc_html_e( 'Показывать', 'wp-personal-account' ); ?></th>
 											<th><?php esc_html_e( 'Обязательное', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></th>
 										</tr>
 									</thead>
 									<tbody>
-										<?php foreach ( WPPA_Fields::schema() as $wppa_field ) : ?>
+										<?php
+										$wppa_sections_list = WPPA_Fields::sections();
+
+										foreach ( WPPA_Fields::schema() as $wppa_field ) :
+											$wppa_base = 'wppa_settings[fields][' . $wppa_field['id'] . ']';
+											?>
 											<tr>
-												<td><?php echo esc_html( $wppa_field['label'] ); ?></td>
+												<td>
+													<code><?php echo esc_html( $wppa_field['id'] ); ?></code>
+													<?php if ( ! empty( $wppa_field['custom'] ) ) : ?>
+														<br /><span class="description"><?php esc_html_e( 'своё поле', 'wp-personal-account' ); ?></span>
+														<input type="hidden" name="<?php echo esc_attr( $wppa_base ); ?>[custom]" value="1" />
+														<input type="hidden" name="<?php echo esc_attr( $wppa_base ); ?>[type]" value="<?php echo esc_attr( isset( $wppa_field['type'] ) ? $wppa_field['type'] : 'text' ); ?>" />
+														<input type="hidden" name="<?php echo esc_attr( $wppa_base ); ?>[placeholder]" value="<?php echo esc_attr( isset( $wppa_field['placeholder'] ) ? $wppa_field['placeholder'] : '' ); ?>" />
+														<input type="hidden" name="<?php echo esc_attr( $wppa_base ); ?>[hint]" value="<?php echo esc_attr( isset( $wppa_field['hint'] ) ? $wppa_field['hint'] : '' ); ?>" />
+														<input type="hidden" name="<?php echo esc_attr( $wppa_base ); ?>[options]" value="<?php echo esc_attr( isset( $wppa_field['options'] ) ? $wppa_field['options'] : '' ); ?>" />
+													<?php endif; ?>
+												</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-<?php echo esc_attr( $wppa_field['id'] ); ?>"
+														name="<?php echo esc_attr( $wppa_base ); ?>[label]"
+														value="<?php echo esc_attr( $wppa_field['label'] ); ?>"
+													/>
+												</td>
+												<td>
+													<select name="<?php echo esc_attr( $wppa_base ); ?>[section]">
+														<?php foreach ( $wppa_sections_list as $wppa_section_id => $wppa_section ) : ?>
+															<option value="<?php echo esc_attr( $wppa_section_id ); ?>" <?php selected( $wppa_field['section'], $wppa_section_id ); ?>><?php echo esc_html( $wppa_section['label'] ); ?></option>
+														<?php endforeach; ?>
+													</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="<?php echo esc_attr( $wppa_base ); ?>[order]" value="<?php echo esc_attr( (int) $wppa_field['order'] ); ?>" />
+												</td>
 												<td>
 													<input
 														type="checkbox"
-														id="wppa-field-<?php echo esc_attr( $wppa_field['id'] ); ?>"
-														name="wppa_settings[fields][<?php echo esc_attr( $wppa_field['id'] ); ?>][enabled]"
+														name="<?php echo esc_attr( $wppa_base ); ?>[enabled]"
 														value="1"
-														<?php checked( $wppa_field['enabled'], 1 ); ?>
+														<?php checked( 1, (int) $wppa_field['enabled'] ); ?>
 													/>
 												</td>
 												<td>
 													<input
 														type="checkbox"
-														name="wppa_settings[fields][<?php echo esc_attr( $wppa_field['id'] ); ?>][required]"
+														name="<?php echo esc_attr( $wppa_base ); ?>[required]"
 														value="1"
-														<?php checked( $wppa_field['required'], 1 ); ?>
+														<?php checked( 1, (int) $wppa_field['required'] ); ?>
 													/>
+												</td>
+												<td>
+													<?php if ( ! empty( $wppa_field['custom'] ) ) : ?>
+														<input type="checkbox" name="<?php echo esc_attr( $wppa_base ); ?>[delete]" value="1" />
+													<?php else : ?>
+														<span class="description">—</span>
+													<?php endif; ?>
 												</td>
 											</tr>
 										<?php endforeach; ?>
 									</tbody>
 								</table>
-								<p class="description"><?php esc_html_e( 'Эти поля выводятся в форме регистрации и в профиле. Снятая галочка «Обязательное» делает поле необязательным; поле, исключённое из показа, скрывается везде и его значения не выводятся.', 'wp-personal-account' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Своё поле добавляется пустой строкой в таблице «Добавить поле». Удалить можно только своё поле: встроенные достаточно скрыть. Значения удалённого поля остаются в базе, но не выводятся в кабинете и не попадают в выгрузку.', 'wp-personal-account' ); ?></p>
+
+								<h4><?php esc_html_e( 'Добавить поле', 'wp-personal-account' ); ?></h4>
+								<table class="widefat striped wppa-admin__fields-new">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Ключ', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Подпись', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Тип', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Раздел', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Порядок', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Показывать', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Обязательное', 'wp-personal-account' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php for ( $wppa_i = 0; $wppa_i < 3; $wppa_i++ ) : ?>
+											<?php $wppa_new = 'wppa_settings[fields_new][' . $wppa_i . ']'; ?>
+											<tr>
+												<td>
+													<input type="text" class="regular-text code" name="<?php echo esc_attr( $wppa_new ); ?>[key]" value="" placeholder="snils" />
+												</td>
+												<td>
+													<input type="text" class="regular-text" name="<?php echo esc_attr( $wppa_new ); ?>[label]" value="" placeholder="<?php esc_attr_e( 'СНИЛС', 'wp-personal-account' ); ?>" />
+												</td>
+												<td>
+													<select name="<?php echo esc_attr( $wppa_new ); ?>[type]">
+														<?php foreach ( WPPA_Fields::types() as $wppa_type => $wppa_type_label ) : ?>
+															<option value="<?php echo esc_attr( $wppa_type ); ?>"><?php echo esc_html( $wppa_type_label ); ?></option>
+														<?php endforeach; ?>
+													</select>
+												</td>
+												<td>
+													<select name="<?php echo esc_attr( $wppa_new ); ?>[section]">
+														<?php foreach ( $wppa_sections_list as $wppa_section_id => $wppa_section ) : ?>
+															<option value="<?php echo esc_attr( $wppa_section_id ); ?>"><?php echo esc_html( $wppa_section['label'] ); ?></option>
+														<?php endforeach; ?>
+													</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="<?php echo esc_attr( $wppa_new ); ?>[order]" value="" placeholder="500" />
+												</td>
+												<td>
+													<input type="checkbox" name="<?php echo esc_attr( $wppa_new ); ?>[enabled]" value="1" />
+												</td>
+												<td>
+													<input type="checkbox" name="<?php echo esc_attr( $wppa_new ); ?>[required]" value="1" />
+												</td>
+											</tr>
+										<?php endfor; ?>
+									</tbody>
+								</table>
+								<p class="description"><?php esc_html_e( 'Ключ — латиница, цифры и подчёркивание; из него собирается имя поля и мета-ключ. Пустые строки не сохраняются. Для типа «Список» варианты перечисляются по одному в настройках поля.', 'wp-personal-account' ); ?></p>
+
+								<h4><?php esc_html_e( 'Разделы', 'wp-personal-account' ); ?></h4>
+								<table class="widefat striped wppa-admin__sections">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Ключ', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Название', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Порядок', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $wppa_sections_list as $wppa_section_id => $wppa_section ) : ?>
+											<?php $wppa_sbase = 'wppa_settings[field_sections][' . $wppa_section_id . ']'; ?>
+											<tr>
+												<td>
+													<code><?php echo esc_html( $wppa_section_id ); ?></code>
+													<?php if ( ! empty( $wppa_section['custom'] ) ) : ?>
+														<br /><span class="description"><?php esc_html_e( 'свой раздел', 'wp-personal-account' ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td>
+													<input type="text" class="regular-text" name="<?php echo esc_attr( $wppa_sbase ); ?>[label]" value="<?php echo esc_attr( $wppa_section['label'] ); ?>" />
+												</td>
+												<td>
+													<input type="number" class="small-text" name="<?php echo esc_attr( $wppa_sbase ); ?>[order]" value="<?php echo esc_attr( (int) $wppa_section['order'] ); ?>" />
+												</td>
+												<td>
+													<?php if ( 'main' === $wppa_section_id ) : ?>
+														<span class="description"><?php esc_html_e( 'основной', 'wp-personal-account' ); ?></span>
+													<?php else : ?>
+														<input type="checkbox" name="<?php echo esc_attr( $wppa_sbase ); ?>[delete]" value="1" />
+													<?php endif; ?>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+
+								<h4><?php esc_html_e( 'Добавить раздел', 'wp-personal-account' ); ?></h4>
+								<table class="widefat striped wppa-admin__sections-new">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Ключ', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Название', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Порядок', 'wp-personal-account' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php for ( $wppa_i = 0; $wppa_i < 2; $wppa_i++ ) : ?>
+											<?php $wppa_new = 'wppa_settings[field_sections_new][' . $wppa_i . ']'; ?>
+											<tr>
+												<td><input type="text" class="regular-text code" name="<?php echo esc_attr( $wppa_new ); ?>[key]" value="" placeholder="study" /></td>
+												<td><input type="text" class="regular-text" name="<?php echo esc_attr( $wppa_new ); ?>[label]" value="" placeholder="<?php esc_attr_e( 'Учёба', 'wp-personal-account' ); ?>" /></td>
+												<td><input type="number" class="small-text" name="<?php echo esc_attr( $wppa_new ); ?>[order]" value="" placeholder="100" /></td>
+											</tr>
+										<?php endfor; ?>
+									</tbody>
+								</table>
+								<p class="description"><?php esc_html_e( 'Раздел — заголовок в форме регистрации и в профиле. Удалённый раздел исчезает из кабинета, а его поля переходят в «Основные данные». Раздел «Основные данные» удалить нельзя: он принимает поля без раздела. В выгрузке все личные поля остаются в одной группе «Личные данные».', 'wp-personal-account' ); ?></p>
 							</fieldset>
 						</td>
 					</tr>

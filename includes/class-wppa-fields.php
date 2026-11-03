@@ -18,6 +18,148 @@ class WPPA_Fields {
 	const SETTING = 'fields';
 
 	/**
+	 * Ключ настройки с разделами полей.
+	 */
+	const SECTIONS = 'field_sections';
+
+	/**
+	 * Разделы по умолчанию.
+	 *
+	 * @return array id => label, order.
+	 */
+	public static function default_sections() {
+		return array(
+			'main'     => array(
+				'label' => __( 'Основные данные', 'wp-personal-account' ),
+				'order' => 10,
+			),
+			'contacts' => array(
+				'label' => __( 'Контакты', 'wp-personal-account' ),
+				'order' => 20,
+			),
+			'work'     => array(
+				'label' => __( 'Работа', 'wp-personal-account' ),
+				'order' => 30,
+			),
+			'about'    => array(
+				'label' => __( 'О себе', 'wp-personal-account' ),
+				'order' => 40,
+			),
+		);
+	}
+
+	/**
+	 * Раздел и порядок поля по умолчанию.
+	 *
+	 * @return array id => array( раздел, порядок ).
+	 */
+	public static function default_layout() {
+		return array(
+			'first_name' => array( 'main', 10 ),
+			'last_name'  => array( 'main', 20 ),
+			'patronymic' => array( 'main', 30 ),
+			'birthdate'  => array( 'main', 40 ),
+			'phone'      => array( 'contacts', 10 ),
+			'city'       => array( 'contacts', 20 ),
+			'telegram'   => array( 'contacts', 30 ),
+			'website'    => array( 'contacts', 40 ),
+			'company'    => array( 'work', 10 ),
+			'position'   => array( 'work', 20 ),
+			'about'      => array( 'about', 10 ),
+		);
+	}
+
+	/**
+	 * Типы, доступные своим полям.
+	 *
+	 * @return array
+	 */
+	public static function types() {
+		return array(
+			'text'     => __( 'Текст', 'wp-personal-account' ),
+			'textarea' => __( 'Многострочный текст', 'wp-personal-account' ),
+			'tel'      => __( 'Телефон', 'wp-personal-account' ),
+			'email'    => __( 'Email', 'wp-personal-account' ),
+			'url'      => __( 'Ссылка', 'wp-personal-account' ),
+			'date'     => __( 'Дата', 'wp-personal-account' ),
+			'number'   => __( 'Число', 'wp-personal-account' ),
+			'select'   => __( 'Список', 'wp-personal-account' ),
+			'checkbox' => __( 'Флажок', 'wp-personal-account' ),
+		);
+	}
+
+	/**
+	 * Сохранённые настройки полей.
+	 *
+	 * @return array
+	 */
+	public static function saved() {
+		$saved = WPPA_Plugin::setting( self::SETTING, array() );
+
+		return is_array( $saved ) ? $saved : array();
+	}
+
+	/**
+	 * Разделы с учётом настроек: переименование, порядок, удаление, свои разделы.
+	 *
+	 * @return array id => array( id, label, order, custom ).
+	 */
+	public static function sections() {
+		$saved = WPPA_Plugin::setting( self::SECTIONS, array() );
+		$saved = is_array( $saved ) ? $saved : array();
+		$out   = array();
+
+		foreach ( self::default_sections() as $id => $def ) {
+			$conf = isset( $saved[ $id ] ) && is_array( $saved[ $id ] ) ? $saved[ $id ] : array();
+
+			// Раздел по умолчанию можно переименовать и удалить, кроме main:
+			// в main падают поля, чей раздел исчез.
+			if ( 'main' !== $id && ! empty( $conf['deleted'] ) ) {
+				continue;
+			}
+
+			$out[ $id ] = array(
+				'id'     => $id,
+				'label'  => ! empty( $conf['label'] ) ? (string) $conf['label'] : $def['label'],
+				'order'  => isset( $conf['order'] ) ? (int) $conf['order'] : (int) $def['order'],
+				'custom' => 0,
+			);
+		}
+
+		foreach ( $saved as $id => $conf ) {
+			$id = (string) $id;
+
+			if ( isset( $out[ $id ] ) || ! is_array( $conf ) || ! preg_match( '/^[a-z0-9_]+$/', $id ) ) {
+				continue;
+			}
+
+			if ( ! empty( $conf['deleted'] ) || empty( $conf['label'] ) ) {
+				continue;
+			}
+
+			$out[ $id ] = array(
+				'id'     => $id,
+				'label'  => (string) $conf['label'],
+				'order'  => isset( $conf['order'] ) ? (int) $conf['order'] : 100,
+				'custom' => 1,
+			);
+		}
+
+		uasort(
+			$out,
+			static function ( $a, $b ) {
+				if ( $a['order'] === $b['order'] ) {
+					return strcmp( (string) $a['id'], (string) $b['id'] );
+				}
+
+				return $a['order'] < $b['order'] ? -1 : 1;
+			}
+		);
+
+		return $out;
+	}
+
+	/**
 	 * Отметка обязательного поля.
 	 *
 	 * @return string
@@ -34,7 +176,7 @@ class WPPA_Fields {
 	 *
 	 * @return array
 	 */
-	public static function all() {
+	public static function registry() {
 		$fields = array(
 			'first_name' => array(
 				'label'            => __( 'Имя', 'wp-personal-account' ),
@@ -118,6 +260,49 @@ class WPPA_Fields {
 			),
 		);
 
+		return $fields;
+	}
+
+	/**
+	 * Эффективный реестр: встроенные поля плюс добавленные в настройках.
+	 *
+	 * @return array
+	 */
+	public static function all() {
+		$fields = self::registry();
+		$saved  = self::saved();
+		$types  = array_keys( self::types() );
+
+		foreach ( $saved as $id => $conf ) {
+			$id = (string) $id;
+
+			if ( ! is_array( $conf ) || ! preg_match( '/^[a-z0-9_]+$/', $id ) ) {
+				continue;
+			}
+
+			// Встроенное поле: правится только подпись.
+			if ( empty( $conf['custom'] ) ) {
+				if ( isset( $fields[ $id ] ) && ! empty( $conf['label'] ) ) {
+					$fields[ $id ]['label'] = (string) $conf['label'];
+				}
+
+				continue;
+			}
+
+			$type = isset( $conf['type'] ) ? (string) $conf['type'] : 'text';
+
+			$fields[ $id ] = array(
+				'label'       => ! empty( $conf['label'] ) ? (string) $conf['label'] : $id,
+				'type'        => in_array( $type, $types, true ) ? $type : 'text',
+				'meta'        => '_wppa_custom_' . preg_replace( '/^custom_/', '', $id ),
+				'custom'      => 1,
+				'placeholder' => isset( $conf['placeholder'] ) ? (string) $conf['placeholder'] : '',
+				'hint'        => isset( $conf['hint'] ) ? (string) $conf['hint'] : '',
+				'options'     => isset( $conf['options'] ) ? (string) $conf['options'] : '',
+				'rows'        => 4,
+			);
+		}
+
 		/**
 		 * Фильтр реестра полей персональных данных.
 		 *
@@ -127,14 +312,37 @@ class WPPA_Fields {
 	}
 
 	/**
-	 * Схема полей с учётом настроек: enabled / required.
+	 * Варианты списка для поля типа select.
 	 *
-	 * @return array
+	 * @param array $def Определение поля.
+	 * @return array Список вариантов.
+	 */
+	public static function options_of( $def ) {
+		$raw   = isset( $def['options'] ) ? (string) $def['options'] : '';
+		$lines = preg_split( '/\r\n|\r|\n/', $raw );
+		$out   = array();
+
+		foreach ( (array) $lines as $line ) {
+			$line = trim( $line );
+
+			if ( '' !== $line ) {
+				$out[] = $line;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Схема полей с учётом настроек: раздел, порядок, enabled / required.
+	 *
+	 * @return array Поля в порядке вывода: раздел → порядок → реестр.
 	 */
 	public static function schema() {
-		$saved = WPPA_Plugin::setting( self::SETTING, array() );
-		$saved = is_array( $saved ) ? $saved : array();
-		$out   = array();
+		$saved  = self::saved();
+		$layout = self::default_layout();
+		$out    = array();
+		$tier   = 0;
 
 		foreach ( self::all() as $id => $def ) {
 			$conf     = isset( $saved[ $id ] ) && is_array( $saved[ $id ] ) ? $saved[ $id ] : array();
@@ -144,8 +352,84 @@ class WPPA_Fields {
 			$def['id']       = $id;
 			$def['enabled']  = $enabled ? 1 : 0;
 			$def['required'] = $def['enabled'] && $required ? 1 : 0;
+			$def['custom']   = empty( $def['custom'] ) ? 0 : 1;
 
-			$out[ $id ] = $def;
+			// Раздел и порядок: из настроек, иначе по умолчанию, иначе в конец.
+			$def['section'] = ! empty( $conf['section'] ) ? (string) $conf['section'] : ( isset( $layout[ $id ] ) ? $layout[ $id ][0] : 'main' );
+			$def['order']   = isset( $conf['order'] ) ? (int) $conf['order'] : ( isset( $layout[ $id ] ) ? (int) $layout[ $id ][1] : 500 );
+
+			$def['_tier'] = $tier++;
+			$out[ $id ]   = $def;
+		}
+
+		uasort(
+			$out,
+			static function ( $a, $b ) {
+				if ( $a['order'] === $b['order'] ) {
+					return $a['_tier'] < $b['_tier'] ? -1 : 1;
+				}
+
+				return $a['order'] < $b['order'] ? -1 : 1;
+			}
+		);
+
+		foreach ( $out as $id => $def ) {
+			unset( $out[ $id ]['_tier'] );
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Включённые поля, сгруппированные по разделам.
+	 *
+	 * @param string $context register|profile.
+	 * @return array id раздела => array( label, fields ).
+	 */
+	public static function grouped( $context = 'register' ) {
+		$sections = self::sections();
+		$fields   = self::fields( $context );
+		$out      = array();
+		$known    = array_keys( $sections );
+
+		foreach ( $sections as $sid => $section ) {
+			$in = array();
+
+			foreach ( $fields as $id => $def ) {
+				if ( $sid === $def['section'] ) {
+					$in[ $id ] = $def;
+				}
+			}
+
+			if ( $in ) {
+				$out[ $sid ] = array(
+					'label'  => $section['label'],
+					'fields' => $in,
+				);
+			}
+		}
+
+		// Поле, у которого раздел исчез, не теряем: кладём в первый раздел.
+		$orphans = array();
+
+		foreach ( $fields as $id => $def ) {
+			if ( ! in_array( $def['section'], $known, true ) ) {
+				$orphans[ $id ] = $def;
+			}
+		}
+
+		if ( $orphans ) {
+			$first = array_key_first( $out );
+
+			if ( null === $first ) {
+				$first = array_key_first( $sections );
+				$out[ $first ] = array(
+					'label'  => isset( $sections[ $first ] ) ? $sections[ $first ]['label'] : __( 'Личные данные', 'wp-personal-account' ),
+					'fields' => array(),
+				);
+			}
+
+			$out[ $first ]['fields'] = array_merge( $out[ $first ]['fields'], $orphans );
 		}
 
 		return $out;
@@ -280,7 +564,8 @@ class WPPA_Fields {
 			return '';
 		}
 
-		$type = isset( $all[ $id ]['type'] ) ? $all[ $id ]['type'] : 'text';
+		$def  = $all[ $id ];
+		$type = isset( $def['type'] ) ? $def['type'] : 'text';
 
 		switch ( $type ) {
 			case 'textarea':
@@ -293,6 +578,16 @@ class WPPA_Fields {
 				return self::sanitize_date( $raw );
 			case 'tel':
 				return trim( preg_replace( '/[^0-9+()\-\s]/', '', $raw ) );
+			case 'number':
+				$number = str_replace( ',', '.', trim( preg_replace( '/[^0-9,.\-]/', '', $raw ) ) );
+
+				return is_numeric( $number ) ? $number : '';
+			case 'checkbox':
+				return '' === trim( $raw ) ? '' : '1';
+			case 'select':
+				$value = sanitize_text_field( $raw );
+
+				return in_array( $value, self::options_of( $def ), true ) ? $value : '';
 			default:
 				return sanitize_text_field( $raw );
 		}
@@ -369,6 +664,18 @@ class WPPA_Fields {
 				}
 			}
 
+			if ( 'number' === $type && ! is_numeric( str_replace( ',', '.', $value ) ) ) {
+				return 'field_invalid';
+			}
+
+			if ( 'email' === $type && '' === sanitize_email( $value ) ) {
+				return 'field_invalid';
+			}
+
+			if ( 'select' === $type && ! in_array( $value, self::options_of( $def ), true ) ) {
+				return 'field_invalid';
+			}
+
 			if ( 'text' === $type && strlen( $value ) > 190 ) {
 				return 'field_too_long';
 			}
@@ -429,70 +736,112 @@ class WPPA_Fields {
 	 * @return void
 	 */
 	public static function render( $context = 'register', $user_id = 0, $values = array() ) {
-		$fields = self::fields( $context );
+		foreach ( self::grouped( $context ) as $section_id => $section ) {
+			$fields = $section['fields'];
 
-		// Имя и фамилия выводятся в одну строку, если включены оба поля.
-		$pair_ids  = array();
-		$pair_open = false;
+			echo '<div class="wppa-section" data-wppa-section="' . esc_attr( $section_id ) . '">';
+			echo '<h3 class="wppa-section__title">' . esc_html( $section['label'] ) . '</h3>';
 
-		if ( isset( $fields['first_name'], $fields['last_name'] ) ) {
-			$pair_ids = array( 'first_name', 'last_name' );
-		}
+			// Имя и фамилия выводятся в одну строку, если оба поля в одном разделе.
+			$pair_ids  = isset( $fields['first_name'], $fields['last_name'] ) ? array( 'first_name', 'last_name' ) : array();
+			$pair_open = false;
 
-		foreach ( $fields as $id => $def ) {
-			$value = isset( $values[ $id ] ) ? $values[ $id ] : ( $user_id ? self::get( $user_id, $id ) : '' );
-			$type  = isset( $def['type'] ) ? $def['type'] : 'text';
-			$req   = ! empty( $def['required'] );
-			$name  = 'wppa_fields[' . $id . ']';
-			$fid   = 'wppa-f-' . str_replace( '_', '-', $id );
-			$label = isset( $def['label'] ) ? $def['label'] : $id;
-			$auto  = isset( $def['autocomplete'] ) ? ' autocomplete="' . esc_attr( $def['autocomplete'] ) . '"' : '';
-			$ph    = isset( $def['placeholder'] ) ? ' placeholder="' . esc_attr( $def['placeholder'] ) . '"' : '';
+			foreach ( $fields as $id => $def ) {
+				$value = isset( $values[ $id ] ) ? $values[ $id ] : ( $user_id ? self::get( $user_id, $id ) : '' );
+				$type  = isset( $def['type'] ) ? $def['type'] : 'text';
+				$req   = ! empty( $def['required'] );
+				$name  = 'wppa_fields[' . $id . ']';
+				$fid   = 'wppa-f-' . str_replace( '_', '-', $id );
+				$label = isset( $def['label'] ) ? $def['label'] : $id;
+				$auto  = isset( $def['autocomplete'] ) ? ' autocomplete="' . esc_attr( $def['autocomplete'] ) . '"' : '';
+				$ph    = isset( $def['placeholder'] ) && '' !== $def['placeholder'] ? ' placeholder="' . esc_attr( $def['placeholder'] ) . '"' : '';
+				$wide  = in_array( $type, array( 'textarea', 'select' ), true );
 
-			if ( in_array( $id, $pair_ids, true ) && 'first_name' === $id ) {
-				echo '<div class="wppa-row">';
-				$pair_open = true;
+				if ( $pair_open && ! in_array( $id, $pair_ids, true ) ) {
+					echo '</div>';
+					$pair_open = false;
+				}
+
+				if ( in_array( $id, $pair_ids, true ) && 'first_name' === $id ) {
+					echo '<div class="wppa-row">';
+					$pair_open = true;
+				}
+
+				echo '<p class="wppa-field' . ( $wide ? ' wppa-field--wide' : '' ) . '">';
+
+				if ( 'checkbox' === $type ) {
+					// Скрытое поле с пустым значением: снятый флажок тоже сохраняется.
+					printf( '<input type="hidden" name="%1$s" value="" />', esc_attr( $name ) );
+					printf(
+						'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1"%3$s%4$s /> %5$s%6$s</label>',
+						esc_attr( $fid ),
+						esc_attr( $name ),
+						checked( '1', (string) $value, false ),
+						$req ? ' required' : '',
+						esc_html( $label ),
+						$req ? ' <span class="wppa-req" aria-hidden="true">*</span>' : ''
+					);
+				} else {
+					echo '<label for="' . esc_attr( $fid ) . '">' . esc_html( $label ) . ( $req ? ' <span class="wppa-req" aria-hidden="true">*</span>' : '' ) . '</label>';
+				}
+
+				if ( 'textarea' === $type ) {
+					printf(
+						'<textarea id="%1$s" name="%2$s" rows="%3$d"%4$s%5$s>%6$s</textarea>',
+						esc_attr( $fid ),
+						esc_attr( $name ),
+						(int) ( isset( $def['rows'] ) ? $def['rows'] : 4 ),
+						$req ? ' required' : '',
+						$ph,
+						esc_textarea( $value )
+					);
+				} elseif ( 'select' === $type ) {
+					printf( '<select id="%1$s" name="%2$s"%3$s>', esc_attr( $fid ), esc_attr( $name ), $req ? ' required' : '' );
+
+					if ( ! $req ) {
+						echo '<option value="">' . esc_html__( '— не выбрано —', 'wp-personal-account' ) . '</option>';
+					}
+
+					foreach ( self::options_of( $def ) as $option ) {
+						printf(
+							'<option value="%1$s"%2$s>%3$s</option>',
+							esc_attr( $option ),
+							selected( $option, (string) $value, false ),
+							esc_html( $option )
+						);
+					}
+
+					echo '</select>';
+				} elseif ( 'checkbox' !== $type ) {
+					printf(
+						'<input type="%1$s" id="%2$s" name="%3$s" value="%4$s"%5$s%6$s%7$s%8$s />',
+						esc_attr( in_array( $type, array( 'text', 'tel', 'email', 'url', 'date', 'number' ), true ) ? $type : 'text' ),
+						esc_attr( $fid ),
+						esc_attr( $name ),
+						esc_attr( $value ),
+						$req ? ' required' : '',
+						$auto,
+						$ph,
+						'number' === $type ? ' step="any"' : ''
+					);
+				}
+
+				if ( ! empty( $def['hint'] ) ) {
+					echo '<span class="wppa-hint">' . esc_html( $def['hint'] ) . '</span>';
+				}
+
+				echo '</p>';
+
+				if ( $pair_open && 'last_name' === $id ) {
+					echo '</div>';
+					$pair_open = false;
+				}
 			}
 
-			echo '<p class="wppa-field' . ( 'textarea' === $type ? ' wppa-field--wide' : '' ) . '">';
-			echo '<label for="' . esc_attr( $fid ) . '">' . esc_html( $label ) . ( $req ? ' <span class="wppa-req" aria-hidden="true">*</span>' : '' ) . '</label>';
-
-			if ( 'textarea' === $type ) {
-				printf(
-					'<textarea id="%1$s" name="%2$s" rows="%3$d"%4$s%5$s>%6$s</textarea>',
-					esc_attr( $fid ),
-					esc_attr( $name ),
-					(int) ( isset( $def['rows'] ) ? $def['rows'] : 4 ),
-					$req ? ' required' : '',
-					$ph,
-					esc_textarea( $value )
-				);
-			} else {
-				printf(
-					'<input type="%1$s" id="%2$s" name="%3$s" value="%4$s"%5$s%6$s%7$s />',
-					esc_attr( $type ),
-					esc_attr( $fid ),
-					esc_attr( $name ),
-					esc_attr( $value ),
-					$req ? ' required' : '',
-					$auto,
-					$ph
-				);
-			}
-
-			if ( ! empty( $def['hint'] ) ) {
-				echo '<span class="wppa-hint">' . esc_html( $def['hint'] ) . '</span>';
-			}
-
-			echo '</p>';
-
-			if ( $pair_open && 'last_name' === $id ) {
+			if ( $pair_open ) {
 				echo '</div>';
-				$pair_open = false;
 			}
-		}
 
-		if ( $pair_open ) {
 			echo '</div>';
 		}
 	}

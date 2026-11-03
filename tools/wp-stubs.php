@@ -598,6 +598,14 @@ function sanitize_title( $title, $fallback = '', $context = 'save' ) {
 	return '' === $title ? (string) $fallback : $title;
 }
 
+if ( ! function_exists( 'checked' ) ) {
+	function checked( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' checked="checked"' : ''; if ( $echo ) { echo $r; } return $r; }
+}
+
+if ( ! function_exists( 'selected' ) ) {
+	function selected( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' selected="selected"' : ''; if ( $echo ) { echo $r; } return $r; }
+}
+
 function wp_mkdir_p( $target ) {
 	return is_dir( $target ) || mkdir( $target, 0777, true );
 }

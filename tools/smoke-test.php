@@ -16,6 +16,7 @@ require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
+require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
@@ -1325,6 +1326,202 @@ if ( ! $short_ok ) {
 }
 
 $GLOBALS['wppa_test']['logged_in'] = true;
+
+// Разделы и свои поля персональных данных (3.8.0).
+$sections_checks = array();
+$settings_backup = get_option( 'wppa_settings', array() );
+
+$default_sections = WPPA_Fields::sections();
+$main_schema      = WPPA_Fields::schema();
+
+$sections_checks['разделы по умолчанию: 4']        = 4 === count( $default_sections );
+$sections_checks['первый раздел — основной']       = 'main' === array_key_first( $default_sections );
+$sections_checks['телефон лежит в «Контактах»']    = 'contacts' === $main_schema['phone']['section'];
+$sections_checks['о компании — раздел «Работа»']   = 'work' === $main_schema['company']['section'];
+
+/**
+ * Сохранить только персональные данные, не трогая остальные настройки.
+ *
+ * @param array $input Поля формы.
+ * @return array Санитизированные ключи.
+ */
+function wppa_test_save_fields( array $input, array $settings_backup ) {
+	$sanitized = WPPA_Settings::sanitize( $input );
+
+	update_option(
+		'wppa_settings',
+		array_merge(
+			$settings_backup,
+			array(
+				'fields'         => $sanitized['fields'],
+				'field_sections' => $sanitized['field_sections'],
+			)
+		)
+	);
+
+	return $sanitized;
+}
+
+$form_fields = array(
+	'first_name' => array( 'enabled' => 1, 'required' => 1, 'label' => 'Имя участника', 'section' => 'main', 'order' => 10 ),
+	'phone'      => array( 'enabled' => 1, 'required' => 0, 'section' => 'contacts', 'order' => 10 ),
+	'city'       => array( 'enabled' => 1, 'section' => 'study', 'order' => 10 ),
+);
+
+$form_new_fields = array(
+	array( 'key' => 'snils', 'label' => 'СНИЛС', 'type' => 'text', 'section' => 'study', 'order' => 20, 'enabled' => 1, 'required' => 1 ),
+	array( 'key' => 'grade', 'label' => 'Класс', 'type' => 'select', 'section' => 'study', 'order' => 30, 'enabled' => 1 ),
+	array( 'key' => '', 'label' => '' ),
+);
+
+$form_sections = array(
+	'main'     => array( 'label' => 'Основные данные', 'order' => 10 ),
+	'contacts' => array( 'label' => 'Контакты', 'order' => 20 ),
+	'work'     => array( 'label' => 'Работа', 'order' => 30, 'delete' => 1 ),
+	'about'    => array( 'label' => 'О себе', 'order' => 40 ),
+);
+
+$form_new_sections = array(
+	array( 'key' => 'study', 'label' => 'Учёба', 'order' => 25 ),
+	array( 'key' => '', 'label' => '' ),
+);
+
+$saved = wppa_test_save_fields(
+	array(
+		'fields'             => $form_fields,
+		'fields_new'         => $form_new_fields,
+		'field_sections'     => $form_sections,
+		'field_sections_new' => $form_new_sections,
+	),
+	$settings_backup
+);
+
+$after_first   = WPPA_Fields::schema();
+$after_all     = WPPA_Fields::all();
+$after_section = WPPA_Fields::sections();
+
+$sections_checks['своё поле сохранено']              = isset( $after_all['custom_snils'] );
+$sections_checks['своё поле в схеме']                = isset( $after_first['custom_snils'] );
+$sections_checks['своё поле: мета-ключ']             = '_wppa_custom_snils' === $after_all['custom_snils']['meta'];
+$sections_checks['своё поле: раздел из формы']       = 'study' === $after_first['custom_snils']['section'];
+$sections_checks['своё поле: обязательное']          = 1 === $after_first['custom_snils']['required'];
+$sections_checks['пустая строка не создаёт поле']    = ! isset( $after_all['custom_'] ) && 2 === count( array_filter( array_keys( $after_all ), static function ( $id ) { return 0 === strpos( $id, 'custom_' ); } ) );
+$sections_checks['подпись встроенного поля правится'] = 'Имя участника' === $after_first['first_name']['label'];
+$sections_checks['новый раздел создан']              = isset( $after_section['study'] ) && 'Учёба' === $after_section['study']['label'];
+$sections_checks['раздел удалён по галочке']         = ! isset( $after_section['work'] );
+$sections_checks['поле перенесено в новый раздел']   = 'study' === $after_first['city']['section'];
+$sections_checks['порядок разделов соблюдён']        = array( 'main', 'contacts', 'study', 'about' ) === array_slice( array_keys( $after_section ), 0, 4 );
+
+$grouped = WPPA_Fields::grouped( 'register' );
+
+$sections_checks['группировка: есть «Учёба»']        = isset( $grouped['study'] );
+$sections_checks['группировка: город в «Учёбе»']     = isset( $grouped['study']['fields']['city'] );
+$sections_checks['группировка: пустых разделов нет'] = ! isset( $grouped['about'] ) || ! empty( $grouped['about']['fields'] );
+
+$custom_all       = WPPA_Fields::all();
+$custom_def       = $custom_all['custom_grade'];
+$custom_all_saved = $after_all;
+
+$sections_checks['список без вариантов: значение не проходит'] = '' === WPPA_Fields::sanitize_value( 'custom_grade', '9' );
+
+// Правим своё поле: варианты списка и тип «число».
+$form_fields['custom_grade'] = array( 'enabled' => 1, 'required' => 0, 'label' => 'Класс', 'section' => 'study', 'order' => 30, 'type' => 'select', 'options' => "5\n6\n7" );
+$form_fields['custom_snils'] = array( 'enabled' => 1, 'required' => 1, 'label' => 'СНИЛС', 'section' => 'study', 'order' => 20, 'type' => 'text' );
+
+$form_new_fields_2 = array(
+	array( 'key' => 'ball', 'label' => 'Балл', 'type' => 'number', 'section' => 'study', 'order' => 40, 'enabled' => 1 ),
+	array( 'key' => 'agree', 'label' => 'Согласие', 'type' => 'checkbox', 'section' => 'study', 'order' => 50, 'enabled' => 1 ),
+);
+
+wppa_test_save_fields(
+	array(
+		'fields'             => $form_fields,
+		'fields_new'         => $form_new_fields_2,
+		'field_sections'     => $form_sections,
+		'field_sections_new' => $form_new_sections,
+	),
+	$settings_backup
+);
+
+$sections_checks['список: вариант из настроек принимается'] = '6' === WPPA_Fields::sanitize_value( 'custom_grade', '6' );
+$sections_checks['список: чужое значение отбрасывается']   = '' === WPPA_Fields::sanitize_value( 'custom_grade', '11' );
+$sections_checks['число: запятая превращается в точку']    = '12.5' === WPPA_Fields::sanitize_value( 'custom_ball', '12,5' );
+$sections_checks['число: буквы отбрасываются']             = '' === WPPA_Fields::sanitize_value( 'custom_ball', 'двенадцать' );
+$sections_checks['число: пусто и целое']                   = '' === WPPA_Fields::sanitize_value( 'custom_ball', '' ) && '12' === WPPA_Fields::sanitize_value( 'custom_ball', '12' );
+$sections_checks['флажок: снят и отмечен']                 = '' === WPPA_Fields::sanitize_value( 'custom_agree', '' ) && '1' === WPPA_Fields::sanitize_value( 'custom_agree', '1' );
+
+$validation_values = array( 'custom_snils' => '123-456-789 00', 'custom_grade' => '5' );
+
+$sections_checks['валидация: свои поля проходят']       = '' === WPPA_Fields::validate( $validation_values, 'profile' );
+$sections_checks['валидация: обязательное своё поле']   = 'field_required' === WPPA_Fields::validate( array( 'custom_grade' => '5' ), 'profile' );
+$sections_checks['валидация: список вне вариантов']     = 'field_invalid' === WPPA_Fields::validate( array( 'custom_snils' => '1', 'custom_grade' => '42' ), 'profile' );
+
+// Значение своего поля сохраняется и читается.
+WPPA_Fields::save_meta( 33, array( 'custom_snils' => '123-456-789 00', 'custom_grade' => '6' ) );
+
+$sections_checks['своё поле: сохранение в мета'] = '123-456-789 00' === WPPA_Fields::get( 33, 'custom_snils' );
+$sections_checks['своё поле: значение списка']   = '6' === WPPA_Fields::get( 33, 'custom_grade' );
+
+// Своё поле попадает в выгрузку.
+$export_keys = array_column( WPPA_Export::columns(), 'key' );
+
+$sections_checks['выгрузка: колонка своего поля'] = in_array( 'field_custom_snils', $export_keys, true );
+$personal_columns = array_filter(
+	WPPA_Export::columns(),
+	static function ( $column ) {
+		return 0 === strpos( $column['key'], 'field_' );
+	}
+);
+
+$sections_checks['выгрузка: личные поля в группе «Личные данные»'] = array() !== $personal_columns && array( 'personal' ) === array_values( array_unique( array_column( $personal_columns, 'group' ) ) );
+
+// Раздел «Учёба» удаляем: его поля остаются и переезжают в основной раздел.
+$form_sections_deleted = $form_sections;
+unset( $form_sections_deleted['work'] );
+
+$form_fields_delete = $form_fields;
+$form_fields_delete['custom_ball'] = array( 'enabled' => 1, 'required' => 0, 'label' => 'Балл', 'section' => 'study', 'order' => 40, 'type' => 'number', 'delete' => '1' );
+
+wppa_test_save_fields(
+	array(
+		'fields'             => $form_fields_delete,
+		'fields_new'         => array(),
+		'field_sections'     => array(
+			'main'     => array( 'label' => 'Основные данные', 'order' => 10 ),
+			'contacts' => array( 'label' => 'Контакты', 'order' => 20 ),
+			'study'    => array( 'label' => 'Учёба', 'order' => 25, 'delete' => '1' ),
+			'about'    => array( 'label' => 'О себе', 'order' => 40 ),
+		),
+		'field_sections_new' => array(),
+	),
+	$settings_backup
+);
+
+$after_delete    = WPPA_Fields::schema();
+$sections_delete = WPPA_Fields::sections();
+
+$sections_checks['своё поле удалено']                  = ! isset( $after_delete['custom_ball'] );
+$sections_checks['свой раздел удалён']                 = ! isset( $sections_delete['study'] );
+$sections_checks['поля удалённого раздела → основной'] = 'main' === $after_delete['custom_snils']['section'] && 'main' === $after_delete['city']['section'];
+$sections_checks['основной раздел удалить нельзя']     = isset( $sections_delete['main'] );
+
+// Форма профиля рисует разделы.
+ob_start();
+WPPA_Fields::render( 'profile', 33 );
+$rendered = ob_get_clean();
+
+$sections_checks['форма: заголовок раздела'] = false !== strpos( $rendered, 'wppa-section__title' );
+$sections_checks['форма: подпись своего поля'] = false !== strpos( $rendered, 'СНИЛС' );
+$sections_checks['форма: значение своего поля'] = false !== strpos( $rendered, '123-456-789 00' );
+
+update_option( 'wppa_settings', $settings_backup );
+
+foreach ( $sections_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'personal: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 // Регресс 3.7.1: deprecation в fputcsv() и fatal error на wp_tempnam() во фронтенде.
 $csv_checks = array();

@@ -314,6 +314,27 @@
 	gap: 0 16px;
 }
 
+/* Раздел персональных данных: заголовок и отступы. */
+.wppa-section {
+	margin: 0 0 8px;
+	padding: 0;
+}
+
+.wppa-section + .wppa-section {
+	margin-top: 20px;
+	padding-top: 16px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-section__title {
+	margin: 0 0 12px;
+	font-size: .95em;
+	font-weight: 700;
+	letter-spacing: .02em;
+	text-transform: uppercase;
+	color: var(--wppa-muted);
+}
+
 .wppa-password {
 	position: relative;
 	display: block;
@@ -1356,7 +1377,7 @@ body {
 		<textarea id="wppa-description" name="description" rows="4">Люблю доставку.</textarea>
 	</p>
 
-	<p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="+7 913 555-21-08" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="Красноярск" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="ООО «Вектор»" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="Руководитель проектов" autocomplete="organization-title" /></p>
+	<div class="wppa-section" data-wppa-section="contacts"><h3 class="wppa-section__title">Контакты</h3><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="+7 913 555-21-08" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="Красноярск" autocomplete="address-level2" /></p></div><div class="wppa-section" data-wppa-section="work"><h3 class="wppa-section__title">Работа</h3><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="ООО «Вектор»" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="Руководитель проектов" autocomplete="organization-title" /></p></div>
 	<p class="wppa-field">
 		<label>Email</label>
 		<input type="email" value="ivan@example.com" readonly />
@@ -1992,7 +2013,7 @@ body {
 	<form class="wppa-form" method="post" action="https://example.com/">
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
 
-		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
+		<div class="wppa-section" data-wppa-section="main"><h3 class="wppa-section__title">Основные данные</h3><div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div></div><div class="wppa-section" data-wppa-section="contacts"><h3 class="wppa-section__title">Контакты</h3><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p></div><div class="wppa-section" data-wppa-section="work"><h3 class="wppa-section__title">Работа</h3><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p></div><div class="wppa-section" data-wppa-section="about"><h3 class="wppa-section__title">О себе</h3><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p></div>
 		<p class="wppa-field">
 			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
@@ -2220,7 +2241,7 @@ body {
 	<form class="wppa-form" method="post" action="https://example.com/">
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
 
-		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
+		<div class="wppa-section" data-wppa-section="main"><h3 class="wppa-section__title">Основные данные</h3><div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div></div><div class="wppa-section" data-wppa-section="contacts"><h3 class="wppa-section__title">Контакты</h3><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p></div><div class="wppa-section" data-wppa-section="work"><h3 class="wppa-section__title">Работа</h3><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p></div><div class="wppa-section" data-wppa-section="about"><h3 class="wppa-section__title">О себе</h3><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p></div>
 		<p class="wppa-field">
 			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
@@ -2305,7 +2326,7 @@ body {
 	<form class="wppa-form" method="post" action="https://example.com/">
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
 
-		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
+		<div class="wppa-section" data-wppa-section="main"><h3 class="wppa-section__title">Основные данные</h3><div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div></div><div class="wppa-section" data-wppa-section="contacts"><h3 class="wppa-section__title">Контакты</h3><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p></div><div class="wppa-section" data-wppa-section="work"><h3 class="wppa-section__title">Работа</h3><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p></div><div class="wppa-section" data-wppa-section="about"><h3 class="wppa-section__title">О себе</h3><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p></div>
 		<p class="wppa-field">
 			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
@@ -2385,7 +2406,7 @@ body {
 	<form class="wppa-form" method="post" action="https://example.com/">
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
 
-		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
+		<div class="wppa-section" data-wppa-section="main"><h3 class="wppa-section__title">Основные данные</h3><div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div></div><div class="wppa-section" data-wppa-section="contacts"><h3 class="wppa-section__title">Контакты</h3><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p></div><div class="wppa-section" data-wppa-section="work"><h3 class="wppa-section__title">Работа</h3><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p></div><div class="wppa-section" data-wppa-section="about"><h3 class="wppa-section__title">О себе</h3><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p></div>
 		<p class="wppa-field">
 			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
@@ -2459,16 +2480,16 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Откроется 03.11.2026 16:14.		</p>
+			Откроется 03.11.2026 16:24.		</p>
 	
 			<p class="wppa-link-block__timer">
 			<span class="wppa-link-block__timer-label">
 				До открытия:			</span>
 			<span
 				class="wppa-countdown"
-				data-wppa-countdown="1793722440"
+				data-wppa-countdown="1793723040"
 				data-wppa-countdown-mode="open"
-				data-wppa-reload="1"			>01:59:27</span>
+				data-wppa-reload="1"			>01:59:37</span>
 		</p>
 	
 	</section>
@@ -2483,7 +2504,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Срок доступа истёк 03.11.2026 13:14.		</p>
+			Срок доступа истёк 03.11.2026 13:24.		</p>
 	
 	
 	</section>
@@ -2491,11 +2512,11 @@ body {
 	<h2 class="wppa-title">Регистрация</h2>
 
 	<div class="wppa-notice wppa-notice--info" role="status">
-	Форма регистрации откроется 03.11.2026 16:14.</div>
+	Форма регистрации откроется 03.11.2026 16:24.</div>
 
 			<p class="wppa-countdown-row">
 			<span class="wppa-countdown-row__label">До открытия:</span>
-			<span class="wppa-countdown" data-wppa-countdown="1793722440" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:27</span>		</p>
+			<span class="wppa-countdown" data-wppa-countdown="1793723040" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:37</span>		</p>
 	
 	<p class="wppa-hint">Регистрация ограничена по времени: форма появится здесь автоматически, когда откроется.</p>
 </div>
@@ -2534,7 +2555,7 @@ body {
 					Регистрация				</span>
 					</div>
 					<p class="wppa-hint wppa-hint--block">
-				Регистрация откроется 03.11.2026 16:14.									<span class="wppa-countdown" data-wppa-countdown="1793722440" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:27</span>							</p>
+				Регистрация откроется 03.11.2026 16:24.									<span class="wppa-countdown" data-wppa-countdown="1793723040" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:37</span>							</p>
 			</div>
 <div style="margin-top:18px"></div></div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Восстановление пароля</h2><p>Свои формы вместо служебной страницы WordPress: заявка по логину или email и установка нового пароля по ссылке из письма</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
 	<h2 class="wppa-title">Восстановление пароля</h2>

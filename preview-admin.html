@@ -483,8 +483,21 @@
 }
 
 .wppa-admin__fields th,
-.wppa-admin__fields td {
+.wppa-admin__fields td,
+.wppa-admin__fields-new th,
+.wppa-admin__fields-new td,
+.wppa-admin__sections th,
+.wppa-admin__sections td,
+.wppa-admin__sections-new th,
+.wppa-admin__sections-new td {
 	padding: 4px 8px;
+}
+
+.wppa-admin__fields select,
+.wppa-admin__fields-new select,
+.wppa-admin__fields-new input[type="text"],
+.wppa-admin__sections input[type="text"] {
+	max-width: 100%;
 }
 
 /* Минимальные стили WordPress admin для автономного превью. */
@@ -1783,17 +1796,42 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 									<thead>
 										<tr>
 											<th>Поле</th>
+											<th>Подпись</th>
+											<th>Раздел</th>
+											<th>Порядок</th>
 											<th>Показывать</th>
 											<th>Обязательное</th>
+											<th>Удалить</th>
 										</tr>
 									</thead>
 									<tbody>
 																					<tr>
-												<td>Имя</td>
+												<td>
+													<code>first_name</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-first_name"
+														name="wppa_settings[fields][first_name][label]"
+														value="Имя"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][first_name][section]">
+																													<option value="main"  selected="selected">Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][first_name][order]" value="10" />
+												</td>
 												<td>
 													<input
 														type="checkbox"
-														id="wppa-field-first_name"
 														name="wppa_settings[fields][first_name][enabled]"
 														value="1"
 														 checked="checked"													/>
@@ -1805,49 +1843,37 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 														value="1"
 														 checked="checked"													/>
 												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
 											</tr>
 																					<tr>
-												<td>Фамилия</td>
+												<td>
+													<code>phone</code>
+																									</td>
 												<td>
 													<input
-														type="checkbox"
-														id="wppa-field-last_name"
-														name="wppa_settings[fields][last_name][enabled]"
-														value="1"
-														 checked="checked"													/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][last_name][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Отчество</td>
-												<td>
-													<input
-														type="checkbox"
-														id="wppa-field-patronymic"
-														name="wppa_settings[fields][patronymic][enabled]"
-														value="1"
-																											/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][patronymic][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Телефон</td>
-												<td>
-													<input
-														type="checkbox"
+														type="text"
+														class="regular-text"
 														id="wppa-field-phone"
+														name="wppa_settings[fields][phone][label]"
+														value="Телефон"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][phone][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts"  selected="selected">Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][phone][order]" value="10" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
 														name="wppa_settings[fields][phone][enabled]"
 														value="1"
 														 checked="checked"													/>
@@ -1859,49 +1885,37 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 														value="1"
 																											/>
 												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
 											</tr>
 																					<tr>
-												<td>Дата рождения</td>
+												<td>
+													<code>company</code>
+																									</td>
 												<td>
 													<input
-														type="checkbox"
-														id="wppa-field-birthdate"
-														name="wppa_settings[fields][birthdate][enabled]"
-														value="1"
-																											/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][birthdate][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Город</td>
-												<td>
-													<input
-														type="checkbox"
-														id="wppa-field-city"
-														name="wppa_settings[fields][city][enabled]"
-														value="1"
-														 checked="checked"													/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][city][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Организация</td>
-												<td>
-													<input
-														type="checkbox"
+														type="text"
+														class="regular-text"
 														id="wppa-field-company"
+														name="wppa_settings[fields][company][label]"
+														value="Организация"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][company][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work"  selected="selected">Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][company][order]" value="10" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
 														name="wppa_settings[fields][company][enabled]"
 														value="1"
 														 checked="checked"													/>
@@ -1913,67 +1927,37 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 														value="1"
 																											/>
 												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
 											</tr>
 																					<tr>
-												<td>Должность</td>
+												<td>
+													<code>about</code>
+																									</td>
 												<td>
 													<input
-														type="checkbox"
-														id="wppa-field-position"
-														name="wppa_settings[fields][position][enabled]"
-														value="1"
-														 checked="checked"													/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][position][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Сайт</td>
-												<td>
-													<input
-														type="checkbox"
-														id="wppa-field-website"
-														name="wppa_settings[fields][website][enabled]"
-														value="1"
-																											/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][website][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>Telegram</td>
-												<td>
-													<input
-														type="checkbox"
-														id="wppa-field-telegram"
-														name="wppa_settings[fields][telegram][enabled]"
-														value="1"
-																											/>
-												</td>
-												<td>
-													<input
-														type="checkbox"
-														name="wppa_settings[fields][telegram][required]"
-														value="1"
-																											/>
-												</td>
-											</tr>
-																					<tr>
-												<td>О себе</td>
-												<td>
-													<input
-														type="checkbox"
+														type="text"
+														class="regular-text"
 														id="wppa-field-about"
+														name="wppa_settings[fields][about][label]"
+														value="О себе"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][about][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about"  selected="selected">О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][about][order]" value="10" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
 														name="wppa_settings[fields][about][enabled]"
 														value="1"
 														 checked="checked"													/>
@@ -1985,10 +1969,533 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 														value="1"
 																											/>
 												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>last_name</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-last_name"
+														name="wppa_settings[fields][last_name][label]"
+														value="Фамилия"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][last_name][section]">
+																													<option value="main"  selected="selected">Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][last_name][order]" value="20" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][last_name][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][last_name][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>city</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-city"
+														name="wppa_settings[fields][city][label]"
+														value="Город"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][city][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts"  selected="selected">Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][city][order]" value="20" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][city][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][city][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>position</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-position"
+														name="wppa_settings[fields][position][label]"
+														value="Должность"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][position][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work"  selected="selected">Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][position][order]" value="20" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][position][enabled]"
+														value="1"
+														 checked="checked"													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][position][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>patronymic</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-patronymic"
+														name="wppa_settings[fields][patronymic][label]"
+														value="Отчество"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][patronymic][section]">
+																													<option value="main"  selected="selected">Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][patronymic][order]" value="30" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][patronymic][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][patronymic][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>telegram</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-telegram"
+														name="wppa_settings[fields][telegram][label]"
+														value="Telegram"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][telegram][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts"  selected="selected">Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][telegram][order]" value="30" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][telegram][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][telegram][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>birthdate</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-birthdate"
+														name="wppa_settings[fields][birthdate][label]"
+														value="Дата рождения"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][birthdate][section]">
+																													<option value="main"  selected="selected">Основные данные</option>
+																													<option value="contacts" >Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][birthdate][order]" value="40" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][birthdate][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][birthdate][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
+											</tr>
+																					<tr>
+												<td>
+													<code>website</code>
+																									</td>
+												<td>
+													<input
+														type="text"
+														class="regular-text"
+														id="wppa-field-website"
+														name="wppa_settings[fields][website][label]"
+														value="Сайт"
+													/>
+												</td>
+												<td>
+													<select name="wppa_settings[fields][website][section]">
+																													<option value="main" >Основные данные</option>
+																													<option value="contacts"  selected="selected">Контакты</option>
+																													<option value="work" >Работа</option>
+																													<option value="about" >О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields][website][order]" value="40" />
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][website][enabled]"
+														value="1"
+																											/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][website][required]"
+														value="1"
+																											/>
+												</td>
+												<td>
+																											<span class="description">—</span>
+																									</td>
 											</tr>
 																			</tbody>
 								</table>
-								<p class="description">Эти поля выводятся в форме регистрации и в профиле. Снятая галочка «Обязательное» делает поле необязательным; поле, исключённое из показа, скрывается везде и его значения не выводятся.</p>
+								<p class="description">Своё поле добавляется пустой строкой в таблице «Добавить поле». Удалить можно только своё поле: встроенные достаточно скрыть. Значения удалённого поля остаются в базе, но не выводятся в кабинете и не попадают в выгрузку.</p>
+
+								<h4>Добавить поле</h4>
+								<table class="widefat striped wppa-admin__fields-new">
+									<thead>
+										<tr>
+											<th>Ключ</th>
+											<th>Подпись</th>
+											<th>Тип</th>
+											<th>Раздел</th>
+											<th>Порядок</th>
+											<th>Показывать</th>
+											<th>Обязательное</th>
+										</tr>
+									</thead>
+									<tbody>
+																																<tr>
+												<td>
+													<input type="text" class="regular-text code" name="wppa_settings[fields_new][0][key]" value="" placeholder="snils" />
+												</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[fields_new][0][label]" value="" placeholder="СНИЛС" />
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][0][type]">
+																													<option value="text">Текст</option>
+																													<option value="textarea">Многострочный текст</option>
+																													<option value="tel">Телефон</option>
+																													<option value="email">Email</option>
+																													<option value="url">Ссылка</option>
+																													<option value="date">Дата</option>
+																													<option value="number">Число</option>
+																													<option value="select">Список</option>
+																													<option value="checkbox">Флажок</option>
+																											</select>
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][0][section]">
+																													<option value="main">Основные данные</option>
+																													<option value="contacts">Контакты</option>
+																													<option value="work">Работа</option>
+																													<option value="about">О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields_new][0][order]" value="" placeholder="500" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][0][enabled]" value="1" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][0][required]" value="1" />
+												</td>
+											</tr>
+																																<tr>
+												<td>
+													<input type="text" class="regular-text code" name="wppa_settings[fields_new][1][key]" value="" placeholder="snils" />
+												</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[fields_new][1][label]" value="" placeholder="СНИЛС" />
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][1][type]">
+																													<option value="text">Текст</option>
+																													<option value="textarea">Многострочный текст</option>
+																													<option value="tel">Телефон</option>
+																													<option value="email">Email</option>
+																													<option value="url">Ссылка</option>
+																													<option value="date">Дата</option>
+																													<option value="number">Число</option>
+																													<option value="select">Список</option>
+																													<option value="checkbox">Флажок</option>
+																											</select>
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][1][section]">
+																													<option value="main">Основные данные</option>
+																													<option value="contacts">Контакты</option>
+																													<option value="work">Работа</option>
+																													<option value="about">О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields_new][1][order]" value="" placeholder="500" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][1][enabled]" value="1" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][1][required]" value="1" />
+												</td>
+											</tr>
+																																<tr>
+												<td>
+													<input type="text" class="regular-text code" name="wppa_settings[fields_new][2][key]" value="" placeholder="snils" />
+												</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[fields_new][2][label]" value="" placeholder="СНИЛС" />
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][2][type]">
+																													<option value="text">Текст</option>
+																													<option value="textarea">Многострочный текст</option>
+																													<option value="tel">Телефон</option>
+																													<option value="email">Email</option>
+																													<option value="url">Ссылка</option>
+																													<option value="date">Дата</option>
+																													<option value="number">Число</option>
+																													<option value="select">Список</option>
+																													<option value="checkbox">Флажок</option>
+																											</select>
+												</td>
+												<td>
+													<select name="wppa_settings[fields_new][2][section]">
+																													<option value="main">Основные данные</option>
+																													<option value="contacts">Контакты</option>
+																													<option value="work">Работа</option>
+																													<option value="about">О себе</option>
+																											</select>
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[fields_new][2][order]" value="" placeholder="500" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][2][enabled]" value="1" />
+												</td>
+												<td>
+													<input type="checkbox" name="wppa_settings[fields_new][2][required]" value="1" />
+												</td>
+											</tr>
+																			</tbody>
+								</table>
+								<p class="description">Ключ — латиница, цифры и подчёркивание; из него собирается имя поля и мета-ключ. Пустые строки не сохраняются. Для типа «Список» варианты перечисляются по одному в настройках поля.</p>
+
+								<h4>Разделы</h4>
+								<table class="widefat striped wppa-admin__sections">
+									<thead>
+										<tr>
+											<th>Ключ</th>
+											<th>Название</th>
+											<th>Порядок</th>
+											<th>Удалить</th>
+										</tr>
+									</thead>
+									<tbody>
+																																<tr>
+												<td>
+													<code>main</code>
+																									</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[field_sections][main][label]" value="Основные данные" />
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[field_sections][main][order]" value="10" />
+												</td>
+												<td>
+																											<span class="description">основной</span>
+																									</td>
+											</tr>
+																																<tr>
+												<td>
+													<code>contacts</code>
+																									</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[field_sections][contacts][label]" value="Контакты" />
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[field_sections][contacts][order]" value="20" />
+												</td>
+												<td>
+																											<input type="checkbox" name="wppa_settings[field_sections][contacts][delete]" value="1" />
+																									</td>
+											</tr>
+																																<tr>
+												<td>
+													<code>work</code>
+																									</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[field_sections][work][label]" value="Работа" />
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[field_sections][work][order]" value="30" />
+												</td>
+												<td>
+																											<input type="checkbox" name="wppa_settings[field_sections][work][delete]" value="1" />
+																									</td>
+											</tr>
+																																<tr>
+												<td>
+													<code>about</code>
+																									</td>
+												<td>
+													<input type="text" class="regular-text" name="wppa_settings[field_sections][about][label]" value="О себе" />
+												</td>
+												<td>
+													<input type="number" class="small-text" name="wppa_settings[field_sections][about][order]" value="40" />
+												</td>
+												<td>
+																											<input type="checkbox" name="wppa_settings[field_sections][about][delete]" value="1" />
+																									</td>
+											</tr>
+																			</tbody>
+								</table>
+
+								<h4>Добавить раздел</h4>
+								<table class="widefat striped wppa-admin__sections-new">
+									<thead>
+										<tr>
+											<th>Ключ</th>
+											<th>Название</th>
+											<th>Порядок</th>
+										</tr>
+									</thead>
+									<tbody>
+																																<tr>
+												<td><input type="text" class="regular-text code" name="wppa_settings[field_sections_new][0][key]" value="" placeholder="study" /></td>
+												<td><input type="text" class="regular-text" name="wppa_settings[field_sections_new][0][label]" value="" placeholder="Учёба" /></td>
+												<td><input type="number" class="small-text" name="wppa_settings[field_sections_new][0][order]" value="" placeholder="100" /></td>
+											</tr>
+																																<tr>
+												<td><input type="text" class="regular-text code" name="wppa_settings[field_sections_new][1][key]" value="" placeholder="study" /></td>
+												<td><input type="text" class="regular-text" name="wppa_settings[field_sections_new][1][label]" value="" placeholder="Учёба" /></td>
+												<td><input type="number" class="small-text" name="wppa_settings[field_sections_new][1][order]" value="" placeholder="100" /></td>
+											</tr>
+																			</tbody>
+								</table>
+								<p class="description">Раздел — заголовок в форме регистрации и в профиле. Удалённый раздел исчезает из кабинета, а его поля переходят в «Основные данные». Раздел «Основные данные» удалить нельзя: он принимает поля без раздела. В выгрузке все личные поля остаются в одной группе «Личные данные».</p>
 							</fieldset>
 						</td>
 					</tr>
@@ -2123,7 +2630,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 03.11.2026 14:19.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 03.11.2026 14:29.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -2412,10 +2919,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 03.11.2026 22:14 (Раз в день).							</p>
+									Следующая выгрузка: 03.11.2026 22:24 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 03.11.2026 14:19				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 03.11.2026 14:29				</p>
 			
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -2445,7 +2952,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>03.11.2026 14:14</td>
+								<td>03.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -2454,7 +2961,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 14:14</td>
+								<td>03.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -2463,7 +2970,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 14:14</td>
+								<td>03.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

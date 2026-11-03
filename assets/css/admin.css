@@ -476,6 +476,19 @@
 }
 
 .wppa-admin__fields th,
-.wppa-admin__fields td {
+.wppa-admin__fields td,
+.wppa-admin__fields-new th,
+.wppa-admin__fields-new td,
+.wppa-admin__sections th,
+.wppa-admin__sections td,
+.wppa-admin__sections-new th,
+.wppa-admin__sections-new td {
 	padding: 4px 8px;
+}
+
+.wppa-admin__fields select,
+.wppa-admin__fields-new select,
+.wppa-admin__fields-new input[type="text"],
+.wppa-admin__sections input[type="text"] {
+	max-width: 100%;
 }

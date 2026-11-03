@@ -73,6 +73,7 @@ class WPPA_Notices {
 			'password_same'         => array( 'error', __( 'Новый пароль должен отличаться от текущего.', 'wp-personal-account' ) ),
 			'field_required'        => array( 'error', __( 'Заполните все обязательные поля.', 'wp-personal-account' ) ),
 			'field_too_long'        => array( 'error', __( 'Одно из полей слишком длинное — сократите до 190 символов.', 'wp-personal-account' ) ),
+			'field_invalid'         => array( 'error', __( 'Проверьте значение поля: формат не подходит.', 'wp-personal-account' ) ),
 			'phone_invalid'         => array( 'error', __( 'Укажите телефон в корректном формате, например +7 900 000-00-00.', 'wp-personal-account' ) ),
 			'birthdate_invalid'     => array( 'error', __( 'Укажите корректную дату рождения.', 'wp-personal-account' ) ),
 			'website_invalid'       => array( 'error', __( 'Укажите корректный адрес сайта, например https://example.com.', 'wp-personal-account' ) ),

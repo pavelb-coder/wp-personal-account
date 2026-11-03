@@ -46,8 +46,6 @@ function get_current_screen() { return (object) array( 'id' => 'toplevel_page_wp
 function get_edit_post_link( $id = 0, $context = 'display' ) { return 'https://example.com/wp-admin/post.php?post=' . $id . '&action=edit'; }
 function get_edit_user_link( $id = 0 ) { return 'https://example.com/wp-admin/user-edit.php?user_id=' . $id; }
 function submit_button( $text = '', $type = 'primary', $name = 'submit', $wrap = true, $other = null ) { echo '<button class="button">' . htmlspecialchars( $text ) . '</button>'; }
-function checked( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' checked="checked"' : ''; if ( $echo ) { echo $r; } return $r; }
-function selected( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' selected="selected"' : ''; if ( $echo ) { echo $r; } return $r; }
 function add_menu_page() {}
 function add_submenu_page() {}
 function register_setting() {}
