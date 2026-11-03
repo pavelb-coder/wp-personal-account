@@ -30,6 +30,7 @@ require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
@@ -635,6 +636,132 @@ unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CHANGE_HOOK ] );
 
 foreach ( $change_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'on change: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+
+// ---------- Баллы за тесты из плагина олимпиад ----------
+global $wpdb;
+
+$olympiad_checks = array();
+
+// 1. Плагина нет — вкладки и блока нет, запросов к базе нет.
+WPPA_Olympiad::flush();
+$wpdb->data = array();
+unset( $GLOBALS['wppa_test']['transients'] );
+
+$olympiad_checks['без плагина: не активен']   = false === WPPA_Olympiad::is_active();
+$olympiad_checks['без плагина: нет вкладки']  = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
+$olympiad_checks['без плагина: нет блока']    = ! array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
+$olympiad_checks['без плагина: результатов нет'] = array() === WPPA_Olympiad::results( 7 );
+
+// 2. Плагин есть: таблица найдена через SHOW TABLES.
+WPPA_Olympiad::flush();
+$wpdb->data  = array( 'var' => 'wp_olympiad_attempts' );
+$wpdb->queries = array();
+
+$olympiad_checks['плагин найден по таблице'] = true === WPPA_Olympiad::is_active();
+$olympiad_checks['проверка кэшируется']      = false !== strpos( implode( ' ', $wpdb->queries ), 'SHOW TABLES' );
+
+$wpdb->queries = array();
+WPPA_Olympiad::is_active();
+$olympiad_checks['повторный вызов без запроса'] = array() === $wpdb->queries;
+
+// 3. Итоги: баллы только по зачтённым работам.
+$wpdb->data = array(
+	'var'      => 'wp_olympiad_attempts',
+	'attempts' => array(
+		(object) array(
+			'id' => 1, 'quiz_id' => 10, 'score' => 8, 'max_score' => 10, 'percentage' => '80.00',
+			'status' => 'completed', 'submitted_at' => '2026-10-28 13:51:04', 'title' => 'Математика',
+		),
+		(object) array(
+			'id' => 2, 'quiz_id' => 11, 'score' => 15, 'max_score' => 20, 'percentage' => '75.00',
+			'status' => 'completed', 'submitted_at' => '2026-10-29 10:00:00', 'title' => 'Физика',
+		),
+		(object) array(
+			'id' => 3, 'quiz_id' => 12, 'score' => 0, 'max_score' => 5, 'percentage' => '0.00',
+			'status' => 'in_progress', 'submitted_at' => '', 'title' => 'Информатика',
+		),
+		(object) array(
+			'id' => 4, 'quiz_id' => 13, 'score' => 4, 'max_score' => 10, 'percentage' => '40.00',
+			'status' => 'needs_review', 'submitted_at' => '2026-10-30 09:00:00', 'title' => 'Химия',
+		),
+		(object) array(
+			'id' => 5, 'quiz_id' => 14, 'score' => 0, 'max_score' => 10, 'percentage' => '0.00',
+			'status' => 'expired', 'submitted_at' => '2026-10-30 10:00:00', 'title' => 'История',
+		),
+	),
+);
+
+$results = WPPA_Olympiad::results( 7 );
+$totals  = WPPA_Olympiad::totals( 7 );
+
+$olympiad_checks['результаты: все попытки']      = 5 === count( $results );
+$olympiad_checks['результаты: название теста']    = 'Математика' === $results[0]['title'];
+$olympiad_checks['результаты: статус переведён']  = 'Завершено' === $results[0]['status_label'];
+$olympiad_checks['итоги: зачтено работ']          = 3 === $totals['tests'];
+$olympiad_checks['итоги: сумма баллов']           = 27 === $totals['score'];
+$olympiad_checks['итоги: максимум']               = 40 === $totals['max_score'];
+$olympiad_checks['итоги: процент']                = 67.5 === $totals['percentage'];
+$olympiad_checks['итоги: лучший результат']       = 'Математика' === $totals['best']['title'];
+$olympiad_checks['итоги: на проверке']            = 1 === $totals['pending'];
+$olympiad_checks['незавершённые не в баллах']     = false === $results[2]['counted'] && false === $results[4]['counted'];
+
+$summary = WPPA_Olympiad::summary( 7 );
+$olympiad_checks['сводка одной строкой'] = 27 === $summary['score'] && 3 === $summary['tests'] && 67.5 === $summary['percentage'];
+
+$olympiad_checks['запрос по конкретному пользователю'] = false !== strpos( implode( ' ', $wpdb->queries ), 'user_id = 7' );
+
+// 4. Вкладка, блок и вывод в кабинете.
+$olympiad_checks['плагин есть: вкладка появилась'] = array_key_exists( 'olympiad', WPPA_Template::tabs() );
+$olympiad_checks['плагин есть: блок зарегистрирован'] = array_key_exists( 'olympiad-scores', WPPA_Builder::blocks() );
+$olympiad_checks['блок стоит в раскладке вкладки'] = in_array( 'olympiad-scores', array_column( WPPA_Builder::layout()['olympiad'], 'id' ), true );
+
+ob_start();
+WPPA_Template::render(
+	'tab-olympiad',
+	array(
+		'user' => new WP_User( 7 ),
+		'tabs' => WPPA_Template::tabs(),
+	)
+);
+$olympiad_html = ob_get_clean();
+
+$olympiad_checks['вывод: баллы в кабинете']  = false !== strpos( $olympiad_html, '27' ) && false !== strpos( $olympiad_html, 'баллов всего' );
+$olympiad_checks['вывод: список тестов']      = false !== strpos( $olympiad_html, 'Математика' ) && false !== strpos( $olympiad_html, '8 из 10' );
+$olympiad_checks['вывод: статус на проверке'] = false !== strpos( $olympiad_html, 'На проверке' );
+$olympiad_checks['вывод: процент']            = false !== strpos( $olympiad_html, '67.5%' );
+
+// 5. Настройка вкладки.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'olympiad_tab' => 0 ) ) );
+$olympiad_checks['выключение вкладки работает'] = ! array_key_exists( 'olympiad', WPPA_Template::tabs() );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'olympiad_tab' => 1 ) ) );
+$olympiad_checks['включение вкладки работает'] = array_key_exists( 'olympiad', WPPA_Template::tabs() );
+
+$olympiad_checks['настройки: поле вкладки есть'] = false !== strpos( $settings_html, 'wppa_settings[olympiad_tab]' );
+$olympiad_checks['sanitize: флаг сохраняется']    = 0 === WPPA_Settings::sanitize( array() )['olympiad_tab'];
+$olympiad_checks['по умолчанию вкладка включена'] = 1 === WPPA_Plugin::defaults()['olympiad_tab'];
+
+// 6. Ручной фильтр наличия плагина.
+WPPA_Olympiad::flush();
+$wpdb->data = array();
+add_filter( 'wppa_olympiad_active', static function () {
+	return true;
+} );
+
+WPPA_Olympiad::flush();
+$olympiad_checks['фильтр включает интеграцию'] = true === WPPA_Olympiad::is_active();
+
+WPPA_Olympiad::flush();
+$wpdb->data = array();
+$wpdb->queries = array();
+
+foreach ( $olympiad_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'olympiad: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

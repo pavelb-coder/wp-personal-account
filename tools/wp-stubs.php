@@ -578,3 +578,56 @@ function wp_tempnam( $filename = '', $dir = '' ) {
 	$tmp = rtrim( $dir, '/\\' ) . DIRECTORY_SEPARATOR . uniqid( 'wppa-', true ) . '-' . preg_replace( '/[^A-Za-z0-9._-]/', '', (string) $filename );
 	return touch( $tmp ) ? $tmp : false;
 }
+
+/**
+ * Минимальная замена $wpdb для тестов: возвращает подготовленные строки.
+ */
+class WPPA_Test_WPDB {
+
+	public $prefix = 'wp_';
+
+	public $data = array();
+
+	public $queries = array();
+
+	public function prepare( $query, ...$args ) {
+		if ( 1 === count( $args ) && is_array( $args[0] ) ) {
+			$args = $args[0];
+		}
+
+		foreach ( $args as $arg ) {
+			$replacement = is_int( $arg ) || is_float( $arg ) ? (string) $arg : "'" . $arg . "'";
+			$query       = preg_replace( '/%[sdf]/', str_replace( '$', '\$', $replacement ), $query, 1 );
+		}
+
+		return $query;
+	}
+
+	public function get_results( $query, $output = null ) {
+		$this->queries[] = $query;
+
+		if ( false !== strpos( $query, 'olympiad_attempts' ) ) {
+			return isset( $this->data['attempts'] ) ? $this->data['attempts'] : array();
+		}
+
+		return array();
+	}
+
+	public function get_var( $query = null ) {
+		$this->queries[] = $query;
+
+		return isset( $this->data['var'] ) ? $this->data['var'] : null;
+	}
+
+	public function get_row( $query = null ) {
+		$this->queries[] = $query;
+
+		return isset( $this->data['row'] ) ? $this->data['row'] : null;
+	}
+
+	public function esc_like( $text ) {
+		return $text;
+	}
+}
+
+$GLOBALS['wpdb'] = new WPPA_Test_WPDB();

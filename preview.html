@@ -1130,6 +1130,98 @@
 	margin-top: 10px;
 }
 
+/* Баллы за тесты (интеграция с плагином олимпиад) */
+.wppa-scores__totals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0 0 14px;
+}
+
+.wppa-scores__metric {
+	flex: 1 1 120px;
+	padding: 12px 14px;
+	border: 1px solid var(--wppa-border, #e2e8f0);
+	border-radius: 10px;
+	background: var(--wppa-surface, #f8fafc);
+	text-align: center;
+}
+
+.wppa-scores__value {
+	display: block;
+	font-size: 1.6em;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--wppa-accent, #2563eb);
+}
+
+.wppa-scores__label {
+	display: block;
+	margin: 4px 0 0;
+	font-size: .85em;
+	color: var(--wppa-muted, #64748b);
+}
+
+.wppa-scores__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: .95em;
+}
+
+.wppa-scores__table th,
+.wppa-scores__table td {
+	padding: 8px 10px;
+	text-align: left;
+	border-bottom: 1px solid var(--wppa-border, #e2e8f0);
+	vertical-align: top;
+}
+
+.wppa-scores__table th {
+	font-weight: 600;
+	color: var(--wppa-muted, #64748b);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+}
+
+.wppa-scores__status {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: .85em;
+	white-space: nowrap;
+}
+
+.wppa-scores__status--ok {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.wppa-scores__status--muted {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+@media (max-width: 600px) {
+	.wppa-scores__table thead {
+		display: none;
+	}
+
+	.wppa-scores__table tr {
+		display: block;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--wppa-border, #e2e8f0);
+	}
+
+	.wppa-scores__table td {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 4px 0;
+		border: 0;
+	}
+}
+
 body {
 	margin: 0;
 	padding: 32px 20px 64px;
@@ -1195,6 +1287,11 @@ body {
 				href="https://example.com/?wppa_tab=security"
 							>
 				Безопасность			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=olympiad"
+							>
+				Олимпиады			</a>
 			</nav>
 
 	<div class="wppa-body">
@@ -1776,6 +1873,89 @@ body {
 		</form>
 	</section>
 
+</section><section class="demo-block"><div class="demo-block__head"><h2>Олимпиады (баллы за тесты)</h2><p>Вкладка появляется, когда установлен плагин олимпиад: баллы за завершённые работы, средний результат и статусы проверки</p></div><section class="wppa-card wppa-scores">
+	<h3 class="wppa-subtitle">Баллы за тесты</h3>
+
+			<div class="wppa-scores__totals">
+			<div class="wppa-scores__metric">
+				<span class="wppa-scores__value">27</span>
+				<span class="wppa-scores__label">баллов всего</span>
+			</div>
+			<div class="wppa-scores__metric">
+				<span class="wppa-scores__value">3</span>
+				<span class="wppa-scores__label">работ зачтено</span>
+			</div>
+			<div class="wppa-scores__metric">
+				<span class="wppa-scores__value">67.5%</span>
+				<span class="wppa-scores__label">средний результат</span>
+			</div>
+		</div>
+
+					<p class="wppa-muted">
+				На проверке: 1 работа.			</p>
+		
+		<table class="wppa-scores__table">
+			<thead>
+				<tr>
+					<th>Тест</th>
+					<th>Баллы</th>
+					<th>Результат</th>
+					<th>Статус</th>
+					<th>Дата</th>
+				</tr>
+			</thead>
+			<tbody>
+									<tr>
+						<td>Математика</td>
+						<td>
+							8 из 10						</td>
+						<td>80%</td>
+						<td>
+							<span class="wppa-scores__status wppa-scores__status--ok">
+								Завершено							</span>
+						</td>
+						<td>
+							28.10.2026 13:51						</td>
+					</tr>
+									<tr>
+						<td>Физика</td>
+						<td>
+							15 из 20						</td>
+						<td>75%</td>
+						<td>
+							<span class="wppa-scores__status wppa-scores__status--ok">
+								Завершено							</span>
+						</td>
+						<td>
+							29.10.2026 10:00						</td>
+					</tr>
+									<tr>
+						<td>Химия</td>
+						<td>
+							4 из 10						</td>
+						<td>40%</td>
+						<td>
+							<span class="wppa-scores__status wppa-scores__status--ok">
+								На проверке							</span>
+						</td>
+						<td>
+							30.10.2026 09:00						</td>
+					</tr>
+									<tr>
+						<td>История</td>
+						<td>
+							0 из 10						</td>
+						<td>0%</td>
+						<td>
+							<span class="wppa-scores__status wppa-scores__status--muted">
+								Время вышло							</span>
+						</td>
+						<td>
+							30.10.2026 10:00						</td>
+					</tr>
+							</tbody>
+		</table>
+	</section>
 </section><section class="demo-block"><div class="demo-block__head"><h2>Безопасность</h2><p>Вкладка security: смена пароля, смена email с подтверждением, выход</p></div><section class="wppa-card">
 	<h3 class="wppa-subtitle">Смена пароля</h3>
 
@@ -2367,16 +2547,16 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Откроется 03.11.2026 14:52.		</p>
+			Откроется 03.11.2026 14:57.		</p>
 	
 			<p class="wppa-link-block__timer">
 			<span class="wppa-link-block__timer-label">
 				До открытия:			</span>
 			<span
 				class="wppa-countdown"
-				data-wppa-countdown="1793717520"
+				data-wppa-countdown="1793717820"
 				data-wppa-countdown-mode="open"
-				data-wppa-reload="1"			>01:59:32</span>
+				data-wppa-reload="1"			>01:59:17</span>
 		</p>
 	
 	</section>
@@ -2391,7 +2571,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Срок доступа истёк 03.11.2026 11:52.		</p>
+			Срок доступа истёк 03.11.2026 11:57.		</p>
 	
 	
 	</section>
@@ -2399,11 +2579,11 @@ body {
 	<h2 class="wppa-title">Регистрация</h2>
 
 	<div class="wppa-notice wppa-notice--info" role="status">
-	Форма регистрации откроется 03.11.2026 14:52.</div>
+	Форма регистрации откроется 03.11.2026 14:57.</div>
 
 			<p class="wppa-countdown-row">
 			<span class="wppa-countdown-row__label">До открытия:</span>
-			<span class="wppa-countdown" data-wppa-countdown="1793717520" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:32</span>		</p>
+			<span class="wppa-countdown" data-wppa-countdown="1793717820" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:17</span>		</p>
 	
 	<p class="wppa-hint">Регистрация ограничена по времени: форма появится здесь автоматически, когда откроется.</p>
 </div>
@@ -2442,7 +2622,7 @@ body {
 					Регистрация				</span>
 					</div>
 					<p class="wppa-hint wppa-hint--block">
-				Регистрация откроется 03.11.2026 14:52.									<span class="wppa-countdown" data-wppa-countdown="1793717520" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:32</span>							</p>
+				Регистрация откроется 03.11.2026 14:57.									<span class="wppa-countdown" data-wppa-countdown="1793717820" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:17</span>							</p>
 			</div>
 <div style="margin-top:18px"></div></div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Восстановление пароля</h2><p>Свои формы вместо служебной страницы WordPress: заявка по логину или email и установка нового пароля по ссылке из письма</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
 	<h2 class="wppa-title">Восстановление пароля</h2>

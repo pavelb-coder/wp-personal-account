@@ -74,6 +74,7 @@ class WPPA_Settings {
 
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
 		$out['hide_admin_bar']       = empty( $input['hide_admin_bar'] ) ? 0 : 1;
+		$out['olympiad_tab']         = empty( $input['olympiad_tab'] ) ? 0 : 1;
 		$out['registration_start']   = isset( $input['registration_start'] ) ? WPPA_Time::sanitize_datetime( $input['registration_start'] ) : '';
 		$out['registration_end']     = isset( $input['registration_end'] ) ? WPPA_Time::sanitize_datetime( $input['registration_end'] ) : '';
 		$out['delete_data_on_uninstall'] = empty( $input['delete_data_on_uninstall'] ) ? 0 : 1;
@@ -342,11 +343,25 @@ class WPPA_Settings {
 						<th scope="row"><?php esc_html_e( 'Отображать', 'wp-personal-account' ); ?></th>
 						<td>
 							<?php foreach ( WPPA_Template::all_tabs() as $slug => $label ) : ?>
+								<?php if ( 'olympiad' === $slug ) : ?>
+									<?php continue; ?>
+								<?php endif; ?>
 								<label style="display:block;margin-bottom:6px;">
 									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, (array) $s['enabled_tabs'], true ) ); ?> />
 									<?php echo esc_html( $label ); ?>
 								</label>
 							<?php endforeach; ?>
+							<label style="display:block;margin-top:10px;">
+								<input type="checkbox" name="wppa_settings[olympiad_tab]" value="1" <?php checked( $s['olympiad_tab'], 1 ); ?> />
+								<?php esc_html_e( 'Олимпиады', 'wp-personal-account' ); ?>
+							</label>
+							<p class="description">
+								<?php
+								echo WPPA_Olympiad::is_active()
+									? esc_html__( 'Плагин олимпиад найден: вкладка показывает баллы пользователя за тесты.', 'wp-personal-account' )
+									: esc_html__( 'Плагин олимпиад не найден — вкладка не выводится.', 'wp-personal-account' );
+								?>
+							</p>
 						</td>
 					</tr>
 				</table>

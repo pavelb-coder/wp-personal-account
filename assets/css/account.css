@@ -1122,3 +1122,95 @@
 .wppa-register-locked .wppa-hint {
 	margin-top: 10px;
 }
+
+/* Баллы за тесты (интеграция с плагином олимпиад) */
+.wppa-scores__totals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0 0 14px;
+}
+
+.wppa-scores__metric {
+	flex: 1 1 120px;
+	padding: 12px 14px;
+	border: 1px solid var(--wppa-border, #e2e8f0);
+	border-radius: 10px;
+	background: var(--wppa-surface, #f8fafc);
+	text-align: center;
+}
+
+.wppa-scores__value {
+	display: block;
+	font-size: 1.6em;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--wppa-accent, #2563eb);
+}
+
+.wppa-scores__label {
+	display: block;
+	margin: 4px 0 0;
+	font-size: .85em;
+	color: var(--wppa-muted, #64748b);
+}
+
+.wppa-scores__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: .95em;
+}
+
+.wppa-scores__table th,
+.wppa-scores__table td {
+	padding: 8px 10px;
+	text-align: left;
+	border-bottom: 1px solid var(--wppa-border, #e2e8f0);
+	vertical-align: top;
+}
+
+.wppa-scores__table th {
+	font-weight: 600;
+	color: var(--wppa-muted, #64748b);
+	font-size: .85em;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+}
+
+.wppa-scores__status {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: .85em;
+	white-space: nowrap;
+}
+
+.wppa-scores__status--ok {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.wppa-scores__status--muted {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+@media (max-width: 600px) {
+	.wppa-scores__table thead {
+		display: none;
+	}
+
+	.wppa-scores__table tr {
+		display: block;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--wppa-border, #e2e8f0);
+	}
+
+	.wppa-scores__table td {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 4px 0;
+		border: 0;
+	}
+}

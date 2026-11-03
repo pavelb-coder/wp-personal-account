@@ -23,6 +23,7 @@ require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-template.php';
@@ -82,6 +83,23 @@ update_option(
 	)
 );
 
+// Демонстрация интеграции с плагином олимпиад: поддельные строки попыток.
+global $wpdb;
+
+if ( $wpdb instanceof WPPA_Test_WPDB ) {
+	$wpdb->data = array(
+		'var'      => $wpdb->prefix . 'olympiad_attempts',
+		'attempts' => array(
+			(object) array( 'id' => 1, 'quiz_id' => 10, 'score' => 8, 'max_score' => 10, 'percentage' => '80.00', 'status' => 'completed', 'submitted_at' => '2026-10-28 13:51:04', 'title' => 'Математика' ),
+			(object) array( 'id' => 2, 'quiz_id' => 11, 'score' => 15, 'max_score' => 20, 'percentage' => '75.00', 'status' => 'completed', 'submitted_at' => '2026-10-29 10:00:00', 'title' => 'Физика' ),
+			(object) array( 'id' => 3, 'quiz_id' => 13, 'score' => 4, 'max_score' => 10, 'percentage' => '40.00', 'status' => 'needs_review', 'submitted_at' => '2026-10-30 09:00:00', 'title' => 'Химия' ),
+			(object) array( 'id' => 4, 'quiz_id' => 14, 'score' => 0, 'max_score' => 10, 'percentage' => '0.00', 'status' => 'expired', 'submitted_at' => '2026-10-30 10:00:00', 'title' => 'История' ),
+		),
+	);
+
+	WPPA_Olympiad::flush();
+}
+
 $sections  = demo_section(
 	'Кабинет целиком (активна вкладка «Обзор»)',
 	'Шапка с аватаром и кнопкой выхода, навигация по вкладкам, контент активной вкладки',
@@ -127,6 +145,12 @@ $sections .= demo_section(
 $GLOBALS['wppa_test']['meta'] = $wppa_mentor_snapshot;
 
 $sections .= demo_section(
+	'Олимпиады (баллы за тесты)',
+	'Вкладка появляется, когда установлен плагин олимпиад: баллы за завершённые работы, средний результат и статусы проверки',
+	WPPA_Template::get( 'tab-olympiad', array( 'user' => $user, 'tabs' => $tabs ) )
+);
+
+$sections .= demo_section(
 	'Безопасность',
 	'Вкладка security: смена пароля, смена email с подтверждением, выход',
 	WPPA_Template::get( 'tab-security', array( 'user' => $user, 'tabs' => $tabs ) )
@@ -134,6 +158,7 @@ $sections .= demo_section(
 
 // Виджет для главной страницы.
 $GLOBALS['wppa_test']['logged_in'] = false;
+
 ob_start();
 $demo_widget = new WPPA_Auth_Widget();
 $demo_widget->widget(

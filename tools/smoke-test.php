@@ -21,6 +21,7 @@ require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-account.php';
