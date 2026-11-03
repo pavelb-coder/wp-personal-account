@@ -40,6 +40,37 @@ $wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 	<?php endif; ?>
 </div>
 
+<?php
+$wppa_personals = array();
+
+foreach ( WPPA_Fields::meta_fields() as $wppa_field_id => $wppa_field ) {
+	$wppa_value = WPPA_Fields::get( $user->ID, $wppa_field_id );
+
+	if ( '' === $wppa_value ) {
+		continue;
+	}
+
+	$wppa_personals[ $wppa_field['label'] ] = $wppa_value;
+}
+?>
+
+<?php if ( $wppa_personals ) : ?>
+	<div class="wppa-card wppa-card--personals">
+		<span class="wppa-card__label"><?php esc_html_e( 'Личные данные', 'wp-personal-account' ); ?></span>
+		<dl class="wppa-dl">
+			<?php foreach ( $wppa_personals as $wppa_label => $wppa_value ) : ?>
+				<div class="wppa-dl__row">
+					<dt><?php echo esc_html( $wppa_label ); ?></dt>
+					<dd><?php echo esc_html( $wppa_value ); ?></dd>
+				</div>
+			<?php endforeach; ?>
+		</dl>
+		<?php if ( isset( $tabs['profile'] ) ) : ?>
+			<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'profile' ) ); ?>"><?php esc_html_e( 'Редактировать данные', 'wp-personal-account' ); ?></a>
+		<?php endif; ?>
+	</div>
+<?php endif; ?>
+
 <?php if ( $wppa_pending ) : ?>
 	<div class="wppa-notice wppa-notice--info">
 		<?php

@@ -89,6 +89,23 @@ class WPPA_Settings {
 
 		$out['custom_css']     = isset( $input['custom_css'] ) ? wp_strip_all_tags( (string) $input['custom_css'] ) : '';
 
+		// Поля персональных данных: показывать / обязательно.
+		$fields_saved = isset( $input['fields'] ) && is_array( $input['fields'] ) ? $input['fields'] : array();
+		$fields_out   = array();
+
+		foreach ( array_keys( WPPA_Fields::all() ) as $field_id ) {
+			$row      = isset( $fields_saved[ $field_id ] ) && is_array( $fields_saved[ $field_id ] ) ? $fields_saved[ $field_id ] : array();
+			$enabled  = empty( $row['enabled'] ) ? 0 : 1;
+			$required = $enabled && ! empty( $row['required'] ) ? 1 : 0;
+
+			$fields_out[ $field_id ] = array(
+				'enabled'  => $enabled,
+				'required' => $required,
+			);
+		}
+
+		$out['fields'] = $fields_out;
+
 		return wp_parse_args( $out, $defaults );
 	}
 
@@ -179,6 +196,48 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="2" max="100" id="wppa-max-team" name="wppa_settings[max_team_members]" value="<?php echo esc_attr( (int) $s['max_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Включая капитана. Сама вкладка «Команда» управляется в блоке «Вкладки кабинета».', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Персональные данные', 'wp-personal-account' ); ?></th>
+						<td>
+							<fieldset>
+								<legend class="screen-reader-text"><?php esc_html_e( 'Поля регистрации и профиля', 'wp-personal-account' ); ?></legend>
+								<table class="widefat striped wppa-admin__fields">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Поле', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Показывать', 'wp-personal-account' ); ?></th>
+											<th><?php esc_html_e( 'Обязательное', 'wp-personal-account' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( WPPA_Fields::schema() as $wppa_field ) : ?>
+											<tr>
+												<td><?php echo esc_html( $wppa_field['label'] ); ?></td>
+												<td>
+													<input
+														type="checkbox"
+														id="wppa-field-<?php echo esc_attr( $wppa_field['id'] ); ?>"
+														name="wppa_settings[fields][<?php echo esc_attr( $wppa_field['id'] ); ?>][enabled]"
+														value="1"
+														<?php checked( $wppa_field['enabled'], 1 ); ?>
+													/>
+												</td>
+												<td>
+													<input
+														type="checkbox"
+														name="wppa_settings[fields][<?php echo esc_attr( $wppa_field['id'] ); ?>][required]"
+														value="1"
+														<?php checked( $wppa_field['required'], 1 ); ?>
+													/>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+								<p class="description"><?php esc_html_e( 'Эти поля выводятся в форме регистрации и в профиле. Снятая галочка «Обязательное» делает поле необязательным; поле, исключённое из показа, скрывается везде и его значения не выводятся.', 'wp-personal-account' ); ?></p>
+							</fieldset>
 						</td>
 					</tr>
 					<tr>

@@ -695,18 +695,22 @@ class WPPA_Admin {
 		// BOM, чтобы Excel корректно открыл UTF-8.
 		fwrite( $output, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
 
-		fputcsv(
-			$output,
-			array(
-				__( 'ID', 'wp-personal-account' ),
-				__( 'Логин', 'wp-personal-account' ),
-				__( 'Email', 'wp-personal-account' ),
-				__( 'Имя', 'wp-personal-account' ),
-				__( 'Роль', 'wp-personal-account' ),
-				__( 'Регистрация', 'wp-personal-account' ),
-				__( 'Команда', 'wp-personal-account' ),
-			)
+		$columns = array(
+			__( 'ID', 'wp-personal-account' ),
+			__( 'Логин', 'wp-personal-account' ),
+			__( 'Email', 'wp-personal-account' ),
+			__( 'Имя', 'wp-personal-account' ),
+			__( 'Фамилия', 'wp-personal-account' ),
+			__( 'Роль', 'wp-personal-account' ),
+			__( 'Регистрация', 'wp-personal-account' ),
+			__( 'Команда', 'wp-personal-account' ),
 		);
+
+		foreach ( WPPA_Fields::meta_fields() as $field ) {
+			$columns[] = $field['label'];
+		}
+
+		fputcsv( $output, $columns );
 
 		$users = get_users(
 			array(
@@ -717,18 +721,22 @@ class WPPA_Admin {
 		);
 
 		foreach ( $users as $user ) {
-			fputcsv(
-				$output,
-				array(
-					$user->ID,
-					$user->user_login,
-					$user->user_email,
-					$user->display_name,
-					implode( ', ', (array) $user->roles ),
-					$user->user_registered,
-					WPPA_Teams::team_id( $user->ID ) ? get_the_title( WPPA_Teams::team_id( $user->ID ) ) : '',
-				)
+			$row = array(
+				$user->ID,
+				$user->user_login,
+				$user->user_email,
+				$user->display_name,
+				$user->last_name,
+				implode( ', ', (array) $user->roles ),
+				$user->user_registered,
+				WPPA_Teams::team_id( $user->ID ) ? get_the_title( WPPA_Teams::team_id( $user->ID ) ) : '',
 			);
+
+			foreach ( array_keys( WPPA_Fields::meta_fields() ) as $field_id ) {
+				$row[] = WPPA_Fields::get( $user->ID, $field_id );
+			}
+
+			fputcsv( $output, $row );
 		}
 
 		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose

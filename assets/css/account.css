@@ -292,6 +292,15 @@
 	margin-top: 3px;
 }
 
+.wppa-field--wide {
+	grid-column: 1 / -1;
+}
+
+.wppa-field--wide textarea {
+	width: 100%;
+	resize: vertical;
+}
+
 .wppa-row {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -806,4 +815,44 @@
 
 .wppa-widget__panel.is-hidden {
 	display: none;
+}
+
+/* Дополнительные персональные данные */
+.wppa-req {
+	color: var(--wppa-accent, #2563eb);
+	font-weight: 600;
+}
+
+.wppa-hint--block {
+	display: block;
+	margin: 0 0 1rem;
+}
+
+.wppa-card--personals {
+	grid-column: 1 / -1;
+}
+
+.wppa-dl {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: .5rem 1.5rem;
+	margin: .5rem 0 .75rem;
+}
+
+.wppa-dl__row {
+	display: flex;
+	flex-direction: column;
+	gap: .15rem;
+}
+
+.wppa-dl dt {
+	color: var(--wppa-muted, #6b7280);
+	font-size: .8125rem;
+	margin: 0;
+}
+
+.wppa-dl dd {
+	margin: 0;
+	font-weight: 500;
+	word-break: break-word;
 }

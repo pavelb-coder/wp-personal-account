@@ -15,6 +15,7 @@ define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
+require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
@@ -188,6 +189,77 @@ foreach ( $checks as $check_name => $ok ) {
 delete_option( WPPA_Builder::OPTION );
 
 // Виджет входа и регистрации.
+// ---------- Дополнительные персональные данные ----------
+$fields_schema  = WPPA_Fields::schema();
+$fields_checks  = array(
+	'реестр полей содержит телефон'      => isset( $fields_schema['phone'] ),
+	'по умолчанию телефон включён'       => WPPA_Fields::is_enabled( 'phone' ),
+	'имя обязательно по умолчанию'       => WPPA_Fields::is_required( 'first_name' ),
+	'отчество по умолчанию скрыто'       => ! WPPA_Fields::is_enabled( 'patronymic' ),
+);
+
+// Санитизация.
+$fields_checks['телефон очищается'] = '+7 (913) 555-21-08' === WPPA_Fields::sanitize_value( 'phone', '+7 (913) 555-21-08; DROP' );
+$fields_checks['дата рождения только в формате Y-m-d'] = '' === WPPA_Fields::sanitize_value( 'birthdate', '12.04.1990' ) && '1990-04-12' === WPPA_Fields::sanitize_value( 'birthdate', '1990-04-12' );
+
+// Валидация.
+$fields_checks['обязательное имя проверяется'] = 'field_required' === WPPA_Fields::validate( array( 'first_name' => '' ), 'register' );
+$fields_checks['короткий телефон отклоняется'] = 'phone_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'phone' => '+7 12' ), 'register' );
+$fields_checks['корректный телефон принимается'] = '' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'phone' => '+7 913 555-21-08' ), 'register' );
+// Включаем дату рождения и сайт, чтобы проверить их валидацию.
+$fields_backup = get_option( 'wppa_settings', array() );
+update_option(
+	'wppa_settings',
+	array_merge(
+		$fields_backup,
+		array(
+			'fields' => array(
+				'first_name' => array( 'enabled' => 1, 'required' => 1 ),
+				'birthdate'  => array( 'enabled' => 1, 'required' => 0 ),
+				'website'    => array( 'enabled' => 1, 'required' => 0 ),
+			),
+		)
+	)
+);
+
+$fields_checks['будущая дата рождения отклоняется'] = 'birthdate_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'birthdate' => gmdate( 'Y-m-d', time() + 86400 * 5 ) ), 'register' );
+$fields_checks['сайт без протокола отклоняется']    = 'website_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'website' => 'example.com' ), 'register' );
+$fields_checks['корректный сайт принимается']       = '' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'website' => 'https://example.com' ), 'register' );
+
+update_option( 'wppa_settings', $fields_backup );
+
+// Сохранение мета-полей.
+WPPA_Fields::save_meta( 21, array( 'phone' => '+7 913 555-21-08', 'city' => 'Красноярск', 'company' => '' ) );
+$fields_checks['телефон сохранён в мета'] = '+7 913 555-21-08' === WPPA_Fields::get( 21, 'phone' );
+$fields_checks['пустое значение не пишется'] = '' === WPPA_Fields::get( 21, 'company' );
+
+// Форма регистрации содержит поля.
+$GLOBALS['wppa_test']['logged_in'] = false;
+ob_start();
+WPPA_Template::render( 'register' );
+$register_html = ob_get_clean();
+$GLOBALS['wppa_test']['logged_in'] = true;
+
+$fields_checks['форма регистрации: имя из реестра']     = false !== strpos( $register_html, 'name="wppa_fields[first_name]"' );
+$fields_checks['форма регистрации: телефон']            = false !== strpos( $register_html, 'name="wppa_fields[phone]"' );
+$fields_checks['форма регистрации: организация']        = false !== strpos( $register_html, 'name="wppa_fields[company]"' );
+$fields_checks['форма регистрации: обязательность']     = false !== strpos( $register_html, 'required' );
+$fields_checks['форма регистрации: без отчества']       = false === strpos( $register_html, 'wppa_fields[patronymic]' );
+
+// Профиль: нативные «Имя»/«Фамилия» не дублируются, мета-поля выводятся.
+ob_start();
+WPPA_Fields::render( 'profile', 21 );
+$profile_fields_html = ob_get_clean();
+$fields_checks['профиль: без дубля имени']    = false === strpos( $profile_fields_html, 'wppa_fields[first_name]' );
+$fields_checks['профиль: телефон с значением'] = false !== strpos( $profile_fields_html, 'value="+7 913 555-21-08"' );
+
+foreach ( $fields_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'fields: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 WPPA_Auth_Widget::register();
 echo 'widget: зарегистрирован ' . implode( ', ', (array) ( $GLOBALS['wppa_test']['widgets'] ?? array() ) ) . "\n";
 

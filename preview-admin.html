@@ -396,6 +396,28 @@
 	width: 64px;
 }
 
+.wppa-team-limits {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.wppa-admin__field {
+	display: inline-block;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.wppa-admin__fields td {
+	vertical-align: middle;
+}
+
+.wppa-admin__fields th,
+.wppa-admin__fields td {
+	padding: 4px 8px;
+}
+
 /* Минимальные стили WordPress admin для автономного превью. */
 body {
 	margin: 0;
@@ -718,6 +740,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 				<tr>
 					<th>Пользователь</th>
 					<th>Email</th>
+					<th>Персональные данные</th>
 					<th>Роль</th>
 					<th>Регистрация</th>
 					<th>Команда</th>
@@ -732,6 +755,9 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<span class="wppa-admin__muted">(ivan)</span>
 						</td>
 						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+						<td>
+																						<span class="wppa-admin__field">Иван Петров</span>
+																				</td>
 						<td>Подписчик</td>
 						<td>10.01.2025</td>
 						<td>
@@ -750,6 +776,9 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<span class="wppa-admin__muted">(ivan)</span>
 						</td>
 						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+						<td>
+																						<span class="wppa-admin__field">Иван Петров</span>
+																				</td>
 						<td>Подписчик</td>
 						<td>10.01.2025</td>
 						<td>

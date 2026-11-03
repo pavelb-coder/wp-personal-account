@@ -39,6 +39,19 @@ class WPPA_Profile {
 		$display_name = isset( $_POST['display_name'] ) ? sanitize_text_field( wp_unslash( $_POST['display_name'] ) ) : '';
 		$description  = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
 
+		// Дополнительные персональные данные (кроме нативных полей формы профиля).
+		$fields = array();
+
+		foreach ( WPPA_Fields::values_from_request( $_POST ) as $field_id => $field_value ) {
+			$fields[ $field_id ] = WPPA_Fields::sanitize_value( $field_id, $field_value );
+		}
+
+		$field_error = WPPA_Fields::validate( $fields, 'profile' );
+
+		if ( '' !== $field_error ) {
+			WPPA_Notices::redirect( $field_error, $tab_url );
+		}
+
 		if ( '' === $display_name ) {
 			$display_name = trim( $first_name . ' ' . $last_name );
 		}
@@ -60,6 +73,8 @@ class WPPA_Profile {
 		if ( is_wp_error( $result ) ) {
 			WPPA_Notices::redirect( 'save_failed', $tab_url );
 		}
+
+		WPPA_Fields::save_meta( $user->ID, $fields );
 
 		WPPA_Notices::redirect( 'profile_saved', $tab_url );
 	}

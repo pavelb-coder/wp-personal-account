@@ -22,6 +22,15 @@ $wppa_meta_keys = array(
 	'_wppa_pending_email',
 	'_wppa_email_token',
 	'_wppa_email_token_expires',
+	'_wppa_consent_time',
+	'_wppa_patronymic',
+	'_wppa_phone',
+	'_wppa_birthdate',
+	'_wppa_city',
+	'_wppa_company',
+	'_wppa_position',
+	'_wppa_website',
+	'_wppa_telegram',
 );
 
 foreach ( $wppa_meta_keys as $wppa_meta_key ) {

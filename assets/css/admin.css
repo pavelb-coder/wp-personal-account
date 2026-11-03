@@ -388,3 +388,25 @@
 .wppa-team-limits .small-text {
 	width: 64px;
 }
+
+.wppa-team-limits {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.wppa-admin__field {
+	display: inline-block;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.wppa-admin__fields td {
+	vertical-align: middle;
+}
+
+.wppa-admin__fields th,
+.wppa-admin__fields td {
+	padding: 4px 8px;
+}

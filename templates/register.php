@@ -18,10 +18,7 @@ $wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистра�
 		<?php wp_nonce_field( 'wppa_register', 'wppa_nonce' ); ?>
 		<input type="hidden" name="wppa_action" value="register" />
 
-		<p class="wppa-field">
-			<label for="wppa-name"><?php esc_html_e( 'Имя', 'wp-personal-account' ); ?></label>
-			<input type="text" id="wppa-name" name="display_name" autocomplete="name" required />
-		</p>
+		<?php WPPA_Fields::render( 'register' ); ?>
 
 		<p class="wppa-field">
 			<label for="wppa-email"><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></label>
@@ -47,6 +44,10 @@ $wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистра�
 				<input type="checkbox" name="consent" value="1" required />
 				<?php esc_html_e( 'Согласен на обработку персональных данных', 'wp-personal-account' ); ?>
 			</label>
+		</p>
+
+		<p class="wppa-hint wppa-hint--block">
+			<?php esc_html_e( 'Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.', 'wp-personal-account' ); ?>
 		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Создать аккаунт', 'wp-personal-account' ); ?></button>

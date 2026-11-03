@@ -39,6 +39,8 @@ defined( 'ABSPATH' ) || exit;
 		<textarea id="wppa-description" name="description" rows="4"><?php echo esc_textarea( $user->description ); ?></textarea>
 	</p>
 
+	<?php WPPA_Fields::render( 'profile', $user->ID ); ?>
+
 	<p class="wppa-field">
 		<label><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></label>
 		<input type="email" value="<?php echo esc_attr( $user->user_email ); ?>" readonly />

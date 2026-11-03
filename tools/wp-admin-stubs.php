@@ -52,6 +52,13 @@ function selected( $a, $b = true, $echo = true ) { $r = (string) $a === (string)
 function add_menu_page() {}
 function add_submenu_page() {}
 function register_setting() {}
+
+function get_pages( $args = array() ) {
+	return array(
+		(object) array( 'ID' => 3, 'post_title' => 'Личный кабинет' ),
+		(object) array( 'ID' => 4, 'post_title' => 'Контакты' ),
+	);
+}
 function settings_fields( $group ) { echo '<input type="hidden" name="option_page" value="' . htmlspecialchars( $group ) . '" />'; }
 function wp_die( $message = '' ) { throw new RuntimeException( 'wp_die: ' . $message ); }
 function wp_get_referer() { return ''; }

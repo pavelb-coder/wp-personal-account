@@ -17,6 +17,7 @@ define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
 
 require $base . 'includes/class-wppa-plugin.php';
+require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
@@ -31,6 +32,15 @@ $GLOBALS['wppa_test']['users'] = array(
 	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
 	9 => array( 'Пётр Сидоров', 'email' => 'petr@example.com' ),
 );
+
+// Демо-персональные данные пользователя.
+update_user_meta( 7, '_wppa_phone', '+7 913 555-21-08' );
+update_user_meta( 7, '_wppa_city', 'Красноярск' );
+update_user_meta( 7, '_wppa_company', 'ООО «Вектор»' );
+update_user_meta( 7, '_wppa_position', 'Руководитель проектов' );
+update_user_meta( 7, '_wppa_patronymic', 'Сергеевич' );
+update_user_meta( 7, '_wppa_birthdate', '1990-04-12' );
+update_user_meta( 7, '_wppa_telegram', '@ivan_petrov' );
 
 $user = new WP_User();
 $tabs = WPPA_Template::all_tabs();

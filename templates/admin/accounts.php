@@ -60,6 +60,7 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 				<tr>
 					<th><?php esc_html_e( 'Пользователь', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></th>
+					<th><?php esc_html_e( 'Персональные данные', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Регистрация', 'wp-personal-account' ); ?></th>
 					<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
@@ -77,6 +78,30 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 							<span class="wppa-admin__muted">(<?php echo esc_html( $wppa_user->user_login ); ?>)</span>
 						</td>
 						<td><a href="mailto:<?php echo esc_attr( $wppa_user->user_email ); ?>"><?php echo esc_html( $wppa_user->user_email ); ?></a></td>
+						<td>
+							<?php
+							$wppa_personals = array();
+
+							foreach ( WPPA_Fields::meta_fields() as $wppa_field_id => $wppa_field ) {
+								$wppa_value = WPPA_Fields::get( $wppa_user->ID, $wppa_field_id );
+
+								if ( '' === $wppa_value ) {
+									continue;
+								}
+
+								$wppa_personals[] = '<span class="wppa-admin__field"><span class="wppa-admin__muted">'
+									. esc_html( $wppa_field['label'] ) . ':</span> ' . esc_html( $wppa_value ) . '</span>';
+							}
+
+							if ( ! $wppa_user->first_name && ! $wppa_user->last_name ) {
+								$wppa_personals[] = '<span class="wppa-admin__muted">—</span>';
+							}
+							?>
+							<?php if ( $wppa_user->last_name ) : ?>
+								<span class="wppa-admin__field"><?php echo esc_html( $wppa_user->first_name . ' ' . $wppa_user->last_name ); ?></span>
+							<?php endif; ?>
+							<?php echo wp_kses_post( implode( '<br />', $wppa_personals ) ); ?>
+						</td>
 						<td><?php echo esc_html( implode( ', ', array_map( 'translate_user_role', array_intersect_key( wp_roles()->get_names(), array_flip( (array) $wppa_user->roles ) ) ) ) ); ?></td>
 						<td><?php echo esc_html( mysql2date( get_option( 'date_format' ), $wppa_user->user_registered ) ); ?></td>
 						<td>

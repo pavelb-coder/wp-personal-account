@@ -97,7 +97,6 @@ class WPPA_Auth {
 			WPPA_Notices::redirect( 'registration_closed', $tab_url );
 		}
 
-		$name     = isset( $_POST['display_name'] ) ? sanitize_text_field( wp_unslash( $_POST['display_name'] ) ) : '';
 		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$repeat   = isset( $_POST['password_confirm'] ) ? (string) wp_unslash( $_POST['password_confirm'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -107,8 +106,32 @@ class WPPA_Auth {
 			WPPA_Notices::redirect( 'no_consent', $tab_url );
 		}
 
-		if ( '' === $name || '' === $email || '' === $password || '' === $repeat ) {
+		// Дополнительные персональные данные.
+		$fields  = array();
+		$raw     = WPPA_Fields::values_from_request( $_POST );
+
+		foreach ( $raw as $field_id => $field_value ) {
+			$fields[ $field_id ] = WPPA_Fields::sanitize_value( $field_id, $field_value );
+		}
+
+		// Имя: собираем из «Имя» + «Фамилия», иначе — прежнее поле display_name.
+		$name = trim(
+			( isset( $fields['first_name'] ) ? $fields['first_name'] : '' ) . ' ' .
+			( isset( $fields['last_name'] ) ? $fields['last_name'] : '' )
+		);
+
+		if ( '' === $name && isset( $_POST['display_name'] ) ) {
+			$name = sanitize_text_field( wp_unslash( $_POST['display_name'] ) );
+		}
+
+		if ( '' === $email || '' === $password || '' === $repeat ) {
 			WPPA_Notices::redirect( 'empty_fields', $tab_url );
+		}
+
+		$field_error = WPPA_Fields::validate( $fields, 'register' );
+
+		if ( '' !== $field_error ) {
+			WPPA_Notices::redirect( $field_error, $tab_url );
 		}
 
 		if ( ! is_email( $email ) ) {
@@ -130,7 +153,12 @@ class WPPA_Auth {
 		$username = self::unique_username( $email );
 		$default  = get_option( 'default_role', 'subscriber' );
 
-		$user_id = wp_insert_user(
+		if ( '' === $name ) {
+			$name = $username;
+		}
+
+		$user_data = array_merge(
+			WPPA_Fields::user_data( $fields ),
 			array(
 				'user_login'   => $username,
 				'user_email'   => $email,
@@ -141,10 +169,16 @@ class WPPA_Auth {
 			)
 		);
 
+		$user_id = wp_insert_user( $user_data );
+
 		if ( is_wp_error( $user_id ) ) {
 			$code = $user_id->get_error_code();
 			WPPA_Notices::redirect( 'existing_user_email' === $code ? 'email_exists' : 'save_failed', $tab_url );
 		}
+
+		// Мета-поля: телефон, город, организация, должность и т. д.
+		WPPA_Fields::save_meta( $user_id, $fields );
+		update_user_meta( $user_id, '_wppa_consent_time', time() );
 
 		wp_set_current_user( $user_id );
 		wp_set_auth_cookie( $user_id, true, is_ssl() );

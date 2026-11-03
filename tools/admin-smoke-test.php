@@ -19,11 +19,13 @@ define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
+require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-admin.php';
+require $base . 'includes/class-wppa-settings.php';
 
 $fail = 0;
 
@@ -71,6 +73,40 @@ ob_start();
 WPPA_Admin::page_teams();
 $teams_html = ob_get_clean();
 WPPA_Teams::set_team_min( $demo_team_id, 3 );
+
+ob_start();
+WPPA_Settings::render_page();
+$settings_html = ob_get_clean();
+
+$fields_settings_ok = false !== strpos( $settings_html, 'wppa_settings[fields][phone][enabled]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[fields][phone][required]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[fields][first_name][enabled]' );
+
+echo ( $fields_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: таблица полей персональных данных\n";
+if ( ! $fields_settings_ok ) {
+	$fail++;
+}
+
+// Санитизация настроек полей.
+$sanitized = WPPA_Settings::sanitize(
+	array(
+		'fields' => array(
+			'first_name' => array( 'enabled' => 1, 'required' => 1 ),
+			'phone'      => array( 'enabled' => 1 ),
+			'city'       => array( 'enabled' => 0, 'required' => 1 ),
+		),
+	)
+);
+
+$fields_sanitize_ok = 1 === $sanitized['fields']['phone']['enabled']
+	&& 0 === $sanitized['fields']['phone']['required']
+	&& 0 === $sanitized['fields']['city']['enabled']
+	&& 0 === $sanitized['fields']['city']['required'];
+
+echo ( $fields_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: обязательность снимается вместе с показом\n";
+if ( ! $fields_sanitize_ok ) {
+	$fail++;
+}
 
 $limit_ok = false !== strpos( $teams_html, 'name="team_limit"' )
 	&& false !== strpos( $teams_html, 'name="team_min"' )

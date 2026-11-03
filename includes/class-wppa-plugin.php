@@ -99,6 +99,7 @@ class WPPA_Plugin {
 			'custom_css'           => '',
 			'max_team_members'     => 10,
 			'min_team_members'     => 2,
+			'fields'               => array(),
 			'delete_data_on_uninstall' => 0,
 		);
 	}
