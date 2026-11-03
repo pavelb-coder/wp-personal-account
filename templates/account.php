@@ -18,7 +18,9 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 			<div>
 				<p class="wppa-header__name"><?php echo esc_html( $user->display_name ); ?></p>
-				<p class="wppa-header__email"><?php echo esc_html( $user->user_email ); ?></p>
+				<?php if ( ! isset( $current_tab ) || 'dashboard' !== $current_tab ) : ?>
+					<p class="wppa-header__email"><?php echo esc_html( $user->user_email ); ?></p>
+				<?php endif; ?>
 			</div>
 		</div>
 

@@ -876,6 +876,61 @@ foreach ( $reg_checks as $check_name => $ok ) {
 	}
 }
 
+// ---------- «Обзор» без личных данных и email ----------
+$dashboard_layout_snapshot = get_option( WPPA_Builder::OPTION, null );
+delete_option( WPPA_Builder::OPTION );
+
+$demo_user = get_userdata( 7 );
+$demo_user->user_email     = 'ivan.petrov@example.com';
+$demo_user->display_name   = 'Иван Петров';
+
+$dashboard_html = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => $demo_user,
+		'tabs'        => WPPA_Template::tabs(),
+		'current_tab' => 'dashboard',
+	)
+);
+
+$profile_html = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => $demo_user,
+		'tabs'        => WPPA_Template::tabs(),
+		'current_tab' => 'profile',
+	)
+);
+
+$dashboard_checks = array(
+	'обзор: нет карточки email'        => false === strpos( $dashboard_html, 'wppa-header__email' ) && false === strpos( $dashboard_html, 'ivan.petrov@example.com' ),
+	'обзор: нет блока личных данных'   => false === strpos( $dashboard_html, 'Личные данные' ),
+	'обзор: нет ссылки «Редактировать данные»' => false === strpos( $dashboard_html, 'Редактировать данные' ),
+	'обзор: дата регистрации на месте' => false !== strpos( $dashboard_html, 'Дата регистрации' ),
+	'обзор: имя в шапке осталось'      => false !== strpos( $dashboard_html, 'Иван Петров' ),
+	'профиль: email в шапке остаётся'  => false !== strpos( $profile_html, 'ivan.petrov@example.com' ),
+);
+
+$summary_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => $demo_user, 'tabs' => WPPA_Template::tabs() )
+);
+
+$dashboard_checks['сводка: нет email']            = false === strpos( $summary_html, 'ivan.petrov@example.com' );
+$dashboard_checks['сводка: нет личных данных']    = false === strpos( $summary_html, 'Личные данные' );
+$dashboard_checks['сводка: дата регистрации']     = false !== strpos( $summary_html, 'Дата регистрации' );
+
+if ( null !== $dashboard_layout_snapshot ) {
+	update_option( WPPA_Builder::OPTION, $dashboard_layout_snapshot );
+}
+
+foreach ( $dashboard_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'dashboard: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // ---------- Панель WordPress в кабинете ----------
 $bar_settings_snapshot = get_option( 'wppa_settings', array() );
 

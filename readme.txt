@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.18.0
+Stable tag: 2.18.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 2.18.1 =
+* На вкладке «Обзор» больше нет карточки с email и блока «Личные данные» — они остались в профиле и в разделе безопасности.
+* В шапке кабинета email скрыт на вкладке «Обзор»; на остальных вкладках он по-прежнему виден.
+* Уведомление о неподтверждённом новом адресе осталось на «Обзоре».
 
 = 2.18.0 =
 * В личном кабинете больше не показывается панель WordPress (админ-бар).
