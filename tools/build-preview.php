@@ -26,6 +26,7 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 require $base . 'includes/class-wppa-widget.php';
+require $base . 'includes/class-wppa-blocks.php';
 
 $GLOBALS['wppa_test']['users'] = array(
 	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
@@ -121,6 +122,21 @@ $demo_widget->widget(
 	array( 'title' => 'Личный кабинет', 'mode' => 'both' )
 );
 $widget_demo = ob_get_clean();
+$GLOBALS['wppa_test']['logged_in'] = true;
+
+$GLOBALS['wppa_test']['logged_in'] = false;
+
+$sections .= demo_section(
+	'Отдельные блоки: «Войти» и «Регистрация»',
+	'Блоки wppa/login и wppa/register: кнопки (display="button") для шапки и формы — независимо друг от друга',
+	'<div class="demo-two">'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'login', 'display' => 'button' ) )
+		. WPPA_Blocks::render( array( 'mode' => 'login', 'showTitle' => true, 'title' => 'Вход', 'hideOther' => true ) ) . '</div>'
+		. '<div>' . WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button', 'buttonText' => 'Создать аккаунт' ) )
+		. WPPA_Blocks::render( array( 'mode' => 'register', 'showTitle' => true, 'title' => 'Регистрация', 'hideOther' => true ) ) . '</div>'
+		. '</div>'
+);
+
 $GLOBALS['wppa_test']['logged_in'] = true;
 
 $sections .= demo_section(

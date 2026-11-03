@@ -51,6 +51,7 @@ class WPPA_Auth_Widget extends WP_Widget {
 			'mode'             => 'both',
 			'redirect'         => '',
 			'hide_for_members' => 1,
+			'hide_other'       => 0,
 		);
 	}
 
@@ -161,6 +162,7 @@ class WPPA_Auth_Widget extends WP_Widget {
 			'mode'             => 'both',
 			'redirect'         => '',
 			'hide_for_members' => 1,
+			'hide_other'       => 0,
 		);
 
 		$mode = isset( $instance['mode'] ) ? sanitize_key( $instance['mode'] ) : 'both';
@@ -192,6 +194,7 @@ class WPPA_Auth_Form {
 			'mode'             => 'both',
 			'redirect'         => '',
 			'hide_for_members' => 1,
+			'hide_other'       => 0,
 		);
 	}
 
@@ -241,6 +244,7 @@ class WPPA_Auth_Form {
 				'registration' => $registration,
 				'redirect'     => isset( $args['redirect'] ) ? $args['redirect'] : '',
 				'active'       => $active,
+				'hide_other'   => ! empty( $args['hide_other'] ),
 			)
 		);
 	}

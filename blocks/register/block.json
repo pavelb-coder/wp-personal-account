@@ -1,0 +1,65 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wppa/register",
+	"title": "Регистрация (личный кабинет)",
+	"category": "widgets",
+	"icon": "admin-users",
+	"description": "Форма регистрации плагина WP Personal Account либо кнопка «Регистрация». Отдельный блок: можно поставить без формы входа.",
+	"keywords": [
+		"регистрация",
+		"регистрация аккаунта",
+		"register",
+		"signup",
+		"личный кабинет"
+	],
+	"textdomain": "wp-personal-account",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"default": "form"
+		},
+		"buttonText": {
+			"type": "string",
+			"default": "Регистрация"
+		},
+		"mode": {
+			"type": "string",
+			"default": "register"
+		},
+		"redirect": {
+			"type": "string",
+			"default": ""
+		},
+		"hideForMembers": {
+			"type": "boolean",
+			"default": true
+		},
+		"showTitle": {
+			"type": "boolean",
+			"default": false
+		},
+		"title": {
+			"type": "string",
+			"default": "Регистрация"
+		},
+		"hideOther": {
+			"type": "boolean",
+			"default": false
+		},
+		"align": {
+			"type": "string"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	}
+}

@@ -1429,7 +1429,112 @@ body {
 	<a class="wppa-button wppa-button--ghost" data-wppa-confirm-logout href="https://example.com/logout">
 		Выйти из аккаунта	</a>
 </section>
-</section><section class="demo-block"><div class="demo-block__head"><h2>Виджет на главной странице</h2><p>Виджет «Личный кабинет: вход и регистрация»: вкладки «Вход» и «Регистрация» в одном компактном блоке</p></div><div class="demo-sidebar"><div class="widget-title" style="margin:0 0 10px;font-size:1rem;font-weight:650;">Личный кабинет</div><div class="widget widget_wppa_auth"><div class="wppa wppa--widget">
+</section><section class="demo-block"><div class="demo-block__head"><h2>Отдельные блоки: «Войти» и «Регистрация»</h2><p>Блоки wppa/login и wppa/register: кнопки (display=&quot;button&quot;) для шапки и формы — независимо друг от друга</p></div><div class="demo-two"><div><div class="wp-block-wppa-login"><a class="wppa-button wppa-button--primary" href="https://example.com/?wppa_view=login">Войти</a></div>		<div class="wp-block-wppa-login">
+							<h2 class="wppa-title">Вход</h2>
+						<div class="wppa wppa--widget">
+
+	
+	
+	<div
+		class="wppa-widget__panel"
+		id="wppa-panel-login"
+		data-wppa-panel="login"
+	>
+		<div class="wppa-form-wrap">
+	<h2 class="wppa-title">Вход в личный кабинет</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
+		
+		<p class="wppa-field">
+			<label for="wppa-login">Логин или email</label>
+			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
+			</span>
+		</p>
+
+		<p class="wppa-field wppa-field--inline">
+			<label>
+				<input type="checkbox" name="rememberme" value="1" />
+				Запомнить меня			</label>
+			<a href="https://example.com/lost">Забыли пароль?</a>
+		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Войти</button>
+	</form>
+
+	</div>
+	</div>
+
+	</div>
+		</div>
+		</div><div><div class="wp-block-wppa-register"><a class="wppa-button wppa-button--primary" href="https://example.com/?wppa_view=register">Создать аккаунт</a></div>		<div class="wp-block-wppa-register">
+							<h2 class="wppa-title">Регистрация</h2>
+						<div class="wppa wppa--widget">
+
+	
+	
+	<div
+		class="wppa-widget__panel"
+		id="wppa-panel-login"
+		data-wppa-panel="login"
+	>
+			</div>
+
+			<div
+			class="wppa-widget__panel"
+			id="wppa-panel-register"
+			data-wppa-panel="register"
+		>
+			<div class="wppa-form-wrap">
+	<h2 class="wppa-title">Регистрация</h2>
+
+	<form class="wppa-form" method="post" action="https://example.com/">
+		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="register" />
+
+		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
+		<p class="wppa-field">
+			<label for="wppa-email">Email</label>
+			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password">Пароль</label>
+			<span class="wppa-password">
+				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
+			</span>
+			<span class="wppa-hint">Минимум 8 символов.</span>
+		</p>
+
+		<p class="wppa-field">
+			<label for="wppa-reg-password2">Пароль ещё раз</label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+		</p>
+
+		<p class="wppa-field wppa-field--check">
+			<label>
+				<input type="checkbox" name="consent" value="1" required />
+				Согласен на обработку персональных данных			</label>
+		</p>
+
+		<p class="wppa-hint wppa-hint--block">
+			Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.		</p>
+
+		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
+	</form>
+
+	</div>
+		</div>
+	</div>
+		</div>
+		</div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Виджет на главной странице</h2><p>Виджет «Личный кабинет: вход и регистрация»: вкладки «Вход» и «Регистрация» в одном компактном блоке</p></div><div class="demo-sidebar"><div class="widget-title" style="margin:0 0 10px;font-size:1rem;font-weight:650;">Личный кабинет</div><div class="widget widget_wppa_auth"><div class="wppa wppa--widget">
 
 	
 			<div class="wppa-widget__tabs" role="tablist">

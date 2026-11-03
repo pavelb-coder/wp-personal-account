@@ -2,7 +2,7 @@
 /**
  * Компактный блок входа и регистрации (виджет и шорткод [wppa_auth]).
  *
- * Доступные переменные: $mode (both|login|register), $registration, $redirect, $active.
+ * Доступные переменные: $mode (both|login|register), $registration, $redirect, $active, $hide_other.
  *
  * @package WP_Personal_Account
  */
@@ -11,6 +11,8 @@ defined( 'ABSPATH' ) || exit;
 
 $wppa_mode   = isset( $mode ) ? $mode : 'both';
 $wppa_active = isset( $active ) && 'register' === $active && $registration ? 'register' : 'login';
+// В режиме «оба» кнопки перехода не нужны (есть вкладки), их же скрывает атрибут hide_other.
+$wppa_hide_other = ! empty( $hide_other ) || 'both' === $wppa_mode;
 ?>
 <div class="wppa wppa--widget">
 
@@ -39,7 +41,7 @@ $wppa_active = isset( $active ) && 'register' === $active && $registration ? 're
 				array(
 					'redirect'      => isset( $redirect ) ? $redirect : '',
 					'title'         => '',
-					'hide_register' => 'both' === $wppa_mode,
+					'hide_register' => $wppa_hide_other,
 				)
 			);
 		}
@@ -58,7 +60,7 @@ $wppa_active = isset( $active ) && 'register' === $active && $registration ? 're
 					'register',
 					array(
 						'title'      => '',
-						'hide_login' => 'both' === $wppa_mode,
+						'hide_login' => $wppa_hide_other,
 					)
 				);
 			}

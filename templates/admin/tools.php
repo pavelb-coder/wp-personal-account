@@ -101,6 +101,14 @@ defined( 'ABSPATH' ) || exit;
 						<td><code>wppa/auth</code></td>
 						<td><?php esc_html_e( 'Блок Gutenberg «Вход и регистрация» — для блочных тем и Site Editor', 'wp-personal-account' ); ?></td>
 					</tr>
+					<tr>
+						<td><code>wppa/login</code></td>
+						<td><?php esc_html_e( 'Блок Gutenberg «Вход» — только форма входа или кнопка «Войти» (атрибут display)', 'wp-personal-account' ); ?></td>
+					</tr>
+					<tr>
+						<td><code>wppa/register</code></td>
+						<td><?php esc_html_e( 'Блок Gutenberg «Регистрация» — только форма регистрации или кнопка «Регистрация»', 'wp-personal-account' ); ?></td>
+					</tr>
 				</tbody>
 			</table>
 
@@ -109,6 +117,10 @@ defined( 'ABSPATH' ) || exit;
 				<li>
 					<strong><?php esc_html_e( 'Блочная тема (FSE):', 'wp-personal-account' ); ?></strong>
 					<?php esc_html_e( 'вставьте блок «Вход и регистрация (личный кабинет)» в Site Editor или в редакторе страницы — раздел «Виджеты» в списке блоков.', 'wp-personal-account' ); ?>
+				</li>
+				<li>
+					<strong><?php esc_html_e( 'Отдельными блоками:', 'wp-personal-account' ); ?></strong>
+					<?php esc_html_e( '«Вход (личный кабинет)» и «Регистрация (личный кабинет)» — независимые блоки. У каждого есть вид «форма» и вид «кнопка» (ссылка на форму): удобно ставить кнопки в шапку, а формы — на страницу.', 'wp-personal-account' ); ?>
 				</li>
 				<li>
 					<strong><?php esc_html_e( 'Классическая тема:', 'wp-personal-account' ); ?></strong>

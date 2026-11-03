@@ -526,6 +526,49 @@ foreach ( $block_checks as $check_name => $ok ) {
 $GLOBALS['wppa_test']['logged_in'] = true;
 $block_hidden = WPPA_Blocks::render( array( 'hideForMembers' => true ) );
 echo ( '' === $block_hidden ? 'OK    ' : 'FAIL  ' ) . "block: скрыт от авторизованных\n";
+
+if ( '' !== $block_hidden ) {
+	$fail++;
+}
+
+// Отдельные блоки: wppa/login и wppa/register.
+$GLOBALS['wppa_test']['logged_in'] = false;
+$registry = WPPA_Blocks::blocks();
+$login_html = WPPA_Blocks::render( array( 'mode' => 'login', 'showTitle' => true, 'title' => 'Вход' ) );
+$register_html_block = WPPA_Blocks::render( array( 'mode' => 'register' ) );
+
+$separate_checks = array(
+	'реестр: три блока'                 => 3 === count( $registry ) && isset( $registry['login'], $registry['register'], $registry['auth'] ),
+	'имена блоков'                      => 'wppa/login' === $registry['login']['name'] && 'wppa/register' === $registry['register']['name'],
+	'вход: своя обёртка'                => false !== strpos( $login_html, 'wp-block-wppa-login' ),
+	'вход: форма входа'                 => false !== strpos( $login_html, 'value="login"' ),
+	'вход: без полей регистрации'       => false === strpos( $login_html, 'wppa_fields[first_name]' ),
+	'вход: заголовок'                   => false !== strpos( $login_html, 'Вход' ),
+	'регистрация: своя обёртка'         => false !== strpos( $register_html_block, 'wp-block-wppa-register' ),
+	'регистрация: поля персональных данных' => false !== strpos( $register_html_block, 'wppa_fields[first_name]' ),
+	'регистрация: без формы входа'      => false === strpos( $register_html_block, 'name="log"' ),
+	'кнопка входа'                      => false !== strpos( WPPA_Blocks::render( array( 'mode' => 'login', 'display' => 'button' ) ), 'wppa_view=login' ),
+	'кнопка регистрации'                => false !== strpos( WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button', 'buttonText' => 'Создать аккаунт' ) ), 'Создать аккаунт' ),
+	'кнопка — это ссылка с классом'      => false !== strpos( WPPA_Blocks::render( array( 'mode' => 'login', 'display' => 'button' ) ), '<a class="wppa-button' ),
+);
+
+// Регистрация закрыта — кнопка регистрации не выводится.
+update_option( 'users_can_register', 0 );
+$separate_checks['кнопка регистрации при закрытой регистрации'] = '' === WPPA_Blocks::render( array( 'mode' => 'register', 'display' => 'button' ) );
+update_option( 'users_can_register', 1 );
+
+// hideOther убирает кнопку перехода внутри формы.
+$login_no_switch = WPPA_Blocks::render( array( 'mode' => 'login', 'hideOther' => true ) );
+$separate_checks['hideOther скрывает кнопку перехода'] = false === strpos( $login_no_switch, 'wppa_view=register' );
+
+foreach ( $separate_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'blocks separate: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+$GLOBALS['wppa_test']['logged_in'] = true;
 if ( '' !== $block_hidden ) {
 	$fail++;
 }
