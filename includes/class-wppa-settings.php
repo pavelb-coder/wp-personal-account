@@ -111,6 +111,16 @@ class WPPA_Settings {
 
 		$out['require_mentor'] = empty( $input['require_mentor'] ) ? 0 : 1;
 
+		// Подключение к сетевой локальной папке.
+		$smb_saved = isset( $input['smb'] ) && is_array( $input['smb'] ) ? $input['smb'] : array();
+		$smb_path  = isset( $smb_saved['path'] ) ? trim( sanitize_text_field( (string) $smb_saved['path'] ) ) : '';
+
+		$out['smb'] = array(
+			'path' => preg_replace( '#[\x00-\x1F]#', '', $smb_path ),
+			'user' => isset( $smb_saved['user'] ) ? sanitize_text_field( $smb_saved['user'] ) : '',
+			'pass' => isset( $smb_saved['pass'] ) ? (string) $smb_saved['pass'] : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- пароль храним как есть.
+		);
+
 		// Выгрузка в сетевую папку.
 		$folder_saved = isset( $input['export_folder'] ) && is_array( $input['export_folder'] ) ? $input['export_folder'] : array();
 		$folder_path  = isset( $folder_saved['path'] ) ? sanitize_text_field( $folder_saved['path'] ) : '';
@@ -136,6 +146,7 @@ class WPPA_Settings {
 
 		$out['export_folder'] = array(
 			'enabled'   => empty( $folder_saved['enabled'] ) ? 0 : 1,
+			'mode'      => isset( $folder_saved['mode'] ) && 'smb' === $folder_saved['mode'] ? 'smb' : 'path',
 			'path'      => trim( $folder_path ),
 			'file'      => $folder_file,
 			'schedule'  => $folder_schedule,
@@ -218,8 +229,9 @@ class WPPA_Settings {
 					<span class="wppa-admin__muted">
 						<?php
 						printf(
-							/* translators: %s: путь */
-							esc_html__( 'Папка на сервере: %s', 'wp-personal-account' ),
+							/* translators: 1: способ, 2: путь */
+							esc_html__( '%1$s: %2$s', 'wp-personal-account' ),
+							'smb' === $wppa_mode['mode'] ? esc_html__( 'Сетевая папка с авторизацией', 'wp-personal-account' ) : esc_html__( 'Папка на сервере', 'wp-personal-account' ),
 							'<code>' . esc_html( '' !== $wppa_target ? $wppa_target : '—' ) . '</code>'
 						);
 						?>
@@ -516,6 +528,22 @@ class WPPA_Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><?php esc_html_e( 'Способ записи', 'wp-personal-account' ); ?></th>
+						<td>
+							<fieldset>
+								<label style="margin-right:16px">
+									<input type="radio" name="wppa_settings[export_folder][mode]" value="path" <?php checked( $wppa_folder['mode'], 'path' ); ?> />
+									<?php esc_html_e( 'Папка на сервере', 'wp-personal-account' ); ?>
+								</label>
+								<label>
+									<input type="radio" name="wppa_settings[export_folder][mode]" value="smb" <?php checked( $wppa_folder['mode'], 'smb' ); ?> />
+									<?php esc_html_e( 'Сетевая папка с логином и паролем', 'wp-personal-account' ); ?>
+								</label>
+							</fieldset>
+							<p class="description"><?php esc_html_e( 'Во втором случае используется путь, логин и пароль из блока «Сетевая локальная папка» ниже.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="wppa-folder-path"><?php esc_html_e( 'Путь к папке', 'wp-personal-account' ); ?></label></th>
 						<td>
 							<input type="text" class="large-text code" id="wppa-folder-path" name="wppa_settings[export_folder][path]" value="<?php echo esc_attr( $wppa_folder['path'] ); ?>" placeholder="/mnt/share/wppa" />
@@ -591,6 +619,60 @@ class WPPA_Settings {
 								<label for="wppa-folder-limit" style="margin-left:10px"><?php esc_html_e( 'Максимум строк', 'wp-personal-account' ); ?></label>
 								<input type="number" class="small-text" id="wppa-folder-limit" name="wppa_settings[export_folder][limit]" value="<?php echo esc_attr( $wppa_folder['limit'] ); ?>" min="1" max="20000" />
 							</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Сетевая локальная папка', 'wp-personal-account' ); ?></h2>
+				<?php $wppa_smb = WPPA_SMB::config(); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-smb-path"><?php esc_html_e( 'Путь', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" class="large-text code" id="wppa-smb-path" name="wppa_settings[smb][path]" value="<?php echo esc_attr( $wppa_smb['path'] ); ?>" placeholder="\\fileserver\exchange\reports" />
+							<p class="description">
+								<?php esc_html_e( 'Подойдёт UNC-путь \\сервер\папка, адрес smb://сервер/папка/подпапка или обычный путь /mnt/share — плагин определит тип сам.', 'wp-personal-account' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-smb-user"><?php esc_html_e( 'Логин', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" class="regular-text" id="wppa-smb-user" name="wppa_settings[smb][user]" value="<?php echo esc_attr( $wppa_smb['user'] ); ?>" autocomplete="off" placeholder="WORKGROUP\svc_wppa" />
+							<p class="description"><?php esc_html_e( 'Домен можно указать через обратную косую черту: DOMAIN\пользователь.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-smb-pass"><?php esc_html_e( 'Пароль', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="password" class="regular-text" id="wppa-smb-pass" name="wppa_settings[smb][pass]" value="<?php echo esc_attr( $wppa_smb['pass'] ); ?>" autocomplete="new-password" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: имя константы */
+									esc_html__( 'Чтобы не держать пароль в базе, задайте в wp-config.php: %s — значение из константы важнее сохранённого.', 'wp-personal-account' ),
+									'<code>define( \'' . esc_html( WPPA_SMB::PASSWORD_CONSTANT ) . '\', \'пароль\' );</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Проверка', 'wp-personal-account' ); ?></th>
+						<td>
+							<?php
+							$wppa_smb_test = WPPA_SMB::test( $wppa_smb );
+							$wppa_mount    = WPPA_SMB::mount_command( $wppa_smb );
+							?>
+							<p>
+								<span class="wppa-badge <?php echo $wppa_smb_test['ok'] ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+									<?php echo $wppa_smb_test['ok'] ? esc_html__( 'Доступ есть', 'wp-personal-account' ) : esc_html__( 'Доступа нет', 'wp-personal-account' ); ?>
+								</span>
+								<span class="description"><?php echo esc_html( $wppa_smb_test['message'] ); ?></span>
+							</p>
+							<p class="description"><?php esc_html_e( 'Если утилиты smbclient нет, шару можно смонтировать в систему. Пароль при этом выносится в файл учётных данных (chmod 600), чтобы не светиться в списке процессов:', 'wp-personal-account' ); ?></p>
+							<p><code><?php echo esc_html( 'cat > ' . $wppa_mount['credentials_file'] . " <<'EOF'\n" . $wppa_mount['credentials'] . 'EOF' ); ?></code></p>
+							<p><code><?php echo esc_html( $wppa_mount['command'] ); ?></code></p>
 						</td>
 					</tr>
 				</table>

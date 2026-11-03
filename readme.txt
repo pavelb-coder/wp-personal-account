@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.0.0
+Stable tag: 3.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,15 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.1.0 =
+* Авторизация в сетевой локальной папке: путь (UNC, smb:// или локальный), логин с доменом и пароль.
+* Тип подключения определяется по пути: Windows, уже смонтированная шара, php-smbclient, утилита smbclient или подсказка с командой монтирования.
+* Пароль передаётся smbclient через файл учётных данных 0600 и не виден в списке процессов; константа WPPA_SMB_PASSWORD важнее сохранённого пароля.
+* Проверка портов 445 / 139 и разбор ответов NT_STATUS_LOGON_FAILURE.
+* Отдельный способ записи в выгрузке в папку: «Папка на сервере» или «Сетевая папка с логином и паролем».
+* Кнопка «Проверить подключение к сетевой папке» проверяет то, что выбрано в настройках.
+* Новый класс `WPPA_SMB` с фильтрами `wppa_smb`, `wppa_smb_runner`, `wppa_smb_port_check`.
 
 = 3.0.0 =
 * Удалена авторизация SMB: настройки «Сервер / шара / домен / пользователь / пароль» и переключатель способа записи убраны.

@@ -221,6 +221,7 @@ includes/
   class-wppa-time.php        даты и время: разбор datetime-local, форматирование, отсчёт
   class-wppa-reset.php       восстановление пароля: заявка, письмо, ссылка, новый пароль
   class-wppa-export-folder.php выгрузка CSV в папку/SMB: расписание, ротация, журнал
+  class-wppa-smb.php         сетевая локальная папка: путь, логин, пароль, проверка подключения
   class-wppa-teams.php       команды: создание, приглашения, состав, роли (капитан/наставник), роспуск
   class-wppa-builder.php     конструктор: блоки, раскладка, рендер вкладок
   class-wppa-widget.php      виджет «Вход и регистрация» + общий рендер форм
@@ -312,6 +313,45 @@ add_filter( 'wppa_link_button', function ( $config ) {
 ```
 
 Хелперы: `WPPA_Link_Button::config()`, `WPPA_Link_Button::state()`, `WPPA_Link_Button::team_progress()`, `WPPA_Link_Button::countdown_text()`.
+
+## Сетевая локальная папка с авторизацией
+
+Настройки → **«Сетевая локальная папка»**: один путь, логин и пароль. Тип подключения определяется по пути, как в `wordprees`:
+
+| Путь в настройках | Что делает плагин |
+| --- | --- |
+| `\\fileserver\exchange\reports` | SMB по UNC |
+| `smb://fileserver/exchange/reports` | SMB по URL |
+| `smb://DOMAIN:pass@fileserver/share` | SMB, логин и пароль прямо в адресе |
+| `/mnt/share/wppa` | обычная или смонтированная папка |
+
+Порядок доставки:
+
+1. **Windows** — UNC-путь доступен как обычная папка.
+2. **Шара уже смонтирована** в систему — пишем по пути (`mount -t cifs`, `/etc/fstab`).
+3. **Расширение `php-smbclient`** — запись напрямую, без монтирования.
+4. **Утилита `smbclient`** — `smbclient //host/share -A файл_учётных_данных -c 'cd dir; put …'`; сначала проверяются порты 445 / 139, отказ `NT_STATUS_LOGON_FAILURE` переводится в «сервер отклонил логин или пароль».
+5. Ничего нет — плагин показывает готовую команду `mount -t cifs` и просит поставить `smbclient`.
+
+Домен указывается в логине: `WORKGROUP\svc_wppa`. Пароль по умолчанию хранится в настройках, но константа в `wp-config.php` важнее:
+
+```php
+define( 'WPPA_SMB_PASSWORD', 'пароль' );
+```
+
+Пароль никогда не попадает в командную строку: он пишется во временный файл с правами `0600` и удаляется после запуска. В режиме выгрузки выбирается способ записи — «Папка на сервере» или «Сетевая папка с логином и паролем».
+
+```php
+WPPA_SMB::config();                  // path, user, pass
+WPPA_SMB::detect_type();             // filesystem | smb
+WPPA_SMB::parse_path( $path );        // host, share, subdir, unc, service
+WPPA_SMB::split_user( 'DOM\user' );  // domain, user
+WPPA_SMB::test();                     // ok, message, method (filesystem|mounted|windows|extension|cli)
+WPPA_SMB::write( $name, $csv );
+WPPA_SMB::mount_command();
+```
+
+Фильтры: `wppa_smb` (настройки), `wppa_smb_runner` (запуск команд), `wppa_smb_port_check` (проверка портов).
 
 ## Экспорт в сетевую папку (SMB)
 

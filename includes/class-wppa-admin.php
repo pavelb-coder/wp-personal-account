@@ -318,7 +318,11 @@ class WPPA_Admin {
 				'export_folder' => WPPA_Export_Folder::config(),
 				'export_log'    => WPPA_Export_Folder::logs(),
 				'export_next'   => WPPA_Export_Folder::next_run(),
-				'folder_status' => WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
+				'folder_status' => 'smb' === WPPA_Export_Folder::config()['mode']
+					? WPPA_SMB::test( WPPA_SMB::config() )
+					: WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
+				'smb_config'    => WPPA_SMB::config(),
+				'smb_test'      => WPPA_SMB::test( WPPA_SMB::config() ),
 				'export_check'  => '' === WPPA_Export_Folder::normalize_path( WPPA_Export_Folder::config()['path'] )
 					? null
 					: WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
@@ -558,6 +562,8 @@ class WPPA_Admin {
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
 			'folder_check_fail'  => array( 'error', __( 'Папка недоступна: проверьте путь, права и монтирование сетевой шары.', 'wp-personal-account' ) ),
 			'folder_log_clear'   => array( 'success', __( 'Журнал выгрузок очищен.', 'wp-personal-account' ) ),
+			'smb_check_ok'       => array( 'success', __( 'Подключение к сетевой папке с указанным логином есть.', 'wp-personal-account' ) ),
+			'smb_check_fail'     => array( 'error', __( 'Подключиться к сетевой папке не удалось. Причина — в журнале выгрузок.', 'wp-personal-account' ) ),
 			'folder_verify_ok'   => array( 'success', __( 'Подключение к сетевой папке есть, запись возможна.', 'wp-personal-account' ) ),
 			'folder_verify_fail' => array( 'error', __( 'Подключиться к сетевой папке не удалось. Причина — в журнале внизу страницы.', 'wp-personal-account' ) ),
 		);
@@ -611,9 +617,17 @@ class WPPA_Admin {
 				self::redirect_tool( $result['ok'] ? 'folder_export_ok' : 'folder_export_fail' );
 				break;
 
+			case 'smb_check':
+				$result = WPPA_SMB::test( WPPA_SMB::config() );
+				WPPA_Export_Folder::log_entry( $result['ok'], '', 0, $result['message'] );
+				self::redirect_tool( $result['ok'] ? 'smb_check_ok' : 'smb_check_fail' );
+				break;
+
 			case 'folder_verify':
 				$folder = WPPA_Export_Folder::config();
-				$result = WPPA_Export_Folder::check_folder( $folder['path'] );
+				$result = 'smb' === $folder['mode']
+					? WPPA_SMB::test( WPPA_SMB::config() )
+					: WPPA_Export_Folder::check_folder( $folder['path'] );
 				WPPA_Export_Folder::log_entry( $result['ok'], '', 0, $result['message'] );
 				self::redirect_tool( $result['ok'] ? 'folder_verify_ok' : 'folder_verify_fail' );
 				break;

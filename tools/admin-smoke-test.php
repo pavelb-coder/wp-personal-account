@@ -29,6 +29,7 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
+require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 require $base . 'includes/class-wppa-settings.php';
@@ -283,18 +284,176 @@ $folder_buttons_checks = array(
 		unset( $_GET['wppa_done'] );
 		return is_array( $ok ) && 'success' === $ok[0] && is_array( $bad ) && 'error' === $bad[0];
 	} )(),
-	'SMB: класс удалён'                      => ! class_exists( 'WPPA_SMB' ),
-	'SMB: поля авторизации убраны'           => false === strpos( $settings_html, 'wppa_settings[smb]' )
-		&& false === strpos( $settings_html, 'Авторизация SMB' ),
-	'SMB: режим записи убран'                => false === strpos( $settings_html, 'wppa_settings[export_folder][mode]' )
-		&& ! array_key_exists( 'mode', WPPA_Export_Folder::config() ),
-	'SMB: настройки не хранят ключ smb'      => ! array_key_exists( 'smb', WPPA_Plugin::get_settings() ),
+	'настройки: поля сетевой папки'          => false !== strpos( $settings_html, 'wppa_settings[smb][path]' )
+		&& false !== strpos( $settings_html, 'wppa_settings[smb][user]' )
+		&& false !== strpos( $settings_html, 'wppa_settings[smb][pass]' ),
+	'настройки: переключатель способа записи' => false !== strpos( $settings_html, 'wppa_settings[export_folder][mode]' ),
 );
 
 delete_option( WPPA_Export_Folder::LOG_OPTION );
 
 foreach ( $folder_buttons_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'folder buttons: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+
+// ---------- Сетевая локальная папка с авторизацией ----------
+$unc = WPPA_SMB::parse_path( '\\\\fileserver\\exchange\\reports\\wppa' );
+$smb_checks = array(
+	'разбор UNC: хост'          => 'fileserver' === $unc['host'],
+	'разбор UNC: шара'          => 'exchange' === $unc['share'],
+	'разбор UNC: вложенная папка' => 'reports/wppa' === $unc['subdir'],
+	'разбор UNC: unc и service' => '\\\\fileserver\\exchange\\reports\\wppa' === $unc['unc'] && '//fileserver/exchange' === $unc['service'],
+);
+
+$url_smb = WPPA_SMB::parse_path( 'smb://WORKGROUP:secret@nas.local/share/docs' );
+$smb_checks['разбор smb://: хост']          = 'nas.local' === $url_smb['host'] && 'share' === $url_smb['share'];
+$smb_checks['разбор smb://: папка']         = 'docs' === $url_smb['subdir'];
+$smb_checks['разбор smb://: логин из URL']  = 'WORKGROUP' === $url_smb['user'] && 'secret' === $url_smb['password'];
+$smb_checks['разбор мусора']                = null === WPPA_SMB::parse_path( 'fileserver' );
+
+$smb_checks['тип: UNC — это smb']              = 'smb' === WPPA_SMB::detect_type( array( 'path' => '\\\\fs\\share' ) );
+$smb_checks['тип: smb:// — это smb']           = 'smb' === WPPA_SMB::detect_type( array( 'path' => 'smb://fs/share' ) );
+$smb_checks['тип: //fs/share — это smb']       = 'smb' === WPPA_SMB::detect_type( array( 'path' => '//fs/share' ) );
+$smb_checks['тип: /mnt/share — файловая система'] = 'filesystem' === WPPA_SMB::detect_type( array( 'path' => '/mnt/share' ) );
+
+$split = WPPA_SMB::split_user( 'WORKGROUP\\svc_wppa' );
+$smb_checks['логин и домен: DOMAIN\\user'] = 'WORKGROUP' === $split['domain'] && 'svc_wppa' === $split['user'];
+$smb_checks['логин без домена']            = '' === WPPA_SMB::split_user( 'svc_wppa' )['domain'];
+$smb_checks['логин из URL, если пусто']     = 'svc' === WPPA_SMB::split_user( '', 'svc' )['user'];
+
+// Проверка записи в локальную папку.
+$local_dir = sys_get_temp_dir() . '/wppa-smb-local-' . uniqid();
+mkdir( $local_dir, 0777, true );
+$local_ok = WPPA_SMB::test( array( 'path' => $local_dir, 'user' => '', 'pass' => '' ) );
+$smb_checks['локальная папка: доступ есть']      = $local_ok['ok'] && 'filesystem' === $local_ok['method'];
+$smb_checks['локальная папка: пробный файл убран'] = 0 === count( glob( $local_dir . '/.wppa-probe-*' ) );
+$smb_checks['локальная папка: без пути ошибка']   = ! WPPA_SMB::test( array( 'path' => '', 'user' => '', 'pass' => '' ) )['ok'];
+
+// Пароль из константы важнее сохранённого.
+define( 'WPPA_SMB_PASSWORD', 'from-constant' );
+$smb_checks['пароль из константы'] = 'from-constant' === WPPA_SMB::password( 'from-db' );
+
+// Команда монтирования не содержит пароля.
+$mount = WPPA_SMB::mount_command( array( 'path' => '\\\\fs\\share\\dir', 'user' => 'WORKGROUP\\svc', 'pass' => 'secret-pass' ) );
+$smb_checks['монтирование: credentials-файл'] = false !== strpos( $mount['command'], 'credentials=' )
+	&& false === strpos( $mount['command'], 'secret-pass' );
+$smb_checks['монтирование: домен в файле']    = false !== strpos( $mount['credentials'], 'domain=WORKGROUP' );
+
+// Без smbclient и без монтирования — понятная ошибка с командой.
+add_filter( 'wppa_smb_runner', function ( $result, $command ) {
+	$GLOBALS['wppa_test']['smb_commands'][] = $command;
+
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 1, 'output' => '' );
+	}
+
+	return array( 'code' => 0, 'output' => '' );
+}, 10, 2 );
+
+$GLOBALS['wppa_test']['smb_commands'] = array();
+$no_tools = WPPA_SMB::test( array( 'path' => '\\\\fileserver\\exchange\\reports', 'user' => 'svc', 'pass' => 'x' ) );
+$smb_checks['нет средств: подсказка про smbclient'] = ! $no_tools['ok'] && false !== strpos( $no_tools['message'], 'smbclient' );
+
+$no_write = WPPA_SMB::write( 'accounts.csv', "id\n", array( 'path' => '\\\\fileserver\\exchange', 'user' => 'svc', 'pass' => 'x' ) );
+$smb_checks['нет средств: в ошибке есть mount'] = ! $no_write['ok'] && false !== strpos( $no_write['message'], 'mount -t cifs' );
+
+// Есть smbclient: проверка и запись с паролем в файле 0600.
+add_filter( 'wppa_smb_runner', function ( $result, $command ) {
+	$GLOBALS['wppa_test']['smb_commands'][] = $command;
+
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
+	}
+
+	return array( 'code' => 0, 'output' => '  blocks available' );
+}, 20, 2 );
+
+add_filter( 'wppa_smb_port_check', function () {
+	return true;
+} );
+
+$GLOBALS['wppa_test']['smb_commands'] = array();
+$cli_config = array( 'path' => '\\\\fileserver\\exchange\\reports', 'user' => 'WORKGROUP\\svc_wppa', 'pass' => 'secret-pass' );
+$cli_test   = WPPA_SMB::test( $cli_config );
+
+$smb_checks['smbclient: доступ получен']        = $cli_test['ok'] && 'cli' === $cli_test['method'];
+$smb_checks['smbclient: вход в подпапку']       = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'cd' );
+$smb_checks['smbclient: пароль не в командной строке'] = false === strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'secret-pass' );
+$smb_checks['smbclient: файл учётных данных после проверки удалён'] = 0 === count( glob( sys_get_temp_dir() . '/wppa_smb_creds_*' ) );
+
+$GLOBALS['wppa_test']['smb_commands'] = array();
+$cli_write = WPPA_SMB::write( 'accounts.csv', "id;email\n1;a@b.c\n", $cli_config );
+$smb_checks['smbclient: файл записан']    = $cli_write['ok'] && false !== strpos( $cli_write['file'], '\\\\fileserver\\exchange\\reports\\accounts.csv' );
+$smb_checks['smbclient: в команде put']   = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'put ' );
+
+// Без логина и пароля — анонимный доступ -N.
+add_filter( 'wppa_smb_runner', function ( $result, $command ) {
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
+	}
+
+	$GLOBALS['wppa_test']['anon_command'] = $command;
+
+	return array( 'code' => 0, 'output' => '' );
+}, 30, 2 );
+
+WPPA_SMB::test( array( 'path' => '\\\\fs\\share', 'user' => '', 'pass' => '' ) );
+$smb_checks['без учётных данных: ключ -N'] = false !== strpos( (string) ( $GLOBALS['wppa_test']['anon_command'] ?? '' ), '-N' );
+
+// Отказ авторизации от сервера.
+add_filter( 'wppa_smb_runner', function ( $result, $command ) {
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
+	}
+
+	return array( 'code' => 1, 'output' => 'NT_STATUS_LOGON_FAILURE listing \\\\fs\\share' );
+}, 40, 2 );
+
+$denied = WPPA_SMB::test( array( 'path' => '\\\\fs\\share', 'user' => 'svc', 'pass' => 'bad' ) );
+$smb_checks['отказ сервера: сообщение про логин'] = ! $denied['ok'] && false !== strpos( $denied['message'], 'логин' );
+
+// Выгрузка в режиме SMB идёт через WPPA_SMB и пишет журнал.
+$smb_snapshot = get_option( 'wppa_settings', array() );
+update_option( 'wppa_settings', array_merge( (array) $smb_snapshot, array( 'smb' => array( 'path' => $local_dir, 'user' => '', 'pass' => '' ) ) ) );
+
+$smb_export = WPPA_Export_Folder::write(
+	array_merge(
+		WPPA_Export_Folder::config(),
+		array(
+			'mode'   => 'smb',
+			'file'   => 'accounts-{date}.csv',
+			'groups' => WPPA_Export::default_groups(),
+			'keep'   => 0,
+		)
+	)
+);
+
+$smb_checks['выгрузка в режиме SMB']    = $smb_export['ok'] && 0 < $smb_export['bytes'];
+$smb_checks['выгрузка в режиме SMB: файл на диске'] = 1 === count( glob( $local_dir . '/accounts-*.csv' ) );
+$smb_checks['журнал помнит выгрузку SMB'] = ! empty( WPPA_Export_Folder::logs() );
+update_option( 'wppa_settings', $smb_snapshot );
+
+$smb_sanitize = WPPA_Settings::sanitize(
+	array(
+		'smb'           => array( 'path' => "\\\\fileserver\\exchange\0\\reports", 'user' => 'WORKGROUP\\svc', 'pass' => 'p@ss word' ),
+		'export_folder' => array( 'mode' => 'smb' ),
+	)
+);
+
+$smb_checks['настройки: путь сохранён']    = '\\\\fileserver\\exchange\\reports' === $smb_sanitize['smb']['path'];
+$smb_checks['настройки: логин сохранён']   = 'WORKGROUP\\svc' === $smb_sanitize['smb']['user'];
+$smb_checks['настройки: пароль сохранён']  = 'p@ss word' === $smb_sanitize['smb']['pass'];
+$smb_checks['настройки: режим smb']        = 'smb' === $smb_sanitize['export_folder']['mode'];
+$smb_checks['настройки: режим по умолчанию path'] = 'path' === WPPA_Export_Folder::defaults()['mode'];
+
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+
+foreach ( $smb_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'smb: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

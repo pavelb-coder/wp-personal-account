@@ -44,6 +44,7 @@ class WPPA_Export_Folder {
 	public static function defaults() {
 		return array(
 			'enabled'   => 0,
+			'mode'      => 'path',
 			'path'      => '',
 			'file'      => 'wppa-accounts-{date}.csv',
 			'schedule'  => 'daily',
@@ -86,6 +87,7 @@ class WPPA_Export_Folder {
 		}
 
 		$out['enabled']   = empty( $out['enabled'] ) ? 0 : 1;
+		$out['mode']      = 'smb' === $out['mode'] ? 'smb' : 'path';
 		$out['path']      = (string) $out['path'];
 		$out['file']      = '' === trim( (string) $out['file'] ) ? self::defaults()['file'] : (string) $out['file'];
 		$out['schedule']  = isset( self::schedules()[ $out['schedule'] ] ) ? $out['schedule'] : 'daily';
@@ -236,6 +238,28 @@ class WPPA_Export_Folder {
 		$args   = wp_parse_args( $args, $config );
 
 		$name = self::filename( (string) $args['file'], isset( $args['timestamp'] ) ? (int) $args['timestamp'] : 0 );
+
+		// Режим SMB: путь может быть шарой, логин и пароль — в настройках.
+		if ( 'smb' === $args['mode'] ) {
+			$csv    = WPPA_Export::csv(
+				array(
+					'groups'    => (array) $args['groups'],
+					'scope'     => (string) $args['scope'],
+					'delimiter' => (string) $args['delimiter'],
+					'limit'     => (int) $args['limit'],
+				)
+			);
+			$result = WPPA_SMB::write( $name, $csv, WPPA_SMB::config() );
+
+			self::log_entry( $result['ok'], $result['file'], (int) $result['bytes'], $result['message'] );
+
+			return array(
+				'ok'      => $result['ok'],
+				'message' => $result['message'],
+				'file'    => $result['file'],
+				'bytes'   => (int) $result['bytes'],
+			);
+		}
 
 		$path = self::normalize_path( $args['path'] );
 		$check = self::check_folder( $path );

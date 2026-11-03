@@ -29,6 +29,7 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
+require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
@@ -99,10 +100,32 @@ WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-' . gmdate( 
 WPPA_Export_Folder::log_entry( false, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 0, 'Не удалось записать файл: нет прав на запись.' );
 WPPA_Export_Folder::log_entry( true, '/mnt/share/wppa/wppa-accounts-2026-11-02.csv', 50120, 'Файл записан (49 КБ). Удалён 1 старый файл по правилу ротации.' );
 
-// Настройки: кабинет, команды, пароли и выгрузка в папку.
-$sections .= demo_page( 'Настройки', 'Параметры кабинета, регистрации, команд, паролей и выгрузка в сетевую папку', static function () { WPPA_Settings::render_page(); } );
+// Настройки и инструменты: сетевая локальная папка с авторизацией.
+$wppa_demo_snapshot = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $wppa_demo_snapshot,
+		array(
+			'smb'           => array(
+				'path' => '\\\\fileserver\\exchange\\reports\\wppa',
+				'user' => 'WORKGROUP\\svc_wppa',
+				'pass' => 'demo-pass',
+			),
+			'export_folder' => array_merge(
+				WPPA_Export_Folder::config(),
+				array( 'mode' => 'smb', 'enabled' => 1 )
+			),
+		)
+	)
+);
+
+$sections .= demo_page( 'Настройки', 'Параметры кабинета, регистрации, команд, паролей и сетевой папки с логином и паролем', static function () { WPPA_Settings::render_page(); } );
 
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
+
+update_option( 'wppa_settings', $wppa_demo_snapshot );
 
 $admin_css = file_get_contents( $base . 'assets/css/admin.css' );
 

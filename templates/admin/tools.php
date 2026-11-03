@@ -133,6 +133,30 @@ defined( 'ABSPATH' ) || exit;
 				<?php esc_html_e( 'Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».', 'wp-personal-account' ); ?>
 			</p>
 
+			<?php
+			$wppa_smb_test = isset( $smb_test ) && is_array( $smb_test ) ? $smb_test : null;
+			$wppa_smb_conf = isset( $smb_config ) && is_array( $smb_config ) ? $smb_config : WPPA_SMB::config();
+			?>
+
+			<?php if ( 'smb' === $wppa_folder['mode'] ) : ?>
+				<p>
+					<span class="wppa-badge <?php echo ( $wppa_smb_test && $wppa_smb_test['ok'] ) ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+						<?php echo ( $wppa_smb_test && $wppa_smb_test['ok'] ) ? esc_html__( 'Сетевая папка: доступ есть', 'wp-personal-account' ) : esc_html__( 'Сетевая папка: доступа нет', 'wp-personal-account' ); ?>
+					</span>
+					<span class="wppa-admin__muted"><?php echo $wppa_smb_test ? esc_html( $wppa_smb_test['message'] ) : ''; ?></span>
+				</p>
+				<p class="wppa-admin__muted">
+					<?php
+					printf(
+						/* translators: 1: путь, 2: логин */
+						esc_html__( 'Путь: %1$s, пользователь: %2$s.', 'wp-personal-account' ),
+						'<code>' . esc_html( '' !== $wppa_smb_conf['path'] ? $wppa_smb_conf['path'] : '—' ) . '</code>',
+						esc_html( '' !== $wppa_smb_conf['user'] ? $wppa_smb_conf['user'] : '—' )
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
 			<?php if ( isset( $export_check ) && is_array( $export_check ) ) : ?>
 				<p>
 					<span class="wppa-badge <?php echo $export_check['ok'] ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
