@@ -451,3 +451,20 @@ function wp_timezone() { return new DateTimeZone( 'UTC' ); }
 function wp_timezone_string() { return 'UTC'; }
 
 function wp_date( $format, $timestamp = null ) { return gmdate( $format, $timestamp ? $timestamp : time() ); }
+
+function show_admin_bar( $show = true ) {
+	$GLOBALS['wppa_test']['admin_bar'] = (bool) $show;
+	return true;
+}
+
+if ( ! function_exists( 'is_admin' ) ) {
+	function is_admin() { return ! empty( $GLOBALS['wppa_test']['is_admin'] ); }
+}
+
+if ( ! function_exists( 'is_singular' ) ) {
+	function is_singular( $post_types = '' ) { return ! isset( $GLOBALS['wppa_test']['is_singular'] ) || (bool) $GLOBALS['wppa_test']['is_singular']; }
+}
+
+if ( ! function_exists( 'wp_doing_ajax' ) ) {
+	function wp_doing_ajax() { return ! empty( $GLOBALS['wppa_test']['doing_ajax'] ); }
+}

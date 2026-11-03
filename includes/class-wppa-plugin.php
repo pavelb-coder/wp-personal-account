@@ -58,6 +58,7 @@ class WPPA_Plugin {
 		add_action( 'admin_init', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'template_redirect', array( $this, 'handle_requests' ), 5 );
+		add_action( 'wp', array( __CLASS__, 'maybe_hide_admin_bar' ), 5 );
 
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
@@ -134,6 +135,7 @@ class WPPA_Plugin {
 			'account_page_id'      => 0,
 			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'security' ),
 			'registration_enabled' => 1,
+			'hide_admin_bar'       => 1,
 			'registration_start'   => '',
 			'registration_end'     => '',
 			'login_redirect'       => '',
@@ -205,6 +207,63 @@ class WPPA_Plugin {
 	 */
 	public static function registration_open() {
 		return (bool) self::setting( 'registration_enabled', 1 ) && (bool) get_option( 'users_can_register' );
+	}
+
+	/**
+	 * Открыт ли личный кабинет на текущем экране.
+	 *
+	 * Учитываются и страница из настроек, и шорткод/блок кабинета на любой другой странице.
+	 *
+	 * @return bool
+	 */
+	public static function is_account_view() {
+		if ( self::is_account_screen() ) {
+			return true;
+		}
+
+		if ( ! is_singular() ) {
+			return false;
+		}
+
+		$post = get_post();
+
+		if ( ! $post instanceof WP_Post ) {
+			return false;
+		}
+
+		if ( has_shortcode( (string) $post->post_content, 'wppa_account' ) ) {
+			return true;
+		}
+
+		return function_exists( 'has_block' ) && has_block( 'wppa/auth', $post );
+	}
+
+	/**
+	 * Скрыть панель WordPress в личном кабинете.
+	 *
+	 * Панель нужна администратору в админке, а в кабинете мешает: перекрывает шапку
+	 * и подсказывает участнику лишние ссылки. Скрывается для всех, кто в кабинете.
+	 *
+	 * @return void
+	 */
+	public static function maybe_hide_admin_bar() {
+		if ( is_admin() || ! is_user_logged_in() ) {
+			return;
+		}
+
+		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
+			return;
+		}
+
+		if ( ! (bool) self::setting( 'hide_admin_bar', 1 ) ) {
+			return;
+		}
+
+		if ( ! self::is_account_view() ) {
+			return;
+		}
+
+		show_admin_bar( false );
 	}
 
 	/**

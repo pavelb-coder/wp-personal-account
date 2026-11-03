@@ -876,6 +876,67 @@ foreach ( $reg_checks as $check_name => $ok ) {
 	}
 }
 
+// ---------- Панель WordPress в кабинете ----------
+$bar_settings_snapshot = get_option( 'wppa_settings', array() );
+
+/**
+ * Прогон скрытия админ-бара и возврат флага.
+ *
+ * @return bool|null true — скрыт, false — показан, null — не трогали.
+ */
+function wppa_admin_bar_state() {
+	$GLOBALS['wppa_test']['admin_bar'] = null;
+	WPPA_Plugin::maybe_hide_admin_bar();
+	return $GLOBALS['wppa_test']['admin_bar'];
+}
+
+$bar_checks = array();
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'hide_admin_bar' => 1 ) ) );
+$GLOBALS['wppa_test']['logged_in']      = true;
+$GLOBALS['wppa_test']['is_admin']       = false;
+$GLOBALS['wppa_test']['is_singular']    = true;
+
+$bar_checks['в кабинете панель скрыта'] = false === wppa_admin_bar_state();
+
+$GLOBALS['wppa_test']['is_admin'] = true;
+$bar_checks['в админке панель не трогаем'] = null === wppa_admin_bar_state();
+$GLOBALS['wppa_test']['is_admin'] = false;
+
+$GLOBALS['wppa_test']['logged_in'] = false;
+$bar_checks['гостю панель не нужна'] = null === wppa_admin_bar_state();
+$GLOBALS['wppa_test']['logged_in'] = true;
+
+$GLOBALS['wppa_test']['doing_ajax'] = true;
+$bar_checks['в ajax не вмешиваемся'] = null === wppa_admin_bar_state();
+$GLOBALS['wppa_test']['doing_ajax'] = false;
+
+$GLOBALS['wppa_test']['is_singular']  = false;
+unset( $GLOBALS['wppa_test']['has_block'] );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'account_page_id' => 0 ) ) );
+$bar_checks['не кабинет — панель остаётся'] = null === wppa_admin_bar_state();
+$GLOBALS['wppa_test']['is_singular'] = true;
+
+// Кабинет через блок на произвольной странице.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'account_page_id' => 0 ) ) );
+$GLOBALS['wppa_test']['has_block'] = array( 'wppa/auth' => true );
+$bar_checks['кабинет блоком на другой странице'] = false === wppa_admin_bar_state();
+unset( $GLOBALS['wppa_test']['has_block'] );
+
+// Настройка выключена — панель остаётся.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'hide_admin_bar' => 0, 'account_page_id' => 5 ) ) );
+$bar_checks['настройка выключена — панель видна'] = null === wppa_admin_bar_state();
+
+update_option( 'wppa_settings', $bar_settings_snapshot );
+$GLOBALS['wppa_test']['admin_bar'] = null;
+
+foreach ( $bar_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'admin bar: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $GLOBALS['wppa_test']['logged_in'] = true;
 
 WPPA_Auth_Widget::register();

@@ -84,6 +84,23 @@ ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
 
+$bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
+	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );
+
+echo ( $bar_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: галочка скрытия панели WordPress\n";
+if ( ! $bar_settings_ok ) {
+	$fail++;
+}
+
+$bar_sanitize_on  = WPPA_Settings::sanitize( array( 'hide_admin_bar' => '1' ) );
+$bar_sanitize_off = WPPA_Settings::sanitize( array() );
+$bar_sanitize_ok  = 1 === $bar_sanitize_on['hide_admin_bar'] && 0 === $bar_sanitize_off['hide_admin_bar'];
+
+echo ( $bar_sanitize_ok ? 'OK    ' : 'FAIL  ' ) . "settings: скрытие панели сохраняется\n";
+if ( ! $bar_sanitize_ok ) {
+	$fail++;
+}
+
 $reg_window_fields_ok = false !== strpos( $settings_html, 'wppa_settings[registration_start]' )
 	&& false !== strpos( $settings_html, 'wppa_settings[registration_end]' );
 

@@ -73,6 +73,7 @@ class WPPA_Settings {
 		$out['enabled_tabs']    = array_values( array_intersect( $allowed_tabs, $tabs ) );
 
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
+		$out['hide_admin_bar']       = empty( $input['hide_admin_bar'] ) ? 0 : 1;
 		$out['registration_start']   = isset( $input['registration_start'] ) ? WPPA_Time::sanitize_datetime( $input['registration_start'] ) : '';
 		$out['registration_end']     = isset( $input['registration_end'] ) ? WPPA_Time::sanitize_datetime( $input['registration_end'] ) : '';
 		$out['delete_data_on_uninstall'] = empty( $input['delete_data_on_uninstall'] ) ? 0 : 1;
@@ -212,6 +213,18 @@ class WPPA_Settings {
 								);
 								?>
 							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Панель WordPress', 'wp-personal-account' ); ?></th>
+						<td>
+							<p>
+								<label>
+									<input type="checkbox" name="wppa_settings[hide_admin_bar]" value="1" <?php checked( 1, (int) $s['hide_admin_bar'] ); ?> />
+									<?php esc_html_e( 'Скрывать панель WordPress (админ-бар) в личном кабинете', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<p class="description"><?php esc_html_e( 'Скрывается только на страницах кабинета — в остальных разделах сайта панель остаётся. Доступ в админку это не ограничивает: если нужно запретить участникам вход в wp-admin, используйте отдельный плагин или роль.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 					<tr>
