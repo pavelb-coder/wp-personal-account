@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.10.0
+Stable tag: 2.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 2.10.1 =
+* Исправлено: кнопка «Регистрация» не переключала на форму регистрации, если виджет или шорткод выведен не на странице кабинета.
+* Параметры `wppa_view`, `wppa_tab`, `wppa_notice`, `wppa_team_join`, `wppa_action`, `wppa_team_action` зарегистрированы в `query_vars` — WordPress больше не удаляет их каноническим редиректом.
+* Виджет и блок учитывают `?wppa_view=register` и открывают нужную панель, даже в режиме «только вход».
+* В режиме «оба» вкладка регистрации активируется по ссылке; на текущей странице переключение идёт без перезагрузки.
+* Новый метод `WPPA_Plugin::requested_view()`.
 
 = 2.10.0 =
 * Под формой входа появилась вторичная кнопка «Регистрация» со ссылкой на форму регистрации; под формой регистрации — кнопка «Войти».

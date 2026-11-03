@@ -206,9 +206,22 @@ class WPPA_Auth_Form {
 
 		$registration = WPPA_Plugin::registration_open();
 		$mode         = in_array( $args['mode'], array( 'both', 'login', 'register' ), true ) ? $args['mode'] : 'both';
+		$requested    = WPPA_Plugin::requested_view();
+		$active       = 'login';
+
+		// Переход по кнопке «Регистрация» (?wppa_view=register) должен переключать форму,
+		// даже если виджет/шорткод настроен только на вход.
+		if ( 'register' === $requested ) {
+			$mode   = 'both' === $mode ? 'both' : 'register';
+			$active = 'register';
+		} elseif ( 'login' === $requested ) {
+			$mode   = 'both' === $mode ? 'both' : 'login';
+			$active = 'login';
+		}
 
 		if ( 'register' === $mode && ! $registration ) {
-			$mode = 'login';
+			$mode   = 'login';
+			$active = 'login';
 		}
 
 		if ( is_user_logged_in() ) {
@@ -227,6 +240,7 @@ class WPPA_Auth_Form {
 				'mode'         => $mode,
 				'registration' => $registration,
 				'redirect'     => isset( $args['redirect'] ) ? $args['redirect'] : '',
+				'active'       => $active,
 			)
 		);
 	}

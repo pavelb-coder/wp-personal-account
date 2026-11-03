@@ -400,6 +400,53 @@ foreach ( $reg_btn_checks as $check_name => $ok ) {
 
 $GLOBALS['wppa_test']['logged_in'] = true;
 
+// ---------- Переход по ссылке ?wppa_view=register ----------
+$GLOBALS['wppa_test']['logged_in'] = false;
+
+$view_checks = array(
+	'query_vars: wppa_view зарегистрирован' => in_array( 'wppa_view', WPPA_Plugin::query_vars( array( 'p' ) ), true ),
+	'query_vars: wppa_tab зарегистрирован'  => in_array( 'wppa_tab', WPPA_Plugin::query_vars( array() ), true ),
+	'requested_view(): пусто без параметра' => '' === WPPA_Plugin::requested_view(),
+);
+
+$_GET['wppa_view'] = 'register';
+$view_checks['requested_view(): register'] = 'register' === WPPA_Plugin::requested_view();
+
+// Виджет «только вход» переключается на регистрацию по ссылке.
+ob_start();
+WPPA_Auth_Form::render( array( 'mode' => 'login' ) );
+$view_register_html = ob_get_clean();
+
+$view_checks['логин-виджет показывает регистрацию'] = false !== strpos( $view_register_html, 'wppa_fields[first_name]' );
+$view_checks['логин-виджет: панель без is-hidden']  = false === strpos( $view_register_html, 'id="wppa-panel-register"' ) ? false : true;
+
+// Виджет «оба»: активна вкладка регистрации, панель входа скрыта.
+ob_start();
+WPPA_Auth_Form::render( array( 'mode' => 'both' ) );
+$view_both_html = ob_get_clean();
+
+$view_checks['режим «оба»: активна вкладка регистрации'] = false !== strpos( $view_both_html, 'data-wppa-panel-btn="register" role="tab" aria-selected="true"' );
+$view_checks['режим «оба»: панель входа скрыта']         = false !== strpos( $view_both_html, 'wppa-widget__panel is-hidden' );
+
+// Экран кабинета для гостя.
+$view_checks['экран гостя: регистрация'] = false !== strpos( WPPA_Template::get( 'guest', array( 'view' => WPPA_Plugin::requested_view(), 'registration' => true ) ), 'wppa_fields[first_name]' );
+
+// Регистрация закрыта — параметр игнорируется.
+update_option( 'users_can_register', 0 );
+$view_checks['закрытая регистрация: fallback на вход'] = 'login' === WPPA_Plugin::requested_view();
+update_option( 'users_can_register', 1 );
+
+unset( $_GET['wppa_view'] );
+
+foreach ( $view_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'view: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+$GLOBALS['wppa_test']['logged_in'] = true;
+
 WPPA_Auth_Widget::register();
 echo 'widget: зарегистрирован ' . implode( ', ', (array) ( $GLOBALS['wppa_test']['widgets'] ?? array() ) ) . "\n";
 

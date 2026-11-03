@@ -62,9 +62,9 @@ class WPPA_Account {
 	private static function render_guest() {
 		$registration = WPPA_Plugin::registration_open();
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор отображаемой формы.
-		$view = isset( $_GET['wppa_view'] ) ? sanitize_key( wp_unslash( $_GET['wppa_view'] ) ) : 'login';
-		if ( 'register' === $view && ! $registration ) {
+		$view = WPPA_Plugin::requested_view();
+
+		if ( '' === $view ) {
 			$view = 'login';
 		}
 

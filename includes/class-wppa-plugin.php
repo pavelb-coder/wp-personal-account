@@ -13,6 +13,11 @@ defined( 'ABSPATH' ) || exit;
 class WPPA_Plugin {
 
 	/**
+	 * Query-параметры плагина (регистрируются, чтобы WordPress их не выбрасывал).
+	 */
+	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action' );
+
+	/**
 	 * Экземпляр (singleton).
 	 *
 	 * @var WPPA_Plugin|null
@@ -61,6 +66,36 @@ class WPPA_Plugin {
 		}
 
 		add_filter( 'plugin_action_links_' . plugin_basename( WPPA_FILE ), array( $this, 'action_links' ) );
+		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
+	}
+
+	/**
+	 * Публичные query-параметры плагина.
+	 *
+	 * Нужны, чтобы WordPress не выбрасывал их каноническим редиректом
+	 * (например, ?wppa_view=register на главной странице).
+	 *
+	 * @param array $vars Параметры.
+	 * @return array
+	 */
+	public static function query_vars( $vars ) {
+		return array_merge( (array) $vars, self::QUERY_VARS );
+	}
+
+	/**
+	 * Текущий запрошенный экран гостя (login|register) с учётом прав.
+	 *
+	 * @return string
+	 */
+	public static function requested_view() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор отображаемой формы.
+		$view = isset( $_GET['wppa_view'] ) ? sanitize_key( wp_unslash( $_GET['wppa_view'] ) ) : '';
+
+		if ( 'register' === $view ) {
+			return self::registration_open() ? 'register' : 'login';
+		}
+
+		return 'login' === $view ? 'login' : '';
 	}
 
 	/**

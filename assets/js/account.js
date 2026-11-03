@@ -75,7 +75,28 @@
 	}
 
 	/**
+	 * Активная панель внутри виджета.
+	 *
+	 * @param {Element} root Корень виджета.
+	 * @param {string}  name login|register.
+	 */
+	function activatePanel( root, name ) {
+		Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel-btn]' ), function ( item ) {
+			var active = item.getAttribute( 'data-wppa-panel-btn' ) === name;
+			item.classList.toggle( 'is-active', active );
+			item.setAttribute( 'aria-selected', active ? 'true' : 'false' );
+		} );
+
+		Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel]' ), function ( panel ) {
+			panel.classList.toggle( 'is-hidden', panel.getAttribute( 'data-wppa-panel' ) !== name );
+		} );
+	}
+
+	/**
 	 * Переключение панелей «Вход / Регистрация» в виджете.
+	 *
+	 * Учитывает ?wppa_view=register (переход по кнопке «Регистрация»)
+	 * и перехватывает такие ссылки, если они ведут на текущую страницу.
 	 */
 	function initWidgetPanels() {
 		var buttons = document.querySelectorAll( '[data-wppa-panel-btn]' );
@@ -89,17 +110,80 @@
 					return;
 				}
 
-				Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel-btn]' ), function ( item ) {
-					var active = item === button;
-					item.classList.toggle( 'is-active', active );
-					item.setAttribute( 'aria-selected', active ? 'true' : 'false' );
-				} );
-
-				Array.prototype.forEach.call( root.querySelectorAll( '[data-wppa-panel]' ), function ( panel ) {
-					panel.classList.toggle( 'is-hidden', panel.getAttribute( 'data-wppa-panel' ) !== name );
-				} );
+				activatePanel( root, name );
 			} );
 		} );
+
+		// 1. Панель по параметру адреса.
+		var requested = getRequestedView();
+
+		if ( requested ) {
+			Array.prototype.forEach.call( document.querySelectorAll( '.wppa--widget' ), function ( root ) {
+				if ( root.querySelector( '[data-wppa-panel="' + requested + '"]' ) ) {
+					activatePanel( root, requested );
+				}
+			} );
+		}
+
+		// 2. Клик по ссылке ?wppa_view=… на текущей странице — без перезагрузки.
+		document.addEventListener( 'click', function ( event ) {
+			var link = event.target.closest ? event.target.closest( 'a[href]' ) : null;
+
+			if ( ! link || event.metaKey || event.ctrlKey || event.shiftKey || event.button ) {
+				return;
+			}
+
+			var url;
+
+			try {
+				url = new URL( link.href, window.location.href );
+			} catch ( error ) {
+				return;
+			}
+
+			var view = url.searchParams.get( 'wppa_view' );
+
+			if ( ! view || url.pathname !== window.location.pathname || url.search.indexOf( 'wppa_view' ) === -1 ) {
+				return;
+			}
+
+			var widget = link.closest( '.wppa--widget' ) || document.querySelector( '.wppa--widget' );
+			var panel  = widget ? widget.querySelector( '[data-wppa-panel="' + view + '"]' ) : null;
+
+			if ( ! panel ) {
+				return;
+			}
+
+			event.preventDefault();
+			activatePanel( widget, view );
+
+			if ( window.history && window.history.replaceState ) {
+				window.history.replaceState( {}, '', url.toString() );
+			}
+
+			var focus = panel.querySelector( 'input:not([type="hidden"]), textarea' );
+
+			if ( focus ) {
+				focus.focus();
+			}
+		} );
+	}
+
+	/**
+	 * Какой экран запрошен параметром ?wppa_view.
+	 *
+	 * @return {string} login|register|''.
+	 */
+	function getRequestedView() {
+		var view = '';
+
+		try {
+			view = new URL( window.location.href ).searchParams.get( 'wppa_view' ) || '';
+		} catch ( error ) {
+			return '';
+		}
+
+		return view === 'register' || view === 'login' ? view : '';
 	}
 
 	/**
