@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 2.4.1 =
+* Из блока «Сводка профиля» в кабинете убрана карточка с ролью пользователя.
+* Описание блока в конструкторе обновлено.
 
 = 2.4.0 =
 * Новый блок Gutenberg wppa/auth «Вход и регистрация (личный кабинет)» для блочных тем, где недоступны виджеты.

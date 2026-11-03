@@ -113,7 +113,7 @@ class WPPA_Builder {
 			'profile-summary' => array(
 				'label' => __( 'Сводка профиля', 'wp-personal-account' ),
 				'tabs'  => array( 'dashboard' ),
-				'desc'  => __( 'Дата регистрации, email, роль, команда', 'wp-personal-account' ),
+				'desc'  => __( 'Дата регистрации, email, команда', 'wp-personal-account' ),
 			),
 			'quick-actions'   => array(
 				'label' => __( 'Быстрые действия', 'wp-personal-account' ),

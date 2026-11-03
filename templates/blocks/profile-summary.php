@@ -13,7 +13,6 @@ $wppa_registered = $user->user_registered ? mysql2date( get_option( 'date_format
 $wppa_pending    = WPPA_Profile::pending_email( $user->ID );
 $wppa_team_id    = WPPA_Teams::team_id( $user->ID );
 $wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
-$wppa_roles      = array_intersect_key( wp_roles()->get_names(), array_flip( (array) $user->roles ) );
 ?>
 <?php if ( isset( $block_title ) && '' !== $block_title ) : ?>
 	<h3 class="wppa-subtitle"><?php echo esc_html( $block_title ); ?></h3>
@@ -39,13 +38,6 @@ $wppa_roles      = array_intersect_key( wp_roles()->get_names(), array_flip( (ar
 			<?php endif; ?>
 		</div>
 	<?php endif; ?>
-
-	<div class="wppa-card wppa-card--stat">
-		<span class="wppa-card__label"><?php esc_html_e( 'Роль', 'wp-personal-account' ); ?></span>
-		<span class="wppa-card__value wppa-card__value--small">
-			<?php echo esc_html( $wppa_roles ? implode( ', ', array_map( 'translate_user_role', $wppa_roles ) ) : '—' ); ?>
-		</span>
-	</div>
 </div>
 
 <?php if ( $wppa_pending ) : ?>
