@@ -382,6 +382,9 @@ $cli_test   = WPPA_SMB::test( $cli_config );
 
 $smb_checks['smbclient: доступ получен']        = $cli_test['ok'] && 'cli' === $cli_test['method'];
 $smb_checks['smbclient: вход в подпапку']       = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'cd' );
+$smb_checks['кавычки smbclient: двойные']        = '"reports"' === WPPA_SMB::quote_arg( 'reports' );
+$smb_checks['кавычки smbclient: без одинарных']  = false === strpos( WPPA_SMB::quote_arg( 'olimp' ), "'" );
+$smb_checks['кавычки smbclient: двойная кавычка в имени убрана'] = '"ab"' === WPPA_SMB::quote_arg( 'a"b' );
 $smb_checks['smbclient: пароль не в командной строке'] = false === strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'secret-pass' );
 $smb_checks['smbclient: файл учётных данных после проверки удалён'] = 0 === count( glob( sys_get_temp_dir() . '/wppa_smb_creds_*' ) );
 
@@ -404,6 +407,35 @@ add_filter( 'wppa_smb_runner', function ( $result, $command ) {
 WPPA_SMB::test( array( 'path' => '\\\\fs\\share', 'user' => '', 'pass' => '' ) );
 $smb_checks['без учётных данных: ключ -N'] = false !== strpos( (string) ( $GLOBALS['wppa_test']['anon_command'] ?? '' ), '-N' );
 
+// Папки внутри шары нет: проверка объясняет, запись создаёт её и повторяет.
+add_filter( 'wppa_smb_runner', function ( $result, $command ) {
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
+	}
+
+	$GLOBALS['wppa_test']['missing_commands'][] = $command;
+
+	if ( false !== strpos( $command, 'mkdir' ) ) {
+		$GLOBALS['wppa_test']['mkdir_used'] = true;
+
+		return array( 'code' => 0, 'output' => '' );
+	}
+
+	return array( 'code' => 1, 'output' => 'cd "olimp"\: NT_STATUS_OBJECT_NAME_NOT_FOUND listing \\fs\share' );
+}, 50, 2 );
+
+$GLOBALS['wppa_test']['missing_commands'] = array();
+$GLOBALS['wppa_test']['mkdir_used']       = false;
+
+$missing_cfg    = array( 'path' => '\\\\fs\\share\\olimp', 'user' => 'svc', 'pass' => 'p' );
+$missing_test   = WPPA_SMB::test( $missing_cfg );
+$missing_write  = WPPA_SMB::write( 'accounts.csv', "id\n", $missing_cfg );
+
+$smb_checks['нет папки в шаре: проверка объясняет'] = ! $missing_test['ok'] && false !== strpos( $missing_test['message'], 'папки' );
+$smb_checks['нет папки в шаре: запись создала папку'] = $missing_write['ok'] && true === $GLOBALS['wppa_test']['mkdir_used'];
+$smb_checks['нет папки в шаре: в отчёте про создание'] = false !== strpos( $missing_write['message'], 'создана' );
+$smb_checks['нет папки: повтор с mkdir и cd']        = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['missing_commands'] ), 'mkdir "olimp"; cd "olimp";' );
+
 // Отказ авторизации от сервера.
 add_filter( 'wppa_smb_runner', function ( $result, $command ) {
 	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
@@ -411,7 +443,7 @@ add_filter( 'wppa_smb_runner', function ( $result, $command ) {
 	}
 
 	return array( 'code' => 1, 'output' => 'NT_STATUS_LOGON_FAILURE listing \\\\fs\\share' );
-}, 40, 2 );
+}, 70, 2 );
 
 $denied = WPPA_SMB::test( array( 'path' => '\\\\fs\\share', 'user' => 'svc', 'pass' => 'bad' ) );
 $smb_checks['отказ сервера: сообщение про логин'] = ! $denied['ok'] && false !== strpos( $denied['message'], 'логин' );

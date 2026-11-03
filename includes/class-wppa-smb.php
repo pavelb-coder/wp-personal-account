@@ -331,6 +331,19 @@ class WPPA_SMB {
 	}
 
 	/**
+	 * Кавычки для команд внутри smbclient (-c).
+	 *
+	 * smbclient понимает только двойные кавычки: одинарные он считает частью
+	 * имени, из-за чего cd 'olimp' ищет папку «'olimp'» и не находит её.
+	 *
+	 * @param string $value Значение.
+	 * @return string
+	 */
+	public static function quote_arg( $value ) {
+		return '"' . str_replace( '"', '', (string) $value ) . '"';
+	}
+
+	/**
 	 * Временный файл учётных данных (0600): пароль не виден в ps.
 	 *
 	 * @param array  $config    Настройки.
@@ -554,7 +567,7 @@ class WPPA_SMB {
 		}
 
 		$auth   = self::auth_args( $config, $parsed );
-		$folder = '' !== $subdir ? 'cd ' . escapeshellarg( $subdir ) . '; ' : '';
+		$folder = '' !== $subdir ? 'cd ' . self::quote_arg( $subdir ) . '; ' : '';
 
 		$command = sprintf(
 			'%s %s %s -c %s -t 10 2>&1',
@@ -578,6 +591,20 @@ class WPPA_SMB {
 			return array(
 				'ok'      => false,
 				'message' => __( 'Сервер SMB отклонил логин или пароль.', 'wp-personal-account' ),
+				'method'  => 'cli',
+			);
+		}
+
+		// Авторизация прошла, но папки внутри шары нет.
+		if ( $failed && false !== strpos( $output, 'NT_STATUS_OBJECT_NAME_NOT_FOUND' ) && '' !== $subdir ) {
+			return array(
+				'ok'      => false,
+				'message' => sprintf(
+					/* translators: 1: папка, 2: ресурс */
+					__( 'Подключение к %2$s есть, но папки «%1$s» в ней нет. Создайте её на сервере или укажите путь без неё: выгрузка создаст папку сама.', 'wp-personal-account' ),
+					$subdir,
+					$parsed['service']
+				),
 				'method'  => 'cli',
 			);
 		}
@@ -705,18 +732,37 @@ class WPPA_SMB {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $temp, $contents );
 
-			$auth   = self::auth_args( $config, $parsed );
-			$script = '' !== $parsed['subdir'] ? sprintf( 'cd %s; ', escapeshellarg( $parsed['subdir'] ) ) : '';
+			$auth = self::auth_args( $config, $parsed );
+			$put  = sprintf( 'put %s %s', self::quote_arg( $temp ), self::quote_arg( $name ) );
+			$sub  = (string) $parsed['subdir'];
 
-			$command = sprintf(
-				'%s %s %s -c %s -t 20 2>&1',
-				escapeshellcmd( $binary ),
-				escapeshellarg( $parsed['service'] ),
-				$auth['args'],
-				escapeshellarg( $script . sprintf( 'put %s %s', escapeshellarg( $temp ), escapeshellarg( $name ) ) )
-			);
+			$cd      = '' !== $sub ? 'cd ' . self::quote_arg( $sub ) . '; ' : '';
+			$prepare = '' !== $sub ? 'mkdir ' . self::quote_arg( $sub ) . '; cd ' . self::quote_arg( $sub ) . '; ' : '';
 
-			$result = self::run( $command );
+			$run = static function ( $script ) use ( $binary, $parsed, $auth ) {
+				return WPPA_SMB::run(
+					sprintf(
+						'%s %s %s -c %s -t 20 2>&1',
+						escapeshellcmd( $binary ),
+						escapeshellarg( $parsed['service'] ),
+						$auth['args'],
+						escapeshellarg( $script )
+					)
+				);
+			};
+
+			$result  = $run( $cd . $put );
+			$output  = trim( wp_strip_all_tags( $result['output'] ) );
+			$failed  = 0 !== $result['code'] || preg_match( '/NT_STATUS_[A-Z_]+/', $output );
+			$created = false;
+
+			// Папки внутри шары может не быть — создаём её и повторяем запись.
+			if ( $failed && '' !== $sub && false !== strpos( $output, 'NT_STATUS_OBJECT_NAME_NOT_FOUND' ) ) {
+				$result  = $run( $prepare . $put );
+				$output  = trim( wp_strip_all_tags( $result['output'] ) );
+				$failed  = 0 !== $result['code'] || preg_match( '/NT_STATUS_[A-Z_]+/', $output );
+				$created = ! $failed;
+			}
 
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
 			@unlink( $temp );
@@ -726,16 +772,27 @@ class WPPA_SMB {
 				@unlink( $auth['credentials'] );
 			}
 
-			$output = trim( wp_strip_all_tags( $result['output'] ) );
-			$failed = 0 !== $result['code'] || preg_match( '/NT_STATUS_[A-Z_]+/', $output );
+			if ( $failed ) {
+				return array(
+					'ok'      => false,
+					'message' => sprintf( /* translators: %s: вывод smbclient */ __( 'smbclient вернул ошибку: %s', 'wp-personal-account' ), $output ),
+					'file'    => $remote,
+					'bytes'   => 0,
+				);
+			}
 
 			return array(
-				'ok'      => ! $failed,
-				'message' => $failed
-					? sprintf( /* translators: %s: вывод smbclient */ __( 'smbclient вернул ошибку: %s', 'wp-personal-account' ), $output )
+				'ok'      => true,
+				'message' => $created
+					? sprintf(
+						/* translators: 1: файл, 2: папка */
+						__( 'Файл %1$s записан через smbclient, папка «%2$s» создана на сервере.', 'wp-personal-account' ),
+						$remote,
+						$sub
+					)
 					: sprintf( /* translators: %s: файл */ __( 'Файл %s записан через smbclient.', 'wp-personal-account' ), $remote ),
 				'file'    => $remote,
-				'bytes'   => $failed ? 0 : strlen( $contents ),
+				'bytes'   => strlen( $contents ),
 			);
 		}
 

@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.1.0
+Stable tag: 3.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.1.1 =
+* Исправлено подключение к вложенной папке шары: smbclient понимает только двойные кавычки, а команда уходила с одинарными, из-за чего `cd 'olimp'` искал папку с кавычками в имени и возвращал NT_STATUS_OBJECT_NAME_NOT_FOUND.
+* Если папки внутри шары нет, проверка объясняет это отдельным сообщением, а выгрузка создаёт папку и повторяет запись.
+* Имена путей в командах smbclient (cd, mkdir, put) экранируются своим способом — без изменений в экранировании оболочки.
 
 = 3.1.0 =
 * Авторизация в сетевой локальной папке: путь (UNC, smb:// или локальный), логин с доменом и пароль.
