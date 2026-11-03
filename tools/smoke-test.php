@@ -266,7 +266,7 @@ update_option(
 		'dashboard' => array(
 			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => 'С возвращением', 'audience' => 'all', 'html' => '' ),
 			array( 'type' => 'custom', 'id' => 'custom-1', 'enabled' => 1, 'title' => 'Инструкция', 'audience' => 'all', 'html' => '<p>Заполните профиль.</p>' ),
-			array( 'type' => 'block', 'id' => 'quick-actions', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
 		),
 	)
 );
@@ -278,11 +278,50 @@ $built = ob_get_clean();
 $checks = array(
 	'заголовок-переопределение' => false !== strpos( $built, 'С возвращением' ),
 	'свой HTML-блок'            => false !== strpos( $built, 'Заполните профиль.' ),
-	'выключенный блок скрыт'    => false === strpos( $built, 'Быстрые действия' ),
+	'выключенный блок скрыт'    => false === strpos( $built, 'Сводка профиля' ),
 );
 
 foreach ( $checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'builder: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Блок «Быстрые действия» удалён в 2.15.1.
+$removed_checks = array(
+	'блока нет в реестре'   => ! isset( WPPA_Builder::blocks()['quick-actions'] ),
+	'блока нет в раскладке' => ! in_array(
+		'quick-actions',
+		array_map(
+			function ( $item ) {
+				return $item['id'];
+			},
+			call_user_func_array( 'array_merge', array_values( WPPA_Builder::defaults() ) )
+		),
+		true
+	),
+	'шаблона нет на диске'  => ! file_exists( WPPA_PATH . 'templates/blocks/quick-actions.php' ),
+);
+
+update_option(
+	WPPA_Builder::OPTION,
+	array(
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			array( 'type' => 'block', 'id' => 'quick-actions', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
+
+$removed_checks['drop_block чистит сохранённую раскладку'] = WPPA_Builder::drop_block( 'quick-actions' )
+	&& 1 === count( WPPA_Builder::layout()['dashboard'] )
+	&& 'greeting' === WPPA_Builder::layout()['dashboard'][0]['id'];
+
+$removed_checks['повторный drop_block ничего не меняет'] = false === WPPA_Builder::drop_block( 'quick-actions' );
+
+foreach ( $removed_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'removed: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

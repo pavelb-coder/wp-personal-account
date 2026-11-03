@@ -115,11 +115,6 @@ class WPPA_Builder {
 				'tabs'  => array( 'dashboard' ),
 				'desc'  => __( 'Дата регистрации, email, команда', 'wp-personal-account' ),
 			),
-			'quick-actions'   => array(
-				'label' => __( 'Быстрые действия', 'wp-personal-account' ),
-				'tabs'  => array( 'dashboard' ),
-				'desc'  => __( 'Ссылки на профиль, смену пароля и выход', 'wp-personal-account' ),
-			),
 			'profile-form'    => array(
 				'label' => __( 'Форма профиля', 'wp-personal-account' ),
 				'tabs'  => array( 'profile' ),
@@ -317,6 +312,43 @@ class WPPA_Builder {
 		update_option( self::OPTION, $saved );
 
 		return true;
+	}
+
+	/**
+	 * Удалить блок из сохранённой раскладки во всех вкладках.
+	 *
+	 * @param string $block_id ID блока.
+	 * @return bool true — раскладка изменилась.
+	 */
+	public static function drop_block( $block_id ) {
+		$saved = get_option( self::OPTION, null );
+
+		if ( ! is_array( $saved ) ) {
+			return false;
+		}
+
+		$changed = false;
+
+		foreach ( $saved as $tab => $items ) {
+			$kept = array();
+
+			foreach ( (array) $items as $item ) {
+				if ( isset( $item['id'] ) && $block_id === $item['id'] ) {
+					$changed = true;
+					continue;
+				}
+
+				$kept[] = $item;
+			}
+
+			$saved[ $tab ] = $kept;
+		}
+
+		if ( $changed ) {
+			update_option( self::OPTION, $saved );
+		}
+
+		return $changed;
 	}
 
 	/**

@@ -429,6 +429,9 @@ class WPPA_Plugin {
 			$settings['min_team_members'] = $defaults['min_team_members'];
 		}
 
+		// Блок «Быстрые действия» удалён в 2.15.1 — вычищаем его из раскладок.
+		WPPA_Builder::drop_block( 'quick-actions' );
+
 		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.
 		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
 			WPPA_Builder::seed_block( 'link-button', 'dashboard' );
@@ -446,11 +449,6 @@ class WPPA_Plugin {
 	 */
 	public static function activate() {
 		$settings = self::get_settings();
-		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.
-		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
-			WPPA_Builder::seed_block( 'link-button', 'dashboard' );
-			update_option( 'wppa_link_button_seeded', 1 );
-		}
 
 		update_option( 'wppa_settings', $settings );
 		update_option( 'wppa_version', WPPA_VERSION );
