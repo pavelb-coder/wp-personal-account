@@ -1,0 +1,277 @@
+/**
+ * WP Personal Account — стили админ-панели.
+ */
+
+.wppa-admin {
+	--wppa-admin-border: #dcdfe5;
+	--wppa-admin-muted: #646970;
+	--wppa-admin-accent: #2563eb;
+}
+
+.wppa-admin__cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 14px;
+	margin: 20px 0 24px;
+}
+
+.wppa-admin__card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 18px;
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+
+.wppa-admin__card-label {
+	color: var(--wppa-admin-muted);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.wppa-admin__card-value {
+	font-size: 26px;
+	font-weight: 650;
+	line-height: 1.15;
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.wppa-admin__card-note {
+	color: var(--wppa-admin-muted);
+	font-size: 11px;
+}
+
+.wppa-admin__grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+	gap: 16px;
+	align-items: start;
+	margin-bottom: 20px;
+}
+
+@media screen and (max-width: 1100px) {
+	.wppa-admin__grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.wppa-admin__panel {
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 10px;
+	padding: 16px 20px 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+
+.wppa-admin__panel > h2:first-child {
+	margin-top: 4px;
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--wppa-admin-muted);
+}
+
+.wppa-admin__muted {
+	color: var(--wppa-admin-muted);
+	font-size: 12px;
+}
+
+/* График */
+
+.wppa-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+	height: 180px;
+	padding: 12px 4px 0;
+	margin-bottom: 8px;
+	border-bottom: 1px solid var(--wppa-admin-border);
+}
+
+.wppa-chart__col {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	flex: 1 1 0;
+	height: 100%;
+	min-width: 0;
+}
+
+.wppa-chart__bar {
+	position: relative;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	width: 100%;
+	max-width: 42px;
+	background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+	border-radius: 5px 5px 0 0;
+	min-height: 3px;
+	transition: filter .15s ease;
+}
+
+.wppa-chart__col:hover .wppa-chart__bar {
+	filter: brightness(1.12);
+}
+
+.wppa-chart__value {
+	position: absolute;
+	top: -20px;
+	font-size: 11px;
+	font-weight: 600;
+	color: #1d2327;
+	white-space: nowrap;
+}
+
+.wppa-chart__label {
+	margin-top: 6px;
+	font-size: 10px;
+	color: var(--wppa-admin-muted);
+	white-space: nowrap;
+	transform: rotate(-45deg);
+	transform-origin: center;
+}
+
+/* Статусы */
+
+.wppa-admin__status {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.wppa-admin__status li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 0;
+	border-bottom: 1px dashed #eef0f3;
+	font-size: 13px;
+}
+
+.wppa-admin__status li:last-child {
+	border-bottom: 0;
+}
+
+.wppa-dot {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: #d1d5db;
+	flex: 0 0 auto;
+}
+
+.wppa-dot.is-ok {
+	background: #22c55e;
+}
+
+.wppa-dot.is-warn {
+	background: #f59e0b;
+}
+
+.wppa-dot.is-bad {
+	background: #ef4444;
+}
+
+/* Таблицы */
+
+.wppa-admin__table {
+	border-radius: 8px;
+	overflow: hidden;
+	margin-top: 8px;
+}
+
+.wppa-admin__table th {
+	font-weight: 600;
+}
+
+.wppa-admin__avatar {
+	border-radius: 50%;
+	vertical-align: middle;
+	margin-right: 6px;
+}
+
+.wppa-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	background: #f1f5f9;
+}
+
+.wppa-badge--warn {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+/* Фильтры и инструменты */
+
+.wppa-admin__filters {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 16px 0 8px;
+}
+
+.wppa-admin__filters .search-box {
+	display: flex;
+	gap: 6px;
+	margin: 0;
+}
+
+.wppa-admin__page a,
+.wppa-admin__page span {
+	display: inline-block;
+	min-width: 30px;
+	padding: 4px 8px;
+	text-align: center;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 6px;
+	text-decoration: none;
+	margin-right: 4px;
+	background: #fff;
+}
+
+.wppa-admin__page .current {
+	background: var(--wppa-admin-accent);
+	border-color: var(--wppa-admin-accent);
+	color: #fff;
+}
+
+.wppa-tool {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 0;
+	border-bottom: 1px solid #eef0f3;
+}
+
+.wppa-tool:last-of-type {
+	border-bottom: 0;
+}
+
+.wppa-tool p {
+	margin: 4px 0 0;
+}
+
+.wppa-tool form {
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.wppa-admin__actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 12px 0 0;
+}

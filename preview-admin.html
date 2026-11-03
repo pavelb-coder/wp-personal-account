@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WP Personal Account — панель управления (превью)</title>
+<style>
+/**
+ * WP Personal Account — стили админ-панели.
+ */
+
+.wppa-admin {
+	--wppa-admin-border: #dcdfe5;
+	--wppa-admin-muted: #646970;
+	--wppa-admin-accent: #2563eb;
+}
+
+.wppa-admin__cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 14px;
+	margin: 20px 0 24px;
+}
+
+.wppa-admin__card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 18px;
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+
+.wppa-admin__card-label {
+	color: var(--wppa-admin-muted);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.wppa-admin__card-value {
+	font-size: 26px;
+	font-weight: 650;
+	line-height: 1.15;
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.wppa-admin__card-note {
+	color: var(--wppa-admin-muted);
+	font-size: 11px;
+}
+
+.wppa-admin__grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+	gap: 16px;
+	align-items: start;
+	margin-bottom: 20px;
+}
+
+@media screen and (max-width: 1100px) {
+	.wppa-admin__grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.wppa-admin__panel {
+	background: #fff;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 10px;
+	padding: 16px 20px 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+
+.wppa-admin__panel > h2:first-child {
+	margin-top: 4px;
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	color: var(--wppa-admin-muted);
+}
+
+.wppa-admin__muted {
+	color: var(--wppa-admin-muted);
+	font-size: 12px;
+}
+
+/* График */
+
+.wppa-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+	height: 180px;
+	padding: 12px 4px 0;
+	margin-bottom: 8px;
+	border-bottom: 1px solid var(--wppa-admin-border);
+}
+
+.wppa-chart__col {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	flex: 1 1 0;
+	height: 100%;
+	min-width: 0;
+}
+
+.wppa-chart__bar {
+	position: relative;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	width: 100%;
+	max-width: 42px;
+	background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+	border-radius: 5px 5px 0 0;
+	min-height: 3px;
+	transition: filter .15s ease;
+}
+
+.wppa-chart__col:hover .wppa-chart__bar {
+	filter: brightness(1.12);
+}
+
+.wppa-chart__value {
+	position: absolute;
+	top: -20px;
+	font-size: 11px;
+	font-weight: 600;
+	color: #1d2327;
+	white-space: nowrap;
+}
+
+.wppa-chart__label {
+	margin-top: 6px;
+	font-size: 10px;
+	color: var(--wppa-admin-muted);
+	white-space: nowrap;
+	transform: rotate(-45deg);
+	transform-origin: center;
+}
+
+/* Статусы */
+
+.wppa-admin__status {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.wppa-admin__status li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 0;
+	border-bottom: 1px dashed #eef0f3;
+	font-size: 13px;
+}
+
+.wppa-admin__status li:last-child {
+	border-bottom: 0;
+}
+
+.wppa-dot {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: #d1d5db;
+	flex: 0 0 auto;
+}
+
+.wppa-dot.is-ok {
+	background: #22c55e;
+}
+
+.wppa-dot.is-warn {
+	background: #f59e0b;
+}
+
+.wppa-dot.is-bad {
+	background: #ef4444;
+}
+
+/* Таблицы */
+
+.wppa-admin__table {
+	border-radius: 8px;
+	overflow: hidden;
+	margin-top: 8px;
+}
+
+.wppa-admin__table th {
+	font-weight: 600;
+}
+
+.wppa-admin__avatar {
+	border-radius: 50%;
+	vertical-align: middle;
+	margin-right: 6px;
+}
+
+.wppa-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	background: #f1f5f9;
+}
+
+.wppa-badge--warn {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+/* Фильтры и инструменты */
+
+.wppa-admin__filters {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 16px 0 8px;
+}
+
+.wppa-admin__filters .search-box {
+	display: flex;
+	gap: 6px;
+	margin: 0;
+}
+
+.wppa-admin__page a,
+.wppa-admin__page span {
+	display: inline-block;
+	min-width: 30px;
+	padding: 4px 8px;
+	text-align: center;
+	border: 1px solid var(--wppa-admin-border);
+	border-radius: 6px;
+	text-decoration: none;
+	margin-right: 4px;
+	background: #fff;
+}
+
+.wppa-admin__page .current {
+	background: var(--wppa-admin-accent);
+	border-color: var(--wppa-admin-accent);
+	color: #fff;
+}
+
+.wppa-tool {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 0;
+	border-bottom: 1px solid #eef0f3;
+}
+
+.wppa-tool:last-of-type {
+	border-bottom: 0;
+}
+
+.wppa-tool p {
+	margin: 4px 0 0;
+}
+
+.wppa-tool form {
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.wppa-admin__actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 12px 0 0;
+}
+
+/* Минимальные стили WordPress admin для автономного превью. */
+body {
+	margin: 0;
+	padding: 24px 28px 60px;
+	background: #f0f0f1;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-size: 13px;
+	color: #1d2327;
+	line-height: 1.5;
+}
+a { color: #2271b1; }
+.wrap { margin: 0; }
+h1.wp-heading-inline { font-size: 23px; font-weight: 400; margin: 0 8px 0 0; display: inline-block; }
+.page-title-action {
+	display: inline-block;
+	margin: 0 0 4px;
+	padding: 4px 10px;
+	border: 1px solid #2271b1;
+	border-radius: 3px;
+	background: #f6f7f7;
+	color: #2271b1;
+	font-size: 13px;
+	line-height: 1.6;
+	text-decoration: none;
+	vertical-align: top;
+}
+hr.wp-header-end { clear: both; visibility: hidden; margin: 0; }
+h2 { font-size: 15px; font-weight: 600; margin: 18px 0 10px; }
+.button {
+	display: inline-block;
+	padding: 0 10px;
+	min-height: 30px;
+	line-height: 28px;
+	border: 1px solid #2271b1;
+	border-radius: 3px;
+	background: #f6f7f7;
+	color: #2271b1;
+	font-size: 13px;
+	text-decoration: none;
+	cursor: pointer;
+	vertical-align: middle;
+}
+.button-small { min-height: 24px; line-height: 22px; font-size: 11px; padding: 0 8px; }
+.notice {
+	margin: 16px 0;
+	padding: 1px 12px;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #72aee6;
+	background: #fff;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+.notice-success { border-left-color: #00a32a; }
+.notice-info { border-left-color: #72aee6; }
+.widefat { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #c3c4c7; }
+.widefat th, .widefat td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #f0f0f1; vertical-align: middle; }
+.widefat thead th { background: #f6f7f7; font-weight: 600; }
+.striped tbody tr:nth-child(odd) { background: #f6f7f7; }
+.screen-reader-text { position: absolute; left: -9999px; }
+.search-box input[type="search"] {
+	padding: 3px 8px;
+	min-height: 30px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-size: 14px;
+}
+select { min-height: 30px; border: 1px solid #8c8f94; border-radius: 3px; }
+code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+
+/* Обвязка превью. */
+.demo-top { max-width: 1180px; margin: 0 auto 26px; }
+.demo-top h1 { margin: 0 0 6px; font-size: 22px; font-weight: 650; }
+.demo-top p { margin: 0; color: #646970; }
+.demo-section { max-width: 1180px; margin: 0 auto 36px; }
+.demo-section__head { margin-bottom: 12px; }
+.demo-section__head h2 { margin: 0 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: #50575e; }
+.demo-section__head p { margin: 0; font-size: 12px; color: #787c82; }
+.demo-frame {
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	padding: 8px 20px 20px;
+	overflow-x: auto;
+}
+
+</style>
+</head>
+<body>
+<div class="demo-top">
+	<h1>Панель управления плагином</h1>
+	<p>Отдельное меню «Личный кабинет» в wp-admin: обзор со статистикой, аккаунты и инструменты. Демо-данные.</p>
+</div>
+<section class="demo-section"><div class="demo-section__head"><h2>Обзор</h2><p>Меню «Личный кабинет» → «Обзор»: метрики, график регистраций, состояние интеграций, последние регистрации</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+
+	<h1 class="wp-heading-inline">Личный кабинет</h1>
+	<a class="page-title-action" href="https://example.com/wp-admin/admin.php?page=wppa-settings">Настройки</a>
+	<hr class="wp-header-end" />
+
+	
+	<div class="wppa-admin__cards">
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Пользователей всего</span>
+			<span class="wppa-admin__card-value">128</span>
+		</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Новых за 30 дней</span>
+			<span class="wppa-admin__card-value">4</span>
+		</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Подписчиков</span>
+			<span class="wppa-admin__card-value">110</span>
+		</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Заказов всего</span>
+			<span class="wppa-admin__card-value">
+				33			</span>
+		</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Оплачено за 30 дней</span>
+			<span class="wppa-admin__card-value">
+				0 ₽			</span>
+					</div>
+
+		<div class="wppa-admin__card">
+			<span class="wppa-admin__card-label">Ждут подтверждения email</span>
+			<span class="wppa-admin__card-value">2</span>
+		</div>
+	</div>
+
+	<div class="wppa-admin__grid">
+		<section class="wppa-admin__panel">
+			<h2>Регистрации за 14 дней</h2>
+
+			<div class="wppa-chart" role="img" aria-label="Всего регистраций: 48">
+														<div class="wppa-chart__col" title="2026-10-21: 6">
+						<span class="wppa-chart__bar" style="height:86%">
+															<span class="wppa-chart__value">6</span>
+													</span>
+						<span class="wppa-chart__label">21 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-22: 3">
+						<span class="wppa-chart__bar" style="height:43%">
+															<span class="wppa-chart__value">3</span>
+													</span>
+						<span class="wppa-chart__label">22 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-23: 0">
+						<span class="wppa-chart__bar" style="height:2%">
+													</span>
+						<span class="wppa-chart__label">23 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-24: 5">
+						<span class="wppa-chart__bar" style="height:71%">
+															<span class="wppa-chart__value">5</span>
+													</span>
+						<span class="wppa-chart__label">24 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-25: 7">
+						<span class="wppa-chart__bar" style="height:100%">
+															<span class="wppa-chart__value">7</span>
+													</span>
+						<span class="wppa-chart__label">25 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-26: 1">
+						<span class="wppa-chart__bar" style="height:14%">
+															<span class="wppa-chart__value">1</span>
+													</span>
+						<span class="wppa-chart__label">26 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-27: 3">
+						<span class="wppa-chart__bar" style="height:43%">
+															<span class="wppa-chart__value">3</span>
+													</span>
+						<span class="wppa-chart__label">27 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-28: 4">
+						<span class="wppa-chart__bar" style="height:57%">
+															<span class="wppa-chart__value">4</span>
+													</span>
+						<span class="wppa-chart__label">28 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-29: 2">
+						<span class="wppa-chart__bar" style="height:29%">
+															<span class="wppa-chart__value">2</span>
+													</span>
+						<span class="wppa-chart__label">29 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-30: 5">
+						<span class="wppa-chart__bar" style="height:71%">
+															<span class="wppa-chart__value">5</span>
+													</span>
+						<span class="wppa-chart__label">30 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-10-31: 6">
+						<span class="wppa-chart__bar" style="height:86%">
+															<span class="wppa-chart__value">6</span>
+													</span>
+						<span class="wppa-chart__label">31 Oct</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-11-01: 3">
+						<span class="wppa-chart__bar" style="height:43%">
+															<span class="wppa-chart__value">3</span>
+													</span>
+						<span class="wppa-chart__label">1 Nov</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-11-02: 2">
+						<span class="wppa-chart__bar" style="height:29%">
+															<span class="wppa-chart__value">2</span>
+													</span>
+						<span class="wppa-chart__label">2 Nov</span>
+					</div>
+														<div class="wppa-chart__col" title="2026-11-03: 1">
+						<span class="wppa-chart__bar" style="height:14%">
+															<span class="wppa-chart__value">1</span>
+													</span>
+						<span class="wppa-chart__label">3 Nov</span>
+					</div>
+							</div>
+
+			<p class="wppa-admin__muted">
+				Всего за период: 48			</p>
+		</section>
+
+		<section class="wppa-admin__panel">
+			<h2>Состояние</h2>
+
+			<ul class="wppa-admin__status">
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Страница кабинета:
+											<a href="https://example.com/personal-account/" target="_blank" rel="noopener">Личный кабинет</a>
+									</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					WooCommerce: Активен 9.4.0				</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Регистрация: Открыта				</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Вкладки кабинета: 5 вкладок				</li>
+			</ul>
+
+			<p class="wppa-admin__muted">
+				WordPress Демо-сайт · PHP 8.3.14 · плагин 1.1.0			</p>
+
+			<p class="wppa-admin__actions">
+				<a class="button" href="https://example.com/wp-admin/admin.php?page=wppa-accounts">Все аккаунты</a>
+				<a class="button" href="https://example.com/wp-admin/admin.php?page=wppa-tools">Инструменты</a>
+			</p>
+		</section>
+	</div>
+
+	<section class="wppa-admin__panel">
+		<h2>Последние регистрации</h2>
+
+					<table class="widefat striped wppa-admin__table">
+				<thead>
+					<tr>
+						<th>Пользователь</th>
+						<th>Email</th>
+						<th>Роль</th>
+						<th>Регистрация</th>
+						<th>Заказы</th>
+						<th>Действия</th>
+					</tr>
+				</thead>
+				<tbody>
+											<tr>
+							<td>
+								<img class="avatar" width="24" height="24" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />								<strong>Иван Петров</strong>
+								<span class="wppa-admin__muted">(ivan)</span>
+							</td>
+							<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+							<td>Подписчик</td>
+							<td>10.01.2025</td>
+							<td>2</td>
+							<td>
+								<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
+							</td>
+						</tr>
+											<tr>
+							<td>
+								<img class="avatar" width="24" height="24" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />								<strong>Иван Петров</strong>
+								<span class="wppa-admin__muted">(ivan)</span>
+							</td>
+							<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+							<td>Подписчик</td>
+							<td>10.01.2025</td>
+							<td>2</td>
+							<td>
+								<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
+							</td>
+						</tr>
+									</tbody>
+			</table>
+			</section>
+</div>
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Аккаунты</h2><p>Поиск, фильтр по роли, число заказов и незавершённые подтверждения email</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+	<h1 class="wp-heading-inline">Аккаунты</h1>
+	<a class="page-title-action" href="https://example.com/wp-admin/user-new.php">Добавить нового</a>
+	<hr class="wp-header-end" />
+
+	
+	<form method="get" class="wppa-admin__filters">
+		<input type="hidden" name="page" value="wppa-accounts" />
+		<p class="search-box">
+			<label class="screen-reader-text" for="wppa-search">Поиск аккаунтов</label>
+			<input type="search" id="wppa-search" name="s" value="" placeholder="Логин, email или имя" />
+			<button class="button">Поиск</button>		</p>
+
+		<label for="wppa-role" class="screen-reader-text">Роль</label>
+		<select name="role" id="wppa-role">
+			<option value="">Все роли</option>
+							<option value="subscriber" >
+					Подписчик				</option>
+							<option value="administrator" >
+					Администратор				</option>
+					</select>
+		<button class="button">Фильтр</button>	</form>
+
+	<p class="wppa-admin__muted">
+		Найдено аккаунтов: 4	</p>
+
+			<table class="widefat striped wppa-admin__table">
+			<thead>
+				<tr>
+					<th>Пользователь</th>
+					<th>Email</th>
+					<th>Роль</th>
+					<th>Регистрация</th>
+					<th>Заказы</th>
+					<th>Подтверждение email</th>
+					<th>Действия</th>
+				</tr>
+			</thead>
+			<tbody>
+														<tr>
+						<td>
+							<img class="avatar" width="24" height="24" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />							<strong>Иван Петров</strong>
+							<span class="wppa-admin__muted">(ivan)</span>
+						</td>
+						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+						<td>Подписчик</td>
+						<td>10.01.2025</td>
+						<td>2</td>
+						<td>
+															<span class="wppa-admin__muted">—</span>
+													</td>
+						<td>
+							<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
+						</td>
+					</tr>
+														<tr>
+						<td>
+							<img class="avatar" width="24" height="24" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />							<strong>Иван Петров</strong>
+							<span class="wppa-admin__muted">(ivan)</span>
+						</td>
+						<td><a href="mailto:ivan@example.com">ivan@example.com</a></td>
+						<td>Подписчик</td>
+						<td>10.01.2025</td>
+						<td>2</td>
+						<td>
+															<span class="wppa-admin__muted">—</span>
+													</td>
+						<td>
+							<a class="button button-small" href="https://example.com/wp-admin/user-edit.php?user_id=7">Профиль</a>
+						</td>
+					</tr>
+							</tbody>
+		</table>
+
+			</div>
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Инструменты</h2><p>Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+	<h1 class="wp-heading-inline">Инструменты</h1>
+	<hr class="wp-header-end" />
+
+	
+	<div class="wppa-admin__grid">
+		<section class="wppa-admin__panel">
+			<h2>Обслуживание</h2>
+
+			<div class="wppa-tool">
+				<div>
+					<strong>Страница кабинета</strong>
+					<p class="wppa-admin__muted">Создаст страницу с шорткодом [wppa_account] и назначит её в настройках, если её нет.</p>
+				</div>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="create_page" />
+					<button type="submit" class="button">Создать / восстановить</button>
+				</form>
+			</div>
+
+			<div class="wppa-tool">
+				<div>
+					<strong>Лимит попыток входа</strong>
+					<p class="wppa-admin__muted">Сбросит блокировку входа (5 неудачных попыток за 15 минут) для всех IP.</p>
+				</div>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="clear_limits" />
+					<button type="submit" class="button">Сбросить блокировки</button>
+				</form>
+			</div>
+
+			<div class="wppa-tool">
+				<div>
+					<strong>Ожидающие подтверждения email</strong>
+					<p class="wppa-admin__muted">Удалит незавершённые заявки на смену email вместе с токенами.</p>
+				</div>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="clear_pending_emails" />
+					<button type="submit" class="button">Очистить заявки</button>
+				</form>
+			</div>
+
+			<div class="wppa-tool">
+				<div>
+					<strong>Экспорт аккаунтов</strong>
+					<p class="wppa-admin__muted">CSV с логинами, email, ролями, датой регистрации и числом заказов (до 5000 записей).</p>
+				</div>
+				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="export_csv" />
+					<button type="submit" class="button">Скачать CSV</button>
+				</form>
+			</div>
+		</section>
+
+		<section class="wppa-admin__panel">
+			<h2>Шорткоды</h2>
+
+			<table class="widefat striped wppa-admin__table">
+				<tbody>
+					<tr>
+						<td><code>[wppa_account]</code></td>
+						<td>Личный кабинет с вкладками</td>
+					</tr>
+					<tr>
+						<td><code>[wppa_login]</code></td>
+						<td>Форма входа (атрибут redirect)</td>
+					</tr>
+					<tr>
+						<td><code>[wppa_register]</code></td>
+						<td>Форма регистрации</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<h2>Среда</h2>
+			<ul class="wppa-admin__status">
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Страница кабинета:
+											<a href="https://example.com/wp-admin/post.php?post=42&amp;action=edit">Личный кабинет</a>
+									</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					WooCommerce: Активен 9.4.0				</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Версия WordPress: Демо-сайт				</li>
+				<li>
+					<span class="wppa-dot is-ok"></span>
+					Версия PHP: 8.3.14				</li>
+			</ul>
+
+			<p class="wppa-admin__actions">
+				<a class="button" href="https://example.com/wp-admin/admin.php?page=wppa-settings">Настройки кабинета</a>
+			</p>
+		</section>
+	</div>
+
+	<section class="wppa-admin__panel">
+		<h2>Документация</h2>
+		<p class="wppa-admin__muted">
+			Шаблоны переопределяются в теме: скопируйте файл из templates/ в yourtheme/wp-personal-account/. Доступны фильтры wppa_tabs, wppa_orders_query_args и wppa_notices.		</p>
+		<p>
+			<a class="button" href="https://github.com/pavelb-coder/wp-personal-account" target="_blank" rel="noopener">GitHub</a>
+			<a class="button" href="https://github.com/pavelb-coder/wp-personal-account/blob/main/README.md" target="_blank" rel="noopener">README</a>
+		</p>
+	</section>
+</div>
+</div></section>
+</body>
+</html>

@@ -28,9 +28,10 @@ class WPPA_Settings {
 	 * @return void
 	 */
 	public static function add_menu() {
-		add_options_page(
-			__( 'Личный кабинет', 'wp-personal-account' ),
-			__( 'Личный кабинет', 'wp-personal-account' ),
+		add_submenu_page(
+			WPPA_Admin::SLUG,
+			__( 'Настройки', 'wp-personal-account' ),
+			__( 'Настройки', 'wp-personal-account' ),
 			'manage_options',
 			'wppa-settings',
 			array( __CLASS__, 'render_page' )

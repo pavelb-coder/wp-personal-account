@@ -76,9 +76,10 @@ if command -v php >/dev/null 2>&1; then
 		php -l "$file" >/dev/null || die "синтаксическая ошибка: $file"
 	done < <(find "$ROOT" -name '*.php' -not -path '*/.git/*' -print0)
 	ok "синтаксис в порядке"
-	if [[ -f "$ROOT/tools/smoke-test.php" ]]; then
-		php "$ROOT/tools/smoke-test.php" >/dev/null && ok "дымовой тест шаблонов пройден" || die "дымовой тест шаблонов упал"
-	fi
+	for test_file in smoke-test.php admin-smoke-test.php; do
+		[[ -f "$ROOT/tools/$test_file" ]] || continue
+		php "$ROOT/tools/$test_file" >/dev/null && ok "тест $test_file пройден" || die "тест $test_file упал"
+	done
 else
 	echo "· php не найден — пропускаю проверку синтаксиса"
 fi
@@ -93,7 +94,7 @@ mkdir -p "$STAGE/$SLUG"
 	tar -c \
 		--exclude='.git' \
 		--exclude='tools' \
-		--exclude='preview.html' \
+		--exclude='preview*.html' \
 		--exclude='phpcs.xml.dist' \
 		--exclude='.editorconfig' \
 		--exclude='.gitignore' \

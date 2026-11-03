@@ -107,7 +107,7 @@ function add_query_arg( $args, $url = '' ) {
 	if ( func_num_args() === 1 ) { return '?' . http_build_query( $args ); }
 	return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $args );
 }
-function wp_nonce_field( $action, $name ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
+function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
 function wp_logout_url( $redirect = '' ) { return 'https://example.com/logout'; }
 function wp_lostpassword_url( $redirect = '' ) { return 'https://example.com/lost'; }
 function get_avatar( $id, $size = 56, $d = '', $a = '', $args = array() ) {

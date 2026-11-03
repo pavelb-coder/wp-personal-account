@@ -49,7 +49,11 @@ class WPPA_Plugin {
 		add_action( 'template_redirect', array( $this, 'handle_requests' ), 5 );
 
 		WPPA_Shortcodes::init();
-		WPPA_Settings::init();
+
+		if ( is_admin() ) {
+			WPPA_Admin::init();
+			WPPA_Settings::init();
+		}
 
 		add_filter( 'plugin_action_links_' . plugin_basename( WPPA_FILE ), array( $this, 'action_links' ) );
 	}
