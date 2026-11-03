@@ -132,14 +132,27 @@ $export_checks['csv: заголовок + одна строка'] = 3 === count(
 $export_checks['csv: разделитель точка с запятой'] = false !== strpos( $csv_lines[2], ';' );
 $export_checks['csv: личные данные не попали'] = false === strpos( $csv, 'Личные данные' );
 
+$export_keys = array_column( WPPA_Export::columns(), 'key' );
+
+$profile_columns = array_filter( $export_keys, static function ( $key ) { return in_array( $key, array( 'first_name', 'last_name' ), true ); } );
+$status_columns  = array_column( array_filter( WPPA_Export::columns(), static function ( $column ) { return 'status' === $column['group']; } ), 'key' );
+
+$export_checks['группа «Профиль»: имя и фамилия']     = array( 'first_name', 'last_name' ) === array_values( $profile_columns );
+$export_checks['группа «Статусы»: одна колонка']      = array( 'team_complete' ) === array_values( $status_columns );
+$export_checks['нет колонки «Отображаемое имя»']      = ! in_array( 'display_name', $export_keys, true );
+$export_checks['нет колонки «О себе»']                = ! in_array( 'description', $export_keys, true );
+$export_checks['нет колонки «Email на подтверждении»'] = ! in_array( 'email_pending', $export_keys, true );
+$export_checks['в заголовке нет «Отображаемое имя»']  = false === strpos( $csv, 'Отображаемое имя' );
+$export_checks['в заголовке нет «Email на подтверждении»'] = false === strpos( $csv, 'Email на подтверждении' );
+
 $csv_comma = WPPA_Export::csv( array( 'users' => array( $export_user ), 'groups' => array( 'account' ), 'delimiter' => ',' ) );
 $export_checks['csv: разделитель запятая']     = false !== strpos( explode( "\n", trim( $csv_comma ) )[2], ',' );
 
 // Экранирование значения с разделителем.
 $quoted_user = new WP_User( 7 );
-$quoted_user->description = 'Люблю; доставку';
+$quoted_user->first_name = 'Иван;Пётр';
 $csv_quoted  = WPPA_Export::csv( array( 'users' => array( $quoted_user ), 'groups' => array( 'profile' ) ) );
-$export_checks['csv: значение с ; экранируется'] = false !== strpos( $csv_quoted, '"Люблю; доставку"' );
+$export_checks['csv: значение с ; экранируется'] = false !== strpos( $csv_quoted, '"Иван;Пётр"' );
 
 // Фильтры по составу.
 $export_checks['кого: четыре варианта'] = 4 === count( WPPA_Export::scopes() );
@@ -1068,7 +1081,7 @@ $injection_checks = array(
 );
 
 $injection_user             = new WP_User( 7 );
-$injection_user->display_name = '=HYPERLINK("http://зло")';
+$injection_user->first_name = '=HYPERLINK("http://зло")';
 $injection_csv              = WPPA_Export::csv( array( 'users' => array( $injection_user ), 'limit' => 5, 'groups' => array( 'profile' ) ) );
 $injection_checks['в файле значение обезврежено'] = false !== strpos( $injection_csv, "'=HYPERLINK" );
 $injection_checks['в файле нет голой формулы']    = false === strpos( $injection_csv, ';=HYPERLINK' );

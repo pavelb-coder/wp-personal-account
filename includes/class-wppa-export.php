@@ -58,15 +58,12 @@ class WPPA_Export {
 			array( 'group' => 'account', 'label' => __( 'Дата регистрации', 'wp-personal-account' ), 'key' => 'registered' ),
 			array( 'group' => 'profile', 'label' => __( 'Имя', 'wp-personal-account' ), 'key' => 'first_name' ),
 			array( 'group' => 'profile', 'label' => __( 'Фамилия', 'wp-personal-account' ), 'key' => 'last_name' ),
-			array( 'group' => 'profile', 'label' => __( 'Отображаемое имя', 'wp-personal-account' ), 'key' => 'display_name' ),
-			array( 'group' => 'profile', 'label' => __( 'О себе', 'wp-personal-account' ), 'key' => 'description' ),
 			array( 'group' => 'team', 'label' => __( 'Команда', 'wp-personal-account' ), 'key' => 'team' ),
 			array( 'group' => 'team', 'label' => __( 'Роль в команде', 'wp-personal-account' ), 'key' => 'team_role' ),
 			array( 'group' => 'team', 'label' => __( 'Капитан', 'wp-personal-account' ), 'key' => 'team_owner' ),
 			array( 'group' => 'team', 'label' => __( 'Наставники', 'wp-personal-account' ), 'key' => 'team_mentors' ),
 			array( 'group' => 'team', 'label' => __( 'Участников', 'wp-personal-account' ), 'key' => 'team_members' ),
 			array( 'group' => 'status', 'label' => __( 'Команда сформирована', 'wp-personal-account' ), 'key' => 'team_complete' ),
-			array( 'group' => 'status', 'label' => __( 'Email на подтверждении', 'wp-personal-account' ), 'key' => 'email_pending' ),
 		);
 
 		if ( WPPA_Olympiad::is_active() ) {
@@ -126,6 +123,8 @@ class WPPA_Export {
 			}
 		}
 
+		// display_name, description и email_pending в файл не попадают (колонок нет),
+		// но остаются в строке: их читает фильтр wppa_export_row.
 		$row = array(
 			'login'            => (string) $user->user_login,
 			'email'            => (string) $user->user_email,

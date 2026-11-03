@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.8.0
+Stable tag: 3.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.8.1 =
+* Из выгрузки аккаунтов убраны колонки «Отображаемое имя», «О себе» и «Email на подтверждении».
+* В группе «Профиль» остались «Имя» и «Фамилия», в группе «Статусы» — «Команда сформирована».
+* Значения этих полей остаются в строке данных и доступны фильтру `wppa_export_row`, в CSV они не попадают.
 
 = 3.8.0 =
 * «Персональные данные» стали редактором: подпись, раздел, порядок, показ и обязательность для каждого поля.
