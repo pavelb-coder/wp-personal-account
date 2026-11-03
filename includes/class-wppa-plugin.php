@@ -62,6 +62,9 @@ class WPPA_Plugin {
 		add_action( 'init', array( 'WPPA_Export_Folder', 'reschedule' ), 20 );
 		add_action( WPPA_Export_Folder::CRON_HOOK, array( 'WPPA_Export_Folder', 'run_cron' ) );
 
+		// Выгрузка по изменению: регистрация, профиль, поля, команды.
+		WPPA_Export_Folder::init();
+
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
 		WPPA_Builder::init();

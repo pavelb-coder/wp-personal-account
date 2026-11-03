@@ -321,6 +321,8 @@ class WPPA_Admin {
 				'folder_status' => 'smb' === WPPA_Export_Folder::config()['mode']
 					? WPPA_SMB::test( WPPA_SMB::config() )
 					: WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
+				'export_pending' => WPPA_Export_Folder::pending(),
+				'export_change'  => WPPA_Export_Folder::next_change(),
 				'smb_config'    => WPPA_SMB::config(),
 				'smb_test'      => WPPA_SMB::test( WPPA_SMB::config() ),
 				'export_check'  => '' === WPPA_Export_Folder::normalize_path( WPPA_Export_Folder::config()['path'] )

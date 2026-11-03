@@ -156,6 +156,8 @@ class WPPA_Settings {
 			'scope'     => $folder_scope,
 			'delimiter' => isset( $folder_saved['delimiter'] ) && ',' === $folder_saved['delimiter'] ? ',' : ';',
 			'limit'     => isset( $folder_saved['limit'] ) ? min( 20000, absint( $folder_saved['limit'] ) ) : 5000,
+			'on_change'    => empty( $folder_saved['on_change'] ) ? 0 : 1,
+			'change_delay' => isset( $folder_saved['change_delay'] ) && array_key_exists( (int) $folder_saved['change_delay'], WPPA_Export_Folder::delays() ) ? (int) $folder_saved['change_delay'] : 5,
 		);
 
 		// Требования к паролю.
@@ -572,6 +574,41 @@ class WPPA_Settings {
 							<label for="wppa-folder-time" style="margin-left:10px"><?php esc_html_e( 'время', 'wp-personal-account' ); ?></label>
 							<input type="time" id="wppa-folder-time" name="wppa_settings[export_folder][time]" value="<?php echo esc_attr( $wppa_folder['time'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Время по часовому поясу сайта, учитывается для «раз в день» и «раз в неделю». Запуск делает WP-Cron при обращении к сайту.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Экспорт при изменениях', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[export_folder][on_change]" value="1" <?php checked( $wppa_folder['on_change'], 1 ); ?> />
+								<?php esc_html_e( 'Выгружать, когда меняются данные аккаунтов', 'wp-personal-account' ); ?>
+							</label>
+							<p>
+								<label for="wppa-folder-change-delay"><?php esc_html_e( 'Не чаще, чем', 'wp-personal-account' ); ?></label>
+								<select id="wppa-folder-change-delay" name="wppa_settings[export_folder][change_delay]">
+									<?php foreach ( WPPA_Export_Folder::delays() as $wppa_delay => $wppa_delay_label ) : ?>
+										<option value="<?php echo esc_attr( $wppa_delay ); ?>" <?php selected( (int) $wppa_folder['change_delay'], (int) $wppa_delay ); ?>>
+											<?php echo esc_html( $wppa_delay_label ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.', 'wp-personal-account' ); ?>
+							</p>
+							<?php $wppa_pending = WPPA_Export_Folder::pending(); ?>
+							<?php if ( $wppa_pending ) : ?>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: 1: число изменений, 2: время */
+										esc_html__( 'Ожидает выгрузки: %1$d изменений, ближайшая — %2$s.', 'wp-personal-account' ),
+										count( $wppa_pending ),
+										esc_html( WPPA_Export_Folder::next_change() ? wp_date( 'd.m.Y H:i', WPPA_Export_Folder::next_change() ) : __( 'сразу', 'wp-personal-account' ) )
+									);
+									?>
+								</p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>

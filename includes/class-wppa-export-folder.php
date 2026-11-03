@@ -37,6 +37,44 @@ class WPPA_Export_Folder {
 	const LOG_LIMIT = 10;
 
 	/**
+	 * Хук выгрузки по изменению.
+	 */
+	const CHANGE_HOOK = 'wppa_export_folder_change_event';
+
+	/**
+	 * Опция с причинами ожидающей выгрузки.
+	 */
+	const PENDING_OPTION = 'wppa_export_folder_pending';
+
+	/**
+	 * Мета-ключи, изменения которых не считаем изменением данных.
+	 *
+	 * @return array
+	 */
+	public static function ignored_meta() {
+		return array(
+			WPPA_Profile::META_EMAIL_TOKEN,
+			WPPA_Profile::META_EMAIL_EXPIRES,
+			WPPA_Teams::META_TOKEN,
+			WPPA_Teams::META_TOKEN_EXPIRES,
+		);
+	}
+
+	/**
+	 * Задержки перед выгрузкой по изменению, в минутах.
+	 *
+	 * @return array
+	 */
+	public static function delays() {
+		return array(
+			0  => __( 'Сразу', 'wp-personal-account' ),
+			5  => __( 'Через 5 минут', 'wp-personal-account' ),
+			15 => __( 'Через 15 минут', 'wp-personal-account' ),
+			60 => __( 'Через час', 'wp-personal-account' ),
+		);
+	}
+
+	/**
 	 * Значения по умолчанию.
 	 *
 	 * @return array
@@ -52,8 +90,10 @@ class WPPA_Export_Folder {
 			'keep'      => 30,
 			'groups'    => WPPA_Export::default_groups(),
 			'scope'     => 'all',
-			'delimiter' => ';',
-			'limit'     => 5000,
+			'delimiter'    => ';',
+			'limit'        => 5000,
+			'on_change'    => 0,
+			'change_delay' => 5,
 		);
 	}
 
@@ -88,6 +128,9 @@ class WPPA_Export_Folder {
 
 		$out['enabled']   = empty( $out['enabled'] ) ? 0 : 1;
 		$out['mode']      = 'smb' === $out['mode'] ? 'smb' : 'path';
+
+		$out['on_change']    = empty( $out['on_change'] ) ? 0 : 1;
+		$out['change_delay'] = array_key_exists( (int) $out['change_delay'], self::delays() ) ? (int) $out['change_delay'] : 5;
 		$out['path']      = (string) $out['path'];
 		$out['file']      = '' === trim( (string) $out['file'] ) ? self::defaults()['file'] : (string) $out['file'];
 		$out['schedule']  = isset( self::schedules()[ $out['schedule'] ] ) ? $out['schedule'] : 'daily';
@@ -428,6 +471,197 @@ class WPPA_Export_Folder {
 	}
 
 	/**
+	 * Подписка на события WordPress.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_action( 'user_register', array( __CLASS__, 'on_user_register' ) );
+		add_action( 'deleted_user', array( __CLASS__, 'on_user_delete' ) );
+		add_action( 'profile_update', array( __CLASS__, 'on_profile_update' ) );
+		add_action( 'added_user_meta', array( __CLASS__, 'on_meta_change' ), 10, 3 );
+		add_action( 'updated_user_meta', array( __CLASS__, 'on_meta_change' ), 10, 3 );
+		add_action( 'deleted_user_meta', array( __CLASS__, 'on_meta_change' ), 10, 3 );
+		add_action( self::CHANGE_HOOK, array( __CLASS__, 'run_change' ) );
+
+		// Смена настроек команды лежит в опциях, а не в мета.
+		add_action( 'add_option_' . WPPA_Teams::META_LIMIT, array( __CLASS__, 'on_team_setting' ) );
+		add_action( 'update_option_' . WPPA_Teams::META_LIMIT, array( __CLASS__, 'on_team_setting' ) );
+		add_action( 'add_option_' . WPPA_Teams::META_MIN, array( __CLASS__, 'on_team_setting' ) );
+		add_action( 'update_option_' . WPPA_Teams::META_MIN, array( __CLASS__, 'on_team_setting' ) );
+	}
+
+	/**
+	 * Регистрация пользователя.
+	 *
+	 * @param int $user_id ID пользователя.
+	 * @return void
+	 */
+	public static function on_user_register( $user_id ) {
+		self::note_change( sprintf( /* translators: %d: ID */ __( 'регистрация пользователя #%d', 'wp-personal-account' ), (int) $user_id ) );
+	}
+
+	/**
+	 * Удаление пользователя.
+	 *
+	 * @param int $user_id ID пользователя.
+	 * @return void
+	 */
+	public static function on_user_delete( $user_id ) {
+		self::note_change( sprintf( /* translators: %d: ID */ __( 'удаление пользователя #%d', 'wp-personal-account' ), (int) $user_id ) );
+	}
+
+	/**
+	 * Сохранение профиля.
+	 *
+	 * @param int $user_id ID пользователя.
+	 * @return void
+	 */
+	public static function on_profile_update( $user_id ) {
+		self::note_change( sprintf( /* translators: %d: ID */ __( 'профиль пользователя #%d', 'wp-personal-account' ), (int) $user_id ) );
+	}
+
+	/**
+	 * Изменение мета-поля пользователя.
+	 *
+	 * @param int    $meta_id  ID записи мета.
+	 * @param int    $user_id  ID пользователя.
+	 * @param string $meta_key Ключ.
+	 * @return void
+	 */
+	public static function on_meta_change( $meta_id, $user_id, $meta_key ) {
+		$meta_key = (string) $meta_key;
+
+		if ( 0 !== strpos( $meta_key, '_wppa_' ) || in_array( $meta_key, self::ignored_meta(), true ) ) {
+			return;
+		}
+
+		self::note_change( sprintf(
+			/* translators: 1: поле, 2: ID */
+			__( 'поле %1$s у пользователя #%2$d', 'wp-personal-account' ),
+			$meta_key,
+			(int) $user_id
+		) );
+	}
+
+	/**
+	 * Изменение настройки команды.
+	 *
+	 * @return void
+	 */
+	public static function on_team_setting() {
+		self::note_change( __( 'настройки команды', 'wp-personal-account' ) );
+	}
+
+	/**
+	 * Запомнить изменение и запланировать выгрузку.
+	 *
+	 * Изменения подряд объединяются в одну выгрузку, чтобы не писать файл
+	 * на каждое сохранение профиля.
+	 *
+	 * @param string $reason Причина.
+	 * @return bool
+	 */
+	public static function note_change( $reason ) {
+		$config = self::config();
+
+		if ( empty( $config['on_change'] ) || '' === $config['path'] ) {
+			return false;
+		}
+
+		$pending = self::pending();
+		$pending[] = (string) $reason;
+		$pending   = array_slice( array_values( array_unique( $pending ) ), -20 );
+
+		update_option( self::PENDING_OPTION, $pending, false );
+
+		$delay = (int) $config['change_delay'];
+
+		if ( 0 === $delay ) {
+			self::run_change();
+			return true;
+		}
+
+		// Уже запланировано — время не сдвигаем, иначе поток изменений отложит выгрузку навсегда.
+		if ( ! wp_next_scheduled( self::CHANGE_HOOK ) ) {
+			wp_schedule_single_event( time() + $delay * MINUTE_IN_SECONDS, self::CHANGE_HOOK );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Причины ожидающей выгрузки.
+	 *
+	 * @return array
+	 */
+	public static function pending() {
+		$pending = get_option( self::PENDING_OPTION, array() );
+
+		return is_array( $pending ) ? $pending : array();
+	}
+
+	/**
+	 * Когда ближайшая выгрузка по изменению.
+	 *
+	 * @return int Метка времени или 0.
+	 */
+	public static function next_change() {
+		$next = wp_next_scheduled( self::CHANGE_HOOK );
+
+		return $next ? (int) $next : 0;
+	}
+
+	/**
+	 * Выгрузка по изменению.
+	 *
+	 * @return array
+	 */
+	public static function run_change() {
+		$pending = self::pending();
+		$config  = self::config();
+
+		if ( empty( $pending ) ) {
+			return array(
+				'ok'      => false,
+				'message' => __( 'Нет изменений для выгрузки.', 'wp-personal-account' ),
+				'file'    => '',
+				'bytes'   => 0,
+			);
+		}
+
+		$result = self::write( $config );
+
+		self::clear_pending();
+		wp_clear_scheduled_hook( self::CHANGE_HOOK );
+
+		if ( $result['ok'] ) {
+			self::log_entry(
+				true,
+				$result['file'],
+				(int) $result['bytes'],
+				sprintf(
+					/* translators: 1: причина, 2: сообщение */
+					__( 'Выгрузка по изменению (%1$s). %2$s', 'wp-personal-account' ),
+					implode( ', ', array_slice( $pending, 0, 5 ) ),
+					$result['message']
+				)
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Сбросить ожидающие изменения.
+	 *
+	 * @return void
+	 */
+	public static function clear_pending() {
+		delete_option( self::PENDING_OPTION );
+	}
+
+	/**
 	 * Обработчик расписания.
 	 *
 	 * @return void
@@ -461,6 +695,14 @@ class WPPA_Export_Folder {
 		$config   = self::config();
 		$existing = self::next_run();
 		$schedule = $config['schedule'];
+
+		if ( empty( $config['on_change'] ) ) {
+			self::clear_pending();
+
+			if ( wp_next_scheduled( self::CHANGE_HOOK ) ) {
+				wp_clear_scheduled_hook( self::CHANGE_HOOK );
+			}
+		}
 
 		if ( empty( $config['enabled'] ) || 'off' === $schedule || '' === $config['path'] ) {
 			if ( $existing ) {

@@ -115,17 +115,25 @@ update_option(
 			),
 			'export_folder' => array_merge(
 				WPPA_Export_Folder::config(),
-				array( 'mode' => 'smb', 'enabled' => 1 )
+				array( 'mode' => 'smb', 'enabled' => 1, 'on_change' => 1, 'change_delay' => 5 )
 			),
 		)
 	)
 );
+
+// Демонстрация ожидающей выгрузки по изменениям.
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+WPPA_Export_Folder::note_change( 'регистрация пользователя #14' );
+WPPA_Export_Folder::note_change( 'поле _wppa_team_id у пользователя #9' );
+WPPA_Export_Folder::note_change( 'профиль пользователя #11' );
 
 $sections .= demo_page( 'Настройки', 'Параметры кабинета, регистрации, команд, паролей и сетевой папки с логином и паролем', static function () { WPPA_Settings::render_page(); } );
 
 $sections .= demo_page( 'Инструменты', 'Обслуживание: восстановление страницы, сброс лимитов, очистка заявок, экспорт CSV', static function () { WPPA_Admin::page_tools(); } );
 
 update_option( 'wppa_settings', $wppa_demo_snapshot );
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CHANGE_HOOK ] );
 
 $admin_css = file_get_contents( $base . 'assets/css/admin.css' );
 

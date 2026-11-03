@@ -6,6 +6,8 @@
 
 define( 'ABSPATH', '/tmp/fake-wp/' );
 define( 'AUTH_SALT', 'salt' );
+define( 'MINUTE_IN_SECONDS', 60 );
+define( 'HOUR_IN_SECONDS', 3600 );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'ENT_QUOTES_WP', ENT_QUOTES );
 
@@ -544,6 +546,11 @@ function wp_next_scheduled( $hook, $args = array() ) {
 function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
 	$GLOBALS['wppa_test']['cron'][ $hook ]        = (int) $timestamp;
 	$GLOBALS['wppa_test']['cron_recurrence'][ $hook ] = $recurrence;
+	return true;
+}
+
+function wp_schedule_single_event( $timestamp, $hook, $args = array() ) {
+	$GLOBALS['wppa_test']['cron'][ $hook ] = (int) $timestamp;
 	return true;
 }
 

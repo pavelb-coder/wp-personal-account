@@ -2102,6 +2102,31 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						</td>
 					</tr>
 					<tr>
+						<th scope="row">Экспорт при изменениях</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[export_folder][on_change]" value="1"  checked="checked" />
+								Выгружать, когда меняются данные аккаунтов							</label>
+							<p>
+								<label for="wppa-folder-change-delay">Не чаще, чем</label>
+								<select id="wppa-folder-change-delay" name="wppa_settings[export_folder][change_delay]">
+																			<option value="0" >
+											Сразу										</option>
+																			<option value="5"  selected="selected">
+											Через 5 минут										</option>
+																			<option value="15" >
+											Через 15 минут										</option>
+																			<option value="60" >
+											Через час										</option>
+																	</select>
+							</p>
+							<p class="description">
+								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
+																						<p class="description">
+									Ожидает выгрузки: 3 изменений, ближайшая — 03.11.2026 12:57.								</p>
+													</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="wppa-folder-keep">Хранить файлов</label></th>
 						<td>
 							<input type="number" class="small-text" id="wppa-folder-keep" name="wppa_settings[export_folder][keep]" value="30" min="0" max="365" />
@@ -2385,8 +2410,11 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 03.11.2026 20:48 (Раз в день).							</p>
+									Следующая выгрузка: 03.11.2026 20:52 (Раз в день).							</p>
 
+							<p class="wppa-admin__muted">
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 03.11.2026 12:57				</p>
+			
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
@@ -2415,7 +2443,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>03.11.2026 12:48</td>
+								<td>03.11.2026 12:52</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -2424,7 +2452,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 12:48</td>
+								<td>03.11.2026 12:52</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -2433,7 +2461,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>03.11.2026 12:48</td>
+								<td>03.11.2026 12:52</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

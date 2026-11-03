@@ -491,6 +491,155 @@ foreach ( $smb_checks as $check_name => $ok ) {
 	}
 }
 
+
+// ---------- Выгрузка по изменениям ----------
+$change_dir = sys_get_temp_dir() . '/wppa-change-' . uniqid();
+mkdir( $change_dir, 0777, true );
+
+$change_base = array_merge(
+	WPPA_Export_Folder::defaults(),
+	array(
+		'enabled'      => 1,
+		'mode'         => 'path',
+		'path'         => $change_dir,
+		'file'         => 'accounts-{datetime}.csv',
+		'keep'         => 0,
+		'on_change'    => 0,
+		'change_delay' => 5,
+	)
+);
+
+$change_checks = array();
+
+$snapshot_all = get_option( 'wppa_settings', array() );
+
+// 1. По умолчанию выключено — ничего не планируется и не записывается.
+update_option( 'wppa_settings', array_merge( (array) $snapshot_all, array( 'export_folder' => $change_base ) ) );
+unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CHANGE_HOOK ] );
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+
+$change_checks['выключено: изменение не запоминается'] = false === WPPA_Export_Folder::note_change( 'тест' )
+	&& array() === WPPA_Export_Folder::pending();
+$change_checks['выключено: событие не создано']        = false === wp_next_scheduled( WPPA_Export_Folder::CHANGE_HOOK );
+
+// 2. Включено с задержкой: одно событие на серию изменений.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $snapshot_all,
+		array( 'export_folder' => array_merge( $change_base, array( 'on_change' => 1 ) ) )
+	)
+);
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CHANGE_HOOK ] );
+
+$before = time();
+WPPA_Export_Folder::note_change( 'регистрация пользователя #1' );
+$first_schedule = WPPA_Export_Folder::next_change();
+sleep( 1 );
+WPPA_Export_Folder::note_change( 'профиль пользователя #2' );
+
+$change_checks['задержка 5 минут: событие стоит']   = $first_schedule >= $before + 5 * MINUTE_IN_SECONDS - 2;
+$change_checks['повтор не сдвигает время']          = $first_schedule === WPPA_Export_Folder::next_change();
+$change_checks['причины накапливаются']             = 2 === count( WPPA_Export_Folder::pending() );
+$change_checks['дубли причин не плодятся']          = ( function () {
+	WPPA_Export_Folder::note_change( 'профиль пользователя #2' );
+	return 2 === count( WPPA_Export_Folder::pending() );
+} )();
+$change_checks['файл пока не пишется']              = 0 === count( glob( $change_dir . '/*.csv' ) );
+
+// 3. Запуск по событию: файл, журнал, очистка.
+$change_run = WPPA_Export_Folder::run_change();
+$change_checks['запуск по изменению: файл записан']  = $change_run['ok'] && 1 === count( glob( $change_dir . '/*.csv' ) );
+$change_checks['запуск по изменению: ожидание сброшено'] = array() === WPPA_Export_Folder::pending();
+$change_checks['запуск по изменению: событие снято']      = false === wp_next_scheduled( WPPA_Export_Folder::CHANGE_HOOK );
+
+$change_log = WPPA_Export_Folder::logs();
+$change_checks['журнал: причина записана'] = ! empty( $change_log ) && false !== strpos( $change_log[0]['message'], 'по изменению' );
+
+$change_checks['повторный запуск без изменений'] = false === WPPA_Export_Folder::run_change()['ok'];
+
+// 4. Задержка 0 — выгрузка сразу.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $snapshot_all,
+		array( 'export_folder' => array_merge( $change_base, array( 'on_change' => 1, 'change_delay' => 0 ) ) )
+	)
+);
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+array_map( 'unlink', glob( $change_dir . '/*.csv' ) );
+
+WPPA_Export_Folder::note_change( 'регистрация пользователя #3' );
+$change_checks['задержка 0: файл записан сразу'] = 1 === count( glob( $change_dir . '/*.csv' ) );
+$change_checks['задержка 0: событие не планируется'] = false === wp_next_scheduled( WPPA_Export_Folder::CHANGE_HOOK );
+
+// 5. Какие мета-поля считаются изменением.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $snapshot_all,
+		array( 'export_folder' => array_merge( $change_base, array( 'on_change' => 1 ) ) )
+	)
+);
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+
+WPPA_Export_Folder::on_meta_change( 1, 7, '_wppa_email_token' );
+$change_checks['служебный токен не считается'] = array() === WPPA_Export_Folder::pending();
+
+WPPA_Export_Folder::on_meta_change( 2, 7, 'some_other_meta' );
+$change_checks['чужие мета не считаются'] = array() === WPPA_Export_Folder::pending();
+
+WPPA_Export_Folder::on_meta_change( 3, 7, '_wppa_team_id' );
+$pending_team = WPPA_Export_Folder::pending();
+$change_checks['состав команды считается'] = 1 === count( $pending_team ) && false !== strpos( $pending_team[0], '_wppa_team_id' );
+
+WPPA_Export_Folder::on_user_register( 12 );
+$change_checks['регистрация считается'] = false !== strpos( implode( ' ', WPPA_Export_Folder::pending() ), 'регистрация' );
+
+WPPA_Export_Folder::on_profile_update( 12 );
+WPPA_Export_Folder::on_team_setting();
+$change_checks['профиль и команды считаются'] = 4 <= count( WPPA_Export_Folder::pending() );
+
+// 6. Выключение настройки снимает ожидание.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $snapshot_all,
+		array( 'export_folder' => array_merge( $change_base, array( 'on_change' => 0 ) ) )
+	)
+);
+WPPA_Export_Folder::reschedule();
+$change_checks['выключение: ожидание сброшено'] = array() === WPPA_Export_Folder::pending();
+$change_checks['выключение: событие снято']     = false === wp_next_scheduled( WPPA_Export_Folder::CHANGE_HOOK );
+
+// 7. Настройки и интерфейс.
+$change_sanitize = WPPA_Settings::sanitize(
+	array( 'export_folder' => array( 'on_change' => '1', 'change_delay' => '15' ) )
+);
+$change_sanitize_bad = WPPA_Settings::sanitize(
+	array( 'export_folder' => array( 'on_change' => '1', 'change_delay' => '7' ) )
+);
+
+$change_checks['настройки: включение сохраняется'] = 1 === $change_sanitize['export_folder']['on_change']
+	&& 15 === $change_sanitize['export_folder']['change_delay'];
+$change_checks['настройки: чужая задержка заменяется'] = 5 === $change_sanitize_bad['export_folder']['change_delay'];
+$change_checks['настройки: поле в форме есть'] = false !== strpos( $settings_html, 'wppa_settings[export_folder][on_change]' )
+	&& false !== strpos( $settings_html, 'wppa_settings[export_folder][change_delay]' );
+$change_checks['варианты задержки'] = array( 0, 5, 15, 60 ) === array_keys( WPPA_Export_Folder::delays() );
+$change_checks['по умолчанию выключено'] = 0 === WPPA_Export_Folder::defaults()['on_change'];
+
+update_option( 'wppa_settings', $snapshot_all );
+delete_option( WPPA_Export_Folder::PENDING_OPTION );
+unset( $GLOBALS['wppa_test']['cron'][ WPPA_Export_Folder::CHANGE_HOOK ] );
+
+foreach ( $change_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'on change: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress' );
 

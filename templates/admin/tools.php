@@ -181,6 +181,28 @@ defined( 'ABSPATH' ) || exit;
 				<?php endif; ?>
 			</p>
 
+			<?php if ( $wppa_folder['on_change'] ) : ?>
+				<p class="wppa-admin__muted">
+					<?php
+					printf(
+						/* translators: 1: задержка, 2: состояние */
+						esc_html__( 'Выгрузка по изменениям: %1$s; %2$s', 'wp-personal-account' ),
+						esc_html( WPPA_Export_Folder::delays()[ $wppa_folder['change_delay'] ] ),
+						esc_html(
+							! empty( $export_pending )
+								? sprintf(
+									/* translators: 1: число, 2: время */
+									__( 'ожидает %1$d изменений, ближайшая выгрузка %2$s', 'wp-personal-account' ),
+									count( $export_pending ),
+									$export_change ? wp_date( 'd.m.Y H:i', $export_change ) : __( 'сразу', 'wp-personal-account' )
+								)
+								: __( 'изменений пока нет', 'wp-personal-account' )
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
 			<div class="wppa-admin__actions">
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
