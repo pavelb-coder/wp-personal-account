@@ -102,7 +102,7 @@ $export_checks = array(
 );
 
 $account_only = WPPA_Export::columns( array( 'account' ) );
-$export_checks['колонки: только выбранная группа'] = 4 === count( $account_only ) && ! in_array( 'personal', array_column( $account_only, 'group' ), true );
+$export_checks['колонки: только выбранная группа'] = 3 === count( $account_only ) && ! in_array( 'personal', array_column( $account_only, 'group' ), true );
 
 $header    = WPPA_Export::header( WPPA_Export::columns() );
 $header_rows = explode( "\n", trim( $header ) );
@@ -111,7 +111,7 @@ $export_checks['заголовок: названия групп']      = false !
 $export_checks['заголовок: подписи полей']       = false !== strpos( $header_rows[1], 'Логин' ) && false !== strpos( $header_rows[1], 'Роль в команде' );
 
 // Убранных колонок не должно остаться ни в заголовке, ни в списке колонок.
-$removed_labels = array( 'Роль WordPress', 'Минимум', 'Лимит', 'Не хватает участников', 'Нет наставника' );
+$removed_labels = array( 'ID', 'Роль WordPress', 'Минимум', 'Лимит', 'Не хватает участников', 'Нет наставника' );
 $all_labels     = array_column( WPPA_Export::columns(), 'label' );
 $header_labels  = explode( ';', trim( $header_rows[1] ) );
 
@@ -921,7 +921,7 @@ $build_all = WPPA_Export::build(
 );
 
 $auto_checks['build: число строк']    = 2 === $build_all['rows'];
-$auto_checks['build: число колонок']  = 7 === $build_all['columns'];
+$auto_checks['build: число колонок']  = 6 === $build_all['columns'];
 $auto_checks['build: лимит не достигнут'] = false === $build_all['truncated'];
 $auto_checks['build: csv совпадает с csv()'] = $build_all['csv'] === WPPA_Export::csv( array( 'groups' => array( 'account', 'olympiad' ), 'users' => $build_users, 'limit' => 10 ) );
 
@@ -1026,7 +1026,7 @@ $percent_checks['csv с ;: значение процента'] = false !== strpo
 $percent_checks['csv с ,: значение процента'] = false !== strpos( $csv_comma, ',27,40,67.5' );
 
 $percent_checks['csv: одинаковое число колонок'] = count( explode( ';', trim( strtok( $csv_semicolon, "\n" ) ) ) ) === count( explode( ',', trim( strtok( $csv_comma, "\n" ) ) ) );
-$percent_checks['csv: 7 колонок в двух группах']  = 7 === count( explode( ';', trim( explode( "\n", $csv_semicolon )[2] ) ) );
+$percent_checks['csv: 6 колонок в двух группах']  = 6 === count( explode( ';', trim( explode( "\n", $csv_semicolon )[2] ) ) );
 
 $percent_checks['заголовок колонки с единицей'] = false !== strpos( $csv_semicolon, 'Процент, %' );
 
@@ -1114,7 +1114,7 @@ $team_idd   = array();
 
 foreach ( $team_file as $team_line ) {
 	$team_cells = explode( ';', $team_line );
-	$team_idd[] = (int) trim( $team_cells[0], "\"\xEF\xBB\xBF " );
+	$team_idd[] = (int) str_replace( array( 'user', '"', "\xEF\xBB\xBF" ), '', trim( $team_cells[0] ) );
 }
 
 $team_checks['в файле 7 строк данных']  = 7 === count( $team_file );

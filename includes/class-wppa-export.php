@@ -53,7 +53,6 @@ class WPPA_Export {
 		$groups = $groups ? (array) $groups : self::default_groups();
 
 		$columns = array(
-			array( 'group' => 'account', 'label' => __( 'ID', 'wp-personal-account' ), 'key' => 'id' ),
 			array( 'group' => 'account', 'label' => __( 'Логин', 'wp-personal-account' ), 'key' => 'login' ),
 			array( 'group' => 'account', 'label' => __( 'Email', 'wp-personal-account' ), 'key' => 'email' ),
 			array( 'group' => 'account', 'label' => __( 'Дата регистрации', 'wp-personal-account' ), 'key' => 'registered' ),
@@ -128,7 +127,6 @@ class WPPA_Export {
 		}
 
 		$row = array(
-			'id'               => (int) $user->ID,
 			'login'            => (string) $user->user_login,
 			'email'            => (string) $user->user_email,
 			'registered'       => (string) $user->user_registered,
