@@ -445,6 +445,41 @@ foreach ( $view_checks as $check_name => $ok ) {
 	}
 }
 
+// ---------- Пароль: минимум 16 символов, обязательные поля ----------
+$password_checks = array(
+	'минимум 16 по умолчанию'          => 16 === WPPA_Plugin::min_password_length(),
+	'15 символов — мало'               => true === WPPA_Plugin::password_too_short( str_repeat( 'a', 15 ) ),
+	'16 символов — достаточно'         => false === WPPA_Plugin::password_too_short( str_repeat( 'a', 16 ) ),
+	'21 символ — достаточно'           => false === WPPA_Plugin::password_too_short( str_repeat( 'a', 21 ) ),
+);
+
+$register_form = WPPA_Template::get( 'register', array( 'title' => '' ) );
+$password_checks['форма регистрации: minlength=16'] = false !== strpos( $register_form, 'minlength="16"' );
+$password_checks['форма регистрации: подсказка о 16'] = false !== strpos( $register_form, 'Минимум 16 символов' );
+$password_checks['форма регистрации: отметка у email'] = 1 === preg_match( '/for="wppa-email">Email.*?wppa-req/s', $register_form );
+$password_checks['форма регистрации: отметки обязательных полей'] = 5 === substr_count( $register_form, 'wppa-req' );
+$password_checks['форма регистрации: пояснение про звёздочку'] = false !== strpos( $register_form, 'Поля со звёздочкой' );
+
+$login_form = WPPA_Template::get( 'login', array() );
+$password_checks['форма входа: отметки у логина и пароля'] = 2 === substr_count( $login_form, 'wppa-req' );
+
+$password_block = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'password-form', 'title' => '' ),
+	array( 'user' => new WP_User(), 'tabs' => WPPA_Template::tabs() )
+);
+$password_checks['смена пароля: minlength=16'] = false !== strpos( $password_block, 'minlength="16"' );
+$password_checks['смена пароля: подсказка']    = false !== strpos( $password_block, 'Минимум 16 символов' );
+
+$notices = WPPA_Notices::registry();
+$password_checks['сообщение содержит 16'] = false !== strpos( $notices['password_short'][1], '16' );
+
+foreach ( $password_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'password: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $GLOBALS['wppa_test']['logged_in'] = true;
 
 WPPA_Auth_Widget::register();

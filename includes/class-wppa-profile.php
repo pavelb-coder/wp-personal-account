@@ -110,7 +110,7 @@ class WPPA_Profile {
 			WPPA_Notices::redirect( 'password_mismatch', $tab_url );
 		}
 
-		if ( strlen( $new ) < 8 ) {
+		if ( WPPA_Plugin::password_too_short( $new ) ) {
 			WPPA_Notices::redirect( 'password_short', $tab_url );
 		}
 

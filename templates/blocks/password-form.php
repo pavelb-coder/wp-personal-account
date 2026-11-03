@@ -17,19 +17,31 @@ defined( 'ABSPATH' ) || exit;
 		<input type="hidden" name="wppa_action" value="password" />
 
 		<p class="wppa-field">
-			<label for="wppa-current-password"><?php esc_html_e( 'Текущий пароль', 'wp-personal-account' ); ?></label>
+			<label for="wppa-current-password"><?php esc_html_e( 'Текущий пароль', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 			<input type="password" id="wppa-current-password" name="current_password" autocomplete="current-password" required />
 		</p>
 
 		<div class="wppa-row">
 			<p class="wppa-field">
-				<label for="wppa-new-password"><?php esc_html_e( 'Новый пароль', 'wp-personal-account' ); ?></label>
-				<input type="password" id="wppa-new-password" name="new_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<label for="wppa-new-password"><?php esc_html_e( 'Новый пароль', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+				<span class="wppa-password">
+					<input type="password" id="wppa-new-password" name="new_password" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
+					<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-new-password" aria-label="<?php esc_attr_e( 'Показать пароль', 'wp-personal-account' ); ?>">👁</button>
+				</span>
+				<span class="wppa-hint">
+					<?php
+					printf(
+						/* translators: %d: минимальная длина пароля */
+						esc_html__( 'Минимум %d символов.', 'wp-personal-account' ),
+						(int) WPPA_Plugin::min_password_length()
+					);
+					?>
+				</span>
 			</p>
 
 			<p class="wppa-field">
-				<label for="wppa-repeat-password"><?php esc_html_e( 'Повторите пароль', 'wp-personal-account' ); ?></label>
-				<input type="password" id="wppa-repeat-password" name="repeat_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<label for="wppa-repeat-password"><?php esc_html_e( 'Повторите пароль', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+				<input type="password" id="wppa-repeat-password" name="repeat_password" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 			</p>
 		</div>
 

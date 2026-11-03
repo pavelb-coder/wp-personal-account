@@ -37,7 +37,14 @@ class WPPA_Notices {
 			'email_exists'          => array( 'error', __( 'Пользователь с таким email уже зарегистрирован.', 'wp-personal-account' ) ),
 			'login_exists'          => array( 'error', __( 'Такое имя пользователя уже занято.', 'wp-personal-account' ) ),
 			'password_mismatch'     => array( 'error', __( 'Пароли не совпадают.', 'wp-personal-account' ) ),
-			'password_short'        => array( 'error', __( 'Пароль должен быть не короче 8 символов.', 'wp-personal-account' ) ),
+			'password_short'        => array(
+				'error',
+				sprintf(
+					/* translators: %d: минимальная длина пароля */
+					__( 'Пароль должен быть не короче %d символов.', 'wp-personal-account' ),
+					WPPA_Plugin::min_password_length()
+				),
+			),
 			'password_wrong'        => array( 'error', __( 'Текущий пароль указан неверно.', 'wp-personal-account' ) ),
 			'password_same'         => array( 'error', __( 'Новый пароль должен отличаться от текущего.', 'wp-personal-account' ) ),
 			'field_required'        => array( 'error', __( 'Заполните все обязательные поля.', 'wp-personal-account' ) ),

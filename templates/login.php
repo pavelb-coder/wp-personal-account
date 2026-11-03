@@ -26,12 +26,12 @@ $wppa_register = $wppa_register && WPPA_Plugin::registration_open();
 		<?php endif; ?>
 
 		<p class="wppa-field">
-			<label for="wppa-login"><?php esc_html_e( 'Логин или email', 'wp-personal-account' ); ?></label>
+			<label for="wppa-login"><?php esc_html_e( 'Логин или email', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password"><?php esc_html_e( 'Пароль', 'wp-personal-account' ); ?></label>
+			<label for="wppa-password"><?php esc_html_e( 'Пароль', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="<?php esc_attr_e( 'Показать пароль', 'wp-personal-account' ); ?>">👁</button>

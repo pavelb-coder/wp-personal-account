@@ -18,6 +18,11 @@ class WPPA_Plugin {
 	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action' );
 
 	/**
+	 * Минимальная длина пароля.
+	 */
+	const MIN_PASSWORD_LENGTH = 16;
+
+	/**
 	 * Экземпляр (singleton).
 	 *
 	 * @var WPPA_Plugin|null
@@ -162,6 +167,30 @@ class WPPA_Plugin {
 	public static function setting( $key, $default = '' ) {
 		$settings = self::get_settings();
 		return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
+	}
+
+	/**
+	 * Минимальная длина пароля (по умолчанию 16).
+	 *
+	 * @return int
+	 */
+	public static function min_password_length() {
+		/**
+		 * Фильтр минимальной длины пароля.
+		 *
+		 * @param int $length Длина.
+		 */
+		return max( 1, (int) apply_filters( 'wppa_min_password_length', self::MIN_PASSWORD_LENGTH ) );
+	}
+
+	/**
+	 * Слишком короткий пароль?
+	 *
+	 * @param string $password Пароль.
+	 * @return bool
+	 */
+	public static function password_too_short( $password ) {
+		return strlen( (string) $password ) < self::min_password_length();
 	}
 
 	/**

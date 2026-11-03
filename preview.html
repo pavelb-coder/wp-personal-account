@@ -1471,19 +1471,24 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="password" />
 
 		<p class="wppa-field">
-			<label for="wppa-current-password">Текущий пароль</label>
+			<label for="wppa-current-password">Текущий пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="password" id="wppa-current-password" name="current_password" autocomplete="current-password" required />
 		</p>
 
 		<div class="wppa-row">
 			<p class="wppa-field">
-				<label for="wppa-new-password">Новый пароль</label>
-				<input type="password" id="wppa-new-password" name="new_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<label for="wppa-new-password">Новый пароль <span class="wppa-req" aria-hidden="true">*</span></label>
+				<span class="wppa-password">
+					<input type="password" id="wppa-new-password" name="new_password" minlength="16" autocomplete="new-password" required data-wppa-password />
+					<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-new-password" aria-label="Показать пароль">👁</button>
+				</span>
+				<span class="wppa-hint">
+					Минимум 16 символов.				</span>
 			</p>
 
 			<p class="wppa-field">
-				<label for="wppa-repeat-password">Повторите пароль</label>
-				<input type="password" id="wppa-repeat-password" name="repeat_password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<label for="wppa-repeat-password">Повторите пароль <span class="wppa-req" aria-hidden="true">*</span></label>
+				<input type="password" id="wppa-repeat-password" name="repeat_password" minlength="16" autocomplete="new-password" required data-wppa-password />
 			</p>
 		</div>
 
@@ -1534,12 +1539,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1587,32 +1592,33 @@ body {
 
 		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
 		<p class="wppa-field">
-			<label for="wppa-email">Email</label>
+			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password">Пароль</label>
+			<label for="wppa-reg-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
-				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<input type="password" id="wppa-reg-password" name="password" minlength="16" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
 			</span>
-			<span class="wppa-hint">Минимум 8 символов.</span>
+			<span class="wppa-hint">
+				Минимум 16 символов.			</span>
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password2">Пароль ещё раз</label>
-			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+			<label for="wppa-reg-password2">Пароль ещё раз <span class="wppa-req" aria-hidden="true">*</span></label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="16" autocomplete="new-password" required data-wppa-password />
 		</p>
 
 		<p class="wppa-field wppa-field--check">
 			<label>
 				<input type="checkbox" name="consent" value="1" required />
-				Согласен на обработку персональных данных			</label>
+				Согласен на обработку персональных данных <span class="wppa-req" aria-hidden="true">*</span>			</label>
 		</p>
 
 		<p class="wppa-hint wppa-hint--block">
-			Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.		</p>
+			Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
 	</form>
@@ -1639,12 +1645,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1684,12 +1690,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1729,12 +1735,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1778,12 +1784,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1816,32 +1822,33 @@ body {
 
 		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
 		<p class="wppa-field">
-			<label for="wppa-email">Email</label>
+			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password">Пароль</label>
+			<label for="wppa-reg-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
-				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<input type="password" id="wppa-reg-password" name="password" minlength="16" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
 			</span>
-			<span class="wppa-hint">Минимум 8 символов.</span>
+			<span class="wppa-hint">
+				Минимум 16 символов.			</span>
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password2">Пароль ещё раз</label>
-			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+			<label for="wppa-reg-password2">Пароль ещё раз <span class="wppa-req" aria-hidden="true">*</span></label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="16" autocomplete="new-password" required data-wppa-password />
 		</p>
 
 		<p class="wppa-field wppa-field--check">
 			<label>
 				<input type="checkbox" name="consent" value="1" required />
-				Согласен на обработку персональных данных			</label>
+				Согласен на обработку персональных данных <span class="wppa-req" aria-hidden="true">*</span>			</label>
 		</p>
 
 		<p class="wppa-hint wppa-hint--block">
-			Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.		</p>
+			Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
 	</form>
@@ -1860,12 +1867,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1902,32 +1909,33 @@ body {
 
 		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
 		<p class="wppa-field">
-			<label for="wppa-email">Email</label>
+			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password">Пароль</label>
+			<label for="wppa-reg-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
-				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<input type="password" id="wppa-reg-password" name="password" minlength="16" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
 			</span>
-			<span class="wppa-hint">Минимум 8 символов.</span>
+			<span class="wppa-hint">
+				Минимум 16 символов.			</span>
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password2">Пароль ещё раз</label>
-			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+			<label for="wppa-reg-password2">Пароль ещё раз <span class="wppa-req" aria-hidden="true">*</span></label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="16" autocomplete="new-password" required data-wppa-password />
 		</p>
 
 		<p class="wppa-field wppa-field--check">
 			<label>
 				<input type="checkbox" name="consent" value="1" required />
-				Согласен на обработку персональных данных			</label>
+				Согласен на обработку персональных данных <span class="wppa-req" aria-hidden="true">*</span>			</label>
 		</p>
 
 		<p class="wppa-hint wppa-hint--block">
-			Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.		</p>
+			Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
 	</form>
@@ -1947,12 +1955,12 @@ body {
 		<input type="hidden" name="wppa_nonce" value="nonce" />		<input type="hidden" name="wppa_action" value="login" />
 		
 		<p class="wppa-field">
-			<label for="wppa-login">Логин или email</label>
+			<label for="wppa-login">Логин или email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="text" id="wppa-login" name="log" autocomplete="username" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-password">Пароль</label>
+			<label for="wppa-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
 				<input type="password" id="wppa-password" name="pwd" autocomplete="current-password" required />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-password" aria-label="Показать пароль">👁</button>
@@ -1983,32 +1991,33 @@ body {
 
 		<div class="wppa-row"><p class="wppa-field"><label for="wppa-f-first-name">Имя <span class="wppa-req" aria-hidden="true">*</span></label><input type="text" id="wppa-f-first-name" name="wppa_fields[first_name]" value="" required autocomplete="given-name" /></p><p class="wppa-field"><label for="wppa-f-last-name">Фамилия</label><input type="text" id="wppa-f-last-name" name="wppa_fields[last_name]" value="" autocomplete="family-name" /></p></div><p class="wppa-field"><label for="wppa-f-phone">Телефон</label><input type="tel" id="wppa-f-phone" name="wppa_fields[phone]" value="" autocomplete="tel" placeholder="+7 900 000-00-00" /><span class="wppa-hint">В формате +7 900 000-00-00.</span></p><p class="wppa-field"><label for="wppa-f-city">Город</label><input type="text" id="wppa-f-city" name="wppa_fields[city]" value="" autocomplete="address-level2" /></p><p class="wppa-field"><label for="wppa-f-company">Организация</label><input type="text" id="wppa-f-company" name="wppa_fields[company]" value="" autocomplete="organization" /></p><p class="wppa-field"><label for="wppa-f-position">Должность</label><input type="text" id="wppa-f-position" name="wppa_fields[position]" value="" autocomplete="organization-title" /></p><p class="wppa-field wppa-field--wide"><label for="wppa-f-about">О себе</label><textarea id="wppa-f-about" name="wppa_fields[about]" rows="4"></textarea></p>
 		<p class="wppa-field">
-			<label for="wppa-email">Email</label>
+			<label for="wppa-email">Email <span class="wppa-req" aria-hidden="true">*</span></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password">Пароль</label>
+			<label for="wppa-reg-password">Пароль <span class="wppa-req" aria-hidden="true">*</span></label>
 			<span class="wppa-password">
-				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<input type="password" id="wppa-reg-password" name="password" minlength="16" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="Показать пароль">👁</button>
 			</span>
-			<span class="wppa-hint">Минимум 8 символов.</span>
+			<span class="wppa-hint">
+				Минимум 16 символов.			</span>
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password2">Пароль ещё раз</label>
-			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+			<label for="wppa-reg-password2">Пароль ещё раз <span class="wppa-req" aria-hidden="true">*</span></label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="16" autocomplete="new-password" required data-wppa-password />
 		</p>
 
 		<p class="wppa-field wppa-field--check">
 			<label>
 				<input type="checkbox" name="consent" value="1" required />
-				Согласен на обработку персональных данных			</label>
+				Согласен на обработку персональных данных <span class="wppa-req" aria-hidden="true">*</span>			</label>
 		</p>
 
 		<p class="wppa-hint wppa-hint--block">
-			Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.		</p>
+			Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary">Создать аккаунт</button>
 	</form>

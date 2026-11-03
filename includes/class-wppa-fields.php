@@ -18,6 +18,15 @@ class WPPA_Fields {
 	const SETTING = 'fields';
 
 	/**
+	 * Отметка обязательного поля.
+	 *
+	 * @return string
+	 */
+	public static function req_mark() {
+		return ' <span class="wppa-req" aria-hidden="true">*</span>';
+	}
+
+	/**
 	 * Реестр доступных полей.
 	 *
 	 * Каждое поле: label, type, autocomplete, meta (или user), placeholder, hint,

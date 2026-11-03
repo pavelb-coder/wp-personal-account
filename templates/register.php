@@ -21,33 +21,41 @@ $wppa_title = isset( $title ) && '' !== $title ? $title : __( 'Регистра�
 		<?php WPPA_Fields::render( 'register' ); ?>
 
 		<p class="wppa-field">
-			<label for="wppa-email"><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></label>
+			<label for="wppa-email"><?php esc_html_e( 'Email', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 			<input type="email" id="wppa-email" name="email" autocomplete="email" required />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password"><?php esc_html_e( 'Пароль', 'wp-personal-account' ); ?></label>
+			<label for="wppa-reg-password"><?php esc_html_e( 'Пароль', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
 			<span class="wppa-password">
-				<input type="password" id="wppa-reg-password" name="password" minlength="8" autocomplete="new-password" required data-wppa-password />
+				<input type="password" id="wppa-reg-password" name="password" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 				<button type="button" class="wppa-password__toggle" data-wppa-toggle="wppa-reg-password" aria-label="<?php esc_attr_e( 'Показать пароль', 'wp-personal-account' ); ?>">👁</button>
 			</span>
-			<span class="wppa-hint"><?php esc_html_e( 'Минимум 8 символов.', 'wp-personal-account' ); ?></span>
+			<span class="wppa-hint">
+				<?php
+				printf(
+					/* translators: %d: минимальная длина пароля */
+					esc_html__( 'Минимум %d символов.', 'wp-personal-account' ),
+					(int) WPPA_Plugin::min_password_length()
+				);
+				?>
+			</span>
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-reg-password2"><?php esc_html_e( 'Пароль ещё раз', 'wp-personal-account' ); ?></label>
-			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="8" autocomplete="new-password" required data-wppa-password />
+			<label for="wppa-reg-password2"><?php esc_html_e( 'Пароль ещё раз', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
+			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 		</p>
 
 		<p class="wppa-field wppa-field--check">
 			<label>
 				<input type="checkbox" name="consent" value="1" required />
-				<?php esc_html_e( 'Согласен на обработку персональных данных', 'wp-personal-account' ); ?>
+				<?php esc_html_e( 'Согласен на обработку персональных данных', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</label>
 		</p>
 
 		<p class="wppa-hint wppa-hint--block">
-			<?php esc_html_e( 'Поля со звёздочкой обязательны. Данные видны только вам, капитану команды и администратору сайта.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.', 'wp-personal-account' ); ?>
 		</p>
 
 		<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Создать аккаунт', 'wp-personal-account' ); ?></button>
