@@ -53,6 +53,7 @@ class WPPA_Plugin {
 		WPPA_Teams::init();
 		WPPA_Builder::init();
 		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
+		WPPA_Blocks::init();
 
 		if ( is_admin() ) {
 			WPPA_Admin::init();
@@ -195,6 +196,10 @@ class WPPA_Plugin {
 
 		$post = get_post();
 		if ( $post instanceof WP_Post ) {
+			if ( function_exists( 'has_block' ) && has_block( 'wppa/auth', $post ) ) {
+				return true;
+			}
+
 			foreach ( array( 'wppa_account', 'wppa_login', 'wppa_register', 'wppa_auth' ) as $tag ) {
 				if ( has_shortcode( $post->post_content, $tag ) ) {
 					return true;

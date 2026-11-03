@@ -97,15 +97,31 @@ defined( 'ABSPATH' ) || exit;
 						<td><code>[wppa_auth]</code></td>
 						<td><?php esc_html_e( 'Вход и регистрация одним блоком (атрибуты mode, redirect)', 'wp-personal-account' ); ?></td>
 					</tr>
+					<tr>
+						<td><code>wppa/auth</code></td>
+						<td><?php esc_html_e( 'Блок Gutenberg «Вход и регистрация» — для блочных тем и Site Editor', 'wp-personal-account' ); ?></td>
+					</tr>
 				</tbody>
 			</table>
 
-			<h2><?php esc_html_e( 'Виджет на главной', 'wp-personal-account' ); ?></h2>
-			<p class="wppa-admin__muted">
-				<?php esc_html_e( 'Виджет «Личный кабинет: вход и регистрация» добавляется в «Внешний вид → Виджеты» (в блочных темах — блок «Классический виджет»). Если главная собрана блоками, вставьте шорткод [wppa_auth].', 'wp-personal-account' ); ?>
-			</p>
+			<h2><?php esc_html_e( 'Вход на главной странице', 'wp-personal-account' ); ?></h2>
+			<ol class="wppa-admin__steps">
+				<li>
+					<strong><?php esc_html_e( 'Блочная тема (FSE):', 'wp-personal-account' ); ?></strong>
+					<?php esc_html_e( 'вставьте блок «Вход и регистрация (личный кабинет)» в Site Editor или в редакторе страницы — раздел «Виджеты» в списке блоков.', 'wp-personal-account' ); ?>
+				</li>
+				<li>
+					<strong><?php esc_html_e( 'Классическая тема:', 'wp-personal-account' ); ?></strong>
+					<?php esc_html_e( 'виджет «Личный кабинет: вход и регистрация» в «Внешний вид → Виджеты».', 'wp-personal-account' ); ?>
+				</li>
+				<li>
+					<strong><?php esc_html_e( 'Любой вариант:', 'wp-personal-account' ); ?></strong>
+					<?php esc_html_e( 'шорткод [wppa_auth] в блоке «Шорткод».', 'wp-personal-account' ); ?>
+				</li>
+			</ol>
 			<p class="wppa-admin__actions">
-				<a class="button" href="<?php echo esc_url( admin_url( 'widgets.php' ) ); ?>"><?php esc_html_e( 'Открыть виджеты', 'wp-personal-account' ); ?></a>
+				<a class="button" href="<?php echo esc_url( admin_url( 'site-editor.php' ) ); ?>"><?php esc_html_e( 'Открыть Site Editor', 'wp-personal-account' ); ?></a>
+				<a class="button" href="<?php echo esc_url( admin_url( 'widgets.php' ) ); ?>"><?php esc_html_e( 'Виджеты', 'wp-personal-account' ); ?></a>
 			</p>
 
 			<h2><?php esc_html_e( 'Среда', 'wp-personal-account' ); ?></h2>

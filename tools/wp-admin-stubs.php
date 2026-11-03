@@ -53,12 +53,6 @@ function add_menu_page() {}
 function add_submenu_page() {}
 function register_setting() {}
 function settings_fields( $group ) { echo '<input type="hidden" name="option_page" value="' . htmlspecialchars( $group ) . '" />'; }
-function wp_enqueue_style() {}
-function wp_enqueue_script() {}
-function wp_register_style() {}
-function wp_register_script() {}
-function wp_localize_script() {}
-function wp_add_inline_style() {}
 function wp_die( $message = '' ) { throw new RuntimeException( 'wp_die: ' . $message ); }
 function wp_get_referer() { return ''; }
 function delete_metadata() { return true; }

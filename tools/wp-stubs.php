@@ -366,6 +366,22 @@ function shortcode_atts( $defaults, $atts, $shortcode = '' ) {
 	return $out;
 }
 function add_shortcode( $tag, $callback ) { $GLOBALS['wppa_test']['shortcodes'][ $tag ] = $callback; }
+
+function register_block_type( $name, $args = array() ) {
+	$key = is_string( $name ) ? $name : ( isset( $args['render_callback'] ) ? $name : $name );
+	$GLOBALS['wppa_test']['blocks'][] = is_string( $name ) ? $name : $name;
+	return (object) array( 'name' => $key, 'args' => $args );
+}
+
+function has_block( $name, $post = null ) { return ! empty( $GLOBALS['wppa_test']['has_block'][ $name ] ); }
+function wp_style_is( $handle, $status = 'enqueued' ) { return ! empty( $GLOBALS['wppa_test']['styles'][ $handle ] ); }
+function wp_enqueue_style( $handle, $src = '', $deps = array(), $ver = false ) { $GLOBALS['wppa_test']['styles'][ $handle ] = true; }
+function wp_add_inline_style( $handle, $css ) { $GLOBALS['wppa_test']['inline_css'][ $handle ] = $css; }
+function wp_register_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) {
+	$GLOBALS['wppa_test']['scripts'][ $handle ] = array( 'src' => $src, 'deps' => $deps );
+	return true;
+}
+function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $footer = false ) { return wp_register_script( $handle, $src, $deps, $ver, $footer ); }
 function get_page_by_path( $path ) { return null; }
 function is_wp_error( $t ) { return $t instanceof WP_Error; }
 function paginate_links( $args = array() ) {

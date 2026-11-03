@@ -22,6 +22,7 @@ require $base . 'includes/class-wppa-teams.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 require $base . 'includes/class-wppa-widget.php';
+require $base . 'includes/class-wppa-blocks.php';
 
 // Обход автозагрузки шаблонов: путь к templates.
 $user  = new WP_User();
@@ -173,6 +174,40 @@ $widget->widget( array( 'before_widget' => '<section>', 'after_widget' => '</sec
 $hidden = ob_get_clean();
 echo ( '' === trim( $hidden ) ? 'OK    ' : 'FAIL  ' ) . "widget: скрыт от авторизованных\n";
 if ( '' !== trim( $hidden ) ) {
+	$fail++;
+}
+
+// Блок Gutenberg wppa/auth.
+$GLOBALS['wppa_test']['logged_in'] = false;
+WPPA_Blocks::register();
+
+$block_html = WPPA_Blocks::render(
+	array(
+		'mode'      => 'both',
+		'showTitle' => true,
+		'title'     => 'Вход на сайт',
+	)
+);
+
+$block_checks = array(
+	'обёртка блока'            => false !== strpos( $block_html, 'wp-block-wppa-auth' ),
+	'заголовок блока'          => false !== strpos( $block_html, 'Вход на сайт' ),
+	'формы внутри блока'       => false !== strpos( $block_html, 'wppa-panel-login' ),
+	'стили подключены'         => ! empty( $GLOBALS['wppa_test']['styles']['wppa-account'] ),
+);
+
+foreach ( $block_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'block: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Блок скрыт от авторизованных при hideForMembers.
+$GLOBALS['wppa_test']['logged_in'] = true;
+$block_hidden = WPPA_Blocks::render( array( 'hideForMembers' => true ) );
+echo ( '' === $block_hidden ? 'OK    ' : 'FAIL  ' ) . "block: скрыт от авторизованных\n";
+if ( '' !== $block_hidden ) {
 	$fail++;
 }
 

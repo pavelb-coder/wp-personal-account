@@ -1,0 +1,53 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wppa/auth",
+	"title": "Вход и регистрация (личный кабинет)",
+	"category": "widgets",
+	"icon": "lock",
+	"description": "Форма входа и регистрации плагина WP Personal Account. Работает в блочных темах и в Site Editor.",
+	"keywords": [
+		"вход",
+		"регистрация",
+		"логин",
+		"личный кабинет",
+		"login"
+	],
+	"textdomain": "wp-personal-account",
+	"attributes": {
+		"mode": {
+			"type": "string",
+			"default": "both"
+		},
+		"redirect": {
+			"type": "string",
+			"default": ""
+		},
+		"hideForMembers": {
+			"type": "boolean",
+			"default": true
+		},
+		"showTitle": {
+			"type": "boolean",
+			"default": false
+		},
+		"title": {
+			"type": "string",
+			"default": "Личный кабинет"
+		},
+		"align": {
+			"type": "string"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	}
+}
