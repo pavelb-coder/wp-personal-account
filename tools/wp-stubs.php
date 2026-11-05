@@ -371,10 +371,21 @@ function has_shortcode( $content, $tag ) { return false !== strpos( (string) $co
 function get_permalink( $id = null ) { return 'https://example.com/personal-account/'; }
 function home_url( $path = '/' ) { return 'https://example.com' . $path; }
 function admin_url( $p = '' ) { return 'https://example.com/wp-admin/' . $p; }
-function add_query_arg( $args, $url = '' ) {
-	if ( ! is_array( $args ) ) { return $url; }
-	if ( func_num_args() === 1 ) { return '?' . http_build_query( $args ); }
-	return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $args );
+function add_query_arg( ...$args ) {
+	// Две формы, как в ядре: add_query_arg( массив, $url ) и add_query_arg( ключ, значение, $url ).
+	if ( is_array( $args[0] ) ) {
+		$query = $args[0];
+		$url   = isset( $args[1] ) ? (string) $args[1] : '';
+	} else {
+		$query = array( $args[0] => isset( $args[1] ) ? $args[1] : '' );
+		$url   = isset( $args[2] ) ? (string) $args[2] : '';
+	}
+
+	if ( '' === $url ) {
+		return '?' . http_build_query( $query );
+	}
+
+	return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $query );
 }
 function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
 function wp_logout_url( $redirect = '' ) { return 'https://example.com/logout'; }

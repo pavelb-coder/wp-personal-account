@@ -38,6 +38,11 @@ class WPPA_Teams {
 	const ROLES = array( 'owner', 'mentor', 'member' );
 
 	/**
+	 * Мета: пользователь — куратор (статус на уровне сайта, не роль в команде).
+	 */
+	const META_CURATOR = '_wppa_curator';
+
+	/**
 	 * Мета: токен приглашения.
 	 */
 	const META_TOKEN = '_wppa_team_invite_token';
@@ -372,6 +377,8 @@ class WPPA_Teams {
 				return __( 'Капитан', 'wp-personal-account' );
 			case 'mentor':
 				return __( 'Наставник', 'wp-personal-account' );
+			case 'curator':
+				return __( 'Куратор', 'wp-personal-account' );
 			default:
 				return __( 'Участник', 'wp-personal-account' );
 		}
@@ -405,6 +412,178 @@ class WPPA_Teams {
 	 */
 	public static function is_manager( $user_id ) {
 		return self::is_owner( $user_id ) || self::is_mentor( $user_id );
+	}
+
+	/**
+	 * Куратор ли пользователь.
+	 *
+	 * Куратор — статус на уровне сайта, а не роль в команде: он не занимает место
+	 * в лимите, не идёт в зачёт минимума и не получает кнопку перехода.
+	 *
+	 * @param int $user_id ID пользователя (0 — текущий).
+	 * @return bool
+	 */
+	public static function is_curator( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		return '1' === (string) get_user_meta( $user_id, self::META_CURATOR, true );
+	}
+
+	/**
+	 * Назначить или снять куратора.
+	 *
+	 * @param int  $user_id ID пользователя.
+	 * @param bool $on      true — назначить, false — снять.
+	 * @return bool
+	 */
+	public static function set_curator( $user_id, $on = true ) {
+		$user_id = (int) $user_id;
+
+		if ( ! $user_id || ! get_userdata( $user_id ) ) {
+			return false;
+		}
+
+		if ( $on ) {
+			update_user_meta( $user_id, self::META_CURATOR, '1' );
+
+			return true;
+		}
+
+		delete_user_meta( $user_id, self::META_CURATOR );
+
+		return true;
+	}
+
+	/**
+	 * Все кураторы сайта.
+	 *
+	 * @return WP_User[]
+	 */
+	public static function curators() {
+		$users = get_users(
+			array(
+				'meta_key'   => self::META_CURATOR,
+				'meta_value' => '1',
+			)
+		);
+
+		return is_array( $users ) ? $users : array();
+	}
+
+	/**
+	 * Все команды сайта (сначала новые).
+	 *
+	 * @param int $limit Сколько вернуть.
+	 * @return array Список: id, name, owner, participants, mentors, complete, missing.
+	 */
+	public static function all_teams( $limit = 200 ) {
+		$posts = get_posts(
+			array(
+				'post_type'   => self::CPT,
+				'post_status' => 'publish',
+				'numberposts' => max( 1, (int) $limit ),
+				'orderby'     => 'date',
+				'order'       => 'DESC',
+			)
+		);
+
+		$out = array();
+
+		foreach ( (array) $posts as $post ) {
+			$owner = get_userdata( (int) $post->post_author );
+
+			$out[] = array(
+				'id'           => (int) $post->ID,
+				'name'         => (string) $post->post_title,
+				'owner'        => $owner ? $owner->display_name : '',
+				'owner_id'     => (int) $post->post_author,
+				'participants' => (int) self::members_count( (int) $post->ID ),
+				'mentors'      => (int) self::mentors_count( (int) $post->ID ),
+				'complete'     => (bool) self::is_complete( (int) $post->ID ),
+				'missing'      => (int) self::missing_members( (int) $post->ID ),
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Может ли пользователь управлять конкретной командой.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id ID пользователя (0 — текущий).
+	 * @return bool
+	 */
+	public static function can_manage_team( $team_id, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $team_id || ! $user_id || self::CPT !== get_post_type( $team_id ) ) {
+			return false;
+		}
+
+		if ( self::is_curator( $user_id ) ) {
+			return true;
+		}
+
+		return (int) self::team_id( $user_id ) === $team_id && self::is_manager( $user_id );
+	}
+
+	/**
+	 * Какую команду куратор открыл для управления: ?wppa_team=ID.
+	 *
+	 * @param int $user_id ID пользователя (0 — текущий).
+	 * @return int ID команды или 0.
+	 */
+	public static function viewing_team_id( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $user_id || ! self::is_curator( $user_id ) ) {
+			return 0;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только чтение номера команды.
+		$team_id = isset( $_GET['wppa_team'] ) ? absint( wp_unslash( $_GET['wppa_team'] ) ) : 0;
+
+		if ( ! $team_id || self::CPT !== get_post_type( $team_id ) ) {
+			return 0;
+		}
+
+		return $team_id;
+	}
+
+	/**
+	 * Команда, которой касается действие из формы.
+	 *
+	 * Куратор работает с любой командой (team_id приходит скрытым полем),
+	 * остальные — только со своей.
+	 *
+	 * @param int $user_id ID пользователя (0 — текущий).
+	 * @return int
+	 */
+	public static function request_team_id( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( $user_id && self::is_curator( $user_id ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверяется в handle_request().
+			$posted = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+
+			if ( $posted && self::CPT === get_post_type( $posted ) ) {
+				return $posted;
+			}
+
+			$viewed = self::viewing_team_id( $user_id );
+
+			if ( $viewed ) {
+				return $viewed;
+			}
+		}
+
+		return (int) self::team_id( $user_id );
 	}
 
 	/**
@@ -844,10 +1023,11 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( 'team_created', $tab_url );
 
 			case 'rename':
-				$team_id = self::team_id( $user_id );
-				$name    = isset( $_POST['team_name'] ) ? sanitize_text_field( wp_unslash( $_POST['team_name'] ) ) : '';
+				$team_id    = self::request_team_id( $user_id );
+				$as_curator = self::is_curator( $user_id );
+				$name       = isset( $_POST['team_name'] ) ? sanitize_text_field( wp_unslash( $_POST['team_name'] ) ) : '';
 
-				if ( ! $team_id || ! self::is_owner( $user_id ) ) {
+				if ( ! $team_id || ( ! $as_curator && ! self::is_owner( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
 				}
 
@@ -859,9 +1039,9 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( 'team_renamed', $tab_url );
 
 			case 'refresh_token':
-				$team_id = self::team_id( $user_id );
+				$team_id = self::request_team_id( $user_id );
 
-				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+				if ( ! $team_id || ( ! self::is_curator( $user_id ) && ! self::is_manager( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
@@ -869,10 +1049,10 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( 'team_token_refreshed', $tab_url );
 
 			case 'invite_email':
-				$team_id = self::team_id( $user_id );
+				$team_id = self::request_team_id( $user_id );
 				$email   = isset( $_POST['invite_email'] ) ? sanitize_email( wp_unslash( $_POST['invite_email'] ) ) : '';
 
-				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+				if ( ! $team_id || ( ! self::is_curator( $user_id ) && ! self::is_manager( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
@@ -893,15 +1073,21 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( $sent ? 'team_invite_sent' : 'save_failed', $tab_url );
 
 			case 'remove_member':
-				$team_id  = self::team_id( $user_id );
-				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+				$team_id    = self::request_team_id( $user_id );
+				$as_curator = self::is_curator( $user_id );
+				$member_id  = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				if ( ! $team_id || ! self::is_manager( $user_id ) ) {
+				if ( ! $team_id || ( ! $as_curator && ! self::is_manager( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
-				// Наставник не может исключать капитана и других наставников.
-				if ( ! self::is_owner( $user_id ) && in_array( self::role( $member_id ), array( 'owner', 'mentor' ), true ) ) {
+				// Капитана не исключает никто: ни наставник, ни куратор.
+				if ( 'owner' === self::role( $member_id ) ) {
+					WPPA_Notices::redirect( 'team_captain_denied', $tab_url );
+				}
+
+				// Наставник не может исключать других наставников.
+				if ( ! $as_curator && ! self::is_owner( $user_id ) && 'mentor' === self::role( $member_id ) ) {
 					WPPA_Notices::redirect( 'team_mentor_denied', $tab_url );
 				}
 
@@ -913,11 +1099,12 @@ class WPPA_Teams {
 
 			case 'make_mentor':
 			case 'dismiss_mentor':
-				$team_id   = self::team_id( $user_id );
-				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+				$team_id    = self::request_team_id( $user_id );
+				$as_curator = self::is_curator( $user_id );
+				$member_id  = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				// Наставников назначает только капитан.
-				if ( ! $team_id || ! self::is_owner( $user_id ) ) {
+				// Наставников назначает капитан команды или куратор.
+				if ( ! $team_id || ( ! $as_curator && ! self::is_owner( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
 				}
 

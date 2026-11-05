@@ -9,12 +9,28 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$wppa_team_id  = WPPA_Teams::team_id( $user->ID );
-$wppa_team     = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
-$wppa_is_owner   = $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
-$wppa_is_mentor  = $wppa_team_id && WPPA_Teams::is_mentor( $user->ID );
-$wppa_is_manager = $wppa_team_id && WPPA_Teams::is_manager( $user->ID );
-$wppa_my_role    = $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '';
+$wppa_my_team_id = (int) WPPA_Teams::team_id( $user->ID );
+$wppa_is_curator = WPPA_Teams::is_curator( $user->ID );
+$wppa_team_id    = $wppa_my_team_id;
+
+// Куратор открывает чужую команду через «Управлять» (?wppa_team=ID).
+$wppa_curator_team_id = $wppa_is_curator ? WPPA_Teams::viewing_team_id( $user->ID ) : 0;
+$wppa_curator_view    = $wppa_curator_team_id && $wppa_curator_team_id !== $wppa_my_team_id;
+
+if ( $wppa_curator_view ) {
+	$wppa_team_id = $wppa_curator_team_id;
+}
+
+$wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
+$wppa_is_owner   = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
+$wppa_is_mentor  = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_mentor( $user->ID );
+$wppa_is_manager = $wppa_team_id && ( $wppa_curator_view || WPPA_Teams::is_manager( $user->ID ) );
+$wppa_my_role    = $wppa_curator_view ? 'curator' : ( $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '' );
+
+// Скрытое поле team_id: без него куратор не поймёт, к какой команде относится действие.
+$wppa_team_field = $wppa_curator_view
+	? '<input type="hidden" name="team_id" value="' . (int) $wppa_team_id . '" />'
+	: '';
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
 $wppa_min      = WPPA_Teams::team_min( $wppa_team_id );
 $wppa_missing  = WPPA_Teams::missing_members( $wppa_team_id );
@@ -28,7 +44,99 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<?php echo isset( $block_title ) && '' !== $block_title ? esc_html( $block_title ) : esc_html__( 'Команда', 'wp-personal-account' ); ?>
 </h2>
 
+<?php if ( $wppa_is_curator ) : ?>
+	<?php
+	$wppa_all_teams = WPPA_Teams::all_teams();
+	$wppa_team_list  = WPPA_Plugin::tab_url( 'team' );
+	?>
+	<section class="wppa-card wppa-curator">
+		<h3 class="wppa-subtitle"><?php esc_html_e( 'Куратор: все команды', 'wp-personal-account' ); ?></h3>
+		<p class="wppa-hint">
+			<?php esc_html_e( 'Вы видите все команды сайта и можете менять их состав: исключать участников, назначать наставников, переименовывать. Распустить команду может только капитан; лимит и минимум на вас не считаются.', 'wp-personal-account' ); ?>
+		</p>
+
+		<?php if ( empty( $wppa_all_teams ) ) : ?>
+			<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Команд пока нет.', 'wp-personal-account' ); ?></div>
+		<?php else : ?>
+			<div class="wppa-table-wrap">
+				<table class="wppa-table">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Капитан', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Наставников', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Состояние', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Действие', 'wp-personal-account' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $wppa_all_teams as $wppa_row ) : ?>
+							<tr<?php echo (int) $wppa_row['id'] === (int) $wppa_team_id ? ' class="wppa-curator__current"' : ''; ?>>
+								<td data-label="<?php esc_attr_e( 'Команда', 'wp-personal-account' ); ?>">
+									<strong><?php echo esc_html( $wppa_row['name'] ); ?></strong>
+									<?php if ( (int) $wppa_row['id'] === $wppa_my_team_id ) : ?>
+										<span class="wppa-hint">(<?php esc_html_e( 'ваша команда', 'wp-personal-account' ); ?>)</span>
+									<?php endif; ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Капитан', 'wp-personal-account' ); ?>"><?php echo esc_html( $wppa_row['owner'] ); ?></td>
+								<td data-label="<?php esc_attr_e( 'Участников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['participants'] ); ?></td>
+								<td data-label="<?php esc_attr_e( 'Наставников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['mentors'] ); ?></td>
+								<td data-label="<?php esc_attr_e( 'Состояние', 'wp-personal-account' ); ?>">
+									<?php if ( $wppa_row['complete'] ) : ?>
+										<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'сформирована', 'wp-personal-account' ); ?></span>
+									<?php elseif ( $wppa_row['missing'] > 0 ) : ?>
+										<span class="wppa-badge wppa-badge--warn">
+											<?php
+											printf(
+												/* translators: %d: сколько не хватает */
+												esc_html__( 'не хватает %d', 'wp-personal-account' ),
+												(int) $wppa_row['missing']
+											);
+											?>
+										</span>
+									<?php else : ?>
+										<span class="wppa-badge"><?php esc_html_e( 'нет наставника', 'wp-personal-account' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Действие', 'wp-personal-account' ); ?>">
+									<?php if ( (int) $wppa_row['id'] === (int) $wppa_team_id && $wppa_curator_view ) : ?>
+										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( $wppa_team_list ); ?>"><?php esc_html_e( 'Закрыть', 'wp-personal-account' ); ?></a>
+									<?php else : ?>
+										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', (int) $wppa_row['id'], $wppa_team_list ) ); ?>"><?php esc_html_e( 'Управлять', 'wp-personal-account' ); ?></a>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		<?php endif; ?>
+	</section>
+<?php endif; ?>
+
+<?php if ( $wppa_curator_view ) : ?>
+	<div class="wppa-notice wppa-notice--info">
+		<?php
+		printf(
+			/* translators: 1: название команды, 2: ссылка на список команд */
+			esc_html__( 'Вы управляете командой «%1$s» как куратор. %2$s', 'wp-personal-account' ),
+			esc_html( $wppa_team ? $wppa_team['name'] : '' ),
+			'<a href="' . esc_url( WPPA_Plugin::tab_url( 'team' ) ) . '">' . esc_html__( 'Вернуться к списку команд', 'wp-personal-account' ) . '</a>'
+		);
+		?>
+	</div>
+<?php endif; ?>
+
 <?php if ( ! $wppa_team ) : ?>
+
+	<?php if ( $wppa_is_curator ) : ?>
+
+		<div class="wppa-notice wppa-notice--info">
+			<?php esc_html_e( 'Вы куратор и не состоите в команде — это нормально: куратор не занимает место в составе. Выберите команду в списке выше, чтобы посмотреть и поправить её.', 'wp-personal-account' ); ?>
+		</div>
+
+	<?php else : ?>
 
 	<div class="wppa-notice wppa-notice--info">
 		<?php esc_html_e( 'Вы пока не состоите в команде. Создайте свою или присоединитесь по ссылке-приглашению.', 'wp-personal-account' ); ?>
@@ -41,6 +149,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 			<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
 				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 				<input type="hidden" name="wppa_action" value="team" />
 				<input type="hidden" name="wppa_team_action" value="create" />
 
@@ -59,6 +168,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 			<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
 				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 				<input type="hidden" name="wppa_action" value="team" />
 				<input type="hidden" name="wppa_team_action" value="join_code" />
 
@@ -72,6 +182,8 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			</form>
 		</section>
 	</div>
+
+	<?php endif; ?>
 
 <?php else : ?>
 
@@ -182,14 +294,15 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 						<?php if ( $wppa_is_manager ) : ?>
 							<?php
 							$wppa_can_act = 'owner' !== $wppa_member_role
-								&& ( $wppa_is_owner || 'member' === $wppa_member_role );
+								&& ( $wppa_is_owner || $wppa_curator_view || 'member' === $wppa_member_role );
 							?>
 							<td data-label="<?php esc_attr_e( 'Действия', 'wp-personal-account' ); ?>">
 								<?php if ( $wppa_can_act ) : ?>
 									<div class="wppa-actions">
-										<?php if ( $wppa_is_owner ) : ?>
+										<?php if ( $wppa_is_owner || $wppa_curator_view ) : ?>
 											<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
 												<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+												<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 												<input type="hidden" name="wppa_action" value="team" />
 												<input type="hidden" name="wppa_team_action" value="<?php echo 'mentor' === $wppa_member_role ? 'dismiss_mentor' : 'make_mentor'; ?>" />
 												<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
@@ -201,6 +314,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 										<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
 											<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+											<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 											<input type="hidden" name="wppa_action" value="team" />
 											<input type="hidden" name="wppa_team_action" value="remove_member" />
 											<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
@@ -238,6 +352,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 			<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
 				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 				<input type="hidden" name="wppa_action" value="team" />
 				<input type="hidden" name="wppa_team_action" value="refresh_token" />
 				<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Обновить ссылку', 'wp-personal-account' ); ?></button>
@@ -247,6 +362,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 			<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
 				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 				<input type="hidden" name="wppa_action" value="team" />
 				<input type="hidden" name="wppa_team_action" value="invite_email" />
 
@@ -261,13 +377,14 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
-	<?php if ( $wppa_is_owner ) : ?>
+	<?php if ( $wppa_is_owner || $wppa_curator_view ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Название команды', 'wp-personal-account' ); ?></h3>
 
 			<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
 				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 				<input type="hidden" name="wppa_action" value="team" />
 				<input type="hidden" name="wppa_team_action" value="rename" />
 
@@ -282,6 +399,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
+	<?php if ( ! $wppa_curator_view ) : ?>
 	<section class="wppa-card wppa-card--danger">
 		<h3 class="wppa-subtitle">
 			<?php echo $wppa_is_owner ? esc_html__( 'Распустить команду', 'wp-personal-account' ) : esc_html__( 'Выйти из команды', 'wp-personal-account' ); ?>
@@ -296,6 +414,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 		<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
 			<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+			<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
 			<input type="hidden" name="wppa_action" value="team" />
 			<input type="hidden" name="wppa_team_action" value="leave" />
 			<button type="submit" class="wppa-button wppa-button--danger" data-wppa-confirm="<?php esc_attr_e( 'Точно? Действие необратимо.', 'wp-personal-account' ); ?>">
@@ -303,5 +422,6 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			</button>
 		</form>
 	</section>
+	<?php endif; ?>
 
 <?php endif; ?>

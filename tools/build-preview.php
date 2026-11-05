@@ -40,6 +40,7 @@ $GLOBALS['wppa_test']['users'] = array(
 	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
 	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
 	9 => array( 'Пётр Сидоров', 'email' => 'petr@example.com' ),
+	12 => array( 'Ольга Куратова', 'email' => 'olga@example.com' ),
 );
 
 // Демо-персональные данные пользователя.
@@ -143,6 +144,29 @@ $sections .= demo_section(
 );
 
 $GLOBALS['wppa_test']['meta'] = $wppa_mentor_snapshot;
+
+// Куратор: список всех команд и управление чужой командой.
+// Куратор не состоит в командах: его дело — надзор, а не участие.
+$curator_user = get_userdata( 12 );
+WPPA_Teams::set_curator( 12, true );
+
+$sections .= demo_section(
+	'Куратор: все команды',
+	'Так «Команду» видит куратор — статус на уровне сайта: список всех команд с составом и состоянием, кнопка «Управлять» у каждой',
+	WPPA_Template::get( 'tab-team', array( 'user' => $curator_user, 'tabs' => $tabs ) )
+);
+
+$_GET['wppa_team'] = (int) $demo_team;
+
+$sections .= demo_section(
+	'Куратор: управление чужой командой',
+	'Куратор открыл команду «Студия «Вектор»»: состав с действиями, назначение наставника, приглашения и переименование. Роспуска и выхода нет — это дело капитана',
+	WPPA_Template::get( 'tab-team', array( 'user' => $curator_user, 'tabs' => $tabs ) )
+);
+
+unset( $_GET['wppa_team'] );
+WPPA_Teams::set_curator( 12, false );
+
 
 $sections .= demo_section(
 	'Безопасность',

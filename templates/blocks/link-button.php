@@ -11,9 +11,9 @@ defined( 'ABSPATH' ) || exit;
 
 $wppa_link = WPPA_Link_Button::state();
 
-// Наставнику кнопка не выдаётся: блок не выводим совсем — ни открытым,
+// Наставнику и куратору кнопка не выдаётся: блок не выводим совсем — ни открытым,
 // ни серым с сообщением.
-if ( 'mentor' === $wppa_link['status'] ) {
+if ( in_array( $wppa_link['status'], array( 'mentor', 'curator' ), true ) ) {
 	return;
 }
 

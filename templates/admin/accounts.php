@@ -76,6 +76,9 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 							<?php echo get_avatar( $wppa_user->ID, 24, '', '', array( 'class' => 'wppa-admin__avatar' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							<strong><?php echo esc_html( $wppa_user->display_name ); ?></strong>
 							<span class="wppa-admin__muted">(<?php echo esc_html( $wppa_user->user_login ); ?>)</span>
+							<?php if ( WPPA_Teams::is_curator( $wppa_user->ID ) ) : ?>
+								<br /><span class="wppa-badge wppa-badge--curator"><?php esc_html_e( 'куратор', 'wp-personal-account' ); ?></span>
+							<?php endif; ?>
 						</td>
 						<td><a href="mailto:<?php echo esc_attr( $wppa_user->user_email ); ?>"><?php echo esc_html( $wppa_user->user_email ); ?></a></td>
 						<td>
@@ -125,7 +128,19 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 							<?php endif; ?>
 						</td>
 						<td>
-							<a class="button button-small" href="<?php echo esc_url( get_edit_user_link( $wppa_user->ID ) ); ?>"><?php esc_html_e( 'Профиль', 'wp-personal-account' ); ?></a>
+							<div class="wppa-actions">
+								<a class="button button-small" href="<?php echo esc_url( get_edit_user_link( $wppa_user->ID ) ); ?>"><?php esc_html_e( 'Профиль', 'wp-personal-account' ); ?></a>
+
+								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline-form">
+									<?php wp_nonce_field( 'wppa_tool' ); ?>
+									<input type="hidden" name="action" value="wppa_tool" />
+									<input type="hidden" name="wppa_tool" value="<?php echo WPPA_Teams::is_curator( $wppa_user->ID ) ? 'remove_curator' : 'set_curator'; ?>" />
+									<input type="hidden" name="user_id" value="<?php echo esc_attr( (string) $wppa_user->ID ); ?>" />
+									<button type="submit" class="button button-small">
+										<?php echo WPPA_Teams::is_curator( $wppa_user->ID ) ? esc_html__( 'Снять куратора', 'wp-personal-account' ) : esc_html__( 'Сделать куратором', 'wp-personal-account' ); ?>
+									</button>
+								</form>
+							</div>
 						</td>
 					</tr>
 				<?php endforeach; ?>

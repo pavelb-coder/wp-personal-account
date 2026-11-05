@@ -1361,6 +1361,120 @@ if ( ! $short_ok ) {
 
 $GLOBALS['wppa_test']['logged_in'] = true;
 
+// Куратор: статус на уровне сайта (3.10.0).
+$curator_checks     = array();
+$curator_snapshot   = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$curator_user       = 41;
+$curator_other      = 42;
+
+$GLOBALS['wppa_test']['meta'] = $curator_snapshot;
+
+$curator_checks['по умолчанию не куратор'] = false === WPPA_Teams::is_curator( $curator_user );
+$curator_checks['назначение куратора']     = true === WPPA_Teams::set_curator( $curator_user, true );
+$curator_checks['куратор отмечен']         = true === WPPA_Teams::is_curator( $curator_user );
+$curator_checks['мета-ключ куратора']      = '1' === (string) get_user_meta( $curator_user, WPPA_Teams::META_CURATOR, true );
+$curator_checks['чужой пользователь — нет'] = false === WPPA_Teams::is_curator( $curator_other );
+$curator_checks['несуществующий не назначается'] = false === WPPA_Teams::set_curator( 0, true );
+$curator_checks['подпись роли']            = 'Куратор' === WPPA_Teams::role_label( 'curator' );
+
+$curator_names = array_map(
+	static function ( $user ) {
+		return (int) $user->ID;
+	},
+	WPPA_Teams::curators()
+);
+$curator_checks['список кураторов'] = in_array( $curator_user, $curator_names, true );
+
+// Куратор управляет любой командой, участник — только своей.
+$curator_team_id = WPPA_Teams::create( 'Команда для куратора', $curator_other );
+
+if ( is_wp_error( $curator_team_id ) ) {
+	$curator_checks['команда создана'] = false;
+} else {
+	$curator_checks['команда создана']                   = true;
+	$curator_checks['куратор управляет чужой командой']  = true === WPPA_Teams::can_manage_team( $curator_team_id, $curator_user );
+	$curator_checks['капитан управляет своей']           = true === WPPA_Teams::can_manage_team( $curator_team_id, $curator_other );
+	$curator_checks['посторонний не управляет']          = false === WPPA_Teams::can_manage_team( $curator_team_id, 555 );
+	$curator_checks['не команда — нельзя']               = false === WPPA_Teams::can_manage_team( 0, $curator_user );
+
+	$all_teams  = WPPA_Teams::all_teams();
+	$team_row   = array();
+
+	foreach ( $all_teams as $curator_row ) {
+		if ( (int) $curator_row['id'] === (int) $curator_team_id ) {
+			$team_row = $curator_row;
+		}
+	}
+
+	$curator_checks['все команды: команда в списке'] = array() !== $team_row;
+	$curator_checks['все команды: поля строки']     = isset( $team_row['name'], $team_row['owner'], $team_row['participants'], $team_row['mentors'], $team_row['complete'], $team_row['missing'] );
+	$curator_checks['все команды: капитан']         = 'Куратор' !== $team_row['owner'];
+
+	// Куратору кнопка перехода не выдаётся.
+	$GLOBALS['wppa_test']['current_user'] = $curator_user;
+	$curator_link_state = wppa_link_state( $link_base );
+	$curator_checks['кнопка: статус curator']   = 'curator' === $curator_link_state['status'];
+	$curator_checks['кнопка: не открыта']       = false === $curator_link_state['is_open'];
+
+	$curator_link_html = WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'link-button', 'enabled' => 1, 'title' => 'Трансляция', 'audience' => 'all', 'html' => '' ),
+		array()
+	);
+	$curator_checks['кнопка: блок не выводится'] = '' === trim( $curator_link_html );
+
+	// Список команд в кабинете куратора.
+	$team_block = array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
+	$curator_html = WPPA_Builder::render_block( $team_block, array() );
+
+	$curator_checks['кабинет: панель куратора']     = false !== strpos( $curator_html, 'Куратор: все команды' );
+	$curator_checks['кабинет: команда в списке']    = false !== strpos( $curator_html, 'Команда для куратора' );
+	$curator_checks['кабинет: ссылка «Управлять»']  = false !== strpos( $curator_html, 'wppa_team=' . (int) $curator_team_id );
+
+	// Открываем чужую команду: ?wppa_team=ID.
+	$_GET['wppa_team'] = (int) $curator_team_id;
+
+	$curator_checks['открытая команда определяется'] = (int) $curator_team_id === (int) WPPA_Teams::viewing_team_id( $curator_user );
+
+	$view_html = WPPA_Builder::render_block( $team_block, array() );
+
+	$curator_checks['просмотр: состав команды']       = false !== strpos( $view_html, 'Состав команды' );
+	$curator_checks['просмотр: скрытое team_id']       = false !== strpos( $view_html, 'name="team_id" value="' . (int) $curator_team_id . '"' );
+	$curator_checks['просмотр: переименование']        = false !== strpos( $view_html, 'wppa_team_action" value="rename"' );
+	$curator_checks['просмотр: нет выхода из команды'] = false === strpos( $view_html, 'wppa_team_action" value="leave"' );
+	$curator_checks['просмотр: плашка куратора']       = false !== strpos( $view_html, 'как куратор' );
+
+	unset( $_GET['wppa_team'] );
+
+	// team_id из формы куратора важнее своей команды.
+	$_POST['team_id'] = (int) $curator_team_id;
+	$_GET['wppa_team'] = (int) $curator_team_id;
+
+	$curator_checks['team_id из формы'] = (int) $curator_team_id === (int) WPPA_Teams::request_team_id( $curator_user );
+
+	unset( $_POST['team_id'], $_GET['wppa_team'] );
+
+	// Обычный пользователь чужую команду не откроет.
+	$GLOBALS['wppa_test']['current_user'] = $curator_other;
+	$curator_checks['не куратор — чужой team_id не берётся'] = 0 !== (int) WPPA_Teams::viewing_team_id( $curator_other )
+		? (int) $curator_team_id !== (int) WPPA_Teams::viewing_team_id( $curator_other )
+		: true;
+
+	WPPA_Teams::dissolve( $curator_team_id );
+}
+
+// Снятие куратора.
+$curator_checks['снятие куратора']     = true === WPPA_Teams::set_curator( $curator_user, false );
+$curator_checks['после снятия — нет']  = false === WPPA_Teams::is_curator( $curator_user );
+
+$GLOBALS['wppa_test']['meta'] = $curator_snapshot;
+
+foreach ( $curator_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Разделы и свои поля персональных данных (3.8.0).
 $sections_checks = array();
 $settings_backup = get_option( 'wppa_settings', array() );

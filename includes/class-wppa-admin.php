@@ -725,6 +725,12 @@ class WPPA_Admin {
 
 				return self::mentor_action( $tool, $team_id, $member_id );
 
+			case 'set_curator':
+			case 'remove_curator':
+				$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+
+				return self::curator_action( $tool, $user_id );
+
 			case 'dissolve_team':
 				$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 
@@ -791,6 +797,44 @@ class WPPA_Admin {
 		}
 
 		return WPPA_Teams::dismiss_mentor( $team_id, $member_id ) ? 'team_mentor_removed' : 'team_mentor_invalid';
+	}
+
+	/**
+	 * Назначение и снятие куратора.
+	 *
+	 * Возвращает код уведомления, ничего не выводит и не перенаправляет —
+	 * так его можно проверить без HTTP.
+	 *
+	 * @param string $tool    set_curator|remove_curator.
+	 * @param int    $user_id ID пользователя.
+	 * @return string Код уведомления.
+	 */
+	public static function curator_action( $tool, $user_id ) {
+		$user_id = (int) $user_id;
+
+		if ( ! $user_id || ! get_userdata( $user_id ) ) {
+			return 'curator_invalid';
+		}
+
+		$is_curator = WPPA_Teams::is_curator( $user_id );
+
+		if ( 'set_curator' === $tool ) {
+			if ( $is_curator ) {
+				return 'curator_already';
+			}
+
+			return WPPA_Teams::set_curator( $user_id, true ) ? 'curator_added' : 'curator_invalid';
+		}
+
+		if ( 'remove_curator' !== $tool ) {
+			return 'curator_invalid';
+		}
+
+		if ( ! $is_curator ) {
+			return 'curator_not';
+		}
+
+		return WPPA_Teams::set_curator( $user_id, false ) ? 'curator_removed' : 'curator_invalid';
 	}
 
 	/**

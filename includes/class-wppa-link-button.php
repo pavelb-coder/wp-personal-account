@@ -173,6 +173,14 @@ class WPPA_Link_Button {
 			return $state;
 		}
 
+		// Куратору кнопка тоже не выдаётся: он не участник команды.
+		if ( WPPA_Teams::is_curator( $user_id ) ) {
+			$state['status']  = 'curator';
+			$state['message'] = __( 'Кнопка перехода выдаётся участникам команды; куратору она недоступна.', 'wp-personal-account' );
+
+			return $state;
+		}
+
 		if ( '' === trim( (string) $config['url'] ) ) {
 			$state['status']  = 'unconfigured';
 			$state['message'] = __( 'Ссылка пока не задана: укажите её в настройках плагина.', 'wp-personal-account' );

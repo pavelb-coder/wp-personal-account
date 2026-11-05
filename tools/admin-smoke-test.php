@@ -62,6 +62,18 @@ function wppa_check_output( $name, $callback, &$fail ) {
 // Страницы панели.
 wppa_check_output( 'admin/dashboard', static function () { WPPA_Admin::page_dashboard(); }, $fail );
 wppa_check_output( 'admin/accounts', static function () { WPPA_Admin::page_accounts(); }, $fail );
+
+// Разметка «Аккаунтов» нужна для проверок интерфейса.
+// Один из пользователей списка — куратор, чтобы были видны обе кнопки.
+WPPA_Teams::set_curator( 7, true );
+ob_start();
+WPPA_Admin::page_accounts();
+$accounts_html = ob_get_clean();
+WPPA_Teams::set_curator( 7, false );
+
+ob_start();
+WPPA_Admin::page_accounts();
+$accounts_html_plain = ob_get_clean();
 wppa_check_output( 'admin/tools', static function () { WPPA_Admin::page_tools(); }, $fail );
 wppa_check_output( 'admin/teams', static function () { WPPA_Admin::page_teams(); }, $fail );
 wppa_check_output( 'admin/builder', static function () { WPPA_Builder::page(); }, $fail );
@@ -1207,6 +1219,29 @@ $smb_checks = array(
 
 foreach ( $smb_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'smb config: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Куратор: кнопки в «Аккаунтах» и обработка действия.
+$curator_admin_checks = array(
+	'аккаунты: кнопка назначения'  => false !== strpos( $accounts_html_plain, 'wppa_tool" value="set_curator"' ),
+	'аккаунты: метка куратора'     => false !== strpos( $accounts_html, 'wppa-badge--curator' ),
+	'аккаунты: кнопка снятия'      => false !== strpos( $accounts_html, 'wppa_tool" value="remove_curator"' ),
+	'аккаунты: поле user_id'       => false !== strpos( $accounts_html, 'name="user_id"' ),
+	'куратор: назначение'          => 'curator_added' === WPPA_Admin::curator_action( 'set_curator', 7 ),
+	'куратор: повторное назначение' => 'curator_already' === WPPA_Admin::curator_action( 'set_curator', 7 ),
+	'куратор: статус выставлен'    => true === WPPA_Teams::is_curator( 7 ),
+	'куратор: снятие'              => 'curator_removed' === WPPA_Admin::curator_action( 'remove_curator', 7 ),
+	'куратор: статус снят'         => false === WPPA_Teams::is_curator( 7 ),
+	'куратор: повторное снятие'    => 'curator_not' === WPPA_Admin::curator_action( 'remove_curator', 7 ),
+	'куратор: неизвестный пользователь' => 'curator_invalid' === WPPA_Admin::curator_action( 'set_curator', 0 ),
+	'куратор: неизвестное действие' => 'curator_invalid' === WPPA_Admin::curator_action( 'что-то', 7 ),
+);
+
+foreach ( $curator_admin_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

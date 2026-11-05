@@ -345,6 +345,11 @@
 	color: #047857;
 }
 
+.wppa-badge--curator {
+	background: #f5f3ff;
+	color: #6d28d9;
+}
+
 .wppa-mentors {
 	display: flex;
 	flex-wrap: wrap;
