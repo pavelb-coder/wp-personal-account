@@ -1816,7 +1816,8 @@ $bulk_admin_checks['кнопка: код успеха']      = 'folder_export_ok
 $bulk_admin_checks['кнопка: CSV записан']     = count( (array) glob( $bulk_admin_dir . '/accounts-*.csv' ) ) > 0;
 $bulk_admin_team_dir = $bulk_admin_dir . '/' . WPPA_Team_Files_Export::folder_path( $bulk_admin_team );
 
-$bulk_admin_checks['кнопка: папка с номером команды'] = $bulk_admin_dir . '/' . WPPA_Team_Files_Export::folder_name( $bulk_admin_team ) === $bulk_admin_team_dir;
+$bulk_admin_checks['кнопка: папка команды в «Команды»'] = $bulk_admin_dir . '/Команды/' . WPPA_Team_Files_Export::folder_name( $bulk_admin_team ) === $bulk_admin_team_dir;
+$bulk_admin_checks['кнопка: имя папки с номером']      = false !== strpos( $bulk_admin_team_dir, '/' . WPPA_Team_Files_Export::folder_name( $bulk_admin_team ) );
 $bulk_admin_checks['кнопка: файл наставника в папке команды'] = is_file( $bulk_admin_team_dir . '/otchet.pdf' );
 $bulk_admin_checks['кнопка: содержимое файла'] = str_repeat( 'z', 40 ) === (string) @file_get_contents( $bulk_admin_team_dir . '/otchet.pdf' );
 $bulk_admin_checks['кнопка: журнал пополнился'] = false !== strpos( (string) wp_json_encode( WPPA_Export_Folder::logs(), JSON_UNESCAPED_UNICODE ), 'Файлы наставников' );

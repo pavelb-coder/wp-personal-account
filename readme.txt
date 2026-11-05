@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.22.0
+Stable tag: 3.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.23.0 =
+* Папки команд при экспорте группируются в отдельную папку «Команды»: \\server\share\olimp\Команды\Студия «Вектор» (12). Внутри — файлы наставника, кураторские не выгружаются.
+* Имя общей папки можно изменить фильтром wppa_team_files_export_root, пустая строка — писать папки команд без группировки.
+* Опустевшая общая папка убирается вместе с папкой команды.
 
 = 3.22.0 =
 * Папка команды в сетевой папке называется «название команды (номер)» и лежит прямо в папке из настроек: \\server\share\olimp/Студия «Вектор» (12). Файлы куратора не выгружаются, файлы в кабинете остаются на месте — папка это копия.

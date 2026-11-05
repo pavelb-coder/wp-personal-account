@@ -2122,9 +2122,9 @@ WPPA_Teams::set_curator( 63, true );
 $export_checks['команда создана']   = $export_team && ! is_wp_error( $export_team );
 $export_checks['выгрузка включена'] = true === WPPA_Team_Files_Export::enabled();
 $export_checks['папка: название и номер команды'] = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_name( $export_team );
-$export_checks['папка: без общего каталога']      = '' === WPPA_Team_Files_Export::folder_root();
-$export_checks['папка: путь = папка команды']     = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_path( $export_team );
-$export_checks['папка: на диске прямо в настройках'] = $export_dir . DIRECTORY_SEPARATOR . 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::local_dir( $export_team );
+$export_checks['папка: общая папка «Команды»']    = 'Команды' === WPPA_Team_Files_Export::folder_root();
+$export_checks['папка: путь в общей папке']       = 'Команды/Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_path( $export_team );
+$export_checks['папка: на диске в общей папке']   = $export_dir . DIRECTORY_SEPARATOR . 'Команды' . DIRECTORY_SEPARATOR . 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::local_dir( $export_team );
 $export_checks['папка: служебные символы'] = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), '/' );
 
 // Одинаковые названия не сливаются: номер команды всегда в имени папки.
@@ -2319,7 +2319,8 @@ $bulk_team_dir = $bulk_dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_S
 
 WPPA_Teams::dissolve( $bulk_team );
 
-$bulk_checks['после роспуска папки нет'] = ! is_dir( $bulk_team_dir );
+$bulk_checks['после роспуска папки нет']        = ! is_dir( $bulk_team_dir );
+$bulk_checks['после роспуска общей папки нет']  = ! is_dir( $bulk_dir . DIRECTORY_SEPARATOR . 'Команды' );
 
 update_option( 'wppa_settings', $export_backup );
 
