@@ -203,12 +203,48 @@ defined( 'ABSPATH' ) || exit;
 				</p>
 			<?php endif; ?>
 
+			<?php
+			$wppa_files_last = isset( $files_last ) && is_array( $files_last ) ? $files_last : WPPA_Team_Files_Export::last_result();
+			?>
+
+			<?php if ( ! empty( $wppa_files_last ) ) : ?>
+				<div class="wppa-admin__panel" style="margin:12px 0;padding:12px 14px;border-left:4px solid <?php echo ! empty( $wppa_files_last['ok'] ) ? '#00a32a' : '#d63638'; ?>;background:#fff">
+					<strong><?php esc_html_e( 'Последняя выгрузка файлов наставников', 'wp-personal-account' ); ?></strong>
+					<p class="wppa-admin__muted" style="margin:4px 0 6px">
+						<?php
+						printf(
+							/* translators: 1: дата, 2: выгружено, 3: всего, 4: ошибок */
+							esc_html__( '%1$s · выгружено %2$d из %3$d, ошибок %4$d', 'wp-personal-account' ),
+							esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $wppa_files_last['time'] ) ),
+							(int) $wppa_files_last['exported'],
+							(int) $wppa_files_last['files'],
+							(int) $wppa_files_last['failed']
+						);
+						?>
+					</p>
+					<p style="margin:0 0 6px"><?php echo esc_html( $wppa_files_last['message'] ); ?></p>
+					<?php if ( ! empty( $wppa_files_last['errors'] ) ) : ?>
+						<ul class="wppa-admin__muted" style="margin:0;padding-left:18px">
+							<?php foreach ( (array) $wppa_files_last['errors'] as $wppa_files_error ) : ?>
+								<li><?php echo esc_html( (string) $wppa_files_error ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+
 			<div class="wppa-admin__actions">
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
 					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="export_folder_now" />
 					<button type="submit" class="button button-primary"><?php esc_html_e( 'Экспортировать', 'wp-personal-account' ); ?></button>
+				</form>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'wppa_tool' ); ?>
+					<input type="hidden" name="action" value="wppa_tool" />
+					<input type="hidden" name="wppa_tool" value="files_folder_check" />
+					<button type="submit" class="button"><?php esc_html_e( 'Проверить папку команд', 'wp-personal-account' ); ?></button>
 				</form>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>

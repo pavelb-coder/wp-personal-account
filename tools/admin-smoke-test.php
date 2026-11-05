@@ -1786,11 +1786,11 @@ WPPA_Teams::set_curator( 7, false );
 
 $bulk_admin_file = WPPA_Curator_Files::store( $bulk_admin_team, $bulk_admin_source, 'otchet.pdf', 24 );
 
-$bulk_admin_redirect = function () {
+$bulk_admin_redirect = function ( $tool = 'export_folder_now' ) {
 	$GLOBALS['wppa_test']['catch_redirect'] = true;
 	$_POST                                  = array(
 		'action'    => 'wppa_tool',
-		'wppa_tool' => 'export_folder_now',
+		'wppa_tool' => $tool,
 		'_wpnonce'  => wp_create_nonce( 'wppa_tool' ),
 	);
 
@@ -1822,6 +1822,19 @@ $bulk_admin_checks['кнопка: файл наставника в папке к
 $bulk_admin_checks['кнопка: содержимое файла'] = str_repeat( 'z', 40 ) === (string) @file_get_contents( $bulk_admin_team_dir . '/otchet.pdf' );
 $bulk_admin_checks['кнопка: журнал пополнился'] = false !== strpos( (string) wp_json_encode( WPPA_Export_Folder::logs(), JSON_UNESCAPED_UNICODE ), 'Файлы наставников' );
 
+// Итог последней выгрузки виден на странице «Инструменты».
+ob_start();
+WPPA_Admin::page_tools();
+$bulk_admin_tools_html = ob_get_clean();
+
+$bulk_admin_checks['итог: блок в «Инструментах»']  = false !== strpos( $bulk_admin_tools_html, 'Последняя выгрузка файлов наставников' );
+$bulk_admin_checks['итог: числа в блоке']          = false !== strpos( $bulk_admin_tools_html, 'выгружено 1 из 1' );
+$bulk_admin_checks['итог: кнопка проверки папки']  = false !== strpos( $bulk_admin_tools_html, 'value="files_folder_check"' );
+
+// Отдельная проверка папки команд: пробная запись и удаление.
+$bulk_admin_checks['проверка папки: код успеха'] = 'files_check_ok' === $bulk_admin_redirect( 'files_folder_check' );
+$bulk_admin_checks['проверка папки: пробного файла нет'] = 0 === count( (array) glob( $bulk_admin_dir . '/Команды/.wppa-probe-*' ) );
+
 $_POST = array();
 
 if ( is_array( $bulk_admin_file ) ) {
@@ -1831,6 +1844,7 @@ if ( is_array( $bulk_admin_file ) ) {
 WPPA_Teams::dissolve( $bulk_admin_team );
 update_option( 'wppa_settings', $bulk_settings_backup );
 delete_option( WPPA_Export_Folder::LOG_OPTION );
+delete_option( WPPA_Team_Files_Export::LAST_OPTION );
 
 foreach ( $bulk_admin_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export button: ' . $check_name . "\n";

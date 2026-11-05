@@ -2260,6 +2260,21 @@ update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb
 
 $bulk_checks['файл без копии'] = is_array( $bulk_file ) && ! is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf' );
 
+// Проверка папки команд: пробная запись и уборка за собой.
+$bulk_probe = WPPA_Team_Files_Export::probe();
+
+$bulk_checks['проверка папки: запись работает']    = true === $bulk_probe['ok'];
+$bulk_checks['проверка папки: путь в сообщении']   = false !== strpos( $bulk_probe['message'], 'Команды' );
+$bulk_checks['проверка папки: режим в сообщении']  = false !== strpos( $bulk_probe['message'], 'filesystem' );
+$bulk_checks['проверка папки: пробный файл убран'] = 0 === count( (array) glob( $bulk_dir . '/Команды/.wppa-probe-*' ) );
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
+
+$bulk_probe_none = WPPA_Team_Files_Export::probe();
+$bulk_checks['проверка папки: без пути отказ'] = false === $bulk_probe_none['ok'] && false !== strpos( $bulk_probe_none['message'], 'Путь не задан' );
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $bulk_dir, 'user' => '', 'pass' => '' ) ) ) );
+
 $bulk_result = WPPA_Team_Files_Export::export_all();
 $bulk_checks['кнопка: выгрузка прошла']    = true === $bulk_result['ok'];
 $bulk_checks['кнопка: файл наставника посчитан'] = 1 === (int) $bulk_result['files'];
@@ -2323,6 +2338,23 @@ $bulk_checks['после роспуска папки нет']        = ! is_dir(
 $bulk_checks['после роспуска общей папки нет']  = ! is_dir( $bulk_dir . DIRECTORY_SEPARATOR . 'Команды' );
 
 update_option( 'wppa_settings', $export_backup );
+
+// Итог последней выгрузки запоминается для админки.
+WPPA_Team_Files_Export::remember(
+	array(
+		'ok'       => false,
+		'files'    => 3,
+		'exported' => 2,
+		'skipped'  => 0,
+		'failed'   => 1,
+		'message'  => 'Файлы наставников: выгружено 2 из 3, ошибок 1.',
+		'errors'   => array( '«Команда» → файл.pdf: нет прав на запись' ),
+	)
+);
+$bulk_last = WPPA_Team_Files_Export::last_result();
+$bulk_checks['итог: сохранён']         = isset( $bulk_last['failed'] ) && 1 === (int) $bulk_last['failed'];
+$bulk_checks['итог: причина на месте'] = false !== strpos( implode( ' ', (array) $bulk_last['errors'] ), 'нет прав' );
+delete_option( WPPA_Team_Files_Export::LAST_OPTION );
 
 foreach ( $bulk_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team files bulk: ' . $check_name . "\n";

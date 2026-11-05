@@ -328,6 +328,115 @@ class WPPA_Team_Files_Export {
 	}
 
 	/**
+	 * Опция с итогом последней массовой выгрузки.
+	 */
+	const LAST_OPTION = 'wppa_team_files_export_last';
+
+	/**
+	 * Запомнить итог массовой выгрузки, чтобы показать его в админке.
+	 *
+	 * @param array $result Результат export_all().
+	 * @return void
+	 */
+	public static function remember( $result ) {
+		update_option(
+			self::LAST_OPTION,
+			array(
+				'time'     => time(),
+				'ok'       => ! empty( $result['ok'] ),
+				'files'    => isset( $result['files'] ) ? (int) $result['files'] : 0,
+				'exported' => isset( $result['exported'] ) ? (int) $result['exported'] : 0,
+				'skipped'  => isset( $result['skipped'] ) ? (int) $result['skipped'] : 0,
+				'failed'   => isset( $result['failed'] ) ? (int) $result['failed'] : 0,
+				'message'  => isset( $result['message'] ) ? (string) $result['message'] : '',
+				'errors'   => array_slice( isset( $result['errors'] ) ? (array) $result['errors'] : array(), 0, 3 ),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Итог последней массовой выгрузки.
+	 *
+	 * @return array
+	 */
+	public static function last_result() {
+		$saved = get_option( self::LAST_OPTION, array() );
+
+		return is_array( $saved ) ? $saved : array();
+	}
+
+	/**
+	 * Проверить папку команд: записать и удалить пробный файл.
+	 *
+	 * Показывает точную причину: путь, режим доставки и сообщение записи.
+	 *
+	 * @return array ok, path, mode, message.
+	 */
+	public static function probe() {
+		$config = self::bulk_config();
+		$result = array(
+			'ok'      => false,
+			'path'    => '',
+			'mode'    => 'filesystem',
+			'message' => '',
+		);
+
+		if ( ! WPPA_SMB::is_configured( $config ) ) {
+			$result['message'] = __( 'Путь не задан: заполните «Сетевую папку» или «Экспорт в папку».', 'wp-personal-account' );
+
+			return $result;
+		}
+
+		$result['mode'] = WPPA_SMB::detect_type( $config );
+		$root           = self::folder_root();
+		$name           = '.wppa-probe-' . strtolower( wp_generate_password( 6, false, false ) ) . '.txt';
+		$result['path'] = rtrim( (string) $config['path'], '/\\' ) . ( '' === $root ? '' : DIRECTORY_SEPARATOR . $root );
+
+		try {
+			$written = WPPA_SMB::write( $name, 'wppa probe', $config, $root );
+		} catch ( \Throwable $e ) {
+			$written = array(
+				'ok'      => false,
+				'message' => $e->getMessage(),
+				'file'    => '',
+			);
+		}
+
+		if ( empty( $written['ok'] ) ) {
+			$result['message'] = sprintf(
+				/* translators: 1: путь, 2: причина */
+				__( 'Записать в %1$s не удалось: %2$s', 'wp-personal-account' ),
+				$result['path'],
+				'' !== (string) $written['message'] ? (string) $written['message'] : __( 'папка недоступна или нет прав на запись', 'wp-personal-account' )
+			);
+
+			return $result;
+		}
+
+		// Убираем пробный файл и, если папка опустела, её саму.
+		try {
+			WPPA_SMB::delete( $name, $config, $root );
+		} catch ( \Throwable $e ) {
+			$written['file'] = '';
+		}
+
+		if ( '' !== $root ) {
+			WPPA_SMB::remove_dir( rtrim( (string) $config['path'], '/\\' ) . DIRECTORY_SEPARATOR . $root );
+		}
+
+		$result['ok']      = true;
+		$result['message'] = sprintf(
+			/* translators: 1: путь, 2: режим */
+			__( 'Запись в %1$s работает (режим: %2$s).', 'wp-personal-account' ),
+			$result['path'],
+			$result['mode']
+		);
+
+		return $result;
+	}
+
+	/**
 	 * Настройки папки для массовой выгрузки.
 	 *
 	 * Основной источник — раздел «Сетевая папка». Если он пуст, берём путь из

@@ -336,6 +336,7 @@ class WPPA_Admin {
 				'export_change'  => WPPA_Export_Folder::next_change(),
 				'smb_config'    => WPPA_SMB::config(),
 				'smb_test'      => WPPA_SMB::test( WPPA_SMB::config() ),
+				'files_last'    => WPPA_Team_Files_Export::last_result(),
 				'export_check'  => '' === WPPA_Export_Folder::normalize_path( WPPA_Export_Folder::config()['path'] )
 					? null
 					: WPPA_Export_Folder::check_folder( WPPA_Export_Folder::config()['path'] ),
@@ -684,6 +685,8 @@ class WPPA_Admin {
 			'mailing_failed'     => array( 'error', __( 'Неизвестное действие рассылки.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_export_files_fail' => array( 'warning', __( 'CSV записан, но файлы наставников выгрузились не полностью. В журнале ниже указано, какие файлы и почему — обычно это недоступная папка или нет прав на запись.', 'wp-personal-account' ) ),
+			'files_check_ok'     => array( 'success', __( 'Папка команд доступна, пробная запись прошла и удалена.', 'wp-personal-account' ) ),
+			'files_check_fail'   => array( 'error', __( 'Записать в папку команд не удалось — причина указана в журнале ниже и в блоке «Последняя выгрузка файлов».', 'wp-personal-account' ) ),
 			'folder_export_ok'  => array( 'success', __( 'Выгрузка записана: CSV аккаунтов и файлы наставников по папкам команд. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
 			'folder_check_fail'  => array( 'error', __( 'Папка недоступна: проверьте путь, права и монтирование сетевой шары.', 'wp-personal-account' ) ),
@@ -780,6 +783,8 @@ class WPPA_Admin {
 				$result = WPPA_Export_Folder::write( WPPA_Export_Folder::config() );
 				$files  = WPPA_Team_Files_Export::export_all();
 
+				WPPA_Team_Files_Export::remember( $files );
+
 				if ( '' !== (string) $files['message'] ) {
 					WPPA_Export_Folder::log_entry( (bool) $files['ok'], '', 0, $files['message'] );
 				}
@@ -794,6 +799,12 @@ class WPPA_Admin {
 				}
 
 				return $files['ok'] ? 'folder_export_ok' : 'folder_export_files_fail';
+
+			case 'files_folder_check':
+				$probe = WPPA_Team_Files_Export::probe();
+				WPPA_Export_Folder::log_entry( (bool) $probe['ok'], '', 0, (string) $probe['message'] );
+
+				return $probe['ok'] ? 'files_check_ok' : 'files_check_fail';
 
 			case 'smb_check':
 				$result = WPPA_SMB::test( WPPA_SMB::config() );
