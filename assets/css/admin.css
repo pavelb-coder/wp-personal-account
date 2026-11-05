@@ -362,6 +362,35 @@
 	margin: 0;
 }
 
+/* Рассылка */
+
+.wppa-inline {
+	display: inline-block;
+	margin: 0;
+}
+
+.wppa-admin__preview {
+	margin: 12px 0 0;
+	padding: 12px 14px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}
+
+.wppa-admin__preview-body p {
+	margin: 0 0 8px;
+}
+
+.wppa-admin__details {
+	margin: 12px 0 0;
+}
+
+.wppa-admin__details summary {
+	cursor: pointer;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
 /* Конструктор */
 
 .wppa-builder__list {

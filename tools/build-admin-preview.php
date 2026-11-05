@@ -32,6 +32,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
+require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-reset.php';
@@ -56,9 +57,12 @@ $GLOBALS['wppa_test']['users'] = array(
 	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
 );
 
+$demo_team_ids = array();
+
 foreach ( array( 'Студия «Вектор»', 'Отдел закупок', 'Фриланс-группа' ) as $demo_name ) {
 	$demo_team = WPPA_Teams::create( $demo_name, 7 );
 	if ( ! is_wp_error( $demo_team ) ) {
+		$demo_team_ids[] = (int) $demo_team;
 		update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team );
 		update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
 		// «Выходим» из команды, чтобы можно было создать следующую.
@@ -71,6 +75,31 @@ $sections  = demo_page( 'Обзор', 'Меню «Личный кабинет» 
 $sections .= demo_page( 'Аккаунты', 'Поиск, фильтр по роли, число заказов и незавершённые подтверждения email', static function () { WPPA_Admin::page_accounts(); } );
 $sections .= demo_page( 'Конструктор', 'Сборка кабинета из блоков: порядок, включение, заголовки, аудитория и свои HTML-блоки', static function () { WPPA_Builder::page(); } );
 $sections .= demo_page( 'Команды', 'Объединение аккаунтов: состав, капитаны, лимит участников, роспуск команды', static function () { WPPA_Admin::page_teams(); } );
+
+// Демонстрация рассылки: команда второго этапа, шаблон и очередь с интервалом.
+if ( ! empty( $demo_team_ids[0] ) ) {
+	update_user_meta( 7, WPPA_Teams::META_TEAM, $demo_team_ids[0] );
+	update_user_meta( 7, WPPA_Teams::META_ROLE, 'owner' );
+	update_user_meta( 8, WPPA_Teams::META_TEAM, $demo_team_ids[0] );
+	update_user_meta( 8, WPPA_Teams::META_ROLE, 'mentor' );
+
+	WPPA_Teams::set_curator( 7, true );
+	WPPA_Teams::set_stage2( $demo_team_ids[0], true, 7 );
+	WPPA_Teams::set_curator( 7, false );
+
+	WPPA_Mailing::save(
+		array(
+			'subject'  => 'Команда «{команда}» прошла во второй этап',
+			'body'     => "Здравствуйте, {имя}!\n\nКоманда «{команда}» прошла во второй этап — отметка от {дата_отметки}.\n\nСледующий шаг пришлём отдельным письмом.\n\n— {сайт}",
+			'interval' => 10,
+			'batch'    => 2,
+		)
+	);
+	WPPA_Mailing::start();
+	WPPA_Mailing::process_due();
+}
+
+$sections .= demo_page( 'Рассылка', 'Шаблон письма с подстановками, предпросмотр, очередь с интервалом между письмами, отмена и журнал', static function () { WPPA_Admin::page_mailing(); } );
 // Демонстрация панели выгрузки в сетевую папку: настройки, расписание, журнал.
 $wppa_folder_snapshot = get_option( 'wppa_settings', array() );
 

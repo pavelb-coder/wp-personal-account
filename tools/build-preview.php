@@ -25,6 +25,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
+require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -215,6 +216,26 @@ $sections .= demo_section(
 );
 
 unset( $_GET['wppa_team'] );
+
+// Куратор: главная страница с очередью рассылки участникам второго этапа.
+WPPA_Mailing::save(
+	array(
+		'subject'  => 'Команда «{команда}» прошла во второй этап',
+		'body'     => "Здравствуйте, {имя}!\n\nКоманда «{команда}» прошла во второй этап — отметка от {дата_отметки}.\n\nСледующий шаг пришлём отдельным письмом.\n\n— {сайт}",
+		'interval' => 10,
+		'batch'    => 2,
+	)
+);
+WPPA_Mailing::start();
+WPPA_Mailing::process_due();
+
+$sections .= demo_section(
+	'Куратор: главная страница и рассылка',
+	'Куратор видит состояние очереди писем участникам второго этапа: сколько отправлено, сколько осталось, когда следующее письмо. Кнопка «Отменить рассылку» очищает очередь. Шаблон письма и запуск — в админке, раздел «Рассылка»',
+	WPPA_Template::get( 'tab-dashboard', array( 'user' => $curator_user, 'tabs' => $tabs ) )
+);
+
+WPPA_Mailing::cancel();
 WPPA_Teams::set_curator( 12, false );
 
 

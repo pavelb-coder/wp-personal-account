@@ -69,6 +69,7 @@ class WPPA_Plugin {
 		WPPA_Teams::init();
 		WPPA_Curator_Files::init();
 		WPPA_Team_Files_Export::init();
+		WPPA_Mailing::init();
 		WPPA_Builder::init();
 		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
 		WPPA_Blocks::init();
@@ -551,6 +552,9 @@ class WPPA_Plugin {
 				break;
 			case 'curator_file':
 				WPPA_Curator_Files::handle_request();
+				break;
+			case 'mailing':
+				WPPA_Mailing::handle_request();
 				break;
 			case 'profile':
 				WPPA_Profile::handle_update();

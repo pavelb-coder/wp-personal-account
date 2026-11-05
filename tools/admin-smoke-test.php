@@ -32,6 +32,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
+require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
@@ -79,6 +80,7 @@ $accounts_html_plain = ob_get_clean();
 wppa_check_output( 'admin/tools', static function () { WPPA_Admin::page_tools(); }, $fail );
 wppa_check_output( 'admin/teams', static function () { WPPA_Admin::page_teams(); }, $fail );
 wppa_check_output( 'admin/builder', static function () { WPPA_Builder::page(); }, $fail );
+wppa_check_output( 'admin/mailing', static function () { WPPA_Admin::page_mailing(); }, $fail );
 
 // Расчётные методы.
 $stats = WPPA_Admin::stats();
@@ -1647,6 +1649,98 @@ $clean = WPPA_Builder::sanitize(
 		'unknown-tab' => array( array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1 ) ),
 	)
 );
+
+// ---------- Рассылка участникам второго этапа ----------
+$mail_admin_checks = array();
+delete_user_meta( 21, WPPA_Teams::META_TEAM );
+delete_user_meta( 22, WPPA_Teams::META_TEAM );
+$mail_admin_team   = WPPA_Teams::create( 'Команда для рассылки', 21 );
+
+if ( is_wp_error( $mail_admin_team ) ) {
+	$mail_admin_checks['команда создана'] = false;
+} else {
+	$mail_admin_checks['команда создана'] = true;
+
+	update_user_meta( 22, WPPA_Teams::META_TEAM, $mail_admin_team );
+	update_user_meta( 22, WPPA_Teams::META_ROLE, 'member' );
+
+	WPPA_Teams::set_curator( 7, true );
+	WPPA_Teams::set_stage2( $mail_admin_team, true, 7 );
+	WPPA_Teams::set_curator( 7, false );
+
+	ob_start();
+	WPPA_Admin::page_mailing();
+	$mail_admin_html = ob_get_clean();
+
+	$mail_admin_checks['страница: заголовок']       = false !== strpos( $mail_admin_html, 'Рассылка участникам второго этапа' );
+	$mail_admin_checks['страница: поле темы']       = false !== strpos( $mail_admin_html, 'wppa-mailing-subject' );
+	$mail_admin_checks['страница: поле текста']     = false !== strpos( $mail_admin_html, 'wppa-mailing-body' );
+	$mail_admin_checks['страница: подстановки']     = false !== strpos( $mail_admin_html, '{дата_отметки}' );
+	$mail_admin_checks['страница: получатель в списке'] = false !== strpos( $mail_admin_html, 'Команда для рассылки' );
+	$mail_admin_checks['страница: предпросмотр']    = false !== strpos( $mail_admin_html, 'Пример на получателе' );
+	$mail_admin_checks['страница: кнопка запуска']  = false !== strpos( $mail_admin_html, 'value="start"' );
+
+	$mail_admin_redirect = function ( $action, $post = array() ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = true;
+		$_POST                                  = array_merge( array( 'wppa_mailing_action' => $action ), $post );
+
+		try {
+			WPPA_Admin::handle_mailing();
+		} catch ( RuntimeException $e ) {
+			$GLOBALS['wppa_test']['catch_redirect'] = false;
+			$query = (string) parse_url( substr( $e->getMessage(), strlen( 'redirect:' ) ), PHP_URL_QUERY );
+			$args  = array();
+			parse_str( $query, $args );
+
+			return isset( $args['wppa_done'] ) ? (string) $args['wppa_done'] : '';
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return '';
+	};
+
+	$mail_admin_checks['обработчик: сохранение шаблона'] = 'mailing_saved' === $mail_admin_redirect(
+		'save',
+		array(
+			'subject'  => 'Этап два: {команда}',
+			'body'     => 'Привет, {имя}!',
+			'interval' => 2,
+			'batch'    => 1,
+		)
+	);
+	$mail_admin_checks['обработчик: запуск очереди'] = 'mailing_started' === $mail_admin_redirect(
+		'start',
+		array(
+			'subject'  => 'Этап два: {команда}',
+			'body'     => 'Привет, {имя}!',
+			'interval' => 2,
+			'batch'    => 1,
+			'skip_sent' => 1,
+		)
+	);
+	$mail_admin_checks['очередь: письмо появилось'] = WPPA_Mailing::stats()['total'] > 0;
+	$mail_admin_checks['обработчик: отмена']        = 'mailing_cancelled' === $mail_admin_redirect( 'cancel' );
+	$mail_admin_checks['очередь: после отмены пусто'] = 0 === WPPA_Mailing::stats()['total'];
+
+	$_POST = array();
+
+	WPPA_Mailing::clear();
+	delete_option( WPPA_Mailing::OPTION );
+	delete_option( WPPA_Mailing::LOG );
+
+	WPPA_Teams::set_curator( 7, true );
+	WPPA_Teams::set_stage2( $mail_admin_team, false, 7 );
+	WPPA_Teams::set_curator( 7, false );
+	WPPA_Teams::dissolve( $mail_admin_team );
+}
+
+foreach ( $mail_admin_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mailing: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 $sanitize_ok = 2 === count( $clean['dashboard'] )
 	&& 'Привет' === $clean['dashboard'][0]['title']

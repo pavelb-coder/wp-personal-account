@@ -31,6 +31,7 @@ class WPPA_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'admin_post_wppa_tool', array( __CLASS__, 'handle_tool' ) );
+		add_action( 'admin_post_wppa_mailing', array( __CLASS__, 'handle_mailing' ) );
 		add_filter( 'admin_footer_text', array( __CLASS__, 'footer_text' ) );
 	}
 
@@ -84,6 +85,15 @@ class WPPA_Admin {
 			self::CAP,
 			'wppa-teams',
 			array( __CLASS__, 'page_teams' )
+		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Рассылка', 'wp-personal-account' ),
+			__( 'Рассылка', 'wp-personal-account' ),
+			self::CAP,
+			'wppa-mailing',
+			array( __CLASS__, 'page_mailing' )
 		);
 
 		add_submenu_page(
@@ -333,6 +343,100 @@ class WPPA_Admin {
 		);
 	}
 
+	/**
+	 * Страница «Рассылка участникам второго этапа».
+	 *
+	 * @return void
+	 */
+	public static function page_mailing() {
+		if ( ! current_user_can( self::CAP ) ) {
+			return;
+		}
+
+		$recipients = WPPA_Mailing::recipients();
+
+		self::render(
+			'mailing',
+			array(
+				'notice'     => self::tool_notice(),
+				'settings'   => WPPA_Mailing::settings(),
+				'stats'      => WPPA_Mailing::stats(),
+				'logs'       => WPPA_Mailing::logs(),
+				'recipients' => $recipients,
+				'sent_before' => WPPA_Mailing::already_sent( $recipients ),
+				'placeholders' => WPPA_Mailing::placeholder_list(),
+				'next'       => WPPA_Mailing::next_run(),
+				'queue'      => WPPA_Mailing::run_state(),
+			)
+		);
+	}
+
+	/**
+	 * Обработчик форм страницы «Рассылка».
+	 *
+	 * @return void
+	 */
+	public static function handle_mailing() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_die( esc_html__( 'Недостаточно прав для этого действия.', 'wp-personal-account' ) );
+		}
+
+		check_admin_referer( 'wppa_mailing' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+		$action = isset( $_POST['wppa_mailing_action'] ) ? sanitize_key( wp_unslash( $_POST['wppa_mailing_action'] ) ) : '';
+
+		switch ( $action ) {
+			case 'save':
+				WPPA_Mailing::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				self::redirect_mailing( 'mailing_saved' );
+				break;
+			case 'start':
+				WPPA_Mailing::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				$queued = WPPA_Mailing::start();
+				self::redirect_mailing( false === $queued ? 'mailing_nobody' : 'mailing_started' );
+				break;
+			case 'cancel':
+				self::redirect_mailing( WPPA_Mailing::cancel() ? 'mailing_cancelled' : 'mailing_empty' );
+				break;
+			case 'resume':
+				self::redirect_mailing( WPPA_Mailing::resume() ? 'mailing_resumed' : 'mailing_empty' );
+				break;
+			case 'send_now':
+				$sent = WPPA_Mailing::send_all();
+				self::redirect_mailing( $sent > 0 ? 'mailing_sent_now' : 'mailing_send_failed' );
+				break;
+			case 'clear':
+				WPPA_Mailing::clear();
+				self::redirect_mailing( 'mailing_cleared' );
+				break;
+			case 'clear_log':
+				WPPA_Mailing::clear_logs();
+				self::redirect_mailing( 'mailing_log_cleared' );
+				break;
+			default:
+				self::redirect_mailing( 'mailing_failed' );
+		}
+	}
+
+	/**
+	 * Редирект назад на страницу «Рассылка».
+	 *
+	 * @param string $code Код уведомления.
+	 * @return void
+	 */
+	private static function redirect_mailing( $code ) {
+		$back = wp_get_referer();
+		$back = $back ? $back : admin_url( 'admin.php?page=wppa-mailing' );
+
+		if ( '' !== $code ) {
+			$back = add_query_arg( 'wppa_done', $code, $back );
+		}
+
+		wp_safe_redirect( $back );
+		exit;
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Данные
 	 * ------------------------------------------------------------------ */
@@ -567,6 +671,17 @@ class WPPA_Admin {
 			'tool_expired'           => array( 'warning', __( 'Страница устарела: пока она была открыта, истёк срок действия формы. Обновите страницу и повторите действие.', 'wp-personal-account' ) ),
 			'tool_forbidden'         => array( 'error', __( 'Недостаточно прав для этого действия.', 'wp-personal-account' ) ),
 			'tool_failed'            => array( 'error', __( 'Действие не выполнено: на сайте произошла ошибка. Подробности записаны в журнал ошибок PHP.', 'wp-personal-account' ) ),
+			'mailing_saved'      => array( 'success', __( 'Шаблон письма сохранён.', 'wp-personal-account' ) ),
+			'mailing_started'    => array( 'success', __( 'Рассылка поставлена в очередь: письма уходят по одному с заданным интервалом.', 'wp-personal-account' ) ),
+			'mailing_nobody'     => array( 'warning', __( 'Отправлять некому: нет команд второго этапа или все получатели уже получили письмо (снимите галочку «не отправлять повторно»).', 'wp-personal-account' ) ),
+			'mailing_cancelled'  => array( 'success', __( 'Рассылка отменена, очередь очищена.', 'wp-personal-account' ) ),
+			'mailing_empty'      => array( 'info', __( 'Очередь рассылки пуста — действие не требовалось.', 'wp-personal-account' ) ),
+			'mailing_resumed'    => array( 'success', __( 'Рассылка продолжена.', 'wp-personal-account' ) ),
+			'mailing_sent_now'   => array( 'success', __( 'Очередь отправлена досрочно. Итоги — в журнале ниже.', 'wp-personal-account' ) ),
+			'mailing_send_failed' => array( 'error', __( 'Не удалось отправить письма: почтовый сервер вернул ошибку. Смотрите журнал рассылки.', 'wp-personal-account' ) ),
+			'mailing_cleared'    => array( 'success', __( 'Очередь рассылки удалена.', 'wp-personal-account' ) ),
+			'mailing_log_cleared' => array( 'success', __( 'Журнал рассылки очищен.', 'wp-personal-account' ) ),
+			'mailing_failed'     => array( 'error', __( 'Неизвестное действие рассылки.', 'wp-personal-account' ) ),
 			'folder_export_ok'   => array( 'success', __( 'Файл выгрузки записан в папку. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),

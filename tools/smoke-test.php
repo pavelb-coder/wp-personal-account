@@ -24,6 +24,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
+require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -2475,6 +2476,250 @@ $csv_checks['SMB-ветка write() ловит Throwable']     = false !== strpo
 
 foreach ( $csv_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'csv/smb: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Рассылка участникам команд второго этапа: шаблон, очередь, задержка, отмена.
+$mail_checks = array();
+$mail_snapshot = array(
+	'meta'   => isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array(),
+	'users'  => isset( $GLOBALS['wppa_test']['users'] ) ? $GLOBALS['wppa_test']['users'] : array(),
+	'mail'   => isset( $GLOBALS['wppa_test']['mail'] ) ? $GLOBALS['wppa_test']['mail'] : array(),
+);
+
+$GLOBALS['wppa_test']['users'][71]['email'] = 'captain@example.com';
+$GLOBALS['wppa_test']['users'][72]['email'] = 'mentor@example.com';
+$GLOBALS['wppa_test']['users'][73]['email'] = 'member@example.com';
+$GLOBALS['wppa_test']['users'][75]['email'] = 'member2@example.com';
+$GLOBALS['wppa_test']['users'][76]['email'] = 'member3@example.com';
+$GLOBALS['wppa_test']['users'][77]['email'] = 'member4@example.com';
+$GLOBALS['wppa_test']['users'][79]['email'] = 'second50@example.com';
+$GLOBALS['wppa_test']['mail']               = array();
+
+delete_option( WPPA_Mailing::OPTION );
+delete_option( WPPA_Mailing::QUEUE );
+delete_option( WPPA_Mailing::LOG );
+delete_user_meta( 71, WPPA_Mailing::META_SENT );
+delete_user_meta( 72, WPPA_Mailing::META_SENT );
+delete_user_meta( 73, WPPA_Mailing::META_SENT );
+delete_user_meta( 75, WPPA_Mailing::META_SENT );
+delete_user_meta( 76, WPPA_Mailing::META_SENT );
+delete_user_meta( 77, WPPA_Mailing::META_SENT );
+
+$mail_defaults = WPPA_Mailing::defaults();
+$mail_checks['шаблон: тема по умолчанию']  = '' !== (string) $mail_defaults['subject'];
+$mail_checks['шаблон: текст по умолчанию'] = false !== strpos( (string) $mail_defaults['body'], '{имя}' );
+
+$mail_saved = WPPA_Mailing::save(
+	array(
+		'subject'   => 'Второй этап: {команда}',
+		'body'      => "Привет, {имя}!\n\nКоманда «{команда}» прошла во второй этап {дата_отметки}.\n\nПисьмо: {email}.",
+		'interval'  => 3,
+		'batch'     => 2,
+		'skip_sent' => 0,
+	)
+);
+$mail_checks['шаблон: тема сохранена']     = 'Второй этап: {команда}' === $mail_saved['subject'];
+$mail_checks['шаблон: интервал сохранён']  = 3 === (int) $mail_saved['interval'];
+$mail_checks['шаблон: пачка сохранена']    = 2 === (int) $mail_saved['batch'];
+$mail_checks['шаблон: повтор разрешён']    = 0 === (int) $mail_saved['skip_sent'];
+
+$mail_clamped = WPPA_Mailing::save(
+	array(
+		'subject'   => 'Второй этап: {команда}',
+		'body'      => 'Текст {имя}',
+		'interval'  => 99999,
+		'batch'     => 999,
+		'skip_sent' => 1,
+	)
+);
+$mail_checks['настройки: интервал ограничен'] = 1440 === (int) $mail_clamped['interval'];
+$mail_checks['настройки: пачка ограничена']   = 50 === (int) $mail_clamped['batch'];
+
+// Своя команда второго этапа: капитан 71, наставник 72, участник 73.
+$mail_team = WPPA_Teams::create( 'Команда рассылки', 71 );
+
+if ( is_wp_error( $mail_team ) ) {
+	$mail_checks['команда рассылки создана'] = false;
+} else {
+	$mail_checks['команда рассылки создана'] = true;
+
+	WPPA_Teams::add_member( $mail_team, 72 );
+	WPPA_Teams::make_mentor( $mail_team, 72 );
+	WPPA_Teams::add_member( $mail_team, 73 );
+	WPPA_Teams::add_member( $mail_team, 75 );
+	WPPA_Teams::add_member( $mail_team, 76 );
+	WPPA_Teams::add_member( $mail_team, 77 );
+
+	$mail_checks['получатели: без отметки никого'] = 0 === count(
+		array_filter(
+			WPPA_Mailing::recipients(),
+			static function ( $row ) use ( $mail_team ) {
+				return (int) $row['team_id'] === (int) $mail_team;
+			}
+		)
+	);
+
+	WPPA_Teams::set_curator( 74, true );
+	WPPA_Teams::set_stage2( $mail_team, true, 74 );
+
+	$mail_recipients = array_values(
+		array_filter(
+			WPPA_Mailing::recipients(),
+			static function ( $row ) use ( $mail_team ) {
+				return (int) $row['team_id'] === (int) $mail_team;
+			}
+		)
+	);
+
+	$mail_checks['получатели: шесть адресов']     = 6 === count( $mail_recipients );
+	$mail_checks['получатели: капитан в списке'] = in_array( 'captain@example.com', array_column( $mail_recipients, 'email' ), true );
+	$mail_checks['получатели: наставник в списке'] = in_array( 'mentor@example.com', array_column( $mail_recipients, 'email' ), true );
+	$mail_checks['получатели: участник в списке']  = in_array( 'member@example.com', array_column( $mail_recipients, 'email' ), true );
+
+	$mail_recipients = array_values(
+		array_map(
+			static function ( $row ) {
+				$row['first'] = 'Иван';
+				return $row;
+			},
+			$mail_recipients
+		)
+	);
+
+	$mail_preview = WPPA_Mailing::render( 'Привет, {имя}! Команда «{команда}»', $mail_recipients[0] );
+	$mail_checks['подстановки: имя']    = false !== strpos( $mail_preview, 'Иван' );
+	$mail_checks['подстановки: команда'] = false !== strpos( $mail_preview, 'Команда рассылки' );
+
+	$mail_html = WPPA_Mailing::to_html( "Строка один\n\nСтрока два" );
+	$mail_checks['письмо: абзацы в HTML'] = 2 === substr_count( $mail_html, '<p>' );
+
+	$mail_options = get_option( WPPA_Mailing::OPTION, array() );
+	$mail_options['skip_sent'] = 0;
+	update_option( WPPA_Mailing::OPTION, $mail_options );
+
+	$mail_queued = WPPA_Mailing::start();
+	$mail_checks['очередь: письма поставлены'] = 6 === $mail_queued;
+
+	$mail_run = WPPA_Mailing::run_state();
+	$mail_checks['очередь: шаг между письмами'] = isset( $mail_run['items'][1]['due'], $mail_run['items'][0]['due'] )
+		&& ( (int) $mail_run['items'][1]['due'] - (int) $mail_run['items'][0]['due'] ) === ( (int) $mail_run['interval'] * 60 );
+	$mail_checks['очередь: первое письмо сразу'] = (int) $mail_run['items'][0]['due'] <= time();
+
+	$mail_stats = WPPA_Mailing::stats();
+	$mail_checks['очередь: сводка']        = 6 === (int) $mail_stats['total'] && 6 === (int) $mail_stats['pending'];
+	$mail_checks['очередь: есть следующее'] = (int) $mail_stats['next'] > 0;
+
+	// Один запуск WP-Cron — только письма, которым пришло время.
+	$mail_sent = WPPA_Mailing::run_cron();
+	$mail_checks['отправка: одно письмо за раз'] = 1 === (int) $mail_sent;
+	$mail_checks['отправка: wp_mail вызван']     = 1 === count( (array) $GLOBALS['wppa_test']['mail'] );
+
+	$mail_letter = isset( $GLOBALS['wppa_test']['mail'][0] ) ? $GLOBALS['wppa_test']['mail'][0] : array();
+	$mail_checks['письмо: тема с подстановкой'] = false !== strpos( (string) $mail_letter['subject'], 'Команда рассылки' );
+	$mail_checks['письмо: HTML-тело']           = false !== strpos( (string) $mail_letter['message'], '<p>' );
+	$mail_checks['письмо: заголовок HTML']      = in_array( 'Content-Type: text/html; charset=UTF-8', (array) $mail_letter['headers'], true );
+
+	$mail_stats = WPPA_Mailing::stats();
+	$mail_checks['отправка: сводка обновилась'] = 1 === (int) $mail_stats['sent'] && 5 === (int) $mail_stats['pending'];
+
+	$mail_first_id = 0;
+	foreach ( $mail_run['items'] as $mail_item ) {
+		if ( (int) get_user_meta( (int) $mail_item['user_id'], WPPA_Mailing::META_SENT, true ) > 0 ) {
+			$mail_first_id = (int) $mail_item['user_id'];
+			break;
+		}
+	}
+	$mail_checks['отправка: отметка у получателя'] = $mail_first_id > 0;
+
+	// Отмена: очередь очищается, расписание снимается.
+	$mail_checks['отмена: очередь была'] = true === WPPA_Mailing::cancel();
+	$mail_checks['отмена: очередь пуста'] = false === WPPA_Mailing::stats()['active'];
+	$mail_checks['отмена: повторно нечего'] = false === WPPA_Mailing::cancel();
+
+	// Ошибки отправки: пауза после пяти неудач подряд.
+	$GLOBALS['wppa_test']['mail_fail'] = true;
+	$mail_options                      = get_option( WPPA_Mailing::OPTION, array() );
+	$mail_options['batch']             = 50;
+	update_option( WPPA_Mailing::OPTION, $mail_options );
+
+	$mail_checks['ошибки: очередь поставлена'] = 6 === WPPA_Mailing::start();
+	$mail_failed_sent                          = WPPA_Mailing::send_all();
+	$mail_stats                                = WPPA_Mailing::stats();
+	$mail_checks['ошибки: писем не отправлено'] = 0 === (int) $mail_failed_sent;
+	$mail_checks['ошибки: рассылка на паузе']   = '' !== (string) $mail_stats['paused'];
+	$mail_checks['ошибки: ошибки посчитаны']    = 5 === (int) $mail_stats['failed'];
+	$mail_checks['ошибки: журнал пишется']      = count( WPPA_Mailing::logs() ) > 0;
+
+	$GLOBALS['wppa_test']['mail_fail'] = false;
+	$mail_checks['ошибки: пауза снимается']     = true === WPPA_Mailing::resume();
+
+	// Кабинет: куратор может отменить рассылку, участник — нет.
+	$mail_redirects = function ( $user_id ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = true;
+		$GLOBALS['wppa_test']['current_user']   = $user_id;
+		$_POST                                  = array(
+			'wppa_action'         => 'mailing',
+			'wppa_mailing_action' => 'cancel',
+			'wppa_nonce'          => wp_create_nonce( 'wppa_mailing' ),
+		);
+
+		try {
+			WPPA_Mailing::handle_request();
+		} catch ( RuntimeException $e ) {
+			$GLOBALS['wppa_test']['catch_redirect'] = false;
+			$query = (string) parse_url( substr( $e->getMessage(), strlen( 'redirect:' ) ), PHP_URL_QUERY );
+			$args  = array();
+			parse_str( $query, $args );
+
+			return isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '';
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return '';
+	};
+
+	$mail_checks['кабинет: участнику нельзя']  = 'mailing_denied' === $mail_redirects( 73 );
+	$mail_checks['кабинет: куратор отменяет']  = 'mailing_cancelled' === $mail_redirects( 74 );
+	$mail_checks['кабинет: повторно пусто']    = 'mailing_empty' === $mail_redirects( 74 );
+
+	$_POST = array();
+
+	// Карточка состояния на главной видна только куратору.
+	WPPA_Mailing::start();
+
+	$GLOBALS['wppa_test']['current_user'] = 74;
+	$mail_dash_curator                    = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 74 ), 'tabs' => WPPA_Template::tabs() ) );
+	$mail_checks['главная: куратор видит очередь'] = false !== strpos( $mail_dash_curator, 'Рассылка участникам второго этапа' );
+
+	$mail_dash_member = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => WPPA_Template::tabs() ) );
+	$mail_checks['главная: участник не видит']    = false === strpos( $mail_dash_member, 'Рассылка участникам второго этапа' );
+
+	$GLOBALS['wppa_test']['current_user'] = 73;
+
+	WPPA_Mailing::cancel();
+	WPPA_Teams::set_stage2( $mail_team, false, 74 );
+	WPPA_Teams::dissolve( $mail_team );
+}
+
+WPPA_Teams::set_curator( 74, false );
+
+delete_option( WPPA_Mailing::OPTION );
+delete_option( WPPA_Mailing::QUEUE );
+delete_option( WPPA_Mailing::LOG );
+
+foreach ( array( 71, 72, 73, 75, 76, 77, 79 ) as $mail_reset_user ) {
+	delete_user_meta( $mail_reset_user, WPPA_Mailing::META_SENT );
+}
+
+$GLOBALS['wppa_test']['meta'] = $mail_snapshot['meta'];
+$GLOBALS['wppa_test']['mail'] = $mail_snapshot['mail'];
+
+foreach ( $mail_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mailing: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

@@ -14,6 +14,7 @@ define( 'ENT_QUOTES_WP', ENT_QUOTES );
 $GLOBALS['wppa_test'] = array(
 	'options'  => array(
 		'date_format'  => 'd.m.Y',
+		'time_format'  => 'H:i',
 		'users_can_register' => 1,
 		'wppa_settings' => array(
 			'account_page_id'      => 42,
@@ -215,7 +216,20 @@ function wp_generate_password( $l = 12, $s = true, $e = true ) {
 }
 function wp_update_user( $a ) { return (int) $a['ID']; }
 function wp_insert_user( $a ) { return 99; }
-function wp_mail( $to, $s, $m ) { return true; }
+function wp_mail( $to, $s, $m, $headers = array(), $attachments = array() ) {
+	if ( ! empty( $GLOBALS['wppa_test']['mail_fail'] ) ) {
+		return false;
+	}
+
+	$GLOBALS['wppa_test']['mail'][] = array(
+		'to'      => (string) $to,
+		'subject' => (string) $s,
+		'message' => (string) $m,
+		'headers' => $headers,
+	);
+
+	return true;
+}
 function email_exists( $e ) { return false; }
 function username_exists( $u ) { return false; }
 function wp_create_nonce( $action = -1 ) { return 'nonce-' . substr( md5( (string) $action ), 0, 10 ); }
@@ -639,6 +653,10 @@ function sanitize_title( $title, $fallback = '', $context = 'save' ) {
 
 if ( ! function_exists( 'checked' ) ) {
 	function checked( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' checked="checked"' : ''; if ( $echo ) { echo $r; } return $r; }
+}
+
+if ( ! function_exists( 'disabled' ) ) {
+	function disabled( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' disabled="disabled"' : ''; if ( $echo ) { echo $r; } return $r; }
 }
 
 if ( ! function_exists( 'selected' ) ) {

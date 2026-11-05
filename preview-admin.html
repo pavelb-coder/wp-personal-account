@@ -369,6 +369,35 @@
 	margin: 0;
 }
 
+/* Рассылка */
+
+.wppa-inline {
+	display: inline-block;
+	margin: 0;
+}
+
+.wppa-admin__preview {
+	margin: 12px 0 0;
+	padding: 12px 14px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}
+
+.wppa-admin__preview-body p {
+	margin: 0 0 8px;
+}
+
+.wppa-admin__details {
+	margin: 12px 0 0;
+}
+
+.wppa-admin__details summary {
+	cursor: pointer;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
 /* Конструктор */
 
 .wppa-builder__list {
@@ -1642,6 +1671,222 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 			Минимум и лимит можно задать для каждой команды отдельно — два поля в колонке «Мин. / лимит». Пустое поле означает общее значение из настроек; чтобы вернуть общее, очистите поле и сохраните. Минимум не может превышать лимит.		</p>
 	</section>
 </div>
+</div></section><section class="demo-section"><div class="demo-section__head"><h2>Рассылка</h2><p>Шаблон письма с подстановками, предпросмотр, очередь с интервалом между письмами, отмена и журнал</p></div><div class="demo-frame"><div class="wrap wppa-admin">
+	<h1 class="wp-heading-inline">Рассылка участникам второго этапа</h1>
+	<hr class="wp-header-end" />
+
+	
+	<div class="notice notice-info">
+		<p>
+			Письма уходят участникам, капитанам и наставникам команд, отмеченных «прошла во второй этап»: получателей сейчас 2, из них уже получали письмо — 1. Отправка идёт очередью: первое письмо сразу, каждое следующее — через заданный интервал, по несколько писем за один запуск WP-Cron. Рассылку можно отменить в любой момент.		</p>
+	</div>
+
+	<div class="wppa-admin__grid">
+		<section class="wppa-admin__panel">
+			<h2>Шаблон письма</h2>
+
+			<form method="post" action="https://example.com/wp-admin/admin-post.php">
+				<input type="hidden" name="_wpnonce" value="nonce" />				<input type="hidden" name="action" value="wppa_mailing" />
+
+				<p>
+					<label for="wppa-mailing-subject"><strong>Тема</strong></label><br />
+					<input type="text" class="widefat" id="wppa-mailing-subject" name="subject" value="Команда «{команда}» прошла во второй этап" />
+				</p>
+
+				<p>
+					<label for="wppa-mailing-body"><strong>Текст письма</strong></label><br />
+					<textarea class="widefat" rows="12" id="wppa-mailing-body" name="body">Здравствуйте, {имя}!
+
+Команда «{команда}» прошла во второй этап — отметка от {дата_отметки}.
+
+Следующий шаг пришлём отдельным письмом.
+
+— {сайт}</textarea>
+				</p>
+
+				<p class="wppa-admin__muted">
+					Подстановки:											<code>{имя}</code>
+											<code>{фамилия}</code>
+											<code>{команда}</code>
+											<code>{роль}</code>
+											<code>{дата_отметки}</code>
+											<code>{email}</code>
+											<code>{сайт}</code>
+									</p>
+
+				<p>
+					<label for="wppa-mailing-interval"><strong>Интервал между письмами, минут</strong></label><br />
+					<input type="number" min="0" max="1440" step="1" id="wppa-mailing-interval" name="interval" value="10" />
+					<span class="wppa-admin__muted">0 — отправить всё сразу, без пауз. Каждое следующее письмо уходит не раньше, чем через этот интервал: так письма не попадут в спам и хостинг не упрётся в лимит.</span>
+				</p>
+
+				<p>
+					<label for="wppa-mailing-batch"><strong>Писем за один запуск</strong></label><br />
+					<input type="number" min="1" max="50" step="1" id="wppa-mailing-batch" name="batch" value="2" />
+				</p>
+
+				<p>
+					<label>
+						<input type="checkbox" name="skip_sent" value="1"  />
+						Не отправлять повторно тем, кто уже получал письмо					</label>
+				</p>
+
+				<p class="wppa-admin__actions">
+					<button type="submit" class="button" name="wppa_mailing_action" value="save">Сохранить шаблон</button>
+					<button type="submit" class="button button-primary" name="wppa_mailing_action" value="start" >Поставить в очередь</button>
+				</p>
+			</form>
+
+			<h2>Предпросмотр</h2>
+			<div class="wppa-admin__preview">
+				<p><strong>Команда «Студия «Вектор»» прошла во второй этап</strong></p>
+				<div class="wppa-admin__preview-body">
+					<p>Здравствуйте, Иван!</p>
+<p>Команда «Студия «Вектор»» прошла во второй этап — отметка от 05.11.2026.</p>
+<p>Следующий шаг пришлём отдельным письмом.</p>
+<p>— Демо-сайт</p>
+				</div>
+				<p class="wppa-admin__muted">
+					Пример на получателе ivan@example.com				</p>
+			</div>
+		</section>
+
+		<section class="wppa-admin__panel">
+			<h2>Очередь</h2>
+
+							<table class="widefat striped">
+					<tbody>
+						<tr>
+							<td>Всего писем</td>
+							<td><strong>2</strong></td>
+						</tr>
+						<tr>
+							<td>Отправлено</td>
+							<td>1</td>
+						</tr>
+						<tr>
+							<td>Осталось</td>
+							<td>1</td>
+						</tr>
+						<tr>
+							<td>Ошибок</td>
+							<td>0</td>
+						</tr>
+						<tr>
+							<td>Шаг</td>
+							<td>
+								10 мин.							</td>
+						</tr>
+						<tr>
+							<td>Следующее письмо</td>
+							<td>
+								05.11.2026 14:25							</td>
+						</tr>
+					</tbody>
+				</table>
+
+				
+				<p class="wppa-admin__actions">
+					
+											<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline">
+							<input type="hidden" name="_wpnonce" value="nonce" />							<input type="hidden" name="action" value="wppa_mailing" />
+							<button type="submit" class="button" name="wppa_mailing_action" value="send_now">Отправить остаток сейчас</button>
+						</form>
+					
+					<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline">
+						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_mailing" />
+						<button type="submit" class="button button-link-delete" name="wppa_mailing_action" value="cancel">Отменить рассылку</button>
+					</form>
+				</p>
+
+									<details class="wppa-admin__details">
+						<summary>Письма в очереди</summary>
+						<table class="widefat striped">
+							<thead>
+								<tr>
+									<th>Получатель</th>
+									<th>Команда</th>
+									<th>Когда</th>
+									<th>Состояние</th>
+								</tr>
+							</thead>
+							<tbody>
+																	<tr>
+										<td>
+											Иван Петров<br />
+											<span class="wppa-admin__muted">ivan@example.com</span>
+										</td>
+										<td>Студия «Вектор»</td>
+										<td>05.11.2026 14:15</td>
+										<td>
+											отправлено										</td>
+									</tr>
+																	<tr>
+										<td>
+											Мария Соколова<br />
+											<span class="wppa-admin__muted">maria@example.com</span>
+										</td>
+										<td>Студия «Вектор»</td>
+										<td>05.11.2026 14:25</td>
+										<td>
+											ждёт отправки										</td>
+									</tr>
+															</tbody>
+						</table>
+					</details>
+							
+			<h2>Получатели</h2>
+
+							<table class="widefat striped">
+					<thead>
+						<tr>
+							<th>Получатель</th>
+							<th>Роль</th>
+							<th>Команда</th>
+						</tr>
+					</thead>
+					<tbody>
+													<tr>
+								<td>
+									Иван Петров<br />
+									<span class="wppa-admin__muted">ivan@example.com</span>
+								</td>
+								<td>Капитан</td>
+								<td>Студия «Вектор»</td>
+							</tr>
+													<tr>
+								<td>
+									Мария Соколова<br />
+									<span class="wppa-admin__muted">maria@example.com</span>
+								</td>
+								<td>Наставник</td>
+								<td>Студия «Вектор»</td>
+							</tr>
+											</tbody>
+				</table>
+			
+			<h2>Журнал рассылки</h2>
+
+							<table class="widefat striped">
+					<tbody>
+													<tr>
+								<td class="wppa-admin__muted">05.11.2026 14:15</td>
+								<td>Отправлено писем: 1.</td>
+							</tr>
+													<tr>
+								<td class="wppa-admin__muted">05.11.2026 14:15</td>
+								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
+							</tr>
+											</tbody>
+				</table>
+
+				<form method="post" action="https://example.com/wp-admin/admin-post.php" class="wppa-inline">
+					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_mailing" />
+					<button type="submit" class="button button-link-delete" name="wppa_mailing_action" value="clear_log">Очистить журнал</button>
+				</form>
+					</section>
+	</div>
+</div>
 </div></section><section class="demo-section"><div class="demo-section__head"><h2>Настройки</h2><p>Параметры кабинета, регистрации, команд, паролей и сетевой папки с логином и паролем</p></div><div class="demo-frame">		<div class="wrap">
 			<h1>Личный кабинет</h1>
 			<p class="description">
@@ -2728,7 +2973,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 14:08.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 14:20.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3031,10 +3276,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 05.11.2026 22:03 (Раз в день).							</p>
+									Следующая выгрузка: 05.11.2026 22:15 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 14:08				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 14:20				</p>
 			
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -3064,7 +3309,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>05.11.2026 14:03</td>
+								<td>05.11.2026 14:15</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3073,7 +3318,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 14:03</td>
+								<td>05.11.2026 14:15</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3082,7 +3327,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 14:03</td>
+								<td>05.11.2026 14:15</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

@@ -768,6 +768,20 @@
 	font-size: 15px;
 }
 
+.wppa-card--mailing {
+	margin: 0 0 16px;
+}
+
+.wppa-mailing__stats {
+	margin: 0 0 12px;
+	padding-left: 18px;
+	font-size: 14px;
+}
+
+.wppa-mailing__stats li {
+	margin: 0 0 4px;
+}
+
 .wppa-stage2-toggle {
 	margin: 0 0 16px;
 }
