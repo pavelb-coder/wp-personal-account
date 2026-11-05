@@ -503,6 +503,19 @@ class WPPA_Curator_Files {
 
 		if ( 'mentor' === $from && class_exists( 'WPPA_Team_Files_Export' ) ) {
 			$export = WPPA_Team_Files_Export::export( $team_id, self::dir()['dir'] . '/' . $file, $name, $key );
+
+			// Неудачное копирование не показываем: файл уже в кабинете, а причина
+			// остаётся в журнале выгрузки и в «Инструментах» — там же путь и права.
+			if ( empty( $export['ok'] ) && class_exists( 'WPPA_Export_Folder' ) ) {
+				WPPA_Export_Folder::log_entry(
+					false,
+					$name,
+					(int) $size,
+					isset( $export['message'] ) && '' !== (string) $export['message']
+						? (string) $export['message']
+						: __( 'сетевая папка недоступна', 'wp-personal-account' )
+				);
+			}
 		}
 
 		return array(
@@ -690,11 +703,8 @@ class WPPA_Curator_Files {
 			WPPA_Notices::redirect( self::notice_code( $result->get_error_code() ), $back );
 		}
 
-		// Файл прикреплён, но в сетевую папку не попал — скажем об этом отдельно.
-		if ( ! empty( $result['export'] ) && empty( $result['export']['ok'] ) ) {
-			WPPA_Notices::redirect( 'file_export_failed', $back );
-		}
-
+		// Копирование в сетевую папку могло не получиться, но файл уже в кабинете:
+		// молча показываем «файл прикреплён», подробности — в журнале выгрузки.
 		WPPA_Notices::redirect( 'file_added', $back );
 	}
 

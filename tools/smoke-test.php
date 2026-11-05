@@ -2398,6 +2398,14 @@ $export_off = WPPA_Curator_Files::store( $export_off_team, wppa_test_file( 'фа
 $export_checks['без пути выгрузка выключена'] = false === WPPA_Team_Files_Export::enabled();
 $export_checks['файл всё равно прикреплён']   = is_array( $export_off ) && empty( $export_off['export']['ok'] );
 
+// Неудачу копирования не показываем — она остаётся в журнале выгрузки.
+$export_logs_after = WPPA_Export_Folder::logs();
+
+$export_checks['неудача копирования в журнале'] = ! empty( $export_logs_after[0] )
+	&& false === (bool) $export_logs_after[0]['ok']
+	&& false !== strpos( (string) $export_logs_after[0]['file'], 'файл.pdf' );
+$export_checks['в журнале есть причина']        = ! empty( $export_logs_after[0] ) && '' !== (string) $export_logs_after[0]['message'];
+
 WPPA_Teams::dissolve( $export_off_team );
 
 // SMB-режим: путь собирается с папкой команды.
