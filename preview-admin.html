@@ -1164,6 +1164,63 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						+ HTML-блок					</button>
 				</p>
 			</section>
+								<section class="wppa-admin__panel wppa-builder" data-tab="files">
+				<h2>Файлы</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[files][0][enabled]" value="1"  checked="checked" />
+										<strong>Файлы от куратора</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Документы куратора для наставника команды</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[files][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[files][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[files][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[files][0][id]" value="files-widget" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="files"
+						data-index="1"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
 								<section class="wppa-admin__panel wppa-builder" data-tab="security">
 				<h2>Безопасность</h2>
 
@@ -1684,6 +1741,9 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 															<label style="display:block;margin-bottom:6px;">
 									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="team"  checked="checked" />
 									Команда								</label>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="files"  />
+									Файлы								</label>
 															<label style="display:block;margin-bottom:6px;">
 									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="security"  checked="checked" />
 									Безопасность								</label>
@@ -2662,7 +2722,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 13:39.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 13:47.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -2951,10 +3011,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 05.11.2026 21:34 (Раз в день).							</p>
+									Следующая выгрузка: 05.11.2026 21:42 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 13:39				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 13:47				</p>
 			
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -2984,7 +3044,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>05.11.2026 13:34</td>
+								<td>05.11.2026 13:42</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -2993,7 +3053,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 13:34</td>
+								<td>05.11.2026 13:42</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3002,7 +3062,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 13:34</td>
+								<td>05.11.2026 13:42</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

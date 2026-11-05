@@ -1787,17 +1787,89 @@ $file_checks['кабинет: кнопка удаления']      = false !== s
 
 unset( $_GET['wppa_team'] );
 
-// Наставник своей команды видит файлы, но не может их прикреплять.
+// Наставник своей команды видит файлы в отдельном разделе «Файлы», но не может их прикреплять.
 $mentor_files_html = WPPA_Builder::render_block(
-	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
 	array( 'user' => get_userdata( 8 ) )
 );
 
-$file_checks['кабинет: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
-$file_checks['кабинет: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
-$file_checks['кабинет: наставник не грузит файлы']    = false === strpos( $mentor_files_html, 'name="curator_file"' );
-$file_checks['кабинет: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
+$file_checks['раздел: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
+$file_checks['раздел: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
+$file_checks['раздел: наставник не грузит файлы']    = false === strpos( $mentor_files_html, 'name="curator_file"' );
+$file_checks['раздел: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
+$file_checks['раздел: название команды']             = false !== strpos( $mentor_files_html, 'Студия' ) || false !== strpos( $mentor_files_html, 'Документы для команды' );
 
+// Вкладка «Файлы» есть у наставника и куратора, но не у участника и гостя.
+$tabs_settings_backup = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge( (array) $tabs_settings_backup, array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'security' ) ) )
+);
+
+$GLOBALS['wppa_test']['current_user'] = 8;
+$file_checks['вкладка: у наставника есть'] = array_key_exists( 'files', WPPA_Template::tabs() );
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+$file_checks['вкладка: у куратора есть']   = array_key_exists( 'files', WPPA_Template::tabs() );
+
+$GLOBALS['wppa_test']['current_user'] = 9;
+$file_checks['вкладка: у участника нет']   = ! array_key_exists( 'files', WPPA_Template::tabs() );
+
+$GLOBALS['wppa_test']['current_user'] = 0;
+$file_checks['вкладка: у гостя нет']       = ! array_key_exists( 'files', WPPA_Template::tabs() );
+
+// Прямая ссылка тоже не открывает раздел участнику.
+$_GET['wppa_tab'] = 'files';
+
+$GLOBALS['wppa_test']['current_user'] = 9;
+$file_checks['вкладка: участнику по ссылке нельзя'] = 'files' !== WPPA_Account::current_tab();
+
+$GLOBALS['wppa_test']['current_user'] = 8;
+$file_checks['вкладка: наставнику по ссылке можно'] = 'files' === WPPA_Account::current_tab();
+
+unset( $_GET['wppa_tab'] );
+
+update_option( 'wppa_settings', $tabs_settings_backup );
+
+$file_checks['вкладка: по умолчанию включена'] = in_array( 'files', (array) WPPA_Plugin::defaults()['enabled_tabs'], true );
+$GLOBALS['wppa_test']['current_user'] = 0;
+$file_checks['вкладка: гостю раздел закрыт'] = false === WPPA_Curator_Files::can_use_tab();
+
+$file_checks['вкладка: права на раздел'] = true === WPPA_Curator_Files::can_use_tab( 8 )
+	&& true === WPPA_Curator_Files::can_use_tab( 12 )
+	&& false === WPPA_Curator_Files::can_use_tab( 9 );
+
+$file_checks['вкладка: шаблон есть']       = is_file( WPPA_PATH . 'templates/tab-files.php' );
+$file_checks['вкладка: блок в конструкторе'] = array_key_exists( 'files-widget', WPPA_Builder::blocks() );
+$file_checks['вкладка: блок в раскладке']   = isset( WPPA_Builder::layout()['files'][0]['id'] ) && 'files-widget' === WPPA_Builder::layout()['files'][0]['id'];
+
+// В карточке команды у наставника осталась только ссылка на раздел.
+$mentor_team_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 8 ) )
+);
+$file_checks['команда: файлов больше нет'] = false === strpos( $mentor_team_html, 'action=wppa_curator_file' );
+$file_checks['команда: ссылка на раздел']  = false !== strpos( $mentor_team_html, 'wppa_tab=files' );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+// Куратор: без выбранной команды — список команд, с выбранной — файлы и ссылка на управление.
+$curator_files_tab = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+$file_checks['раздел: куратор видит список команд'] = false !== strpos( $curator_files_tab, 'Открыть' );
+
+$_GET['wppa_team'] = (int) $files_team;
+
+$curator_files_team = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+$file_checks['раздел: куратор видит файлы команды'] = false !== strpos( $curator_files_team, 'методичка.pdf' );
+$file_checks['раздел: куратор идёт управлять']      = false !== strpos( $curator_files_team, 'wppa_tab=team' );
+
+unset( $_GET['wppa_team'] );
 unset( $GLOBALS['wppa_test']['current_user'] );
 
 // Роспуск команды удаляет файлы.

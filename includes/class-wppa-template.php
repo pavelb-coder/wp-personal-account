@@ -24,6 +24,7 @@ class WPPA_Template {
 			'dashboard' => __( 'Обзор', 'wp-personal-account' ),
 			'profile'   => __( 'Профиль', 'wp-personal-account' ),
 			'team'      => __( 'Команда', 'wp-personal-account' ),
+			'files'     => __( 'Файлы', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
 		);
 	}
@@ -42,6 +43,11 @@ class WPPA_Template {
 			if ( in_array( $slug, $enabled, true ) ) {
 				$tabs[ $slug ] = $label;
 			}
+		}
+
+		// Вкладка «Файлы» нужна только наставнику команды и куратору.
+		if ( isset( $tabs['files'] ) && ! WPPA_Curator_Files::can_use_tab() ) {
+			unset( $tabs['files'] );
 		}
 
 		if ( empty( $tabs ) ) {

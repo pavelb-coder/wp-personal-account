@@ -762,7 +762,7 @@ $olympiad_checks['в настройках нет ключа']             = ! ar
 $olympiad_checks['в умолчаниях нет ключа']             = ! array_key_exists( 'olympiad_tab', WPPA_Plugin::defaults() );
 
 // Вкладки, которые остались, работают как раньше.
-$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'security' ) === array_keys( WPPA_Template::all_tabs() );
+$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'security' ) === array_keys( WPPA_Template::all_tabs() );
 
 // 5. Раскладка со старым ключом olympiad не ломает рендер.
 update_option(

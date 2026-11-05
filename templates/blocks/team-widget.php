@@ -278,6 +278,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<?php if ( $wppa_is_mentor ) : ?>
 		<div class="wppa-notice wppa-notice--info">
 			<?php esc_html_e( 'Вы наставник команды: можете приглашать и исключать участников. Переименовать или распустить команду может только капитан.', 'wp-personal-account' ); ?>
+			<a href="<?php echo esc_url( WPPA_Plugin::tab_url( 'files' ) ); ?>"><?php esc_html_e( 'Документы от куратора — на вкладке «Файлы».', 'wp-personal-account' ); ?></a>
 		</div>
 	<?php endif; ?>
 
@@ -427,44 +428,6 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Прикрепить', 'wp-personal-account' ); ?></button>
 			</form>
-		</section>
-
-	<?php elseif ( $wppa_is_mentor ) : ?>
-
-		<section class="wppa-card wppa-curator-files">
-			<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от куратора', 'wp-personal-account' ); ?></h3>
-
-			<?php if ( $wppa_files ) : ?>
-				<div class="wppa-table-wrap">
-					<table class="wppa-table">
-						<thead>
-							<tr>
-								<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
-								<th><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?></th>
-								<th><?php esc_html_e( 'Прикреплён', 'wp-personal-account' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $wppa_files as $wppa_file ) : ?>
-								<tr>
-									<td data-label="<?php esc_attr_e( 'Файл', 'wp-personal-account' ); ?>">
-										<a href="<?php echo esc_url( WPPA_Curator_Files::download_url( $wppa_team_id, $wppa_file['key'] ) ); ?>">
-											<?php echo esc_html( $wppa_file['name'] ); ?>
-										</a>
-									</td>
-									<td data-label="<?php esc_attr_e( 'Размер', 'wp-personal-account' ); ?>"><?php echo esc_html( WPPA_Curator_Files::size_label( $wppa_file['size'] ) ); ?></td>
-									<td data-label="<?php esc_attr_e( 'Прикреплён', 'wp-personal-account' ); ?>">
-										<?php echo esc_html( $wppa_file['time'] ? date_i18n( get_option( 'date_format' ), $wppa_file['time'] ) : '—' ); ?>
-									</td>
-								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
-				</div>
-				<p class="wppa-hint"><?php esc_html_e( 'Файлы прикрепил куратор. Их видят только наставники команды — участникам они недоступны.', 'wp-personal-account' ); ?></p>
-			<?php else : ?>
-				<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Куратор пока не прикреплял файлов для вашей команды.', 'wp-personal-account' ); ?></div>
-			<?php endif; ?>
 		</section>
 
 	<?php endif; ?>

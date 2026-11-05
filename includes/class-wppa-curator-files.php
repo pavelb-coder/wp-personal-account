@@ -198,6 +198,25 @@ class WPPA_Curator_Files {
 	}
 
 	/**
+	 * Кому показывать вкладку «Файлы».
+	 *
+	 * Раздел нужен наставнику команды (он получает файлы) и куратору (он их
+	 * прикрепляет). Остальным вкладка не выводится.
+	 *
+	 * @param int $user_id Пользователь.
+	 * @return bool
+	 */
+	public static function can_use_tab( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		return WPPA_Teams::is_mentor( $user_id ) || WPPA_Teams::is_curator( $user_id );
+	}
+
+	/**
 	 * Может ли пользователь смотреть файлы команды.
 	 *
 	 * Наставник этой команды, куратор и администратор сайта.

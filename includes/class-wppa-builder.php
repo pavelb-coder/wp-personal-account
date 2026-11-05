@@ -125,6 +125,11 @@ class WPPA_Builder {
 				'tabs'  => array( 'team' ),
 				'desc'  => __( 'Состав команды, приглашения, управление', 'wp-personal-account' ),
 			),
+			'files-widget'    => array(
+				'label' => __( 'Файлы от куратора', 'wp-personal-account' ),
+				'tabs'  => array( 'files' ),
+				'desc'  => __( 'Документы куратора для наставника команды', 'wp-personal-account' ),
+			),
 			'password-form'   => array(
 				'label' => __( 'Смена пароля', 'wp-personal-account' ),
 				'tabs'  => array( 'security' ),
