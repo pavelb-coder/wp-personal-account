@@ -739,6 +739,23 @@
 	color: #b45309;
 }
 
+.wppa-badge--stage2 {
+	background: #eef2ff;
+	border-color: #c7d2fe;
+	color: #4338ca;
+	font-weight: 600;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.wppa-stage2 {
+	border-left: 4px solid var(--wppa-accent, #2563eb);
+}
+
+.wppa-stage2-toggle {
+	margin: 0 0 16px;
+}
+
 .wppa-actions {
 	display: flex;
 	flex-wrap: wrap;

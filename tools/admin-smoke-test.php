@@ -781,6 +781,27 @@ $olympiad_checks['в настройках нет ключа']             = ! ar
 $olympiad_checks['в умолчаниях нет ключа']             = ! array_key_exists( 'olympiad_tab', WPPA_Plugin::defaults() );
 
 // Вкладки, которые остались, работают как раньше.
+// Отметка «второй этап» видна в админском списке команд.
+$stage_admin_team = WPPA_Teams::create( 'Команда для админки', 78 );
+
+if ( $stage_admin_team && ! is_wp_error( $stage_admin_team ) ) {
+	WPPA_Teams::set_curator( 79, true );
+	WPPA_Teams::set_stage2( $stage_admin_team, true, 79 );
+
+	$teams_backup = $teams_html;
+	ob_start();
+	WPPA_Admin::page_teams();
+	$stage_admin_html = ob_get_clean();
+	$teams_html       = $teams_backup;
+
+	$olympiad_checks['админка: отметка второго этапа'] = false !== strpos( $stage_admin_html, 'второй этап' );
+
+	WPPA_Teams::set_curator( 79, false );
+	WPPA_Teams::dissolve( $stage_admin_team );
+} else {
+	$olympiad_checks['админка: отметка второго этапа'] = false;
+}
+
 $olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'security' ) === array_keys( WPPA_Template::all_tabs() );
 
 // 5. Раскладка со старым ключом olympiad не ломает рендер.

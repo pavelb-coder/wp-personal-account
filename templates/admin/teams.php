@@ -89,7 +89,12 @@ $wppa_available = isset( $total_users['total_users'] ) ? (int) $total_users['tot
 			<tbody>
 				<?php foreach ( $rows as $wppa_row ) : ?>
 					<tr>
-						<td><strong><?php echo esc_html( $wppa_row['name'] ); ?></strong></td>
+						<td>
+							<strong><?php echo esc_html( $wppa_row['name'] ); ?></strong>
+							<?php if ( ! empty( $wppa_row['stage2'] ) ) : ?>
+								<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'второй этап', 'wp-personal-account' ); ?></span>
+							<?php endif; ?>
+						</td>
 						<td>
 							<?php if ( $wppa_row['owner_id'] ) : ?>
 								<a href="<?php echo esc_url( get_edit_user_link( $wppa_row['owner_id'] ) ); ?>"><?php echo esc_html( $wppa_row['owner'] ); ?></a>

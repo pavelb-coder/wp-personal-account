@@ -67,6 +67,11 @@ if ( ! is_wp_error( $demo_team ) ) {
 	update_user_meta( 9, WPPA_Teams::META_ROLE, 'member' );
 }
 
+// Отметка «прошла во второй этап»: ставит куратор, видят все участники команды.
+WPPA_Teams::set_curator( 12, true );
+WPPA_Teams::set_stage2( $demo_team, true, 12 );
+WPPA_Teams::set_curator( 12, false );
+
 function demo_section( $title, $note, $html ) {
 	return '<section class="demo-block"><div class="demo-block__head"><h2>' . htmlspecialchars( $title ) . '</h2>'
 		. ( $note ? '<p>' . htmlspecialchars( $note ) . '</p>' : '' ) . '</div>' . $html . '</section>';

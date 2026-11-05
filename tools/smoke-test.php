@@ -1490,6 +1490,113 @@ foreach ( $curator_checks as $check_name => $ok ) {
 	}
 }
 
+// Отметка «команда прошла во второй этап» (ставит куратор).
+$stage_checks   = array();
+$stage_snapshot = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$stage_team     = WPPA_Teams::create( 'Команда второго этапа', 71 );
+
+if ( is_wp_error( $stage_team ) ) {
+	$stage_checks['команда создана'] = false;
+} else {
+	$stage_checks['команда создана'] = true;
+
+	WPPA_Teams::add_member( $stage_team, 72 );
+	WPPA_Teams::make_mentor( $stage_team, 72 );
+	WPPA_Teams::add_member( $stage_team, 73 );
+	WPPA_Teams::set_curator( 74, true );
+
+	$stage_checks['по умолчанию нет отметки'] = false === WPPA_Teams::is_stage2( $stage_team );
+	$stage_checks['куратор ставит отметку']   = true === WPPA_Teams::set_stage2( $stage_team, true, 74 );
+	$stage_checks['отметка видна']            = true === WPPA_Teams::is_stage2( $stage_team );
+	$stage_checks['в отметке есть время']     = ! empty( WPPA_Teams::stage2( $stage_team )['time'] );
+	$stage_checks['в отметке есть автор']     = 74 === (int) WPPA_Teams::stage2( $stage_team )['user'];
+	$stage_checks['наставник не отмечает']    = false === WPPA_Teams::set_stage2( $stage_team, true, 72 );
+	$stage_checks['участник не отмечает']     = false === WPPA_Teams::set_stage2( $stage_team, true, 73 );
+	$stage_checks['посторонний не отмечает']  = false === WPPA_Teams::set_stage2( $stage_team, true, 999 );
+
+	// Признак есть в списке команд.
+	$stage_row = array();
+
+	foreach ( WPPA_Teams::all_teams() as $stage_candidate ) {
+		if ( (int) $stage_candidate['id'] === (int) $stage_team ) {
+			$stage_row = $stage_candidate;
+		}
+	}
+
+	$stage_checks['список: признак есть'] = ! empty( $stage_row['stage2'] );
+
+	// Бейдж видят все участники команды и куратор.
+	$stage_block = array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
+
+	$GLOBALS['wppa_test']['current_user'] = 73;
+	$stage_member_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 73 ) ) );
+	$stage_checks['участник видит отметку'] = false !== strpos( $stage_member_html, 'Прошла во второй этап' );
+
+	$GLOBALS['wppa_test']['current_user'] = 72;
+	$stage_mentor_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 72 ) ) );
+	$stage_checks['наставник видит отметку']   = false !== strpos( $stage_mentor_html, 'Прошла во второй этап' );
+	$stage_checks['наставник не переключает']  = false === strpos( $stage_mentor_html, 'value="stage2_remove"' );
+
+	$GLOBALS['wppa_test']['current_user'] = 74;
+	$_GET['wppa_team']                     = (int) $stage_team;
+	$stage_curator_html                    = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 74 ) ) );
+
+	$stage_checks['куратор видит переключатель'] = false !== strpos( $stage_curator_html, 'value="stage2_remove"' );
+	$stage_checks['куратор видит колонку']       = false !== strpos( $stage_curator_html, 'Второй этап' );
+
+	unset( $_GET['wppa_team'] );
+
+	// Обработчики форм.
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+
+	$wppa_run_stage = function ( $user_id, $action ) use ( $stage_team ) {
+		$GLOBALS['wppa_test']['current_user'] = $user_id;
+		$_POST                                = array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => $action,
+			'team_id'          => $stage_team,
+		);
+		$_GET                                 = array();
+
+		try {
+			WPPA_Teams::handle_request();
+		} catch ( RuntimeException $e ) {
+			$query = (string) parse_url( substr( $e->getMessage(), strlen( 'redirect:' ) ), PHP_URL_QUERY );
+			$args  = array();
+
+			parse_str( $query, $args );
+
+			return isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '';
+		}
+
+		return '';
+	};
+
+	WPPA_Teams::set_stage2( $stage_team, false, 74 );
+
+	$stage_checks['обработчик: куратор ставит']   = 'stage2_added' === $wppa_run_stage( 74, 'stage2_add' );
+	$stage_checks['обработчик: отметка появилась'] = true === WPPA_Teams::is_stage2( $stage_team );
+	$stage_checks['обработчик: куратор снимает']  = 'stage2_removed' === $wppa_run_stage( 74, 'stage2_remove' );
+	$stage_checks['обработчик: отметки нет']      = false === WPPA_Teams::is_stage2( $stage_team );
+	$stage_checks['обработчик: наставнику нельзя'] = 'stage2_denied' === $wppa_run_stage( 72, 'stage2_add' );
+	$stage_checks['обработчик: участнику нельзя']  = 'stage2_denied' === $wppa_run_stage( 73, 'stage2_add' );
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	$_POST                                  = array();
+
+	WPPA_Teams::dissolve( $stage_team );
+}
+
+WPPA_Teams::set_curator( 74, false );
+$GLOBALS['wppa_test']['meta'] = $stage_snapshot;
+
+foreach ( $stage_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'stage2: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Действия через обработчик форм: куратор работает с составом, приглашает и переименовывает капитан.
 $action_checks   = array();
 $action_snapshot = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();

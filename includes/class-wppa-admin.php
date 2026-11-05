@@ -284,6 +284,7 @@ class WPPA_Admin {
 				'missing'   => WPPA_Teams::missing_members( (int) $team->ID ),
 				'gaps'      => WPPA_Teams::gaps( (int) $team->ID ),
 				'complete'  => WPPA_Teams::is_complete( (int) $team->ID ),
+				'stage2'    => WPPA_Teams::is_stage2( (int) $team->ID ),
 				'created' => (int) get_post_meta( (int) $team->ID, WPPA_Teams::META_CREATED, true ),
 			);
 		}

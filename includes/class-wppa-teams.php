@@ -68,6 +68,11 @@ class WPPA_Teams {
 	const META_MIN = '_wppa_team_min';
 
 	/**
+	 * Мета команды: отметка «прошла во второй этап» (время и кто отметил).
+	 */
+	const META_STAGE2 = '_wppa_team_stage2';
+
+	/**
 	 * Срок жизни приглашения (7 дней).
 	 */
 	const TOKEN_TTL = 604800;
@@ -505,6 +510,7 @@ class WPPA_Teams {
 				'mentors'      => (int) self::mentors_count( (int) $post->ID ),
 				'complete'     => (bool) self::is_complete( (int) $post->ID ),
 				'missing'      => (int) self::missing_members( (int) $post->ID ),
+				'stage2'       => self::is_stage2( (int) $post->ID ),
 			);
 		}
 
@@ -990,6 +996,75 @@ class WPPA_Teams {
 	 * ------------------------------------------------------------------ */
 
 	/**
+	 * Отметка «команда прошла во второй этап».
+	 *
+	 * @param int $team_id ID команды.
+	 * @return array time, user — пустой массив, если отметки нет.
+	 */
+	public static function stage2( $team_id ) {
+		$saved = get_post_meta( (int) $team_id, self::META_STAGE2, true );
+
+		if ( ! is_array( $saved ) ) {
+			return array();
+		}
+
+		return array(
+			'time' => isset( $saved['time'] ) ? (int) $saved['time'] : 0,
+			'user' => isset( $saved['user'] ) ? (int) $saved['user'] : 0,
+		);
+	}
+
+	/**
+	 * Прошла ли команда во второй этап.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function is_stage2( $team_id ) {
+		return array() !== self::stage2( $team_id );
+	}
+
+	/**
+	 * Поставить или снять отметку «прошла во второй этап».
+	 *
+	 * Отмечает только куратор: это решение организатора, а не команды.
+	 *
+	 * @param int  $team_id ID команды.
+	 * @param bool $on      Поставить (true) или снять (false).
+	 * @param int  $user_id Кто отмечает.
+	 * @return bool
+	 */
+	public static function set_stage2( $team_id, $on = true, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $team_id || self::CPT !== get_post_type( $team_id ) || ! $user_id ) {
+			return false;
+		}
+
+		if ( ! self::is_curator( $user_id ) ) {
+			return false;
+		}
+
+		if ( ! $on ) {
+			delete_post_meta( $team_id, self::META_STAGE2 );
+
+			return true;
+		}
+
+		update_post_meta(
+			$team_id,
+			self::META_STAGE2,
+			array(
+				'time' => time(),
+				'user' => $user_id,
+			)
+		);
+
+		return true;
+	}
+
+	/**
 	 * Капитан или наставник именно этой команды.
 	 *
 	 * @param int $team_id ID команды.
@@ -1178,6 +1253,25 @@ class WPPA_Teams {
 
 				self::dismiss_mentor( $team_id, $member_id );
 				WPPA_Notices::redirect( 'team_mentor_removed', $tab_url );
+
+			case 'stage2_add':
+			case 'stage2_remove':
+				$team_id = self::request_team_id( $user_id );
+				$back    = self::context_url( $team_id, $user_id );
+
+				// Второй этап отмечает только куратор.
+				if ( ! self::is_curator( $user_id ) ) {
+					WPPA_Notices::redirect( 'stage2_denied', $back );
+				}
+
+				if ( ! $team_id || self::CPT !== get_post_type( $team_id ) ) {
+					WPPA_Notices::redirect( 'team_missing_team', $back );
+				}
+
+				$on = 'stage2_add' === $sub;
+
+				self::set_stage2( $team_id, $on, $user_id );
+				WPPA_Notices::redirect( $on ? 'stage2_added' : 'stage2_removed', $back );
 
 			case 'join_code':
 				$raw  = isset( $_POST['team_code'] ) ? sanitize_text_field( wp_unslash( $_POST['team_code'] ) ) : '';

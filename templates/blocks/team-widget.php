@@ -40,6 +40,8 @@ $wppa_team_name  = $wppa_team ? (string) $wppa_team['name'] : ( $wppa_team_id ? 
 $wppa_created    = $wppa_team && ! empty( $wppa_team['created'] ) ? (int) $wppa_team['created'] : 0;
 $wppa_team_rows  = $wppa_team && isset( $wppa_team['members'] ) ? (array) $wppa_team['members'] : array();
 $wppa_my_role    = $wppa_curator_view ? 'curator' : ( $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '' );
+$wppa_stage2     = $wppa_team_id ? WPPA_Teams::stage2( $wppa_team_id ) : array();
+$wppa_stage2_on  = array() !== $wppa_stage2;
 
 // Скрытое поле team_id: без него куратор не поймёт, к какой команде относится действие.
 $wppa_team_field = ( $wppa_is_curator && $wppa_team_id )
@@ -81,6 +83,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 							<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Наставников', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Состояние', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Второй этап', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Действие', 'wp-personal-account' ); ?></th>
 						</tr>
 					</thead>
@@ -111,6 +114,26 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 										</span>
 									<?php else : ?>
 										<span class="wppa-badge"><?php esc_html_e( 'нет наставника', 'wp-personal-account' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Второй этап', 'wp-personal-account' ); ?>">
+									<?php if ( ! empty( $wppa_row['stage2'] ) ) : ?>
+										<form method="post" action="<?php echo esc_url( $wppa_team_list ); ?>" class="wppa-inline-form">
+											<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
+											<input type="hidden" name="wppa_action" value="team" />
+											<input type="hidden" name="wppa_team_action" value="stage2_remove" />
+											<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'прошла', 'wp-personal-account' ); ?></span>
+											<button type="submit" class="wppa-link-button"><?php esc_html_e( 'Снять', 'wp-personal-account' ); ?></button>
+										</form>
+									<?php else : ?>
+										<form method="post" action="<?php echo esc_url( $wppa_team_list ); ?>" class="wppa-inline-form">
+											<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
+											<input type="hidden" name="wppa_action" value="team" />
+											<input type="hidden" name="wppa_team_action" value="stage2_add" />
+											<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Отметить', 'wp-personal-account' ); ?></button>
+										</form>
 									<?php endif; ?>
 								</td>
 								<td data-label="<?php esc_attr_e( 'Действие', 'wp-personal-account' ); ?>">
@@ -249,6 +272,37 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			<?php echo esc_html( WPPA_Teams::role_label( $wppa_my_role ) ); ?>
 		</span>
 	</div>
+
+	<?php if ( $wppa_stage2_on ) : ?>
+		<div class="wppa-card wppa-stage2">
+			<p class="wppa-hint">
+				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Прошла во второй этап', 'wp-personal-account' ); ?></span>
+				<?php
+				if ( ! empty( $wppa_stage2['time'] ) ) {
+					printf(
+						/* translators: %s: дата */
+						esc_html__( 'Отмечено %s.', 'wp-personal-account' ),
+						esc_html( date_i18n( get_option( 'date_format' ), (int) $wppa_stage2['time'] ) )
+					);
+				}
+				?>
+			</p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $wppa_is_curator && $wppa_team_id ) : ?>
+		<div class="wppa-hint wppa-stage2-toggle">
+			<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
+				<input type="hidden" name="wppa_action" value="team" />
+				<input type="hidden" name="wppa_team_action" value="<?php echo $wppa_stage2_on ? 'stage2_remove' : 'stage2_add'; ?>" />
+				<button type="submit" class="wppa-link-button">
+					<?php echo $wppa_stage2_on ? esc_html__( 'Снять отметку «второй этап»', 'wp-personal-account' ) : esc_html__( 'Отметить: команда прошла во второй этап', 'wp-personal-account' ); ?>
+				</button>
+			</form>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( ! $wppa_curator_view ) : ?>
 
