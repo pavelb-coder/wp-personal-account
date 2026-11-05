@@ -222,7 +222,11 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 			<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Наставник пока не прикреплял файлов.', 'wp-personal-account' ); ?></div>
 		<?php endif; ?>
 
-		<?php if ( $wppa_can_attach ) : ?>
+	<?php endif; ?>
+	<?php // Прикрепление — отдельно от полок: куратору можно всегда, наставнику после второго этапа. ?>
+	<?php if ( $wppa_can_attach ) : ?>
+		<section class="wppa-card wppa-upload">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Прикрепить файл', 'wp-personal-account' ); ?></h3>
 			<?php echo $wppa_upload_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- статическая разметка формы. ?>
 				<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
 				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
@@ -251,9 +255,9 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Прикрепить', 'wp-personal-account' ); ?></button>
 			</form>
-		<?php endif; ?>
-	</section>
+		</section>
 	<?php endif; ?>
+
 	<?php if ( $wppa_is_curator && $wppa_curator_team_id ) : ?>
 		<p class="wppa-hint">
 			<a href="<?php echo esc_url( WPPA_Plugin::tab_url( 'files' ) ); ?>"><?php esc_html_e( 'Выбрать другую команду', 'wp-personal-account' ); ?></a>

@@ -2004,6 +2004,44 @@ unset( $GLOBALS['wppa_test']['can_manage'] );
 WPPA_Teams::dissolve( $no_cur_team );
 
 $GLOBALS['wppa_test']['current_user'] = 9;
+
+// Куратор прикрепляет файлы любой команде — отметка второго этапа не нужна.
+$no_stage_team = WPPA_Teams::create( 'Команда без отметки', 96 );
+WPPA_Teams::add_member( $no_stage_team, 97 );
+WPPA_Teams::make_mentor( $no_stage_team, 97 );
+
+$_GET['wppa_team']                    = (int) $no_stage_team;
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$curator_no_stage_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$file_checks['куратор без отметки: can_attach']     = true === WPPA_Curator_Files::can_attach( $no_stage_team, 12 );
+$file_checks['куратор без отметки: форма есть']      = false !== strpos( $curator_no_stage_html, 'name="curator_file"' );
+$file_checks['куратор без отметки: team_id в форме'] = false !== strpos( $curator_no_stage_html, 'name="team_id" value="' . (int) $no_stage_team . '"' );
+$file_checks['куратор без отметки: полки наставника нет'] = false === strpos( $curator_no_stage_html, 'Файлы от наставника' );
+$file_checks['куратор без отметки: файл принят']     = is_array( WPPA_Curator_Files::store( $no_stage_team, wppa_test_file( 'куратор-файл.pdf', 'c' ), 'куратор-файл.pdf', 12 ) );
+$file_checks['куратор без отметки: файл в команде']  = true === WPPA_Curator_Files::has_curator_files( $no_stage_team );
+
+// Наставнику без отметки по-прежнему нельзя.
+$GLOBALS['wppa_test']['current_user'] = 97;
+
+$mentor_no_stage_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 97 ) )
+);
+
+$file_checks['наставник без отметки: can_attach ложь'] = false === WPPA_Curator_Files::can_attach( $no_stage_team, 97 );
+$file_checks['наставник без отметки: формы нет']       = false === strpos( $mentor_no_stage_html, 'name="curator_file"' );
+$file_checks['наставник без отметки: файл куратора виден'] = false !== strpos( $mentor_no_stage_html, 'куратор-файл.pdf' );
+
+unset( $_GET['wppa_team'] );
+
+WPPA_Teams::dissolve( $no_stage_team );
+
+$GLOBALS['wppa_test']['current_user'] = 9;
 $file_checks['раздел: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
 $file_checks['раздел: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
 $file_checks['раздел: наставник грузит файлы']       = false !== strpos( $mentor_files_html, 'name="curator_file"' );
