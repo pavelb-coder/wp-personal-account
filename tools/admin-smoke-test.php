@@ -1780,6 +1780,10 @@ $bulk_admin_source = sys_get_temp_dir() . '/wppa-admin-bulk-otchet.pdf';
 
 file_put_contents( $bulk_admin_source, str_repeat( 'z', 40 ) );
 
+WPPA_Teams::set_curator( 7, true );
+WPPA_Teams::set_stage2( $bulk_admin_team, true, 7 );
+WPPA_Teams::set_curator( 7, false );
+
 $bulk_admin_file = WPPA_Curator_Files::store( $bulk_admin_team, $bulk_admin_source, 'otchet.pdf', 24 );
 
 $bulk_admin_redirect = function () {
@@ -1810,8 +1814,9 @@ $bulk_admin_code = $bulk_admin_redirect();
 
 $bulk_admin_checks['кнопка: код успеха']      = 'folder_export_ok' === $bulk_admin_code;
 $bulk_admin_checks['кнопка: CSV записан']     = count( (array) glob( $bulk_admin_dir . '/accounts-*.csv' ) ) > 0;
-$bulk_admin_team_dir = $bulk_admin_dir . '/' . WPPA_Team_Files_Export::folder_name( $bulk_admin_team );
+$bulk_admin_team_dir = $bulk_admin_dir . '/' . WPPA_Team_Files_Export::folder_path( $bulk_admin_team );
 
+$bulk_admin_checks['кнопка: папка внутри «Команды»'] = false !== strpos( $bulk_admin_team_dir, '/Команды/' );
 $bulk_admin_checks['кнопка: файл наставника в папке команды'] = is_file( $bulk_admin_team_dir . '/otchet.pdf' );
 $bulk_admin_checks['кнопка: содержимое файла'] = str_repeat( 'z', 40 ) === (string) @file_get_contents( $bulk_admin_team_dir . '/otchet.pdf' );
 $bulk_admin_checks['кнопка: журнал пополнился'] = false !== strpos( (string) wp_json_encode( WPPA_Export_Folder::logs(), JSON_UNESCAPED_UNICODE ), 'Файлы наставников' );

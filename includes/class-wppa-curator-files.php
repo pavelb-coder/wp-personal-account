@@ -270,6 +270,42 @@ class WPPA_Curator_Files {
 	 * @param int $user_id Пользователь.
 	 * @return string curator|mentor|пустая строка, если прав нет.
 	 */
+	public static function can_attach( $team_id, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! self::can_manage( $team_id, $user_id ) ) {
+			return false;
+		}
+
+		// Куратор прикрепляет документы всегда, наставник — после второго этапа.
+		if ( WPPA_Teams::is_curator( $user_id ) ) {
+			return true;
+		}
+
+		return WPPA_Teams::is_stage2( $team_id );
+	}
+
+	/**
+	 * Ждёт ли наставник отметки «второй этап», чтобы прикрепить файл.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Кто смотрит.
+	 * @return bool
+	 */
+	public static function waiting_stage2( $team_id, $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		return 'mentor' === self::direction( $team_id, $user_id ) && ! WPPA_Teams::is_stage2( (int) $team_id );
+	}
+
+	/**
+	 * Направление обмена файлами.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Кто смотрит.
+	 * @return string
+	 */
 	public static function direction( $team_id, $user_id = 0 ) {
 		$team_id = (int) $team_id;
 		$user_id = $user_id ? (int) $user_id : get_current_user_id();
@@ -335,6 +371,15 @@ class WPPA_Curator_Files {
 
 		if ( '' === $from ) {
 			return new WP_Error( 'wppa_file_forbidden', __( 'Прикреплять файлы может куратор и наставник команды.', 'wp-personal-account' ) );
+		}
+
+		// Наставник получает возможность прикреплять файлы, когда команда прошла
+		// во второй этап. Участники этого делать не могут никогда.
+		if ( 'mentor' === $from && ! WPPA_Teams::is_stage2( $team_id ) ) {
+			return new WP_Error(
+				'wppa_file_stage2',
+				__( 'Прикреплять файлы можно после того, как команда прошла во второй этап.', 'wp-personal-account' )
+			);
 		}
 
 		if ( ! is_file( $path ) ) {
@@ -603,6 +648,7 @@ class WPPA_Curator_Files {
 			'wppa_file_forbidden' => 'file_forbidden',
 			'wppa_file_dir'       => 'file_save_failed',
 			'wppa_file_copy'      => 'file_save_failed',
+			'wppa_file_stage2'    => 'file_stage2',
 		);
 
 		return isset( $map[ $code ] ) ? $map[ $code ] : 'file_missing';

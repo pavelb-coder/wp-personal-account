@@ -217,6 +217,18 @@ $sections .= demo_section(
 
 unset( $_GET['wppa_team'] );
 
+// Наставник до второго этапа: прикрепить файл нельзя, есть подсказка.
+WPPA_Teams::set_curator( 12, true );
+WPPA_Teams::set_stage2( $demo_team, false, 12 );
+
+$sections .= demo_section(
+	'Наставник: файлы до второго этапа',
+	'Пока команда не прошла во второй этап, наставник видит документы куратора и может их скачать, но прикрепить свой файл не может — вместо формы появляется подсказка',
+	WPPA_Template::get( 'tab-files', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
+);
+
+WPPA_Teams::set_stage2( $demo_team, true, 12 );
+
 // Куратор: главная страница с очередью рассылки участникам второго этапа.
 WPPA_Mailing::save(
 	array(

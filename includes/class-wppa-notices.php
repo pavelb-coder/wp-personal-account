@@ -115,6 +115,7 @@ class WPPA_Notices {
 			'file_limit'            => array( 'error', __( 'К команде уже прикреплено максимальное число файлов — удалите лишние.', 'wp-personal-account' ) ),
 			'file_save_failed'      => array( 'error', __( 'Не удалось сохранить файл на сервере — проверьте права на папку uploads.', 'wp-personal-account' ) ),
 			'file_forbidden'        => array( 'error', __( 'Файлы прикрепляют куратор и наставник команды; удалить можно только свой файл.', 'wp-personal-account' ) ),
+			'file_stage2'         => array( 'error', __( 'Прикреплять файлы можно после того, как команда прошла во второй этап.', 'wp-personal-account' ) ),
 			'file_team_missing'     => array( 'error', __( 'Команда не найдена — откройте её из списка команд.', 'wp-personal-account' ) ),
 			'file_exported'         => array( 'success', __( 'Файл скопирован в сетевую папку команды.', 'wp-personal-account' ) ),
 			'file_export_failed'    => array( 'warning', __( 'Файл прикреплён в кабинете, но скопировать его в сетевую папку не удалось. Проверьте путь и права в настройках выгрузки.', 'wp-personal-account' ) ),

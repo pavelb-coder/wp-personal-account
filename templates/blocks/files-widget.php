@@ -21,6 +21,8 @@ $wppa_curator_team_id = $wppa_is_curator ? WPPA_Teams::viewing_team_id( $user->I
 $wppa_team_id         = $wppa_curator_team_id ? $wppa_curator_team_id : $wppa_my_team_id;
 $wppa_can_view        = $wppa_team_id && WPPA_Curator_Files::can_view( $wppa_team_id, $user->ID );
 $wppa_can_upload      = $wppa_team_id && WPPA_Curator_Files::can_manage( $wppa_team_id, $user->ID );
+$wppa_can_attach      = $wppa_team_id && WPPA_Curator_Files::can_attach( $wppa_team_id, $user->ID );
+$wppa_wait_stage2     = $wppa_team_id && WPPA_Curator_Files::waiting_stage2( $wppa_team_id, $user->ID );
 $wppa_direction       = $wppa_team_id ? WPPA_Curator_Files::direction( $wppa_team_id, $user->ID ) : '';
 $wppa_files           = $wppa_can_view ? WPPA_Curator_Files::files( $wppa_team_id ) : array();
 $wppa_team_name       = $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '';
@@ -206,7 +208,13 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 			<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Наставник пока не прикреплял файлов.', 'wp-personal-account' ); ?></div>
 		<?php endif; ?>
 
-		<?php if ( $wppa_can_upload ) : ?>
+		<?php if ( $wppa_wait_stage2 ) : ?>
+			<div class="wppa-notice wppa-notice--info">
+				<?php esc_html_e( 'Прикреплять файлы можно после того, как команда прошла во второй этап. Пока отметки нет — документы куратора можно скачать.', 'wp-personal-account' ); ?>
+			</div>
+		<?php endif; ?>
+
+		<?php if ( $wppa_can_attach ) : ?>
 			<?php echo $wppa_upload_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- статическая разметка формы. ?>
 				<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
 				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />

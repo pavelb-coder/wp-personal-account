@@ -27,6 +27,11 @@ class WPPA_Team_Files_Export {
 	const NAME_LIMIT = 60;
 
 	/**
+	 * Общая папка, внутри которой лежат папки команд.
+	 */
+	const ROOT_NAME = 'Команды';
+
+	/**
 	 * Выгрузка включена.
 	 *
 	 * Работает, когда в настройках задан путь к сетевой папке. Отключить можно
@@ -61,8 +66,57 @@ class WPPA_Team_Files_Export {
 			return '';
 		}
 
-		$name = (string) get_the_title( $team_id );
-		$name = preg_replace( '/[\\\\\\/:*?"<>|]+/u', ' ', $name );
+		$name = self::clean_name( (string) get_the_title( $team_id ) );
+
+		// Названия совпадают у разных команд: к более старой оставляем чистое имя,
+		// младшей добавляем номер, чтобы папки не сливались.
+		if ( self::name_taken( $team_id, $name ) ) {
+			$name = $name . ' (' . $team_id . ')';
+		}
+
+		return $name;
+	}
+
+	/**
+	 * Общая папка для команд.
+	 *
+	 * @return string
+	 */
+	public static function folder_root() {
+		/**
+		 * Фильтр имени общей папки команд.
+		 *
+		 * @param string $root Имя папки.
+		 */
+		$root = self::clean_name( (string) apply_filters( 'wppa_team_files_export_root', self::ROOT_NAME ) );
+
+		return '' === $root ? self::ROOT_NAME : $root;
+	}
+
+	/**
+	 * Путь папки команды внутри выгрузки: «Команды/Название команды».
+	 *
+	 * @param int $team_id ID команды.
+	 * @return string
+	 */
+	public static function folder_path( $team_id ) {
+		$folder = self::folder_name( $team_id );
+
+		if ( '' === $folder ) {
+			return '';
+		}
+
+		return self::folder_root() . '/' . $folder;
+	}
+
+	/**
+	 * Очистить имя папки от служебных символов.
+	 *
+	 * @param string $name Исходное имя.
+	 * @return string
+	 */
+	public static function clean_name( $name ) {
+		$name = preg_replace( '/[\\\\\\/:*?\"<>|]+/u', ' ', (string) $name );
 		$name = preg_replace( '/[[:cntrl:]]/', ' ', (string) $name );
 		$name = trim( preg_replace( '/\s+/u', ' ', (string) $name ) );
 		$name = rtrim( $name, '. ' );
@@ -71,11 +125,42 @@ class WPPA_Team_Files_Export {
 			$name = rtrim( mb_substr( $name, 0, self::NAME_LIMIT ) );
 		}
 
-		if ( '' === $name ) {
-			$name = 'team';
+		return '' === $name ? 'team' : $name;
+	}
+
+	/**
+	 * Название уже занято другой (более старой) командой.
+	 *
+	 * @param int    $team_id ID команды.
+	 * @param string $name    Очищенное название.
+	 * @return bool
+	 */
+	public static function name_taken( $team_id, $name ) {
+		foreach ( self::teams() as $team ) {
+			$other = (int) $team['id'];
+
+			if ( $other === (int) $team_id || $other > (int) $team_id ) {
+				continue;
+			}
+
+			if ( self::clean_name( (string) $team['name'] ) === $name ) {
+				return true;
+			}
 		}
 
-		return $name . ' (' . $team_id . ')';
+		return false;
+	}
+
+	/**
+	 * Команды для проверки совпадения названий.
+	 *
+	 * Кэш сознательно не держим: список нужен редко (одна выборка на операцию
+	 * с файлом), а устаревший кэш ломал бы проверку сразу после создания команды.
+	 *
+	 * @return array
+	 */
+	private static function teams() {
+		return class_exists( 'WPPA_Teams' ) ? (array) WPPA_Teams::all_teams( 2000 ) : array();
 	}
 
 	/**
@@ -91,13 +176,13 @@ class WPPA_Team_Files_Export {
 			return '';
 		}
 
-		$folder = self::folder_name( $team_id );
+		$folder = self::folder_path( $team_id );
 
 		if ( '' === $folder ) {
 			return '';
 		}
 
-		return rtrim( (string) $config['path'], '/\\' ) . DIRECTORY_SEPARATOR . $folder;
+		return rtrim( (string) $config['path'], '/\\' ) . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, $folder );
 	}
 
 	/**
@@ -171,7 +256,7 @@ class WPPA_Team_Files_Export {
 			return $result;
 		}
 
-		$folder = self::folder_name( $team_id );
+		$folder = self::folder_path( $team_id );
 		$record = self::record( $team_id );
 
 		// Файл уже выгружали раньше — пишем под тем же именем, а не плодим копии.
@@ -229,7 +314,7 @@ class WPPA_Team_Files_Export {
 		$dir  = self::local_dir( $team_id );
 
 		try {
-			WPPA_SMB::delete( $name, WPPA_SMB::config(), self::folder_name( $team_id ) );
+			WPPA_SMB::delete( $name, WPPA_SMB::config(), self::folder_path( $team_id ) );
 		} catch ( \Throwable $e ) {
 			return false;
 		}
@@ -242,9 +327,10 @@ class WPPA_Team_Files_Export {
 			delete_post_meta( $team_id, self::META );
 		}
 
-		// Пустую папку команды на диске убираем, чтобы не копился мусор.
-		if ( '' !== $dir ) {
-			WPPA_SMB::remove_dir( $dir );
+		// Пустые папки на диске убираем, чтобы не копился мусор: сначала папку
+		// команды, затем общую — если в ней не осталось других команд.
+		if ( '' !== $dir && WPPA_SMB::remove_dir( $dir ) ) {
+			WPPA_SMB::remove_dir( dirname( $dir ) );
 		}
 
 		return true;
@@ -265,8 +351,8 @@ class WPPA_Team_Files_Export {
 
 		$dir = self::local_dir( $team_id );
 
-		if ( '' !== $dir ) {
-			WPPA_SMB::remove_dir( $dir );
+		if ( '' !== $dir && WPPA_SMB::remove_dir( $dir ) ) {
+			WPPA_SMB::remove_dir( dirname( $dir ) );
 		}
 
 		delete_post_meta( $team_id, self::META );

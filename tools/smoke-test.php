@@ -1814,6 +1814,26 @@ WPPA_Teams::add_member( $files_team, 9 );
 WPPA_Teams::set_curator( 12, true );
 WPPA_Teams::set_curator( 13, false );
 
+// Наставник получает возможность прикреплять файлы только после второго этапа.
+$mentor_wait_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 8 ) )
+);
+$mentor_early_store = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'рано.pdf', 'x' ), 'рано.pdf', 8 );
+
+$file_checks['второй этап: наставнику рано грузить']  = false === strpos( $mentor_wait_html, 'name="curator_file"' );
+$file_checks['второй этап: подсказка наставнику']     = false !== strpos( $mentor_wait_html, 'после того, как команда прошла во второй этап' );
+$file_checks['второй этап: store отклоняет']          = is_wp_error( $mentor_early_store ) && 'wppa_file_stage2' === $mentor_early_store->get_error_code();
+$file_checks['второй этап: код уведомления']          = 'file_stage2' === WPPA_Curator_Files::notice_code( 'wppa_file_stage2' );
+$file_checks['второй этап: can_attach запрещает']     = false === WPPA_Curator_Files::can_attach( $files_team, 8 );
+$file_checks['второй этап: waiting_stage2']           = true === WPPA_Curator_Files::waiting_stage2( $files_team, 8 );
+$file_checks['второй этап: куратору можно и без']     = true === WPPA_Curator_Files::can_attach( $files_team, 12 );
+
+WPPA_Teams::set_stage2( $files_team, true, 12 );
+
+$file_checks['второй этап: can_attach разрешает']     = true === WPPA_Curator_Files::can_attach( $files_team, 8 );
+$file_checks['второй этап: подсказки больше нет']     = false === WPPA_Curator_Files::waiting_stage2( $files_team, 8 );
+
 /**
  * Временный файл для проверки загрузки.
  *
@@ -2101,11 +2121,26 @@ WPPA_Teams::set_curator( 63, true );
 
 $export_checks['команда создана']   = $export_team && ! is_wp_error( $export_team );
 $export_checks['выгрузка включена'] = true === WPPA_Team_Files_Export::enabled();
-$export_checks['папка: имя команды'] = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: имя по названию команды'] = 'Студия «Вектор»' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: общий каталог «Команды»'] = 'Команды' === WPPA_Team_Files_Export::folder_root();
+$export_checks['папка: путь внутри общей']        = 'Команды/Студия «Вектор»' === WPPA_Team_Files_Export::folder_path( $export_team );
+$export_checks['папка: на диске общий каталог']   = false !== strpos( WPPA_Team_Files_Export::local_dir( $export_team ), DIRECTORY_SEPARATOR . 'Команды' . DIRECTORY_SEPARATOR );
 $export_checks['папка: служебные символы'] = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), '/' );
+
+// Одинаковые названия команд: у старой папка чистая, у новой — с номером.
+$export_dup_one = WPPA_Teams::create( 'Дубль', 68 );
+$export_dup_two = WPPA_Teams::create( 'Дубль', 69 );
+
+$export_checks['одинаковые названия: первая чистая']     = 'Дубль' === WPPA_Team_Files_Export::folder_name( $export_dup_one );
+$export_checks['одинаковые названия: вторая с номером']  = 'Дубль (' . (int) $export_dup_two . ')' === WPPA_Team_Files_Export::folder_name( $export_dup_two );
+
+WPPA_Teams::dissolve( $export_dup_one );
+WPPA_Teams::dissolve( $export_dup_two );
 $export_checks['папка: путь на диске']     = '' !== WPPA_Team_Files_Export::local_dir( $export_team );
 
 // Файл наставника уходит в папку команды.
+WPPA_Teams::set_stage2( $export_team, true, 63 );
+
 $export_file = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'протокол.pdf', str_repeat( 'e', 80 ) ), 'протокол.pdf', 62 );
 
 $export_checks['наставник прикрепил']   = is_array( $export_file ) && ! empty( $export_file['key'] );
@@ -2135,9 +2170,15 @@ $export_checks['копия удалена']       = ! is_file( $export_copy );
 $export_checks['мета обновилась']     = ! isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
 
 // Роспуск команды убирает папку.
+$export_team_dir = WPPA_Team_Files_Export::local_dir( $export_team );
+
+if ( '' === $export_team_dir ) {
+	$export_team_dir = $export_dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, WPPA_Team_Files_Export::folder_path( $export_team ) );
+}
+
 WPPA_Teams::dissolve( $export_team );
 
-$export_checks['после роспуска папки нет'] = ! is_dir( $export_dir . '/' . WPPA_Team_Files_Export::folder_name( $export_team ) );
+$export_checks['после роспуска папки нет'] = ! is_dir( $export_team_dir );
 
 // Без настроенного пути выгрузки нет, но загрузка работает.
 update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
@@ -2145,6 +2186,8 @@ update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb
 $export_off_team = WPPA_Teams::create( 'Команда без папки', 64 );
 WPPA_Teams::add_member( $export_off_team, 65 );
 WPPA_Teams::make_mentor( $export_off_team, 65 );
+
+WPPA_Teams::set_stage2( $export_off_team, true, 63 );
 
 $export_off = WPPA_Curator_Files::store( $export_off_team, wppa_test_file( 'файл.pdf', 'данные' ), 'файл.pdf', 65 );
 
@@ -2208,6 +2251,8 @@ WPPA_Teams::make_mentor( $bulk_team, 67 );
 // Файл кладём, пока выгрузка выключена: копии в папке ещё нет.
 update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
 
+WPPA_Teams::set_stage2( $bulk_team, true, 63 );
+
 $bulk_file = WPPA_Curator_Files::store( $bulk_team, wppa_test_file( 'bulk.pdf', str_repeat( 'g', 64 ) ), 'bulk.pdf', 67 );
 $bulk_curator = WPPA_Curator_Files::store( $bulk_team, wppa_test_file( 'curator-bulk.pdf', 'note' ), 'curator-bulk.pdf', 63 );
 
@@ -2238,9 +2283,11 @@ if ( is_array( $bulk_curator ) ) {
 	WPPA_Curator_Files::remove( $bulk_team, $bulk_curator['key'], 63 );
 }
 
+$bulk_team_dir = $bulk_dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, WPPA_Team_Files_Export::folder_path( $bulk_team ) );
+
 WPPA_Teams::dissolve( $bulk_team );
 
-$bulk_checks['после роспуска папки нет'] = ! is_dir( $bulk_dir . '/' . WPPA_Team_Files_Export::folder_name( $bulk_team ) );
+$bulk_checks['после роспуска папки нет'] = ! is_dir( $bulk_team_dir );
 
 update_option( 'wppa_settings', $export_backup );
 

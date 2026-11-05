@@ -705,7 +705,7 @@ class WPPA_SMB {
 		if ( $parsed ) {
 			// $parsed['unc'] уже содержит подпапку из настроек — добавляем только папку команды.
 			$sub_all = trim( $parsed['subdir'] . ( '' !== $subdir ? '/' . $subdir : '' ), '/' );
-			$remote  = $parsed['unc'] . ( '' !== $subdir ? '\\' . $subdir : '' ) . '\\' . $name;
+			$remote  = $parsed['unc'] . ( '' !== $subdir ? '\\' . str_replace( '/', '\\', $subdir ) : '' ) . '\\' . $name;
 		}
 
 		// 1. Обычная или смонтированная папка (в том числе UNC на Windows).
