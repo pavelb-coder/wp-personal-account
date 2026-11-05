@@ -994,6 +994,34 @@ class WPPA_Teams {
 	 * ------------------------------------------------------------------ */
 
 	/**
+	 * Капитан или наставник именно этой команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Пользователь.
+	 * @return bool
+	 */
+	public static function is_manager_of( $team_id, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		return $team_id && $user_id && (int) self::team_id( $user_id ) === $team_id && self::is_manager( $user_id );
+	}
+
+	/**
+	 * Капитан именно этой команды.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Пользователь.
+	 * @return bool
+	 */
+	public static function is_captain_of( $team_id, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		return $team_id && $user_id && (int) self::team_id( $user_id ) === $team_id && 'owner' === self::role( $user_id );
+	}
+
+	/**
 	 * Адрес вкладки «Команда» с сохранением открытой команды куратора.
 	 *
 	 * @param int $team_id ID команды.
@@ -1046,13 +1074,12 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( 'team_created', $tab_url );
 
 			case 'rename':
-				$team_id    = self::request_team_id( $user_id );
-				$as_curator = self::is_curator( $user_id );
-				$name       = isset( $_POST['team_name'] ) ? sanitize_text_field( wp_unslash( $_POST['team_name'] ) ) : '';
+				$team_id = self::request_team_id( $user_id );
+				$name    = isset( $_POST['team_name'] ) ? sanitize_text_field( wp_unslash( $_POST['team_name'] ) ) : '';
+				$back    = self::context_url( $team_id, $user_id );
 
-				$back = self::context_url( $team_id, $user_id );
-
-				if ( ! $team_id || ( ! $as_curator && ! self::is_owner( $user_id ) ) ) {
+				// Переименование — только капитан этой команды. Куратору недоступно.
+				if ( ! $team_id || ! self::is_captain_of( $team_id, $user_id ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $back );
 				}
 
@@ -1067,7 +1094,8 @@ class WPPA_Teams {
 				$team_id = self::request_team_id( $user_id );
 				$back    = self::context_url( $team_id, $user_id );
 
-				if ( ! $team_id || ! self::can_manage_team( $team_id, $user_id ) ) {
+				// Ссылку-приглашение обновляют капитан и наставник команды, но не куратор.
+				if ( ! $team_id || ! self::is_manager_of( $team_id, $user_id ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $back );
 				}
 
@@ -1079,7 +1107,8 @@ class WPPA_Teams {
 				$email   = isset( $_POST['invite_email'] ) ? sanitize_email( wp_unslash( $_POST['invite_email'] ) ) : '';
 				$back    = self::context_url( $team_id, $user_id );
 
-				if ( ! $team_id || ! self::can_manage_team( $team_id, $user_id ) ) {
+				// Приглашать участников может капитан и наставник команды, но не куратор.
+				if ( ! $team_id || ! self::is_manager_of( $team_id, $user_id ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $back );
 				}
 

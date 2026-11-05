@@ -31,6 +31,11 @@ $wppa_is_mentor = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_mentor
 // пропадать, если объект команды почему-то не подгрузился.
 $wppa_can_manage = $wppa_team_id && WPPA_Teams::can_manage_team( $wppa_team_id, $user->ID );
 $wppa_is_manager = $wppa_can_manage;
+
+// Приглашать участников и переименовывать команду может только капитан или наставник
+// этой команды. Куратору эти действия недоступны — он работает с составом.
+$wppa_can_invite = $wppa_team_id && WPPA_Teams::is_manager_of( $wppa_team_id, $user->ID );
+$wppa_can_rename = $wppa_team_id && WPPA_Teams::is_captain_of( $wppa_team_id, $user->ID );
 $wppa_team_name  = $wppa_team ? (string) $wppa_team['name'] : ( $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '' );
 $wppa_created    = $wppa_team && ! empty( $wppa_team['created'] ) ? (int) $wppa_team['created'] : 0;
 $wppa_team_rows  = $wppa_team && isset( $wppa_team['members'] ) ? (array) $wppa_team['members'] : array();
@@ -61,7 +66,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<section class="wppa-card wppa-curator">
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Куратор: все команды', 'wp-personal-account' ); ?></h3>
 		<p class="wppa-hint">
-			<?php esc_html_e( 'Вы видите все команды сайта и можете менять их состав: исключать участников, назначать наставников, переименовывать. Распустить команду может только капитан; лимит и минимум на вас не считаются.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Вы видите все команды сайта и можете менять их состав: исключать участников и назначать наставников. Приглашать участников, переименовать или распустить команду может только капитан; лимит и минимум на вас не считаются.', 'wp-personal-account' ); ?>
 		</p>
 
 		<?php if ( empty( $wppa_all_teams ) ) : ?>
@@ -129,7 +134,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		<?php
 		printf(
 			/* translators: 1: название команды, 2: ссылка на список команд */
-			esc_html__( 'Вы управляете командой «%1$s» как куратор. %2$s', 'wp-personal-account' ),
+			esc_html__( 'Вы управляете командой «%1$s» как куратор: состав и файлы. Приглашения и переименование — у капитана и наставника. %2$s', 'wp-personal-account' ),
 			esc_html( $wppa_team_name ),
 			'<a href="' . esc_url( WPPA_Plugin::tab_url( 'team' ) ) . '">' . esc_html__( 'Вернуться к списку команд', 'wp-personal-account' ) . '</a>'
 		);
@@ -464,7 +469,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
-	<?php if ( $wppa_is_manager ) : ?>
+	<?php if ( $wppa_can_invite ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Пригласить участников', 'wp-personal-account' ); ?></h3>
@@ -509,7 +514,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
-	<?php if ( $wppa_is_owner || $wppa_is_curator ) : ?>
+	<?php if ( $wppa_can_rename ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Название команды', 'wp-personal-account' ); ?></h3>
