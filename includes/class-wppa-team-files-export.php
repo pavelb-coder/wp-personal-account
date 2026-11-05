@@ -27,9 +27,12 @@ class WPPA_Team_Files_Export {
 	const NAME_LIMIT = 60;
 
 	/**
-	 * Общая папка, внутри которой лежат папки команд.
+	 * Необязательный общий каталог для папок команд.
+	 *
+	 * По умолчанию пусто: папка команды создаётся прямо в папке из настроек,
+	 * например \\server\share\olimp\Студия «Вектор» (12).
 	 */
-	const ROOT_NAME = 'Команды';
+	const ROOT_NAME = '';
 
 	/**
 	 * Выгрузка включена.
@@ -68,13 +71,8 @@ class WPPA_Team_Files_Export {
 
 		$name = self::clean_name( (string) get_the_title( $team_id ) );
 
-		// Названия совпадают у разных команд: к более старой оставляем чистое имя,
-		// младшей добавляем номер, чтобы папки не сливались.
-		if ( self::name_taken( $team_id, $name ) ) {
-			$name = $name . ' (' . $team_id . ')';
-		}
-
-		return $name;
+		// Номер команды в имени папки: одноимённые команды не сливаются в одну.
+		return $name . ' (' . $team_id . ')';
 	}
 
 	/**
@@ -84,13 +82,19 @@ class WPPA_Team_Files_Export {
 	 */
 	public static function folder_root() {
 		/**
-		 * Фильтр имени общей папки команд.
+		 * Необязательный общий каталог для папок команд.
 		 *
-		 * @param string $root Имя папки.
+		 * Пустая строка (по умолчанию) — папки команд лежат прямо в папке из настроек.
+		 *
+		 * @param string $root Имя каталога.
 		 */
-		$root = self::clean_name( (string) apply_filters( 'wppa_team_files_export_root', self::ROOT_NAME ) );
+		$root = trim( (string) apply_filters( 'wppa_team_files_export_root', self::ROOT_NAME ) );
 
-		return '' === $root ? self::ROOT_NAME : $root;
+		if ( '' === $root ) {
+			return '';
+		}
+
+		return self::clean_name( $root );
 	}
 
 	/**
@@ -106,7 +110,9 @@ class WPPA_Team_Files_Export {
 			return '';
 		}
 
-		return self::folder_root() . '/' . $folder;
+		$root = self::folder_root();
+
+		return '' === $root ? $folder : $root . '/' . $folder;
 	}
 
 	/**
@@ -126,41 +132,6 @@ class WPPA_Team_Files_Export {
 		}
 
 		return '' === $name ? 'team' : $name;
-	}
-
-	/**
-	 * Название уже занято другой (более старой) командой.
-	 *
-	 * @param int    $team_id ID команды.
-	 * @param string $name    Очищенное название.
-	 * @return bool
-	 */
-	public static function name_taken( $team_id, $name ) {
-		foreach ( self::teams() as $team ) {
-			$other = (int) $team['id'];
-
-			if ( $other === (int) $team_id || $other > (int) $team_id ) {
-				continue;
-			}
-
-			if ( self::clean_name( (string) $team['name'] ) === $name ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Команды для проверки совпадения названий.
-	 *
-	 * Кэш сознательно не держим: список нужен редко (одна выборка на операцию
-	 * с файлом), а устаревший кэш ломал бы проверку сразу после создания команды.
-	 *
-	 * @return array
-	 */
-	private static function teams() {
-		return class_exists( 'WPPA_Teams' ) ? (array) WPPA_Teams::all_teams( 2000 ) : array();
 	}
 
 	/**
@@ -399,11 +370,14 @@ class WPPA_Team_Files_Export {
 	 */
 	public static function export_all() {
 		$result = array(
-			'ok'      => true,
-			'files'   => 0,
-			'teams'   => 0,
-			'failed'  => 0,
-			'message' => '',
+			'ok'       => true,
+			'files'    => 0,
+			'exported' => 0,
+			'skipped'  => 0,
+			'teams'    => 0,
+			'failed'   => 0,
+			'errors'   => array(),
+			'message'  => '',
 		);
 
 		$config = self::bulk_config();
@@ -419,7 +393,7 @@ class WPPA_Team_Files_Export {
 		$base    = is_array( $uploads ) && ! empty( $uploads['dir'] ) ? rtrim( (string) $uploads['dir'], '/\\' ) : '';
 
 		foreach ( WPPA_Teams::all_teams( 2000 ) as $team ) {
-			$team_id = (int) $team['id'];
+			$team_id    = (int) $team['id'];
 			$team_files = 0;
 
 			foreach ( WPPA_Curator_Files::files( $team_id ) as $file ) {
@@ -430,10 +404,41 @@ class WPPA_Team_Files_Export {
 				$team_files++;
 				$result['files']++;
 
-				$exported = self::export( $team_id, $base . '/' . $file['file'], $file['name'], $file['key'], $config );
+				$source = '' === $base ? '' : $base . '/' . $file['file'];
+
+				// Исходник пропал из uploads (удалён вручную, переехал uploads) —
+				// это не сбой сети: просто помечаем и идём дальше, без пугающего
+				// «выгрузилось не полностью».
+				if ( '' === $source || ! is_file( $source ) ) {
+					$result['skipped']++;
+					$result['errors'][] = sprintf(
+						/* translators: 1: команда, 2: файл */
+						__( '«%1$s» → %2$s: исходного файла нет в папке загрузок, копия пропущена.', 'wp-personal-account' ),
+						(string) $team['name'],
+						(string) $file['name']
+					);
+
+					continue;
+				}
+
+				$exported = self::export( $team_id, $source, $file['name'], $file['key'], $config );
+
+				if ( empty( $exported['ok'] ) ) {
+					// Одна повторная попытка: сетевые папки иногда отваливаются на миг.
+					$exported = self::export( $team_id, $source, $file['name'], $file['key'], $config );
+				}
 
 				if ( empty( $exported['ok'] ) ) {
 					$result['failed']++;
+					$result['errors'][] = sprintf(
+						/* translators: 1: команда, 2: файл, 3: причина */
+						__( '«%1$s» → %2$s: %3$s', 'wp-personal-account' ),
+						(string) $team['name'],
+						(string) $file['name'],
+						'' !== (string) $exported['message'] ? (string) $exported['message'] : __( 'не удалось записать в папку', 'wp-personal-account' )
+					);
+				} else {
+					$result['exported']++;
 				}
 			}
 
@@ -445,18 +450,27 @@ class WPPA_Team_Files_Export {
 		if ( $result['failed'] > 0 ) {
 			$result['ok']      = false;
 			$result['message'] = sprintf(
-				/* translators: 1: выгружено файлов, 2: не удалось */
-				__( 'Файлы наставников: выгружено %1$d, не удалось %2$d.', 'wp-personal-account' ),
-				(int) ( $result['files'] - $result['failed'] ),
-				(int) $result['failed']
+				/* translators: 1: выгружено, 2: всего, 3: ошибок */
+				__( 'Файлы наставников: выгружено %1$d из %2$d, ошибок %3$d. Первая: %4$s', 'wp-personal-account' ),
+				(int) $result['exported'],
+				(int) $result['files'],
+				(int) $result['failed'],
+				(string) reset( $result['errors'] )
 			);
 		} elseif ( 0 === $result['files'] ) {
 			$result['message'] = __( 'Файлов наставников для выгрузки нет.', 'wp-personal-account' );
+		} elseif ( $result['skipped'] > 0 ) {
+			$result['message'] = sprintf(
+				/* translators: 1: выгружено, 2: пропущено */
+				__( 'Файлы наставников выгружены: %1$d. Пропущено без исходника: %2$d (подробности в журнале).', 'wp-personal-account' ),
+				(int) $result['exported'],
+				(int) $result['skipped']
+			);
 		} else {
 			$result['message'] = sprintf(
 				/* translators: 1: файлов, 2: команд */
 				__( 'Файлы наставников выгружены: %1$d в %2$d командах.', 'wp-personal-account' ),
-				(int) $result['files'],
+				(int) $result['exported'],
 				(int) $result['teams']
 			);
 		}

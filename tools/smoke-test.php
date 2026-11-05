@@ -2121,18 +2121,18 @@ WPPA_Teams::set_curator( 63, true );
 
 $export_checks['команда создана']   = $export_team && ! is_wp_error( $export_team );
 $export_checks['выгрузка включена'] = true === WPPA_Team_Files_Export::enabled();
-$export_checks['папка: имя по названию команды'] = 'Студия «Вектор»' === WPPA_Team_Files_Export::folder_name( $export_team );
-$export_checks['папка: общий каталог «Команды»'] = 'Команды' === WPPA_Team_Files_Export::folder_root();
-$export_checks['папка: путь внутри общей']        = 'Команды/Студия «Вектор»' === WPPA_Team_Files_Export::folder_path( $export_team );
-$export_checks['папка: на диске общий каталог']   = false !== strpos( WPPA_Team_Files_Export::local_dir( $export_team ), DIRECTORY_SEPARATOR . 'Команды' . DIRECTORY_SEPARATOR );
+$export_checks['папка: название и номер команды'] = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: без общего каталога']      = '' === WPPA_Team_Files_Export::folder_root();
+$export_checks['папка: путь = папка команды']     = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_path( $export_team );
+$export_checks['папка: на диске прямо в настройках'] = $export_dir . DIRECTORY_SEPARATOR . 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::local_dir( $export_team );
 $export_checks['папка: служебные символы'] = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), '/' );
 
-// Одинаковые названия команд: у старой папка чистая, у новой — с номером.
+// Одинаковые названия не сливаются: номер команды всегда в имени папки.
 $export_dup_one = WPPA_Teams::create( 'Дубль', 68 );
 $export_dup_two = WPPA_Teams::create( 'Дубль', 69 );
 
-$export_checks['одинаковые названия: первая чистая']     = 'Дубль' === WPPA_Team_Files_Export::folder_name( $export_dup_one );
-$export_checks['одинаковые названия: вторая с номером']  = 'Дубль (' . (int) $export_dup_two . ')' === WPPA_Team_Files_Export::folder_name( $export_dup_two );
+$export_checks['одноимённые: разные папки'] = WPPA_Team_Files_Export::folder_name( $export_dup_one ) !== WPPA_Team_Files_Export::folder_name( $export_dup_two );
+$export_checks['одноимённые: номер в имени'] = 'Дубль (' . (int) $export_dup_two . ')' === WPPA_Team_Files_Export::folder_name( $export_dup_two );
 
 WPPA_Teams::dissolve( $export_dup_one );
 WPPA_Teams::dissolve( $export_dup_two );
@@ -2276,6 +2276,38 @@ $bulk_checks['повтор: имя не изменилось'] = 'bulk.pdf' === 
 $bulk_checks['повтор: счёт тот же']     = 1 === (int) $bulk_again['files'];
 
 $bulk_checks['файл куратора не выгружен'] = ! is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/curator-bulk.pdf' );
+
+// Исходник пропал из загрузок: это не сбой, копия просто пропускается.
+$bulk_missing_source = WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $bulk_team )[ $bulk_file['key'] ]['file'];
+$bulk_kept_copy      = WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf';
+
+@rename( $bulk_missing_source, $bulk_missing_source . '.bak' );
+
+$bulk_missing = WPPA_Team_Files_Export::export_all();
+$bulk_checks['без исходника: не ошибка']        = true === $bulk_missing['ok'];
+$bulk_checks['без исходника: пропуск посчитан'] = 1 === (int) $bulk_missing['skipped'];
+$bulk_checks['без исходника: ошибок нет']       = 0 === (int) $bulk_missing['failed'];
+$bulk_checks['без исходника: в сообщении']      = false !== strpos( $bulk_missing['message'], 'Пропущено' );
+$bulk_checks['без исходника: причина в списке'] = false !== strpos( implode( ' ', $bulk_missing['errors'] ), 'исходного файла нет' );
+$bulk_checks['без исходника: копия на месте']   = is_file( $bulk_kept_copy );
+
+@rename( $bulk_missing_source . '.bak', $bulk_missing_source );
+
+// Папка недоступна: ошибка с причиной, а не только «не полностью».
+$bulk_bad_base = sys_get_temp_dir() . '/wppa-bulk-not-a-dir';
+
+file_put_contents( $bulk_bad_base, 'x' );
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $bulk_bad_base, 'user' => '', 'pass' => '' ) ) ) );
+
+$bulk_failed = WPPA_Team_Files_Export::export_all();
+
+$bulk_checks['плохая папка: ошибка есть']      = false === $bulk_failed['ok'] && (int) $bulk_failed['failed'] > 0;
+$bulk_checks['плохая папка: причина в тексте'] = false !== strpos( $bulk_failed['message'], 'Первая:' );
+$bulk_checks['плохая папка: подробности']      = false !== strpos( implode( ' ', $bulk_failed['errors'] ), 'bulk.pdf' );
+
+@unlink( $bulk_bad_base );
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $bulk_dir, 'user' => '', 'pass' => '' ) ) ) );
 
 $bulk_empty = WPPA_Team_Files_Export::export_all();
 

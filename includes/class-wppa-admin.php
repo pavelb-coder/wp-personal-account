@@ -683,7 +683,7 @@ class WPPA_Admin {
 			'mailing_log_cleared' => array( 'success', __( 'Журнал рассылки очищен.', 'wp-personal-account' ) ),
 			'mailing_failed'     => array( 'error', __( 'Неизвестное действие рассылки.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
-			'folder_export_files_fail' => array( 'warning', __( 'CSV записан, но файлы наставников выгрузились не полностью — подробности в журнале ниже.', 'wp-personal-account' ) ),
+			'folder_export_files_fail' => array( 'warning', __( 'CSV записан, но файлы наставников выгрузились не полностью. В журнале ниже указано, какие файлы и почему — обычно это недоступная папка или нет прав на запись.', 'wp-personal-account' ) ),
 			'folder_export_ok'  => array( 'success', __( 'Выгрузка записана: CSV аккаунтов и файлы наставников по папкам команд. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
 			'folder_check_fail'  => array( 'error', __( 'Папка недоступна: проверьте путь, права и монтирование сетевой шары.', 'wp-personal-account' ) ),
@@ -782,6 +782,11 @@ class WPPA_Admin {
 
 				if ( '' !== (string) $files['message'] ) {
 					WPPA_Export_Folder::log_entry( (bool) $files['ok'], '', 0, $files['message'] );
+				}
+
+				// Подробности по проблемным файлам — отдельными строками журнала.
+				foreach ( array_slice( (array) $files['errors'], 0, 3 ) as $files_error ) {
+					WPPA_Export_Folder::log_entry( (bool) $files['ok'], '', 0, (string) $files_error );
 				}
 
 				if ( ! $result['ok'] ) {
