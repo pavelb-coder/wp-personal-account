@@ -994,6 +994,24 @@ class WPPA_Teams {
 	 * ------------------------------------------------------------------ */
 
 	/**
+	 * Адрес вкладки «Команда» с сохранением открытой команды куратора.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Пользователь.
+	 * @return string
+	 */
+	public static function context_url( $team_id, $user_id = 0 ) {
+		$url     = WPPA_Plugin::tab_url( 'team' );
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( $team_id && self::is_curator( $user_id ) ) {
+			$url = add_query_arg( 'wppa_team', (int) $team_id, $url );
+		}
+
+		return $url;
+	}
+
+	/**
 	 * Обработчик POST-форм вкладки «Команда».
 	 *
 	 * @return void
@@ -1032,37 +1050,41 @@ class WPPA_Teams {
 				$as_curator = self::is_curator( $user_id );
 				$name       = isset( $_POST['team_name'] ) ? sanitize_text_field( wp_unslash( $_POST['team_name'] ) ) : '';
 
+				$back = self::context_url( $team_id, $user_id );
+
 				if ( ! $team_id || ( ! $as_curator && ! self::is_owner( $user_id ) ) ) {
-					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
+					WPPA_Notices::redirect( 'team_owner_only', $back );
 				}
 
 				if ( '' === $name ) {
-					WPPA_Notices::redirect( 'team_name_required', $tab_url );
+					WPPA_Notices::redirect( 'team_name_required', $back );
 				}
 
 				self::rename( $team_id, mb_substr( $name, 0, 100 ) );
-				WPPA_Notices::redirect( 'team_renamed', $tab_url );
+				WPPA_Notices::redirect( 'team_renamed', $back );
 
 			case 'refresh_token':
 				$team_id = self::request_team_id( $user_id );
+				$back    = self::context_url( $team_id, $user_id );
 
-				if ( ! $team_id || ( ! self::is_curator( $user_id ) && ! self::is_manager( $user_id ) ) ) {
-					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
+				if ( ! $team_id || ! self::can_manage_team( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_manager_only', $back );
 				}
 
 				self::refresh_token( $team_id );
-				WPPA_Notices::redirect( 'team_token_refreshed', $tab_url );
+				WPPA_Notices::redirect( 'team_token_refreshed', $back );
 
 			case 'invite_email':
 				$team_id = self::request_team_id( $user_id );
 				$email   = isset( $_POST['invite_email'] ) ? sanitize_email( wp_unslash( $_POST['invite_email'] ) ) : '';
+				$back    = self::context_url( $team_id, $user_id );
 
-				if ( ! $team_id || ( ! self::is_curator( $user_id ) && ! self::is_manager( $user_id ) ) ) {
-					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
+				if ( ! $team_id || ! self::can_manage_team( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_manager_only', $back );
 				}
 
 				if ( ! is_email( $email ) ) {
-					WPPA_Notices::redirect( 'email_invalid', $tab_url );
+					WPPA_Notices::redirect( 'email_invalid', $back );
 				}
 
 				$team  = self::get( $team_id );
@@ -1075,7 +1097,7 @@ class WPPA_Teams {
 				);
 				$sent  = wp_mail( $email, __( 'Приглашение в команду', 'wp-personal-account' ), $body );
 
-				WPPA_Notices::redirect( $sent ? 'team_invite_sent' : 'save_failed', $tab_url );
+				WPPA_Notices::redirect( $sent ? 'team_invite_sent' : 'save_failed', $back );
 
 			case 'remove_member':
 				$team_id    = self::request_team_id( $user_id );

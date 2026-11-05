@@ -235,7 +235,14 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 		return '' === (string) $nonce ? false : 1;
 	}
 }
-function wp_safe_redirect( $u ) { return true; }
+function wp_safe_redirect( $u ) {
+	// В тестах обработчики форм завершаются exit-ом: перехватываем адрес исключением.
+	if ( ! empty( $GLOBALS['wppa_test']['catch_redirect'] ) ) {
+		throw new RuntimeException( 'redirect:' . $u );
+	}
+
+	return true;
+}
 function get_bloginfo( $k ) { return 'Демо-сайт'; }
 function wp_specialchars_decode( $t, $q = null ) { return $t; }
 function is_ssl() { return true; }

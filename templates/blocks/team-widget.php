@@ -21,14 +21,23 @@ if ( $wppa_curator_view ) {
 	$wppa_team_id = $wppa_curator_team_id;
 }
 
-$wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
-$wppa_is_owner   = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
-$wppa_is_mentor  = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_mentor( $user->ID );
-$wppa_is_manager = $wppa_team_id && ( $wppa_curator_view || WPPA_Teams::is_manager( $user->ID ) );
+$wppa_team      = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
+$wppa_has_team  = $wppa_team_id > 0;
+$wppa_is_owner  = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_owner( $user->ID );
+$wppa_is_mentor = ! $wppa_curator_view && $wppa_team_id && WPPA_Teams::is_mentor( $user->ID );
+
+// Права на управление командой: капитан и наставник — на свою, куратор — на любую.
+// Считаем их по номеру команды, а не по загруженным данным: карточки не должны
+// пропадать, если объект команды почему-то не подгрузился.
+$wppa_can_manage = $wppa_team_id && WPPA_Teams::can_manage_team( $wppa_team_id, $user->ID );
+$wppa_is_manager = $wppa_can_manage;
+$wppa_team_name  = $wppa_team ? (string) $wppa_team['name'] : ( $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '' );
+$wppa_created    = $wppa_team && ! empty( $wppa_team['created'] ) ? (int) $wppa_team['created'] : 0;
+$wppa_team_rows  = $wppa_team && isset( $wppa_team['members'] ) ? (array) $wppa_team['members'] : array();
 $wppa_my_role    = $wppa_curator_view ? 'curator' : ( $wppa_team_id ? WPPA_Teams::role( $user->ID ) : '' );
 
 // Скрытое поле team_id: без него куратор не поймёт, к какой команде относится действие.
-$wppa_team_field = $wppa_curator_view
+$wppa_team_field = ( $wppa_is_curator && $wppa_team_id )
 	? '<input type="hidden" name="team_id" value="' . (int) $wppa_team_id . '" />'
 	: '';
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
@@ -121,14 +130,15 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		printf(
 			/* translators: 1: название команды, 2: ссылка на список команд */
 			esc_html__( 'Вы управляете командой «%1$s» как куратор. %2$s', 'wp-personal-account' ),
-			esc_html( $wppa_team ? $wppa_team['name'] : '' ),
+			esc_html( $wppa_team_name ),
 			'<a href="' . esc_url( WPPA_Plugin::tab_url( 'team' ) ) . '">' . esc_html__( 'Вернуться к списку команд', 'wp-personal-account' ) . '</a>'
 		);
 		?>
 	</div>
 <?php endif; ?>
 
-<?php if ( ! $wppa_team ) : ?>
+<?php if ( ! $wppa_has_team ) : ?>
+
 
 	<?php if ( $wppa_is_curator ) : ?>
 
@@ -187,9 +197,15 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 <?php else : ?>
 
+	<?php if ( ! $wppa_team ) : ?>
+		<div class="wppa-notice wppa-notice--info">
+			<?php esc_html_e( 'Не удалось загрузить данные команды. Обновите страницу или вернитесь к списку команд.', 'wp-personal-account' ); ?>
+		</div>
+	<?php endif; ?>
+
 	<div class="wppa-card wppa-team-head">
 		<div>
-			<h3 class="wppa-team-name"><?php echo esc_html( $wppa_team['name'] ); ?></h3>
+			<h3 class="wppa-team-name"><?php echo esc_html( $wppa_team_name ); ?></h3>
 			<p class="wppa-hint">
 				<?php
 				printf(
@@ -207,12 +223,12 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 						(int) $wppa_mentors
 					);
 				}
-				if ( $wppa_team['created'] ) {
+				if ( $wppa_created ) {
 					echo ' · ';
 					printf(
 						/* translators: %s: дата создания */
 						esc_html__( 'создана %s', 'wp-personal-account' ),
-						esc_html( date_i18n( get_option( 'date_format' ), $wppa_team['created'] ) )
+						esc_html( date_i18n( get_option( 'date_format' ), $wppa_created ) )
 					);
 				}
 				?>
@@ -275,7 +291,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach ( $wppa_team['members'] as $wppa_member ) : ?>
+				<?php foreach ( $wppa_team_rows as $wppa_member ) : ?>
 					<?php $wppa_member_role = WPPA_Teams::role( $wppa_member->ID ); ?>
 					<tr>
 						<td data-label="<?php esc_attr_e( 'Участник', 'wp-personal-account' ); ?>">
@@ -493,7 +509,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
-	<?php if ( $wppa_is_owner || $wppa_curator_view ) : ?>
+	<?php if ( $wppa_is_owner || $wppa_is_curator ) : ?>
 
 		<section class="wppa-card">
 			<h3 class="wppa-subtitle"><?php esc_html_e( 'Название команды', 'wp-personal-account' ); ?></h3>
@@ -506,7 +522,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 				<p class="wppa-field">
 					<label for="wppa-team-rename"><?php esc_html_e( 'Название', 'wp-personal-account' ); ?></label>
-					<input type="text" id="wppa-team-rename" name="team_name" value="<?php echo esc_attr( $wppa_team['name'] ); ?>" maxlength="100" required />
+					<input type="text" id="wppa-team-rename" name="team_name" value="<?php echo esc_attr( $wppa_team_name ); ?>" maxlength="100" required />
 				</p>
 
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Сохранить', 'wp-personal-account' ); ?></button>

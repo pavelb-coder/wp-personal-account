@@ -1443,6 +1443,9 @@ if ( is_wp_error( $curator_team_id ) ) {
 	$curator_checks['просмотр: переименование']        = false !== strpos( $view_html, 'wppa_team_action" value="rename"' );
 	$curator_checks['просмотр: нет выхода из команды'] = false === strpos( $view_html, 'wppa_team_action" value="leave"' );
 	$curator_checks['просмотр: плашка куратора']       = false !== strpos( $view_html, 'как куратор' );
+	$curator_checks['просмотр: приглашение участников'] = false !== strpos( $view_html, 'Пригласить участников' );
+	$curator_checks['просмотр: поле email приглашения'] = false !== strpos( $view_html, 'name="invite_email"' );
+	$curator_checks['просмотр: ссылка-приглашение']     = false !== strpos( $view_html, 'Ссылка-приглашение' );
 
 	unset( $_GET['wppa_team'] );
 
@@ -1471,6 +1474,143 @@ $GLOBALS['wppa_test']['meta'] = $curator_snapshot;
 
 foreach ( $curator_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Действия куратора через обработчик форм: переименование, приглашение, ссылка.
+$action_checks   = array();
+$action_snapshot = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$action_team     = WPPA_Teams::create( 'Команда для действий', 51 );
+
+if ( is_wp_error( $action_team ) ) {
+	$action_checks['команда создана'] = false;
+} else {
+	$action_checks['команда создана'] = true;
+
+	WPPA_Teams::add_member( $action_team, 53 );
+	WPPA_Teams::make_mentor( $action_team, 53 );
+	WPPA_Teams::add_member( $action_team, 54 );
+	WPPA_Teams::set_curator( 52, true );
+
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+
+	// Прогоняет обработчик формы и возвращает код уведомления и адрес возврата.
+	$wppa_run_action = function ( $user_id, $post ) {
+		$GLOBALS['wppa_test']['current_user'] = $user_id;
+		$_POST                                = $post;
+		$_GET                                 = array();
+
+		try {
+			WPPA_Teams::handle_request();
+		} catch ( RuntimeException $e ) {
+			$url   = substr( $e->getMessage(), strlen( 'redirect:' ) );
+			$query = (string) parse_url( $url, PHP_URL_QUERY );
+			$args  = array();
+
+			parse_str( $query, $args );
+
+			return array(
+				'code' => isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '',
+				'url'  => $url,
+			);
+		}
+
+		return array( 'code' => '', 'url' => '' );
+	};
+
+	$action_rename = $wppa_run_action(
+		52,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'rename',
+			'team_id'          => $action_team,
+			'team_name'        => 'Новое название',
+		)
+	);
+	$action_checks['куратор переименовал: уведомление'] = 'team_renamed' === $action_rename['code'];
+	$action_checks['куратор переименовал: имя']         = 'Новое название' === WPPA_Teams::get( $action_team )['name'];
+	$action_checks['куратор остался в команде']         = false !== strpos( $action_rename['url'], 'wppa_team=' . (int) $action_team );
+
+	$action_empty = $wppa_run_action(
+		52,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'rename',
+			'team_id'          => $action_team,
+			'team_name'        => '   ',
+		)
+	);
+	$action_checks['пустое имя отклонено'] = 'team_name_required' === $action_empty['code'];
+
+	$action_invite = $wppa_run_action(
+		52,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'invite_email',
+			'team_id'          => $action_team,
+			'invite_email'     => 'new@example.com',
+		)
+	);
+	$action_checks['куратор пригласил по email']  = 'team_invite_sent' === $action_invite['code'];
+	$action_checks['возврат в команду после письма'] = false !== strpos( $action_invite['url'], 'wppa_team=' . (int) $action_team );
+
+	$action_token = $wppa_run_action(
+		52,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'refresh_token',
+			'team_id'          => $action_team,
+		)
+	);
+	$action_checks['куратор обновил ссылку'] = 'team_token_refreshed' === $action_token['code'];
+
+	$action_mentor = $wppa_run_action(
+		53,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'invite_email',
+			'invite_email'     => 'new@example.com',
+		)
+	);
+	$action_checks['наставник приглашает']            = 'team_invite_sent' === $action_mentor['code'];
+	$action_checks['наставник: возврат без team_id']  = false === strpos( $action_mentor['url'], 'wppa_team=' );
+
+	$action_member = $wppa_run_action(
+		54,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'invite_email',
+			'team_id'          => $action_team,
+			'invite_email'     => 'new@example.com',
+		)
+	);
+	$action_checks['участник не приглашает'] = 'team_manager_only' === $action_member['code'];
+
+	$action_foreign = $wppa_run_action(
+		54,
+		array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'rename',
+			'team_id'          => $action_team,
+			'team_name'        => 'Чужое имя',
+		)
+	);
+	$action_checks['участник не переименовывает'] = 'team_owner_only' === $action_foreign['code'];
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	$_POST                                  = array();
+	$_GET                                   = array();
+
+	WPPA_Teams::dissolve( $action_team );
+}
+
+WPPA_Teams::set_curator( 52, false );
+$GLOBALS['wppa_test']['meta'] = $action_snapshot;
+
+foreach ( $action_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator actions: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}
