@@ -23,6 +23,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -1946,6 +1947,107 @@ $_POST                                  = array();
 $_GET                                   = array();
 
 unset( $GLOBALS['wppa_test']['current_user'] );
+
+// Автоматическая выгрузка файлов наставника в сетевую папку (папка на команду).
+$export_checks  = array();
+$export_dir     = sys_get_temp_dir() . '/wppa-export-test';
+$export_backup  = get_option( 'wppa_settings', array() );
+$export_team    = WPPA_Teams::create( 'Студия «Вектор»', 61 );
+
+// Чистим папку от прошлых прогонов.
+foreach ( (array) glob( $export_dir . '/*' ) as $export_stale ) {
+	if ( is_file( $export_stale ) ) {
+		@unlink( $export_stale );
+	}
+}
+
+@mkdir( $export_dir, 0777, true );
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $export_dir, 'user' => '', 'pass' => '' ) ) ) );
+
+WPPA_Teams::add_member( $export_team, 62 );
+WPPA_Teams::make_mentor( $export_team, 62 );
+WPPA_Teams::set_curator( 63, true );
+
+$export_checks['команда создана']   = $export_team && ! is_wp_error( $export_team );
+$export_checks['выгрузка включена'] = true === WPPA_Team_Files_Export::enabled();
+$export_checks['папка: имя команды'] = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: служебные символы'] = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), '/' );
+$export_checks['папка: путь на диске']     = '' !== WPPA_Team_Files_Export::local_dir( $export_team );
+
+// Файл наставника уходит в папку команды.
+$export_file = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'протокол.pdf', str_repeat( 'e', 80 ) ), 'протокол.pdf', 62 );
+
+$export_checks['наставник прикрепил']   = is_array( $export_file ) && ! empty( $export_file['key'] );
+$export_checks['выгрузка прошла']       = ! empty( $export_file['export']['ok'] );
+$export_checks['файл в папке команды']  = is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/протокол.pdf' );
+$export_checks['папка создана']         = is_dir( WPPA_Team_Files_Export::local_dir( $export_team ) );
+$export_checks['содержимое совпадает']  = str_repeat( 'e', 80 ) === file_get_contents( WPPA_Team_Files_Export::local_dir( $export_team ) . '/протокол.pdf' );
+$export_checks['запись в мете']         = isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
+
+// Файл куратора не выгружается.
+$export_curator = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'письмо.pdf', 'данные' ), 'письмо.pdf', 63 );
+
+$export_checks['куратор не выгружается'] = is_array( $export_curator ) && empty( $export_curator['export']['ok'] );
+$export_checks['файла куратора нет в папке'] = ! is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/письмо.pdf' );
+
+// Одноимённый файл не перезаписывается.
+$export_second = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'протокол-2.pdf', str_repeat( 'f', 40 ) ), 'протокол.pdf', 62 );
+$export_checks['одноимённый не перезаписал'] = ! empty( $export_second['export']['ok'] ) && is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/протокол.pdf' );
+$export_checks['второй файл под своим именем'] = is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . ( WPPA_Team_Files_Export::record( $export_team )[ $export_second['key'] ] ) );
+
+// Удаление файла убирает копию.
+$export_copy = WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ];
+
+WPPA_Curator_Files::remove( $export_team, $export_file['key'], 63 );
+
+$export_checks['копия удалена']       = ! is_file( $export_copy );
+$export_checks['мета обновилась']     = ! isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
+
+// Роспуск команды убирает папку.
+WPPA_Teams::dissolve( $export_team );
+
+$export_checks['после роспуска папки нет'] = ! is_dir( $export_dir . '/' . WPPA_Team_Files_Export::folder_name( $export_team ) );
+
+// Без настроенного пути выгрузки нет, но загрузка работает.
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
+
+$export_off_team = WPPA_Teams::create( 'Команда без папки', 64 );
+WPPA_Teams::add_member( $export_off_team, 65 );
+WPPA_Teams::make_mentor( $export_off_team, 65 );
+
+$export_off = WPPA_Curator_Files::store( $export_off_team, wppa_test_file( 'файл.pdf', 'данные' ), 'файл.pdf', 65 );
+
+$export_checks['без пути выгрузка выключена'] = false === WPPA_Team_Files_Export::enabled();
+$export_checks['файл всё равно прикреплён']   = is_array( $export_off ) && empty( $export_off['export']['ok'] );
+
+WPPA_Teams::dissolve( $export_off_team );
+
+// SMB-режим: путь собирается с папкой команды.
+$export_smb = WPPA_SMB::write( 'протокол.pdf', 'данные', array( 'path' => '\\\\fileserver\\exchange\\reports', 'user' => 'u', 'pass' => 'p' ), 'Студия (12)' );
+$export_checks['smb: папка команды в пути'] = is_array( $export_smb ) && false !== strpos( (string) $export_smb['file'], 'reports\Студия (12)\протокол.pdf' );
+
+update_option( 'wppa_settings', $export_backup );
+
+// Итоговая уборка тестовой папки.
+foreach ( (array) glob( $export_dir . '/*' ) as $export_stale ) {
+	if ( is_file( $export_stale ) ) {
+		@unlink( $export_stale );
+	} elseif ( is_dir( $export_stale ) ) {
+		foreach ( (array) glob( $export_stale . '/*' ) as $export_inner ) {
+			@unlink( $export_inner );
+		}
+
+		@rmdir( $export_stale );
+	}
+}
+
+foreach ( $export_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team files export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 // Роспуск команды удаляет файлы.
 $file_path = WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['file'];

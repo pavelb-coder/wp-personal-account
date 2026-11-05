@@ -229,6 +229,10 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 					?>
 				</p>
 
+				<?php if ( 'mentor' === $wppa_direction && WPPA_Team_Files_Export::enabled() ) : ?>
+					<p class="wppa-hint"><?php esc_html_e( 'Файл сразу скопируется в сетевую папку команды — наставнику не нужно ничего выгружать вручную.', 'wp-personal-account' ); ?></p>
+				<?php endif; ?>
+
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Прикрепить', 'wp-personal-account' ); ?></button>
 			</form>
 		<?php endif; ?>

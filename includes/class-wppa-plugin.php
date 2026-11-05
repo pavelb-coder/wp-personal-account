@@ -68,6 +68,7 @@ class WPPA_Plugin {
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
 		WPPA_Curator_Files::init();
+		WPPA_Team_Files_Export::init();
 		WPPA_Builder::init();
 		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
 		WPPA_Blocks::init();

@@ -2722,7 +2722,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 13:56.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 14:03.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -2818,6 +2818,20 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<input type="password" class="regular-text" id="wppa-smb-pass" name="wppa_settings[smb][pass]" value="demo-pass" autocomplete="new-password" />
 							<p class="description">
 								Чтобы не держать пароль в базе, задайте в wp-config.php: <code>define( 'WPPA_SMB_PASSWORD', 'пароль' );</code> — значение из константы важнее сохранённого.							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Файлы наставников</th>
+						<td>
+							<p class="description">
+								Файлы, которые наставники прикрепляют к командам, автоматически копируются в эту папку — каждый в свою подпапку по названию команды и её номеру. Файлы куратора не выгружаются; прикреплённые в кабинете файлы остаются на месте, папка — это копия.							</p>
+							<p class="description">
+								Например: <code>\\fileserver\exchange\reports\wppa/Студия «Вектор» (12)</code>							</p>
+							<p>
+								<span class="wppa-badge wppa-badge--ok">
+									Выгрузка включена								</span>
+								<span class="description">Включается автоматически, как только задан путь. Отключить можно фильтром wppa_team_files_export.</span>
+							</p>
 						</td>
 					</tr>
 					<tr>
@@ -3011,10 +3025,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 05.11.2026 21:51 (Раз в день).							</p>
+									Следующая выгрузка: 05.11.2026 21:58 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 13:56				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 14:03				</p>
 			
 			<div class="wppa-admin__actions">
 				<form method="post" action="https://example.com/wp-admin/admin-post.php">
@@ -3044,7 +3058,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>05.11.2026 13:51</td>
+								<td>05.11.2026 13:58</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3053,7 +3067,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 13:51</td>
+								<td>05.11.2026 13:58</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3062,7 +3076,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 13:51</td>
+								<td>05.11.2026 13:58</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

@@ -31,6 +31,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
@@ -427,6 +428,24 @@ $GLOBALS['wppa_test']['smb_commands'] = array();
 $cli_write = WPPA_SMB::write( 'accounts.csv', "id;email\n1;a@b.c\n", $cli_config );
 $smb_checks['smbclient: файл записан']    = $cli_write['ok'] && false !== strpos( $cli_write['file'], '\\\\fileserver\\exchange\\reports\\accounts.csv' );
 $smb_checks['smbclient: в команде put']   = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'put ' );
+
+// Подпапка команды: файл наставника пишется в папку команды, папка создаётся при необходимости.
+$GLOBALS['wppa_test']['smb_commands'] = array();
+$cli_team_write = WPPA_SMB::write( 'протокол.pdf', 'данные', $cli_config, 'Студия (12)' );
+
+$smb_checks['smbclient: папка команды в пути'] = $cli_team_write['ok'] && false !== strpos( (string) $cli_team_write['file'], 'reports\\Студия (12)\\протокол.pdf' );
+$smb_checks['smbclient: mkdir подпапки команды'] = false !== strpos( implode( "\n", $GLOBALS['wppa_test']['smb_commands'] ), 'Студия (12)' );
+
+$smb_checks['папка команды: имя без служебных символов'] = false === strpos( WPPA_Team_Files_Export::folder_name( 12 ), '/' );
+$smb_settings_backup = get_option( 'wppa_settings', array() );
+
+update_option( 'wppa_settings', array_merge( (array) $smb_settings_backup, array( 'smb' => $cli_config ) ) );
+$smb_checks['выгрузка: включается по пути'] = true === WPPA_Team_Files_Export::enabled();
+
+update_option( 'wppa_settings', array_merge( (array) $smb_settings_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
+$smb_checks['выгрузка: без пути выключена'] = false === WPPA_Team_Files_Export::enabled();
+
+update_option( 'wppa_settings', $smb_settings_backup );
 
 // Без логина и пароля — анонимный доступ -N.
 add_filter( 'wppa_smb_runner', function ( $result, $command ) {

@@ -407,10 +407,22 @@ class WPPA_Curator_Files {
 
 		update_post_meta( $team_id, self::META, $files );
 
+		// Файл наставника сразу уходит в сетевую папку команды.
+		$export = array(
+			'ok'      => false,
+			'message' => '',
+			'file'    => '',
+		);
+
+		if ( 'mentor' === $from && class_exists( 'WPPA_Team_Files_Export' ) ) {
+			$export = WPPA_Team_Files_Export::export( $team_id, self::dir()['dir'] . '/' . $file, $name, $key );
+		}
+
 		return array(
-			'ok'   => true,
-			'key'  => $key,
-			'name' => $name,
+			'ok'     => true,
+			'key'    => $key,
+			'name'   => $name,
+			'export' => $export,
 		);
 	}
 
@@ -476,8 +488,15 @@ class WPPA_Curator_Files {
 			@unlink( $path );
 		}
 
+		$was_mentor = 'mentor' === $files[ $key ]['from'];
+
 		unset( $files[ $key ] );
 		update_post_meta( $team_id, self::META, $files );
+
+		// Копия в сетевой папке больше не нужна.
+		if ( $was_mentor && class_exists( 'WPPA_Team_Files_Export' ) ) {
+			WPPA_Team_Files_Export::remove( $team_id, $key );
+		}
 
 		return true;
 	}
@@ -501,6 +520,10 @@ class WPPA_Curator_Files {
 		}
 
 		delete_post_meta( (int) $team_id, self::META );
+
+		if ( class_exists( 'WPPA_Team_Files_Export' ) ) {
+			WPPA_Team_Files_Export::clear( (int) $team_id );
+		}
 	}
 
 	/**
@@ -555,6 +578,11 @@ class WPPA_Curator_Files {
 
 		if ( is_wp_error( $result ) ) {
 			WPPA_Notices::redirect( self::notice_code( $result->get_error_code() ), $back );
+		}
+
+		// Файл прикреплён, но в сетевую папку не попал — скажем об этом отдельно.
+		if ( ! empty( $result['export'] ) && empty( $result['export']['ok'] ) ) {
+			WPPA_Notices::redirect( 'file_export_failed', $back );
 		}
 
 		WPPA_Notices::redirect( 'file_added', $back );

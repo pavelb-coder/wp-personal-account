@@ -1024,6 +1024,29 @@ class WPPA_Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><?php esc_html_e( 'Файлы наставников', 'wp-personal-account' ); ?></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'Файлы, которые наставники прикрепляют к командам, автоматически копируются в эту папку — каждый в свою подпапку по названию команды и её номеру. Файлы куратора не выгружаются; прикреплённые в кабинете файлы остаются на месте, папка — это копия.', 'wp-personal-account' ); ?>
+							</p>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: пример пути */
+									esc_html__( 'Например: %s', 'wp-personal-account' ),
+									'<code>' . esc_html( rtrim( (string) $wppa_smb['path'], '/\\' ) . DIRECTORY_SEPARATOR . 'Студия «Вектор» (12)' ) . '</code>'
+								);
+								?>
+							</p>
+							<p>
+								<span class="wppa-badge <?php echo WPPA_Team_Files_Export::enabled() ? 'wppa-badge--ok' : 'wppa-badge--warn'; ?>">
+									<?php echo WPPA_Team_Files_Export::enabled() ? esc_html__( 'Выгрузка включена', 'wp-personal-account' ) : esc_html__( 'Выгрузка выключена', 'wp-personal-account' ); ?>
+								</span>
+								<span class="description"><?php esc_html_e( 'Включается автоматически, как только задан путь. Отключить можно фильтром wppa_team_files_export.', 'wp-personal-account' ); ?></span>
+							</p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><?php esc_html_e( 'Проверка', 'wp-personal-account' ); ?></th>
 						<td>
 							<?php

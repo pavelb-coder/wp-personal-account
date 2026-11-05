@@ -683,9 +683,10 @@ class WPPA_SMB {
 	 * @param array  $config   Настройки.
 	 * @return array ok, message, file, bytes.
 	 */
-	public static function write( $name, $contents, $config = array() ) {
+	public static function write( $name, $contents, $config = array(), $subdir = '' ) {
 		$config = $config ? $config : self::config();
 		$remote = '';
+		$subdir = trim( str_replace( array( '\\', '..' ), array( '/', '' ), (string) $subdir ), '/' );
 
 		if ( ! self::is_configured( $config ) ) {
 			return array(
@@ -698,14 +699,23 @@ class WPPA_SMB {
 
 		$parsed = 'smb' === self::detect_type( $config ) ? self::parse_path( self::path_of( $config ) ) : null;
 
+		// Подпапка команды добавляется к подпапке из настроек.
+		$sub_all = '';
+
 		if ( $parsed ) {
-			$remote = $parsed['unc'] . ( '' !== $parsed['subdir'] ? '\\' : '' ) . $name;
+			// $parsed['unc'] уже содержит подпапку из настроек — добавляем только папку команды.
+			$sub_all = trim( $parsed['subdir'] . ( '' !== $subdir ? '/' . $subdir : '' ), '/' );
+			$remote  = $parsed['unc'] . ( '' !== $subdir ? '\\' . $subdir : '' ) . '\\' . $name;
 		}
 
 		// 1. Обычная или смонтированная папка (в том числе UNC на Windows).
 		$local_dir = $config['path'];
 
 		if ( ! $parsed || is_dir( $local_dir ) ) {
+			if ( '' !== $subdir ) {
+				$local_dir = rtrim( $local_dir, '/\\' ) . DIRECTORY_SEPARATOR . $subdir;
+			}
+
 			if ( ! is_dir( $local_dir ) && ! wp_mkdir_p( $local_dir ) ) {
 				return array(
 					'ok'      => false,
@@ -746,7 +756,14 @@ class WPPA_SMB {
 				);
 			}
 
-			$target = 'smb://' . $parsed['host'] . '/' . $parsed['share'] . ( '' !== $parsed['subdir'] ? '/' . $parsed['subdir'] : '' ) . '/' . $name;
+			$dir_target = 'smb://' . $parsed['host'] . '/' . $parsed['share'] . ( '' !== $sub_all ? '/' . $sub_all : '' );
+			$target     = $dir_target . '/' . $name;
+
+			// Папки команды может не быть — создаём, ошибку игнорируем и пробуем писать.
+			if ( '' !== $sub_all && function_exists( 'smbclient_mkdir' ) ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@smbclient_mkdir( $state, $dir_target );
+			}
 
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			$handle = @smbclient_open( $state, $target, 'w' );
@@ -791,7 +808,7 @@ class WPPA_SMB {
 
 			$auth = self::auth_args( $config, $parsed );
 			$put  = sprintf( 'put %s %s', self::quote_arg( $temp ), self::quote_arg( $name ) );
-			$sub  = (string) $parsed['subdir'];
+			$sub  = $sub_all;
 
 			$cd      = '' !== $sub ? 'cd ' . self::quote_arg( $sub ) . '; ' : '';
 			$prepare = '' !== $sub ? 'mkdir ' . self::quote_arg( $sub ) . '; cd ' . self::quote_arg( $sub ) . '; ' : '';
@@ -865,6 +882,105 @@ class WPPA_SMB {
 			'file'    => $remote,
 			'bytes'   => 0,
 		);
+	}
+
+	/**
+	 * Удалить файл из сетевой папки.
+	 *
+	 * Нужно, чтобы копия прикреплённого файла не оставалась в папке после его
+	 * удаления в кабинете. Ошибки не считаем критичными: файл мог быть убран
+	 * вручную или папка недоступна.
+	 *
+	 * @param string $name   Имя файла.
+	 * @param array  $config Настройки.
+	 * @param string $subdir Подпапка команды.
+	 * @return bool
+	 */
+	public static function delete( $name, $config = array(), $subdir = '' ) {
+		$config = $config ? $config : self::config();
+		$subdir = trim( str_replace( array( '\\', '..' ), array( '/', '' ), (string) $subdir ), '/' );
+
+		if ( ! self::is_configured( $config ) || '' === (string) $name ) {
+			return false;
+		}
+
+		$parsed  = 'smb' === self::detect_type( $config ) ? self::parse_path( self::path_of( $config ) ) : null;
+		$sub_all = $parsed ? trim( $parsed['subdir'] . ( '' !== $subdir ? '/' . $subdir : '' ), '/' ) : $subdir;
+
+		// 1. Обычная или смонтированная папка.
+		if ( ! $parsed || is_dir( $config['path'] ) ) {
+			$full = rtrim( $config['path'], '/\\' ) . ( '' !== $sub_all ? DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, $sub_all ) : '' ) . DIRECTORY_SEPARATOR . $name;
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			return is_file( $full ) ? @unlink( $full ) : false;
+		}
+
+		// 2. php-smbclient.
+		if ( self::has_extension() ) {
+			$login = self::split_user( $config['user'], $parsed['user'] );
+			$pass  = '' !== $config['pass'] ? $config['pass'] : $parsed['password'];
+			$state = smbclient_state_new();
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			if ( ! @smbclient_state_init( $state, $login['domain'], $login['user'], $pass ) ) {
+				return false;
+			}
+
+			$target = 'smb://' . $parsed['host'] . '/' . $parsed['share'] . ( '' !== $sub_all ? '/' . $sub_all : '' ) . '/' . $name;
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$ok = @smbclient_unlink( $state, $target );
+
+			return (bool) $ok;
+		}
+
+		// 3. Через утилиту smbclient.
+		$binary = self::smbclient_binary();
+
+		if ( '' === $binary ) {
+			return false;
+		}
+
+		$auth = self::auth_args( $config, $parsed );
+		$path = ( '' !== $sub_all ? $sub_all . '/' : '' ) . $name;
+		$run  = WPPA_SMB::run(
+			sprintf(
+				'%s %s %s -c %s -t 20 2>&1',
+				escapeshellcmd( $binary ),
+				escapeshellarg( $parsed['service'] ),
+				$auth['args'],
+				escapeshellarg( 'del ' . self::quote_arg( $path ) )
+			)
+		);
+
+		if ( '' !== $auth['credentials'] ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+			@unlink( $auth['credentials'] );
+		}
+
+		return 0 === $run['code'] && ! preg_match( '/NT_STATUS_[A-Z_]+/', trim( (string) $run['output'] ) );
+	}
+
+	/**
+	 * Удалить пустую папку на диске (сетевые папки не трогаем).
+	 *
+	 * @param string $path Путь.
+	 * @return bool
+	 */
+	public static function remove_dir( $path ) {
+		if ( ! is_dir( $path ) || ! is_writable( $path ) ) {
+			return false;
+		}
+
+		$items = @scandir( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( ! is_array( $items ) ) {
+			return false;
+		}
+
+		$items = array_diff( $items, array( '.', '..' ) );
+
+		return empty( $items ) ? @rmdir( $path ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	}
 
 	/**
