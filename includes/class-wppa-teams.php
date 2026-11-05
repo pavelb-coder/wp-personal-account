@@ -526,10 +526,6 @@ class WPPA_Teams {
 			return false;
 		}
 
-		if ( self::is_curator( $user_id ) ) {
-			return true;
-		}
-
 		return (int) self::team_id( $user_id ) === $team_id && self::is_manager( $user_id );
 	}
 
@@ -1129,11 +1125,15 @@ class WPPA_Teams {
 				WPPA_Notices::redirect( $sent ? 'team_invite_sent' : 'save_failed', $back );
 
 			case 'remove_member':
-				$team_id    = self::request_team_id( $user_id );
-				$as_curator = self::is_curator( $user_id );
-				$member_id  = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+				$team_id   = self::request_team_id( $user_id );
+				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				if ( ! $team_id || ( ! $as_curator && ! self::is_manager( $user_id ) ) ) {
+				// Состав ведут капитан и наставник этой команды. Куратор состав не меняет.
+				if ( $team_id && self::is_curator( $user_id ) && ! self::is_manager_of( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_curator_denied', self::context_url( $team_id, $user_id ) );
+				}
+
+				if ( ! $team_id || ! self::is_manager_of( $team_id, $user_id ) ) {
 					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
 				}
 
@@ -1143,7 +1143,7 @@ class WPPA_Teams {
 				}
 
 				// Наставник не может исключать других наставников.
-				if ( ! $as_curator && ! self::is_owner( $user_id ) && 'mentor' === self::role( $member_id ) ) {
+				if ( ! self::is_captain_of( $team_id, $user_id ) && 'mentor' === self::role( $member_id ) ) {
 					WPPA_Notices::redirect( 'team_mentor_denied', $tab_url );
 				}
 
@@ -1155,12 +1155,15 @@ class WPPA_Teams {
 
 			case 'make_mentor':
 			case 'dismiss_mentor':
-				$team_id    = self::request_team_id( $user_id );
-				$as_curator = self::is_curator( $user_id );
-				$member_id  = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
+				$team_id   = self::request_team_id( $user_id );
+				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				// Наставников назначает капитан команды или куратор.
-				if ( ! $team_id || ( ! $as_curator && ! self::is_owner( $user_id ) ) ) {
+				// Наставников назначает капитан этой команды. Куратор состав не меняет.
+				if ( $team_id && self::is_curator( $user_id ) && ! self::is_captain_of( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_curator_denied', self::context_url( $team_id, $user_id ) );
+				}
+
+				if ( ! $team_id || ! self::is_captain_of( $team_id, $user_id ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
 				}
 

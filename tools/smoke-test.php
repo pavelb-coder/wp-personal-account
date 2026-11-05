@@ -1396,7 +1396,7 @@ if ( is_wp_error( $curator_team_id ) ) {
 	$curator_checks['команда создана'] = false;
 } else {
 	$curator_checks['команда создана']                   = true;
-	$curator_checks['куратор управляет чужой командой']  = true === WPPA_Teams::can_manage_team( $curator_team_id, $curator_user );
+	$curator_checks['куратор состав не ведёт']           = false === WPPA_Teams::can_manage_team( $curator_team_id, $curator_user );
 	$curator_checks['капитан управляет своей']           = true === WPPA_Teams::can_manage_team( $curator_team_id, $curator_other );
 	$curator_checks['посторонний не управляет']          = false === WPPA_Teams::can_manage_team( $curator_team_id, 555 );
 	$curator_checks['не команда — нельзя']               = false === WPPA_Teams::can_manage_team( 0, $curator_user );
@@ -1444,7 +1444,6 @@ if ( is_wp_error( $curator_team_id ) ) {
 
 	$view_html = WPPA_Builder::render_block( $team_block, array() );
 
-	$curator_checks['просмотр: состав команды']       = false !== strpos( $view_html, 'Состав команды' );
 	$curator_checks['просмотр: скрытое team_id']       = false !== strpos( $view_html, 'name="team_id" value="' . (int) $curator_team_id . '"' );
 	$curator_checks['просмотр: нет переименования']    = false === strpos( $view_html, 'wppa_team_action" value="rename"' );
 	$curator_checks['просмотр: нет карточки названия'] = false === strpos( $view_html, 'Название команды' );
@@ -1453,8 +1452,10 @@ if ( is_wp_error( $curator_team_id ) ) {
 	$curator_checks['просмотр: нет приглашения']        = false === strpos( $view_html, 'Пригласить участников' );
 	$curator_checks['просмотр: нет поля email']         = false === strpos( $view_html, 'name="invite_email"' );
 	$curator_checks['просмотр: нет ссылки-приглашения'] = false === strpos( $view_html, 'Ссылка-приглашение' );
-	$curator_checks['просмотр: состав с действиями']    = false !== strpos( $view_html, 'Исключить' );
-	$curator_checks['просмотр: назначение наставника']  = false !== strpos( $view_html, 'Сделать наставником' );
+	$curator_checks['просмотр: состава нет']            = false === strpos( $view_html, 'class="wppa-subtitle">Состав команды' );
+	$curator_checks['просмотр: нет исключения']         = false === strpos( $view_html, 'Исключить' );
+	$curator_checks['просмотр: нет наставника из состава'] = false === strpos( $view_html, 'Сделать наставником' );
+	$curator_checks['просмотр: пояснение про состав']   = false !== strpos( $view_html, 'Список участников ведут капитан и наставник' );
 
 	unset( $_GET['wppa_team'] );
 
@@ -1573,7 +1574,7 @@ if ( is_wp_error( $action_team ) ) {
 			'member_id'        => 54,
 		)
 	);
-	$action_checks['куратор назначает наставника'] = 'team_mentor_added' === $curator_mentor['code'];
+	$action_checks['куратор не назначает наставника'] = 'team_curator_denied' === $curator_mentor['code'];
 
 	$curator_remove = $wppa_run_action(
 		52,
@@ -1584,7 +1585,8 @@ if ( is_wp_error( $action_team ) ) {
 			'member_id'        => 54,
 		)
 	);
-	$action_checks['куратор исключает участника']  = 'team_member_removed' === $curator_remove['code'];
+	$action_checks['куратор не исключает участника']  = 'team_curator_denied' === $curator_remove['code'];
+	$action_checks['участник остался в команде']       = (int) WPPA_Teams::team_id( 54 ) === (int) $action_team;
 
 	// Капитан и наставник приглашают и работают со ссылкой.
 	$captain_rename = $wppa_run_action(

@@ -66,7 +66,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<section class="wppa-card wppa-curator">
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Куратор: все команды', 'wp-personal-account' ); ?></h3>
 		<p class="wppa-hint">
-			<?php esc_html_e( 'Вы видите все команды сайта и можете менять их состав: исключать участников и назначать наставников. Приглашать участников, переименовать или распустить команду может только капитан; лимит и минимум на вас не считаются.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Вы видите все команды сайта и состояние каждой. Состав ведут капитан и наставник: приглашают участников, исключают их, назначают наставников и переименовывают команду. Ваша задача — прикреплять для наставников документы.', 'wp-personal-account' ); ?>
 		</p>
 
 		<?php if ( empty( $wppa_all_teams ) ) : ?>
@@ -208,6 +208,12 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		</div>
 	<?php endif; ?>
 
+	<?php if ( $wppa_curator_view ) : ?>
+		<div class="wppa-notice wppa-notice--info">
+			<?php esc_html_e( 'Список участников ведут капитан и наставник — куратор в состав не вмешивается. Ниже можно прикрепить документы для наставника.', 'wp-personal-account' ); ?>
+		</div>
+	<?php endif; ?>
+
 	<div class="wppa-card wppa-team-head">
 		<div>
 			<h3 class="wppa-team-name"><?php echo esc_html( $wppa_team_name ); ?></h3>
@@ -243,6 +249,8 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			<?php echo esc_html( WPPA_Teams::role_label( $wppa_my_role ) ); ?>
 		</span>
 	</div>
+
+	<?php if ( ! $wppa_curator_view ) : ?>
 
 	<?php if ( $wppa_missing > 0 ) : ?>
 		<div class="wppa-notice wppa-notice--info">
@@ -353,6 +361,8 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			</tbody>
 		</table>
 	</div>
+
+	<?php endif; ?>
 
 	<?php
 	// Файлы куратора: куратор прикрепляет, наставник команды скачивает.
