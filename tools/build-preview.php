@@ -236,6 +236,29 @@ $sections .= demo_section(
 );
 
 WPPA_Mailing::cancel();
+
+// Снятие отметки: письма уходят только тем командам, у которых отметка осталась.
+$wppa_notice_registry = WPPA_Notices::registry();
+
+$sections .= demo_section(
+	'Снятие отметки второго этапа',
+	'Снятие отметки убирает письма команды из очереди рассылки. Если отметку сняли в течение минуты после установки, плагин считает нажатие случайным и отдельно сообщает, что письма не отправлялись',
+	WPPA_Template::get(
+		'notice',
+		array(
+			'type' => $wppa_notice_registry['stage2_removed_grace'][0],
+			'text' => $wppa_notice_registry['stage2_removed_grace'][1],
+		)
+	)
+	. WPPA_Template::get(
+		'notice',
+		array(
+			'type' => $wppa_notice_registry['stage2_removed_mail'][0],
+			'text' => $wppa_notice_registry['stage2_removed_mail'][1],
+		)
+	)
+);
+
 WPPA_Teams::set_curator( 12, false );
 
 

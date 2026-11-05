@@ -62,6 +62,17 @@ class WPPA_Mailing {
 	const MINUTE = 60;
 
 	/**
+	 * Итог последнего снятия отметки: array( 'count' => int, 'grace' => bool, 'team' => string ).
+	 *
+	 * @var array
+	 */
+	private static $last_drop = array(
+		'count' => 0,
+		'grace' => false,
+		'team'  => '',
+	);
+
+	/**
 	 * Хуки.
 	 *
 	 * @return void
@@ -289,6 +300,7 @@ class WPPA_Mailing {
 			'sent'    => 0,
 			'failed'  => 0,
 			'pending' => 0,
+			'skipped' => 0,
 			'next'    => 0,
 			'paused'  => '',
 			'done'    => 0,
@@ -312,6 +324,8 @@ class WPPA_Mailing {
 				$out['sent']++;
 			} elseif ( 'failed' === $status ) {
 				$out['failed']++;
+			} elseif ( 'skipped' === $status ) {
+				$out['skipped']++;
 			} else {
 				$out['pending']++;
 
@@ -523,6 +537,88 @@ class WPPA_Mailing {
 		return true;
 	}
 
+	/**
+	 * Итог последнего снятия отметки «второй этап».
+	 *
+	 * @return array
+	 */
+	public static function last_drop() {
+		return self::$last_drop;
+	}
+
+	/**
+	 * Убрать из очереди письма команды, у которой сняли отметку второго этапа.
+	 *
+	 * Письма этой команды уже не уйдут: они удаляются из очереди, а не помечаются
+	 * отправленными. Если отметку сняли в течение минуты после установки, это
+	 * считается случайным нажатием — в журнал пишется отдельная строка.
+	 *
+	 * @param int  $team_id ID команды.
+	 * @param bool $grace   Сняли сразу после установки (окно «случайного нажатия»).
+	 * @return int Сколько писем убрано.
+	 */
+	public static function drop_team( $team_id, $grace = false ) {
+		$team_id = (int) $team_id;
+		$team    = WPPA_Teams::get( $team_id );
+		$name    = $team ? (string) $team['name'] : sprintf( '#%d', $team_id );
+		$run     = self::run_state();
+		$dropped = 0;
+		$items   = array();
+
+		self::$last_drop = array(
+			'count' => 0,
+			'grace' => (bool) $grace,
+			'team'  => $name,
+		);
+
+		if ( empty( $run ) ) {
+			return 0;
+		}
+
+		foreach ( $run['items'] as $item ) {
+			$status = isset( $item['status'] ) ? (string) $item['status'] : 'pending';
+
+			if ( 'pending' === $status && (int) $item['team_id'] === $team_id ) {
+				$dropped++;
+				continue;
+			}
+
+			$items[] = $item;
+		}
+
+		if ( 0 === $dropped ) {
+			return 0;
+		}
+
+		$run['items']     = $items;
+		self::$last_drop['count'] = $dropped;
+
+		if ( 0 === self::next_due( $run ) ) {
+			$run['done'] = time();
+		}
+
+		update_option( self::QUEUE, $run, false );
+
+		if ( ! empty( $run['done'] ) ) {
+			self::unschedule();
+		}
+
+		self::log(
+			sprintf(
+				/* translators: 1: название команды, 2: число писем */
+				__( 'Команда «%1$s»: отметка второго этапа снята, из очереди убрано писем — %2$d.', 'wp-personal-account' ),
+				$name,
+				$dropped
+			)
+		);
+
+		if ( $grace ) {
+			self::log( __( 'Отметку сняли в течение минуты после установки — защита от случайного нажатия: письма этой команде не отправлялись.', 'wp-personal-account' ) );
+		}
+
+		return $dropped;
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Отправка
 	 * ------------------------------------------------------------------ */
@@ -544,9 +640,10 @@ class WPPA_Mailing {
 			return 0;
 		}
 
-		$now   = time();
-		$batch = max( 1, (int) $run['batch'] );
-		$sent  = 0;
+		$now     = time();
+		$batch   = max( 1, (int) $run['batch'] );
+		$sent    = 0;
+		$skipped = 0;
 		$fails = isset( $run['fails'] ) ? (int) $run['fails'] : 0;
 
 		foreach ( $run['items'] as $index => $item ) {
@@ -559,6 +656,15 @@ class WPPA_Mailing {
 			}
 
 			if ( ! $force && (int) $item['due'] > $now ) {
+				continue;
+			}
+
+			// Отметку могли снять, пока письмо ждало своей очереди: тогда не отправляем.
+			if ( ! WPPA_Teams::is_stage2( (int) $item['team_id'] ) ) {
+				$run['items'][ $index ]['status'] = 'skipped';
+				$run['items'][ $index ]['error']  = __( 'отметка второго этапа снята', 'wp-personal-account' );
+				$skipped++;
+
 				continue;
 			}
 
@@ -602,6 +708,16 @@ class WPPA_Mailing {
 					/* translators: %d: число писем */
 					__( 'Отправлено писем: %d.', 'wp-personal-account' ),
 					(int) $sent
+				)
+			);
+		}
+
+		if ( $skipped > 0 ) {
+			self::log(
+				sprintf(
+					/* translators: %d: число писем */
+					__( 'Пропущено писем без отправки (отметка второго этапа снята): %d.', 'wp-personal-account' ),
+					(int) $skipped
 				)
 			);
 		}

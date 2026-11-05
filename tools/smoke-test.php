@@ -2725,6 +2725,162 @@ foreach ( $mail_checks as $check_name => $ok ) {
 	}
 }
 
+// Снятие отметки второго этапа: письма команде не отправляются, окно «случайного нажатия» — минута.
+$drop_checks   = array();
+$drop_snapshot = array(
+	'meta'   => isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array(),
+	'mail'   => isset( $GLOBALS['wppa_test']['mail'] ) ? $GLOBALS['wppa_test']['mail'] : array(),
+);
+
+$GLOBALS['wppa_test']['users'][81]['email'] = 'drop1@example.com';
+$GLOBALS['wppa_test']['users'][82]['email'] = 'drop2@example.com';
+
+delete_user_meta( 81, WPPA_Teams::META_TEAM );
+delete_user_meta( 82, WPPA_Teams::META_TEAM );
+delete_option( WPPA_Mailing::OPTION );
+delete_option( WPPA_Mailing::QUEUE );
+delete_option( WPPA_Mailing::LOG );
+delete_user_meta( 81, WPPA_Mailing::META_SENT );
+delete_user_meta( 82, WPPA_Mailing::META_SENT );
+
+$drop_team = WPPA_Teams::create( 'Команда отмены', 81 );
+
+if ( is_wp_error( $drop_team ) ) {
+	$drop_checks['команда создана'] = false;
+} else {
+	$drop_checks['команда создана'] = true;
+
+	WPPA_Teams::add_member( $drop_team, 82 );
+	WPPA_Teams::set_curator( 74, true );
+	WPPA_Mailing::save(
+		array(
+			'subject'   => 'Второй этап: {команда}',
+			'body'      => 'Привет, {имя}!',
+			'interval'  => 10,
+			'batch'     => 10,
+			'skip_sent' => 0,
+		)
+	);
+
+	// 1. Отметка стоит давно: снятие убирает письма из очереди.
+	WPPA_Teams::set_stage2( $drop_team, true, 74 );
+	update_post_meta( $drop_team, WPPA_Teams::META_STAGE2, array( 'time' => time() - 600, 'user' => 74 ) );
+
+	$drop_log_has = function ( $needle ) {
+		foreach ( WPPA_Mailing::logs() as $drop_log ) {
+			if ( false !== strpos( (string) $drop_log['text'], $needle ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	$drop_mail_before = count( (array) $GLOBALS['wppa_test']['mail'] );
+	$drop_checks['очередь: два письма'] = 2 === WPPA_Mailing::start();
+	$drop_checks['очередь: письма ждут'] = 2 === (int) WPPA_Mailing::stats()['pending'];
+
+	WPPA_Teams::set_stage2( $drop_team, false, 74 );
+
+	$drop_last = WPPA_Mailing::last_drop();
+	$drop_checks['снятие: письма убраны из очереди'] = 2 === (int) $drop_last['count'];
+	$drop_checks['снятие: очередь очищена']          = false === WPPA_Mailing::stats()['active'];
+	$drop_checks['снятие: это не случайное нажатие'] = false === $drop_last['grace'];
+	$drop_checks['снятие: письма не ушли']           = $drop_mail_before === count( (array) $GLOBALS['wppa_test']['mail'] );
+	$drop_checks['снятие: запись в журнале']         = $drop_log_has( 'убрано писем' );
+
+	// 2. Отметку сняли сразу после установки — окно «случайного нажатия».
+	WPPA_Teams::set_stage2( $drop_team, true, 74 );
+	$drop_checks['окно: очередь поставлена'] = 2 === WPPA_Mailing::start();
+	WPPA_Teams::set_stage2( $drop_team, false, 74 );
+
+	$drop_last = WPPA_Mailing::last_drop();
+	$drop_checks['окно: снятие в течение минуты']  = true === $drop_last['grace'];
+	$drop_checks['окно: письма убраны']            = 2 === (int) $drop_last['count'];
+	$drop_checks['окно: пометка в журнале']        = $drop_log_has( 'случайного нажатия' );
+	$drop_checks['окно: письма не ушли']           = $drop_mail_before === count( (array) $GLOBALS['wppa_test']['mail'] );
+
+	// 3. Отметку сняли в обход очереди — письма всё равно не отправляются.
+	WPPA_Teams::set_stage2( $drop_team, true, 74 );
+	WPPA_Mailing::start();
+	delete_post_meta( $drop_team, WPPA_Teams::META_STAGE2 );
+
+	$drop_checks['защита: ничего не отправлено'] = 0 === (int) WPPA_Mailing::process_due( true );
+	$drop_checks['защита: письма помечены пропущенными'] = 2 === (int) WPPA_Mailing::stats()['skipped'];
+	$drop_checks['защита: wp_mail не вызывался'] = $drop_mail_before === count( (array) $GLOBALS['wppa_test']['mail'] );
+	$drop_checks['защита: запись в журнале']     = $drop_log_has( 'Пропущено писем без отправки' );
+
+	WPPA_Mailing::cancel();
+
+	// 4. Уведомления обработчика: обычное снятие, снятие с очередью, случайное нажатие.
+	$drop_notice = function ( $mode ) use ( $drop_team ) {
+		if ( 'with_queue' === $mode ) {
+			WPPA_Teams::set_stage2( $drop_team, true, 74 );
+			update_post_meta( $drop_team, WPPA_Teams::META_STAGE2, array( 'time' => time() - 600, 'user' => 74 ) );
+			WPPA_Mailing::start();
+		} elseif ( 'grace' === $mode ) {
+			WPPA_Teams::set_stage2( $drop_team, true, 74 );
+			WPPA_Mailing::start();
+		} else {
+			WPPA_Teams::set_stage2( $drop_team, true, 74 );
+			update_post_meta( $drop_team, WPPA_Teams::META_STAGE2, array( 'time' => time() - 600, 'user' => 74 ) );
+			WPPA_Mailing::cancel();
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = true;
+		$GLOBALS['wppa_test']['current_user']   = 74;
+		$_POST                                  = array(
+			'wppa_action'      => 'team',
+			'wppa_team_action' => 'stage2_remove',
+			'team_id'          => $drop_team,
+		);
+		$_GET                                   = array();
+
+		try {
+			WPPA_Teams::handle_request();
+		} catch ( RuntimeException $e ) {
+			$GLOBALS['wppa_test']['catch_redirect'] = false;
+			$query = (string) parse_url( substr( $e->getMessage(), strlen( 'redirect:' ) ), PHP_URL_QUERY );
+			$args  = array();
+			parse_str( $query, $args );
+
+			return isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '';
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return '';
+	};
+
+	$drop_checks['уведомление: обычное снятие'] = 'stage2_removed' === $drop_notice( 'plain' );
+	$drop_checks['уведомление: письма убраны']  = 'stage2_removed_mail' === $drop_notice( 'with_queue' );
+	$drop_checks['уведомление: случайное нажатие'] = 'stage2_removed_grace' === $drop_notice( 'grace' );
+
+	$_POST = array();
+
+	WPPA_Mailing::cancel();
+	WPPA_Teams::set_stage2( $drop_team, false, 74 );
+	WPPA_Teams::dissolve( $drop_team );
+}
+
+WPPA_Teams::set_curator( 74, false );
+
+delete_option( WPPA_Mailing::OPTION );
+delete_option( WPPA_Mailing::QUEUE );
+delete_option( WPPA_Mailing::LOG );
+delete_user_meta( 81, WPPA_Mailing::META_SENT );
+delete_user_meta( 82, WPPA_Mailing::META_SENT );
+
+$GLOBALS['wppa_test']['meta'] = $drop_snapshot['meta'];
+$GLOBALS['wppa_test']['mail'] = $drop_snapshot['mail'];
+
+foreach ( $drop_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'stage2-undo: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

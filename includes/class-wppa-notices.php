@@ -94,6 +94,8 @@ class WPPA_Notices {
 			'stage2_added'          => array( 'success', __( 'Команда отмечена: прошла во второй этап.', 'wp-personal-account' ) ),
 			'stage2_removed'        => array( 'success', __( 'Отметка «прошла во второй этап» снята.', 'wp-personal-account' ) ),
 			'stage2_denied'         => array( 'error', __( 'Отмечать команды второго этапа может только куратор.', 'wp-personal-account' ) ),
+			'stage2_removed_mail'   => array( 'success', __( 'Отметка снята, письма этой команды убраны из очереди рассылки — они не отправятся.', 'wp-personal-account' ) ),
+			'stage2_removed_grace'  => array( 'info', __( 'Отметка снята в течение минуты — сработала защита от случайного нажатия: письма этой команде не отправлялись.', 'wp-personal-account' ) ),
 			'team_missing_team'     => array( 'error', __( 'Команда не найдена — откройте её из списка команд.', 'wp-personal-account' ) ),
 			'mailing_cancelled'     => array( 'success', __( 'Рассылка участникам второго этапа отменена, очередь очищена.', 'wp-personal-account' ) ),
 			'mailing_empty'         => array( 'info', __( 'Очередь рассылки и так пуста — отменять нечего.', 'wp-personal-account' ) ),

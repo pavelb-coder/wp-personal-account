@@ -73,6 +73,11 @@ class WPPA_Teams {
 	const META_STAGE2 = '_wppa_team_stage2';
 
 	/**
+	 * Окно «случайного нажатия»: снятие отметки раньше этого срока отменяет письма.
+	 */
+	const STAGE2_GRACE = 60;
+
+	/**
 	 * Срок жизни приглашения (7 дней).
 	 */
 	const TOKEN_TTL = 604800;
@@ -1047,7 +1052,15 @@ class WPPA_Teams {
 		}
 
 		if ( ! $on ) {
+			$previous = self::stage2( $team_id );
+			$grace    = ! empty( $previous['time'] ) && ( time() - (int) $previous['time'] ) < self::STAGE2_GRACE;
+
 			delete_post_meta( $team_id, self::META_STAGE2 );
+
+			// Снятие отметки отменяет ещё не отправленные письма этой команды.
+			if ( class_exists( 'WPPA_Mailing' ) ) {
+				WPPA_Mailing::drop_team( $team_id, $grace );
+			}
 
 			return true;
 		}
@@ -1271,7 +1284,19 @@ class WPPA_Teams {
 				$on = 'stage2_add' === $sub;
 
 				self::set_stage2( $team_id, $on, $user_id );
-				WPPA_Notices::redirect( $on ? 'stage2_added' : 'stage2_removed', $back );
+
+				if ( $on ) {
+					WPPA_Notices::redirect( 'stage2_added', $back );
+				}
+
+				// Защита от случайного нажатия: снятие в течение минуты отменяет рассылку команде.
+				$drop = class_exists( 'WPPA_Mailing' ) ? WPPA_Mailing::last_drop() : array();
+
+				if ( ! empty( $drop['count'] ) ) {
+					WPPA_Notices::redirect( ! empty( $drop['grace'] ) ? 'stage2_removed_grace' : 'stage2_removed_mail', $back );
+				}
+
+				WPPA_Notices::redirect( 'stage2_removed', $back );
 
 			case 'join_code':
 				$raw  = isset( $_POST['team_code'] ) ? sanitize_text_field( wp_unslash( $_POST['team_code'] ) ) : '';

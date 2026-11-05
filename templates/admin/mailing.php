@@ -138,6 +138,10 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 							<td><?php echo esc_html( (string) $stats['failed'] ); ?></td>
 						</tr>
 						<tr>
+							<td><?php esc_html_e( 'Пропущено (отметка снята)', 'wp-personal-account' ); ?></td>
+							<td><?php echo esc_html( (string) $stats['skipped'] ); ?></td>
+						</tr>
+						<tr>
 							<td><?php esc_html_e( 'Шаг', 'wp-personal-account' ); ?></td>
 							<td>
 								<?php
@@ -225,6 +229,9 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 													break;
 												case 'failed':
 													echo esc_html( 'ошибка' . ( ! empty( $wppa_item['error'] ) ? ': ' . $wppa_item['error'] : '' ) );
+													break;
+												case 'skipped':
+													esc_html_e( 'пропущено: отметка снята', 'wp-personal-account' );
 													break;
 												default:
 													esc_html_e( 'ждёт отправки', 'wp-personal-account' );

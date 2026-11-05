@@ -57,6 +57,9 @@ $wppa_mail_admin   = current_user_can( 'manage_options' );
 			<?php if ( $wppa_mail_stats['failed'] > 0 ) : ?>
 				<li><?php printf( esc_html__( 'Ошибок: %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['failed'] ) ); ?></li>
 			<?php endif; ?>
+			<?php if ( ! empty( $wppa_mail_stats['skipped'] ) ) : ?>
+				<li><?php printf( esc_html__( 'Пропущено (отметка снята): %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['skipped'] ) ); ?></li>
+			<?php endif; ?>
 			<li>
 				<?php
 				if ( ! empty( $wppa_mail_stats['done'] ) ) {
