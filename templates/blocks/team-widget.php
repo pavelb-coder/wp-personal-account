@@ -510,6 +510,43 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php endif; ?>
 
+	<?php
+	// Участникам команды: что прислал куратор. Видно всем участникам, без отметки второго этапа.
+	$wppa_team_curator_files = array();
+
+	// Наставнику полка не нужна: у него свой раздел «Файлы» с двумя полками.
+	if ( $wppa_team_id && ! $wppa_is_curator && ! $wppa_is_mentor ) {
+		foreach ( WPPA_Curator_Files::files( $wppa_team_id ) as $wppa_entry ) {
+			if ( 'mentor' !== $wppa_entry['from'] ) {
+				$wppa_team_curator_files[ $wppa_entry['key'] ] = $wppa_entry;
+			}
+		}
+	}
+	?>
+
+	<?php if ( $wppa_team_curator_files ) : ?>
+
+		<section class="wppa-card wppa-team-files">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от куратора', 'wp-personal-account' ); ?></h3>
+			<p class="wppa-hint"><?php esc_html_e( 'Документы, которые куратор прислал вашей команде. Их видят все участники команды, скачать может каждый.', 'wp-personal-account' ); ?></p>
+
+			<ul class="wppa-list wppa-team-files__list">
+				<?php foreach ( $wppa_team_curator_files as $wppa_file ) : ?>
+					<li>
+						<a class="wppa-link" href="<?php echo esc_url( WPPA_Curator_Files::download_url( $wppa_team_id, $wppa_file['key'] ) ); ?>"><?php echo esc_html( $wppa_file['name'] ); ?></a>
+						<span class="wppa-hint">
+							<?php echo esc_html( WPPA_Curator_Files::size_label( $wppa_file['size'] ) ); ?>
+							<?php if ( ! empty( $wppa_file['time'] ) ) : ?>
+								· <?php echo esc_html( date_i18n( get_option( 'date_format' ), (int) $wppa_file['time'] ) ); ?>
+							<?php endif; ?>
+						</span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</section>
+
+	<?php endif; ?>
+
 	<?php if ( $wppa_can_invite ) : ?>
 
 		<section class="wppa-card">

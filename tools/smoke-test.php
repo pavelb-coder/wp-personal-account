@@ -2152,6 +2152,23 @@ $mentor_team_html = WPPA_Builder::render_block(
 );
 $file_checks['команда: файлов больше нет'] = false === strpos( $mentor_team_html, 'action=wppa_curator_file' );
 $file_checks['команда: ссылка на раздел']  = false !== strpos( $mentor_team_html, 'wppa_tab=files' );
+
+// Участник и капитан видят файлы куратора прямо в карточке команды.
+$member_team_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 9 ) )
+);
+$owner_team_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 7 ) )
+);
+
+$file_checks['участник: полка куратора в команде']  = false !== strpos( $member_team_html, 'Файлы от куратора' );
+$file_checks['участник: файл куратора в команде']    = false !== strpos( $member_team_html, 'методичка.pdf' );
+$file_checks['участник: файла наставника нет']      = false === strpos( $member_team_html, 'ответ.pdf' );
+$file_checks['участник: без формы загрузки']        = false === strpos( $member_team_html, 'name="curator_file"' );
+$file_checks['капитан: файл куратора в команде']    = false !== strpos( $owner_team_html, 'методичка.pdf' );
+$file_checks['наставник: полки куратора в команде нет'] = false === strpos( $mentor_team_html, 'Файлы от куратора' );
 $GLOBALS['wppa_test']['current_user'] = 12;
 
 // Куратор: без выбранной команды — список команд, с выбранной — файлы и ссылка на управление.
