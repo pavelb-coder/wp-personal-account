@@ -84,8 +84,8 @@ class WPPA_Team_Files_Export {
 	 * @param int $team_id ID команды.
 	 * @return string Пустая строка, если папка сетевая.
 	 */
-	public static function local_dir( $team_id ) {
-		$config = WPPA_SMB::config();
+	public static function local_dir( $team_id, $config = array() ) {
+		$config = is_array( $config ) && $config ? $config : WPPA_SMB::config();
 
 		if ( ! WPPA_SMB::is_configured( $config ) || 'smb' === WPPA_SMB::detect_type( $config ) ) {
 			return '';
@@ -120,7 +120,7 @@ class WPPA_Team_Files_Export {
 	 * @param int    $team_id ID команды.
 	 * @return string
 	 */
-	public static function file_name( $name, $key, $team_id ) {
+	public static function file_name( $name, $key, $team_id, $config = array() ) {
 		$name = sanitize_file_name( (string) $name );
 		$name = trim( str_replace( array( '/', '\\' ), ' ', $name ) );
 
@@ -130,7 +130,7 @@ class WPPA_Team_Files_Export {
 
 		// В папке команды уже есть файл с таким именем — добавляем ключ,
 		// чтобы не перезаписать чужой документ.
-		$dir = self::local_dir( $team_id );
+		$dir = self::local_dir( $team_id, $config );
 
 		if ( '' !== $dir && file_exists( $dir . DIRECTORY_SEPARATOR . $name ) ) {
 			$info = pathinfo( $name );
@@ -151,8 +151,9 @@ class WPPA_Team_Files_Export {
 	 * @param string $key     Ключ файла.
 	 * @return array ok, message, file.
 	 */
-	public static function export( $team_id, $path, $name, $key ) {
+	public static function export( $team_id, $path, $name, $key, $config = array() ) {
 		$team_id = (int) $team_id;
+		$config  = is_array( $config ) && $config ? $config : WPPA_SMB::config();
 
 		$result = array(
 			'ok'      => false,
@@ -160,7 +161,7 @@ class WPPA_Team_Files_Export {
 			'file'    => '',
 		);
 
-		if ( ! self::enabled() || ! $team_id ) {
+		if ( ! WPPA_SMB::is_configured( $config ) || ! $team_id ) {
 			return $result;
 		}
 
@@ -171,12 +172,17 @@ class WPPA_Team_Files_Export {
 		}
 
 		$folder = self::folder_name( $team_id );
-		$target = self::file_name( $name, $key, $team_id );
+		$record = self::record( $team_id );
+
+		// Файл уже выгружали раньше — пишем под тем же именем, а не плодим копии.
+		$target = isset( $record[ (string) $key ] ) && '' !== (string) $record[ (string) $key ]
+			? (string) $record[ (string) $key ]
+			: self::file_name( $name, $key, $team_id, $config );
 
 		try {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			$contents = file_get_contents( $path );
-			$written  = WPPA_SMB::write( $target, (string) $contents, WPPA_SMB::config(), $folder );
+			$written  = WPPA_SMB::write( $target, (string) $contents, $config, $folder );
 		} catch ( \Throwable $e ) {
 			// Сбой сети не должен ломать загрузку файла в кабинет.
 			$written = array(
@@ -192,7 +198,6 @@ class WPPA_Team_Files_Export {
 			return $result;
 		}
 
-		$record                = self::record( $team_id );
 		$record[ (string) $key ] = $target;
 
 		update_post_meta( $team_id, self::META, $record );
@@ -265,6 +270,112 @@ class WPPA_Team_Files_Export {
 		}
 
 		delete_post_meta( $team_id, self::META );
+	}
+
+	/**
+	 * Настройки папки для массовой выгрузки.
+	 *
+	 * Основной источник — раздел «Сетевая папка». Если он пуст, берём путь из
+	 * «Экспорт в папку»: кнопка «Экспортировать» должна складывать CSV и файлы
+	 * команд в одно место.
+	 *
+	 * @return array
+	 */
+	public static function bulk_config() {
+		$config = WPPA_SMB::config();
+
+		if ( WPPA_SMB::is_configured( $config ) ) {
+			return $config;
+		}
+
+		$folder = WPPA_Export_Folder::config();
+		$path   = isset( $folder['path'] ) ? trim( (string) $folder['path'] ) : '';
+
+		if ( '' === $path ) {
+			return $config;
+		}
+
+		$config['path'] = $path;
+		$config['user'] = '';
+		$config['pass'] = '';
+
+		return $config;
+	}
+
+	/**
+	 * Выгрузить файлы наставников всех команд — по кнопке «Экспортировать».
+	 *
+	 * Кураторские файлы не выгружаются: в сетевую папку уходят только документы,
+	 * которые прислали наставники. Повторный запуск перезаписывает те же файлы
+	 * под теми же именами, дублей не появляется.
+	 *
+	 * @return array ok, files, teams, failed, message.
+	 */
+	public static function export_all() {
+		$result = array(
+			'ok'      => true,
+			'files'   => 0,
+			'teams'   => 0,
+			'failed'  => 0,
+			'message' => '',
+		);
+
+		$config = self::bulk_config();
+
+		if ( ! apply_filters( 'wppa_team_files_export', WPPA_SMB::is_configured( $config ) ) ) {
+			$result['ok']      = false;
+			$result['message'] = __( 'Сетевая папка не настроена — файлы наставников не выгружены.', 'wp-personal-account' );
+
+			return $result;
+		}
+
+		$uploads = WPPA_Curator_Files::dir();
+		$base    = is_array( $uploads ) && ! empty( $uploads['dir'] ) ? rtrim( (string) $uploads['dir'], '/\\' ) : '';
+
+		foreach ( WPPA_Teams::all_teams( 2000 ) as $team ) {
+			$team_id = (int) $team['id'];
+			$team_files = 0;
+
+			foreach ( WPPA_Curator_Files::files( $team_id ) as $file ) {
+				if ( 'mentor' !== $file['from'] ) {
+					continue;
+				}
+
+				$team_files++;
+				$result['files']++;
+
+				$exported = self::export( $team_id, $base . '/' . $file['file'], $file['name'], $file['key'], $config );
+
+				if ( empty( $exported['ok'] ) ) {
+					$result['failed']++;
+				}
+			}
+
+			if ( $team_files > 0 ) {
+				$result['teams']++;
+			}
+		}
+
+		if ( $result['failed'] > 0 ) {
+			$result['ok']      = false;
+			$result['message'] = sprintf(
+				/* translators: 1: выгружено файлов, 2: не удалось */
+				__( 'Файлы наставников: выгружено %1$d, не удалось %2$d.', 'wp-personal-account' ),
+				(int) ( $result['files'] - $result['failed'] ),
+				(int) $result['failed']
+			);
+		} elseif ( 0 === $result['files'] ) {
+			$result['message'] = __( 'Файлов наставников для выгрузки нет.', 'wp-personal-account' );
+		} else {
+			$result['message'] = sprintf(
+				/* translators: 1: файлов, 2: команд */
+				__( 'Файлы наставников выгружены: %1$d в %2$d командах.', 'wp-personal-account' ),
+				(int) $result['files'],
+				(int) $result['teams']
+			);
+		}
+
+		return $result;
 	}
 
 	/**

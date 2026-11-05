@@ -1742,6 +1742,97 @@ foreach ( $mail_admin_checks as $check_name => $ok ) {
 	}
 }
 
+// ---------- Кнопка «Экспортировать» выгружает и файлы наставников ----------
+$bulk_admin_checks = array();
+$bulk_admin_dir    = sys_get_temp_dir() . '/wppa-admin-bulk';
+
+@mkdir( $bulk_admin_dir, 0777, true );
+
+foreach ( (array) glob( $bulk_admin_dir . '/*' ) as $bulk_admin_stale ) {
+	if ( is_dir( $bulk_admin_stale ) ) {
+		foreach ( (array) glob( $bulk_admin_stale . '/*' ) as $bulk_admin_inner ) {
+			@unlink( $bulk_admin_inner );
+		}
+		@rmdir( $bulk_admin_stale );
+	} else {
+		@unlink( $bulk_admin_stale );
+	}
+}
+
+$bulk_settings_backup = get_option( 'wppa_settings', array() );
+$bulk_config          = array(
+	'path'      => $bulk_admin_dir,
+	'file'      => 'accounts-{date}.csv',
+	'groups'    => WPPA_Export::default_groups(),
+	'scope'     => 'all',
+	'delimiter' => ';',
+	'limit'     => 100,
+	'keep'      => 5,
+);
+
+update_option( 'wppa_settings', array_merge( (array) $bulk_settings_backup, array( 'export_folder' => $bulk_config ) ) );
+
+$bulk_admin_team = WPPA_Teams::create( 'Команда для кнопки экспорта', 23 );
+WPPA_Teams::add_member( $bulk_admin_team, 24 );
+WPPA_Teams::make_mentor( $bulk_admin_team, 24 );
+
+$bulk_admin_source = sys_get_temp_dir() . '/wppa-admin-bulk-otchet.pdf';
+
+file_put_contents( $bulk_admin_source, str_repeat( 'z', 40 ) );
+
+$bulk_admin_file = WPPA_Curator_Files::store( $bulk_admin_team, $bulk_admin_source, 'otchet.pdf', 24 );
+
+$bulk_admin_redirect = function () {
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+	$_POST                                  = array(
+		'action'    => 'wppa_tool',
+		'wppa_tool' => 'export_folder_now',
+		'_wpnonce'  => wp_create_nonce( 'wppa_tool' ),
+	);
+
+	try {
+		WPPA_Admin::handle_tool();
+	} catch ( RuntimeException $e ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+		$query = (string) parse_url( substr( $e->getMessage(), strlen( 'redirect:' ) ), PHP_URL_QUERY );
+		$args  = array();
+		parse_str( $query, $args );
+
+		return isset( $args['wppa_done'] ) ? (string) $args['wppa_done'] : '';
+	}
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+	return '';
+};
+
+$bulk_admin_code = $bulk_admin_redirect();
+
+$bulk_admin_checks['кнопка: код успеха']      = 'folder_export_ok' === $bulk_admin_code;
+$bulk_admin_checks['кнопка: CSV записан']     = count( (array) glob( $bulk_admin_dir . '/accounts-*.csv' ) ) > 0;
+$bulk_admin_team_dir = $bulk_admin_dir . '/' . WPPA_Team_Files_Export::folder_name( $bulk_admin_team );
+
+$bulk_admin_checks['кнопка: файл наставника в папке команды'] = is_file( $bulk_admin_team_dir . '/otchet.pdf' );
+$bulk_admin_checks['кнопка: содержимое файла'] = str_repeat( 'z', 40 ) === (string) @file_get_contents( $bulk_admin_team_dir . '/otchet.pdf' );
+$bulk_admin_checks['кнопка: журнал пополнился'] = false !== strpos( (string) wp_json_encode( WPPA_Export_Folder::logs(), JSON_UNESCAPED_UNICODE ), 'Файлы наставников' );
+
+$_POST = array();
+
+if ( is_array( $bulk_admin_file ) ) {
+	WPPA_Curator_Files::remove( $bulk_admin_team, $bulk_admin_file['key'], 23 );
+}
+
+WPPA_Teams::dissolve( $bulk_admin_team );
+update_option( 'wppa_settings', $bulk_settings_backup );
+delete_option( WPPA_Export_Folder::LOG_OPTION );
+
+foreach ( $bulk_admin_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'export button: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 $sanitize_ok = 2 === count( $clean['dashboard'] )
 	&& 'Привет' === $clean['dashboard'][0]['title']
 	&& 'all' === $clean['dashboard'][0]['audience']

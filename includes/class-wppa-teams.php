@@ -1272,6 +1272,13 @@ class WPPA_Teams {
 				$team_id = self::request_team_id( $user_id );
 				$back    = self::context_url( $team_id, $user_id );
 
+				// Отметка из списка команд не должна открывать карточку команды:
+				// куратор остаётся там, где нажимал кнопку.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+				if ( ! empty( $_POST['wppa_stay'] ) ) {
+					$back = $tab_url;
+				}
+
 				// Второй этап отмечает только куратор.
 				if ( ! self::is_curator( $user_id ) ) {
 					WPPA_Notices::redirect( 'stage2_denied', $back );

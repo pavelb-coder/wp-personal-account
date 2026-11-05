@@ -2179,6 +2179,78 @@ foreach ( $export_checks as $check_name => $ok ) {
 	}
 }
 
+// Кнопка «Экспортировать»: помимо CSV выгружаются файлы наставников всех команд.
+$bulk_checks = array();
+$bulk_dir    = sys_get_temp_dir() . '/wppa-bulk-test';
+
+@mkdir( $bulk_dir, 0777, true );
+
+foreach ( (array) glob( $bulk_dir . '/*' ) as $bulk_stale ) {
+	if ( is_dir( $bulk_stale ) ) {
+		foreach ( (array) glob( $bulk_stale . '/*' ) as $bulk_inner ) {
+			@unlink( $bulk_inner );
+		}
+		@rmdir( $bulk_stale );
+	} elseif ( is_file( $bulk_stale ) ) {
+		@unlink( $bulk_stale );
+	}
+}
+
+$bulk_none = WPPA_Team_Files_Export::export_all();
+$bulk_checks['без папки: выгрузки нет'] = false === $bulk_none['ok'] && '' !== (string) $bulk_none['message'];
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $bulk_dir, 'user' => '', 'pass' => '' ) ) ) );
+
+$bulk_team = WPPA_Teams::create( 'Команда выгрузки', 66 );
+WPPA_Teams::add_member( $bulk_team, 67 );
+WPPA_Teams::make_mentor( $bulk_team, 67 );
+
+// Файл кладём, пока выгрузка выключена: копии в папке ещё нет.
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => '', 'user' => '', 'pass' => '' ) ) ) );
+
+$bulk_file = WPPA_Curator_Files::store( $bulk_team, wppa_test_file( 'bulk.pdf', str_repeat( 'g', 64 ) ), 'bulk.pdf', 67 );
+$bulk_curator = WPPA_Curator_Files::store( $bulk_team, wppa_test_file( 'curator-bulk.pdf', 'note' ), 'curator-bulk.pdf', 63 );
+
+update_option( 'wppa_settings', array_merge( (array) $export_backup, array( 'smb' => array( 'path' => $bulk_dir, 'user' => '', 'pass' => '' ) ) ) );
+
+$bulk_checks['файл без копии'] = is_array( $bulk_file ) && ! is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf' );
+
+$bulk_result = WPPA_Team_Files_Export::export_all();
+$bulk_checks['кнопка: выгрузка прошла']    = true === $bulk_result['ok'];
+$bulk_checks['кнопка: файл наставника посчитан'] = 1 === (int) $bulk_result['files'];
+$bulk_checks['кнопка: команда в счёте']    = 1 === (int) $bulk_result['teams'];
+$bulk_checks['кнопка: файл в папке команды'] = is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf' );
+$bulk_checks['кнопка: содержимое совпадает'] = str_repeat( 'g', 64 ) === file_get_contents( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf' );
+$bulk_checks['кнопка: мета записана']       = isset( WPPA_Team_Files_Export::record( $bulk_team )[ $bulk_file['key'] ] );
+
+$bulk_again = WPPA_Team_Files_Export::export_all();
+$bulk_list  = (array) glob( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/*' );
+
+$bulk_checks['повтор: без дублей']      = 1 === count( $bulk_list ) && is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/bulk.pdf' );
+$bulk_checks['повтор: имя не изменилось'] = 'bulk.pdf' === (string) WPPA_Team_Files_Export::record( $bulk_team )[ $bulk_file['key'] ];
+$bulk_checks['повтор: счёт тот же']     = 1 === (int) $bulk_again['files'];
+
+$bulk_checks['файл куратора не выгружен'] = ! is_file( WPPA_Team_Files_Export::local_dir( $bulk_team ) . '/curator-bulk.pdf' );
+
+$bulk_empty = WPPA_Team_Files_Export::export_all();
+
+if ( is_array( $bulk_curator ) ) {
+	WPPA_Curator_Files::remove( $bulk_team, $bulk_curator['key'], 63 );
+}
+
+WPPA_Teams::dissolve( $bulk_team );
+
+$bulk_checks['после роспуска папки нет'] = ! is_dir( $bulk_dir . '/' . WPPA_Team_Files_Export::folder_name( $bulk_team ) );
+
+update_option( 'wppa_settings', $export_backup );
+
+foreach ( $bulk_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'team files bulk: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Роспуск команды удаляет файлы.
 $file_path = WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['file'];
 
@@ -2855,6 +2927,57 @@ if ( is_wp_error( $drop_team ) ) {
 	$drop_checks['уведомление: обычное снятие'] = 'stage2_removed' === $drop_notice( 'plain' );
 	$drop_checks['уведомление: письма убраны']  = 'stage2_removed_mail' === $drop_notice( 'with_queue' );
 	$drop_checks['уведомление: случайное нажатие'] = 'stage2_removed_grace' === $drop_notice( 'grace' );
+
+	// Отметка из списка команд не должна открывать карточку команды.
+	WPPA_Teams::set_stage2( $drop_team, false, 74 );
+	WPPA_Mailing::cancel();
+
+	$drop_url = function ( $extra ) use ( $drop_team ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = true;
+		$GLOBALS['wppa_test']['current_user']   = 74;
+		$_POST                                  = array_merge(
+			array(
+				'wppa_action'      => 'team',
+				'wppa_team_action' => 'stage2_add',
+				'team_id'          => $drop_team,
+			),
+			$extra
+		);
+		$_GET                                   = array();
+
+		try {
+			WPPA_Teams::handle_request();
+		} catch ( RuntimeException $e ) {
+			$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+			return substr( $e->getMessage(), strlen( 'redirect:' ) );
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return '';
+	};
+
+	$drop_list_url = $drop_url( array( 'wppa_stay' => 'list' ) );
+	$drop_card_url = $drop_url( array() );
+
+	$drop_checks['список: остаёмся в списке']   = false !== strpos( $drop_list_url, 'wppa_notice=stage2_added' ) && false === strpos( $drop_list_url, 'wppa_team=' );
+	$drop_checks['список: команда отмечена']    = true === WPPA_Teams::is_stage2( $drop_team );
+	$drop_checks['карточка: команда в адресе']  = false !== strpos( $drop_card_url, 'wppa_team=' . (int) $drop_team );
+
+	// В разметке списка у каждой кнопки отметки есть признак «остаться в списке».
+	$GLOBALS['wppa_test']['current_user'] = 74;
+	unset( $_GET['wppa_team'] );
+
+	$drop_widget = WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		array( 'user' => get_userdata( 74 ) )
+	);
+
+	$drop_stay   = substr_count( $drop_widget, 'name="wppa_stay" value="list"' );
+	$drop_marks  = substr_count( $drop_widget, 'value="stage2_add"' ) + substr_count( $drop_widget, 'value="stage2_remove"' );
+
+	$drop_checks['разметка: список не открывает карточку'] = $drop_stay > 0 && $drop_stay === $drop_marks;
 
 	$_POST = array();
 

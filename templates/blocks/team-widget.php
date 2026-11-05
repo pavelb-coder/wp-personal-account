@@ -123,6 +123,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
 											<input type="hidden" name="wppa_action" value="team" />
 											<input type="hidden" name="wppa_team_action" value="stage2_remove" />
+											<input type="hidden" name="wppa_stay" value="list" />
 											<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'прошла', 'wp-personal-account' ); ?></span>
 											<button type="submit" class="wppa-link-button"><?php esc_html_e( 'Снять', 'wp-personal-account' ); ?></button>
 										</form>
@@ -132,6 +133,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['id'] ); ?>" />
 											<input type="hidden" name="wppa_action" value="team" />
 											<input type="hidden" name="wppa_team_action" value="stage2_add" />
+											<input type="hidden" name="wppa_stay" value="list" />
 											<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Отметить', 'wp-personal-account' ); ?></button>
 										</form>
 									<?php endif; ?>

@@ -682,8 +682,9 @@ class WPPA_Admin {
 			'mailing_cleared'    => array( 'success', __( 'Очередь рассылки удалена.', 'wp-personal-account' ) ),
 			'mailing_log_cleared' => array( 'success', __( 'Журнал рассылки очищен.', 'wp-personal-account' ) ),
 			'mailing_failed'     => array( 'error', __( 'Неизвестное действие рассылки.', 'wp-personal-account' ) ),
-			'folder_export_ok'   => array( 'success', __( 'Файл выгрузки записан в папку. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_export_fail' => array( 'error', __( 'Выгрузка не удалась: папка недоступна или нет прав на запись. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
+			'folder_export_files_fail' => array( 'warning', __( 'CSV записан, но файлы наставников выгрузились не полностью — подробности в журнале ниже.', 'wp-personal-account' ) ),
+			'folder_export_ok'  => array( 'success', __( 'Выгрузка записана: CSV аккаунтов и файлы наставников по папкам команд. Подробности — в журнале ниже.', 'wp-personal-account' ) ),
 			'folder_check_ok'    => array( 'success', __( 'Папка доступна на запись.', 'wp-personal-account' ) ),
 			'folder_check_fail'  => array( 'error', __( 'Папка недоступна: проверьте путь, права и монтирование сетевой шары.', 'wp-personal-account' ) ),
 			'folder_log_clear'   => array( 'success', __( 'Журнал выгрузок очищен.', 'wp-personal-account' ) ),
@@ -777,7 +778,17 @@ class WPPA_Admin {
 
 			case 'export_folder_now':
 				$result = WPPA_Export_Folder::write( WPPA_Export_Folder::config() );
-				return $result['ok'] ? 'folder_export_ok' : 'folder_export_fail';
+				$files  = WPPA_Team_Files_Export::export_all();
+
+				if ( '' !== (string) $files['message'] ) {
+					WPPA_Export_Folder::log_entry( (bool) $files['ok'], '', 0, $files['message'] );
+				}
+
+				if ( ! $result['ok'] ) {
+					return 'folder_export_fail';
+				}
+
+				return $files['ok'] ? 'folder_export_ok' : 'folder_export_files_fail';
 
 			case 'smb_check':
 				$result = WPPA_SMB::test( WPPA_SMB::config() );
