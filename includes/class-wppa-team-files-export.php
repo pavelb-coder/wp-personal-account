@@ -34,15 +34,28 @@ class WPPA_Team_Files_Export {
 	const ROOT_NAME = 'Команды';
 
 	/**
+	 * Переключатель из настроек: копировать ли файлы команд в сетевую папку.
+	 *
+	 * Снятая галочка «Копировать файлы наставников в папки команд» выключает
+	 * выгрузку целиком: файл остаётся в кабинете, кнопка «Экспортировать» пишет
+	 * только CSV аккаунтов.
+	 *
+	 * @return bool
+	 */
+	public static function switched_on() {
+		return 1 === (int) WPPA_Plugin::setting( 'file_export', 1 );
+	}
+
+	/**
 	 * Выгрузка включена.
 	 *
-	 * Работает, когда в настройках задан путь к сетевой папке. Отключить можно
-	 * фильтром.
+	 * Работает, когда в настройках задан путь к сетевой папке и не снята галочка
+	 * «Копировать файлы наставников в папки команд». Отключить можно фильтром.
 	 *
 	 * @return bool
 	 */
 	public static function enabled() {
-		$enabled = WPPA_SMB::is_configured();
+		$enabled = self::switched_on() && WPPA_SMB::is_configured();
 
 		/**
 		 * Фильтр автоматической выгрузки файлов наставника в сетевую папку.
@@ -252,7 +265,8 @@ class WPPA_Team_Files_Export {
 			'file'    => '',
 		);
 
-		if ( ! WPPA_SMB::is_configured( $config ) || ! $team_id ) {
+		// Выгрузка выключена галочкой в настройках — файл остаётся только в кабинете.
+		if ( ! self::switched_on() || ! WPPA_SMB::is_configured( $config ) || ! $team_id ) {
 			return $result;
 		}
 
@@ -525,6 +539,12 @@ class WPPA_Team_Files_Export {
 		);
 
 		$config = self::bulk_config();
+
+		if ( ! self::switched_on() ) {
+			$result['message'] = __( 'Копирование файлов команд выключено в настройках — выгружен только CSV аккаунтов.', 'wp-personal-account' );
+
+			return $result;
+		}
 
 		if ( ! apply_filters( 'wppa_team_files_export', WPPA_SMB::is_configured( $config ) ) ) {
 			$result['ok']      = false;

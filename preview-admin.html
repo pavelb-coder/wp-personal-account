@@ -1848,7 +1848,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								05.11.2026 16:07							</td>
+								05.11.2026 16:13							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -1887,7 +1887,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">ivan@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>05.11.2026 15:57</td>
+										<td>05.11.2026 16:03</td>
 										<td>
 											отправлено										</td>
 									</tr>
@@ -1897,7 +1897,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">maria@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>05.11.2026 16:07</td>
+										<td>05.11.2026 16:13</td>
 										<td>
 											ждёт отправки										</td>
 									</tr>
@@ -1940,11 +1940,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<table class="widefat striped">
 					<tbody>
 													<tr>
-								<td class="wppa-admin__muted">05.11.2026 15:57</td>
+								<td class="wppa-admin__muted">05.11.2026 16:03</td>
 								<td>Отправлено писем: 1.</td>
 							</tr>
 													<tr>
-								<td class="wppa-admin__muted">05.11.2026 15:57</td>
+								<td class="wppa-admin__muted">05.11.2026 16:03</td>
 								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
 							</tr>
 											</tbody>
@@ -3100,6 +3100,16 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 				<h2>Экспорт в папку</h2>
 								<table class="form-table" role="presentation">
 					<tr>
+						<th scope="row">Файлы команд</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[file_export]" value="1"  checked="checked" />
+								Копировать файлы наставников в папки команд							</label>
+							<p class="description">
+								Снимите галочку, чтобы файлы команд оставались только в кабинете: при прикреплении ничего не копируется, а кнопка «Экспортировать» пишет только CSV аккаунтов. Кураторские файлы не выгружаются никогда.							</p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row">Автоматическая выгрузка</th>
 						<td>
 							<label>
@@ -3174,7 +3184,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 16:02.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 05.11.2026 16:08.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3462,6 +3472,7 @@ EOF</code></p>
 				Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Вместе с CSV кнопка «Экспортировать» раскладывает файлы наставников по папкам команд — общая папка «Команды», внутри папка с названием команды. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».			</p>
 
 			
+			
 							<p>
 					<span class="wppa-badge wppa-badge--warn">
 						Сетевая папка: доступа нет					</span>
@@ -3477,10 +3488,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 05.11.2026 23:57 (Раз в день).							</p>
+									Следующая выгрузка: 06.11.2026 00:03 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 16:02				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 05.11.2026 16:08				</p>
 			
 			
 			
@@ -3490,12 +3501,12 @@ EOF</code></p>
 					<input type="hidden" name="wppa_tool" value="export_folder_now" />
 					<button type="submit" class="button button-primary">Экспортировать</button>
 				</form>
-				<form method="post" action="https://example.com/wp-admin/admin-post.php">
-					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="files_folder_check" />
-					<button type="submit" class="button">Проверить папку команд</button>
-				</form>
-				<form method="post" action="https://example.com/wp-admin/admin-post.php">
+									<form method="post" action="https://example.com/wp-admin/admin-post.php">
+						<input type="hidden" name="_wpnonce" value="nonce" />						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="files_folder_check" />
+						<button type="submit" class="button">Проверить папку команд</button>
+					</form>
+								<form method="post" action="https://example.com/wp-admin/admin-post.php">
 					<input type="hidden" name="_wpnonce" value="nonce" />					<input type="hidden" name="action" value="wppa_tool" />
 					<input type="hidden" name="wppa_tool" value="folder_verify" />
 					<button type="submit" class="button">Проверить подключение к сетевой папке</button>
@@ -3517,7 +3528,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>05.11.2026 15:57</td>
+								<td>05.11.2026 16:03</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3526,7 +3537,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 15:57</td>
+								<td>05.11.2026 16:03</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3535,7 +3546,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>05.11.2026 15:57</td>
+								<td>05.11.2026 16:03</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

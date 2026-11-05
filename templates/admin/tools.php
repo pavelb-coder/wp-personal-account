@@ -133,6 +133,12 @@ defined( 'ABSPATH' ) || exit;
 				<?php esc_html_e( 'Файл CSV по тем же группам колонок, что и ручная выгрузка, но записывается в папку на диске — в том числе в смонтированную сетевую шару SMB/CIFS. Вместе с CSV кнопка «Экспортировать» раскладывает файлы наставников по папкам команд — общая папка «Команды», внутри папка с названием команды. Настройки пути и расписания — в разделе «Настройки → Экспорт в папку».', 'wp-personal-account' ); ?>
 			</p>
 
+			<?php if ( ! WPPA_Team_Files_Export::switched_on() ) : ?>
+				<div class="notice notice-warning inline" style="margin:0 0 12px">
+					<p><?php esc_html_e( 'Копирование файлов команд выключено: файлы наставников остаются в кабинете, а «Экспортировать» пишет только CSV аккаунтов. Включить — «Настройки → Экспорт в папку → Копировать файлы наставников в папки команд».', 'wp-personal-account' ); ?></p>
+				</div>
+			<?php endif; ?>
+
 			<?php
 			$wppa_smb_test = isset( $smb_test ) && is_array( $smb_test ) ? $smb_test : null;
 			$wppa_smb_conf = isset( $smb_config ) && is_array( $smb_config ) ? $smb_config : WPPA_SMB::config();
@@ -240,12 +246,14 @@ defined( 'ABSPATH' ) || exit;
 					<input type="hidden" name="wppa_tool" value="export_folder_now" />
 					<button type="submit" class="button button-primary"><?php esc_html_e( 'Экспортировать', 'wp-personal-account' ); ?></button>
 				</form>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<?php wp_nonce_field( 'wppa_tool' ); ?>
-					<input type="hidden" name="action" value="wppa_tool" />
-					<input type="hidden" name="wppa_tool" value="files_folder_check" />
-					<button type="submit" class="button"><?php esc_html_e( 'Проверить папку команд', 'wp-personal-account' ); ?></button>
-				</form>
+				<?php if ( WPPA_Team_Files_Export::switched_on() ) : ?>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'wppa_tool' ); ?>
+						<input type="hidden" name="action" value="wppa_tool" />
+						<input type="hidden" name="wppa_tool" value="files_folder_check" />
+						<button type="submit" class="button"><?php esc_html_e( 'Проверить папку команд', 'wp-personal-account' ); ?></button>
+					</form>
+				<?php endif; ?>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wppa_tool' ); ?>
 					<input type="hidden" name="action" value="wppa_tool" />

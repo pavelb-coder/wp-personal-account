@@ -315,6 +315,9 @@ class WPPA_Settings {
 			'change_delay' => isset( $folder_saved['change_delay'] ) && array_key_exists( (int) $folder_saved['change_delay'], WPPA_Export_Folder::delays() ) ? (int) $folder_saved['change_delay'] : 5,
 		);
 
+		// Копирование файлов команд в сетевую папку: галочка в «Экспорт в папку».
+		$out['file_export'] = empty( $input['file_export'] ) ? 0 : 1;
+
 		// Требования к паролю.
 		$rules_saved = isset( $input['password_rules'] ) && is_array( $input['password_rules'] ) ? $input['password_rules'] : array();
 		$rules_out   = array();
@@ -839,6 +842,18 @@ class WPPA_Settings {
 				$wppa_folder = WPPA_Export_Folder::config();
 				?>
 				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Файлы команд', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[file_export]" value="1" <?php checked( 1, (int) WPPA_Plugin::setting( 'file_export', 1 ) ); ?> />
+								<?php esc_html_e( 'Копировать файлы наставников в папки команд', 'wp-personal-account' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Снимите галочку, чтобы файлы команд оставались только в кабинете: при прикреплении ничего не копируется, а кнопка «Экспортировать» пишет только CSV аккаунтов. Кураторские файлы не выгружаются никогда.', 'wp-personal-account' ); ?>
+							</p>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Автоматическая выгрузка', 'wp-personal-account' ); ?></th>
 						<td>

@@ -110,6 +110,34 @@ ob_start();
 WPPA_Admin::page_tools();
 $tools_html = ob_get_clean();
 
+// Галочка «Копировать файлы наставников в папки команд» (3.32.0).
+$file_export_switch_checks = array();
+
+$file_export_switch_checks['настройки: галочка выгрузки файлов'] = false !== strpos( $settings_html, 'name="wppa_settings[file_export]"' );
+$file_export_switch_checks['настройки: подпись галочки']         = false !== strpos( $settings_html, 'Копировать файлы наставников в папки команд' );
+$file_export_switch_checks['инструменты: проверка папки есть']   = false !== strpos( $tools_html, 'Проверить папку команд' );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'file_export' => 0 ) ) );
+
+ob_start();
+WPPA_Admin::page_tools();
+$tools_off_html = ob_get_clean();
+
+$file_export_switch_checks['инструменты: предупреждение о выключении'] = false !== strpos( $tools_off_html, 'Копирование файлов команд выключено' );
+$file_export_switch_checks['инструменты: кнопки проверки нет']         = false === strpos( $tools_off_html, 'Проверить папку команд' );
+
+update_option(
+	'wppa_settings',
+	array_merge( (array) get_option( 'wppa_settings', array() ), array( 'file_export' => 1 ) )
+);
+
+foreach ( $file_export_switch_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'file export switch: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // ---------- Экспорт аккаунтов ----------
 $export_groups = WPPA_Export::groups();
 $export_checks = array(

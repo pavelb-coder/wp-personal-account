@@ -506,7 +506,7 @@ class WPPA_Curator_Files {
 
 			// Неудачное копирование не показываем: файл уже в кабинете, а причина
 			// остаётся в журнале выгрузки и в «Инструментах» — там же путь и права.
-			if ( empty( $export['ok'] ) && class_exists( 'WPPA_Export_Folder' ) ) {
+			if ( empty( $export['ok'] ) && WPPA_Team_Files_Export::switched_on() && class_exists( 'WPPA_Export_Folder' ) ) {
 				WPPA_Export_Folder::log_entry(
 					false,
 					$name,

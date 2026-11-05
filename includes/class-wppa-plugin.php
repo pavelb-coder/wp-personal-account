@@ -158,6 +158,7 @@ class WPPA_Plugin {
 			'password_rules'       => array(),
 			'link_button'          => array(),
 			'export_folder'        => array(),
+			'file_export'          => 1,
 			'smb'                  => array(),
 			'delete_data_on_uninstall' => 0,
 		);

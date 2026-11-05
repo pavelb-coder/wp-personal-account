@@ -2540,6 +2540,58 @@ foreach ( $export_checks as $check_name => $ok ) {
 	}
 }
 
+// Отключение выгрузки файлов команд галочкой в настройках (3.32.0).
+$switch_checks = array();
+$switch_backup = get_option( 'wppa_settings', array() );
+
+$switch_checks['по умолчанию копирование включено'] = true === WPPA_Team_Files_Export::switched_on();
+$switch_checks['по умолчанию выгрузка включена']    = array_key_exists( 'file_export', WPPA_Plugin::defaults() ) && 1 === (int) WPPA_Plugin::defaults()['file_export'];
+
+update_option( 'wppa_settings', array_merge( (array) $switch_backup, array( 'file_export' => 0 ) ) );
+
+$switch_checks['галочка выключает копирование'] = false === WPPA_Team_Files_Export::switched_on();
+$switch_checks['выгрузка выключена целиком']    = false === WPPA_Team_Files_Export::enabled();
+
+$switch_team = WPPA_Teams::create( 'Команда без выгрузки', 64 );
+
+WPPA_Teams::add_member( $switch_team, 65 );
+WPPA_Teams::make_mentor( $switch_team, 65 );
+WPPA_Teams::set_stage2( $switch_team, true, 63 );
+
+$switch_logs_before = WPPA_Export_Folder::logs();
+$switch_store       = WPPA_Curator_Files::store( $switch_team, wppa_test_file( 'тихо.pdf', 'данные' ), 'тихо.pdf', 65 );
+$switch_logs_after  = WPPA_Export_Folder::logs();
+
+$switch_checks['файл всё равно прикреплён']   = is_array( $switch_store ) && ! empty( $switch_store['ok'] );
+$switch_checks['копии в папке нет']           = is_array( $switch_store ) && empty( $switch_store['export']['ok'] );
+$switch_checks['журнал не засоряется']        = count( $switch_logs_before ) === count( $switch_logs_after );
+
+$switch_all = WPPA_Team_Files_Export::export_all();
+
+$switch_checks['массовая выгрузка пропущена'] = ! empty( $switch_all['ok'] )
+	&& 0 === (int) $switch_all['exported']
+	&& false !== strpos( (string) $switch_all['message'], 'выключено' );
+
+$switch_sanitize_off = WPPA_Settings::sanitize( array_merge( (array) $switch_backup, array( 'file_export' => '' ) ) );
+$switch_sanitize_on  = WPPA_Settings::sanitize( array_merge( (array) $switch_backup, array( 'file_export' => '1' ) ) );
+
+$switch_checks['настройка сохраняет «выкл»']  = isset( $switch_sanitize_off['file_export'] ) && 0 === (int) $switch_sanitize_off['file_export'];
+$switch_checks['настройка сохраняет «вкл»']   = isset( $switch_sanitize_on['file_export'] ) && 1 === (int) $switch_sanitize_on['file_export'];
+
+update_option( 'wppa_settings', array_merge( (array) $switch_backup, array( 'file_export' => 1 ) ) );
+
+$switch_checks['после возврата снова включено'] = true === WPPA_Team_Files_Export::switched_on();
+
+WPPA_Teams::dissolve( $switch_team );
+update_option( 'wppa_settings', $switch_backup );
+
+foreach ( $switch_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'file export switch: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Кнопка «Экспортировать»: помимо CSV выгружаются файлы наставников всех команд.
 $bulk_checks = array();
 $bulk_dir    = sys_get_temp_dir() . '/wppa-bulk-test';
