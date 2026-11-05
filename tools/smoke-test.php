@@ -2230,34 +2230,37 @@ $smb_fake = function ( $result, $command ) use ( &$smb_dirs, &$smb_files, &$smb_
 		$action = $parts[1];
 		$arg    = $parts[2];
 
+		// Как настоящий smbclient: путь считается от текущего каталога,
+		// с ведущего «\» — от корня шары.
+		$full   = 0 === strpos( $arg, '\\' ) ? ltrim( $arg, '\\' ) : ( '' !== $current ? $current . '\\' : '' ) . $arg;
+		$exists = in_array( $full, $smb_dirs, true );
+
 		if ( 'put' === $action ) {
 			$smb_files[ ( '' !== $current ? $current . '\\' : '' ) . $parts[3] ] = true;
 			$out[] = 'putting file ' . $arg . ' as \\' . $parts[3];
 			continue;
 		}
 
-		$exists = in_array( $arg, $smb_dirs, true );
-
 		if ( 'mkdir' === $action ) {
-			$slash  = strrpos( $arg, '\\' );
-			$parent = false !== $slash ? substr( $arg, 0, $slash ) : '';
+			$slash  = strrpos( $full, '\\' );
+			$parent = false !== $slash ? substr( $full, 0, $slash ) : '';
 
 			if ( $exists ) {
-				$out[] = 'NT_STATUS_OBJECT_NAME_COLLISION making remote directory \\' . $arg;
+				$out[] = 'NT_STATUS_OBJECT_NAME_COLLISION making remote directory \\' . $full;
 			} elseif ( $smb_deny || ( '' !== $parent && ! in_array( $parent, $smb_dirs, true ) ) ) {
-				$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND making remote directory \\' . $arg;
+				$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND making remote directory \\' . $full;
 				$code  = 1;
 			} else {
-				$smb_dirs[] = $arg;
+				$smb_dirs[] = $full;
 			}
 
 			continue;
 		}
 
 		if ( $exists ) {
-			$current = $arg;
+			$current = $full;
 		} else {
-			$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND cd \\' . $arg . '\\';
+			$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND cd \\' . $full . '\\';
 			$code  = 1;
 		}
 	}
@@ -2278,6 +2281,7 @@ $smb_checks['smbclient: в корень шары не положил'] = ! isset
 $smb_ensure = isset( $smb_scripts[0] ) ? (string) $smb_scripts[0] : '';
 $smb_checks['smbclient: mkdir по шагам']            = 3 === substr_count( $smb_ensure, 'mkdir ' );
 $smb_checks['smbclient: файл кладём отдельным заходом'] = false === strpos( $smb_ensure, 'put ' );
+$smb_checks['smbclient: путь не удваивается'] = ! in_array( 'olimp\\olimp', $smb_dirs, true );
 
 // Папку создать нельзя: файл не кладём совсем, показываем причину.
 $smb_dirs  = array();

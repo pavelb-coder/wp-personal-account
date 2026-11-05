@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.25.0
+Stable tag: 3.25.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.25.1 =
+* Исправлено удвоение пути при выгрузке через smbclient: утилита считает путь от текущего каталога, поэтому после «cd olimp» команда mkdir «olimp\Команды» давала \olimp\olimp\Команды и папка не создавалась (NT_STATUS_OBJECT_PATH_NOT_FOUND).
+* Теперь mkdir и cd идут строго по одному уровню относительными именами, а файл кладётся после повторения той же цепочки переходов.
 
 = 3.25.0 =
 * Исправлена выгрузка в сетевую папку через smbclient: вложенные папки («Команды → Название (ID)») создаются по одному уровню, а не одним mkdir. Раньше smbclient отвечал NT_STATUS_OBJECT_PATH_NOT_FOUND, и файл попадал в корень шары.

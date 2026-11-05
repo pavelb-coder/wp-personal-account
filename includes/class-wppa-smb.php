@@ -856,12 +856,20 @@ class WPPA_SMB {
 			$created    = false;
 			$dir_failed = false;
 
+			// Пути smbclient считает от текущего каталога: после «cd olimp» полный
+			// путь дал бы \\olimp\\olimp\\Команды. Поэтому и mkdir, и cd — по одному
+			// уровню, и файл кладём, повторив ту же цепочку переходов.
+			$enter = '';
+
+			foreach ( $dirs as $dir ) {
+				$enter .= 'cd ' . self::quote_arg( $dir ) . '; ';
+			}
+
 			if ( $dirs ) {
 				$script = '';
 
-				foreach ( $dirs as $index => $dir ) {
-					$chain   = implode( '\\', array_slice( $dirs, 0, $index + 1 ) );
-					$script .= 'mkdir ' . self::quote_arg( $chain ) . '; cd ' . self::quote_arg( $chain ) . '; ';
+				foreach ( $dirs as $dir ) {
+					$script .= 'mkdir ' . self::quote_arg( $dir ) . '; cd ' . self::quote_arg( $dir ) . '; ';
 				}
 
 				$result     = $run( $script );
@@ -873,7 +881,7 @@ class WPPA_SMB {
 
 			// Файл не кладём, если каталога нет: иначе он оказался бы в корне шары.
 			if ( ! $failed ) {
-				$result = $run( ( '' !== $deep ? 'cd ' . self::quote_arg( $deep ) . '; ' : '' ) . $put );
+				$result = $run( $enter . $put );
 				$answer = trim( wp_strip_all_tags( $result['output'] ) );
 				$output = '' !== $output ? $output . "\n" . $answer : $answer;
 				$failed = self::smbclient_fatal( $answer ) || ( 0 !== $result['code'] && '' === $answer );
