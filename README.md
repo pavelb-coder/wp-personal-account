@@ -233,6 +233,20 @@ add_filter( 'wppa_blocks', function ( $blocks ) {
 * Права в коде: `WPPA_Teams::can_manage_team( $team_id, $user_id )` — истина для куратора на любую команду, для капитана/наставника — только на свою. `WPPA_Teams::viewing_team_id()` — какую команду куратор открыл, `WPPA_Teams::request_team_id()` — команда из формы (куратор передаёт `team_id` скрытым полем).
 * Коды уведомлений: `curator_added`, `curator_removed`, `curator_already`, `curator_not`, `curator_invalid`, `team_captain_denied`.
 
+### Файлы куратора
+
+Куратор может приложить к команде документы — их видит и скачивает **наставник этой команды**.
+
+* Куратор: карточка **«Файлы для наставника»** на вкладке «Команда» (в своей команде и в чужой, открытой через «Управлять»). Здесь же загрузка нового файла и удаление с подтверждением.
+* Наставник: карточка **«Файлы от куратора»** — только список со ссылками на скачивание. Загружать и удалять файлы он не может.
+* Участники команды, капитан и посторонние файлов не видят; прямой адрес к папке ничего не отдаёт.
+* Ограничения: до 20 файлов на команду, до 10 МБ каждый. Типы: `pdf`, `doc(x)`, `xls(x)`, `ppt(x)`, `txt`, `csv`, `rtf`, `odt`, `ods`, `odp`, `zip`, `rar`, `7z`, `jpg`, `jpeg`, `png`, `gif`, `webp`. Фильтры: `wppa_curator_file_max_size`, `wppa_curator_file_types`.
+* Хранение: папка `uploads/wppa-curator/` (в ней `index.php` и `.htaccess` с запретом прямого доступа); список файлов — мета команды `_wppa_curator_files`: ключ → имя, файл на диске, размер, время, автор.
+* Скачивание идёт только через `admin-post.php?action=wppa_curator_file&team=ID&file=KEY&_wpnonce=…` после проверки прав и одноразового ключа `wppa_file_{team}_{key}`; отдаётся как `application/octet-stream` с заголовком `attachment`.
+* Удаление файла и роспуск команды убирают файлы с диска.
+* Права: `WPPA_Curator_Files::can_view( $team_id, $user_id )` — куратор, наставник команды и администратор; `can_manage()` — только куратор. API: `files()`, `count()`, `store()`, `upload()`, `remove()`, `clear()`, `download_url()`, `size_label()`.
+* Коды уведомлений: `file_added`, `file_removed`, `file_missing`, `file_type`, `file_size`, `file_empty`, `file_limit`, `file_save_failed`, `file_forbidden`, `file_team_missing`.
+
 ## Установка
 
 ```bash

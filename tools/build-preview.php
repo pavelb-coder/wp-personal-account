@@ -23,6 +23,7 @@ require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -158,10 +159,29 @@ $sections .= demo_section(
 
 $_GET['wppa_team'] = (int) $demo_team;
 
+// Демо-файлы куратора: два документа, чтобы карточка была не пустой.
+$wppa_demo_uploads = array(
+	array( 'Положение об олимпиаде.pdf', str_repeat( 'a', 240 ) ),
+	array( 'Критерии оценивания.docx', str_repeat( 'b', 96 ) ),
+);
+
+foreach ( $wppa_demo_uploads as $wppa_demo_upload ) {
+	$wppa_demo_path = sys_get_temp_dir() . '/wppa-preview-' . md5( $wppa_demo_upload[0] );
+
+	file_put_contents( $wppa_demo_path, $wppa_demo_upload[1] );
+	WPPA_Curator_Files::store( $demo_team, $wppa_demo_path, $wppa_demo_upload[0], 12 );
+}
+
 $sections .= demo_section(
 	'Куратор: управление чужой командой',
-	'Куратор открыл команду «Студия «Вектор»»: состав с действиями, назначение наставника, приглашения и переименование. Роспуска и выхода нет — это дело капитана',
+	'Куратор открыл команду «Студия «Вектор»»: состав с действиями, назначение наставника, приглашения, файлы для наставника и переименование. Роспуска и выхода нет — это дело капитана',
 	WPPA_Template::get( 'tab-team', array( 'user' => $curator_user, 'tabs' => $tabs ) )
+);
+
+$sections .= demo_section(
+	'Наставник: файлы от куратора',
+	'Тот же файл глазами наставника команды: список документов со ссылками на скачивание. Загружать и удалять файлы наставник не может — это дело куратора',
+	WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
 );
 
 unset( $_GET['wppa_team'] );

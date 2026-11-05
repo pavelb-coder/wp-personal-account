@@ -22,6 +22,7 @@ require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -1470,6 +1471,160 @@ $GLOBALS['wppa_test']['meta'] = $curator_snapshot;
 
 foreach ( $curator_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Файлы куратора для наставника команды (3.11.0).
+$file_checks      = array();
+$files_meta_backup = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
+$files_posts_backup = isset( $GLOBALS['wppa_test']['posts'] ) ? $GLOBALS['wppa_test']['posts'] : array();
+
+$GLOBALS['wppa_test']['meta'] = $files_meta_backup;
+
+$files_team = WPPA_Teams::create( 'Команда с файлами', 7 );
+WPPA_Teams::add_member( $files_team, 8 );
+WPPA_Teams::make_mentor( $files_team, 8 );
+WPPA_Teams::add_member( $files_team, 9 );
+
+WPPA_Teams::set_curator( 12, true );
+WPPA_Teams::set_curator( 13, false );
+
+/**
+ * Временный файл для проверки загрузки.
+ *
+ * @param string $name Имя.
+ * @param string $body Содержимое.
+ * @return string Путь.
+ */
+function wppa_test_file( $name, $body = 'данные' ) {
+	$dir  = sys_get_temp_dir() . '/wppa-files-test';
+	$path = $dir . '/' . $name;
+
+	wp_mkdir_p( $dir );
+	file_put_contents( $path, $body );
+
+	return $path;
+}
+
+$pdf = wppa_test_file( 'методичка.pdf', str_repeat( 'a', 240 ) );
+
+$file_checks['команда создана'] = $files_team && ! is_wp_error( $files_team );
+
+$stored = WPPA_Curator_Files::store( $files_team, $pdf, 'методичка.pdf', 12 );
+
+$file_checks['куратор прикрепил файл']    = is_array( $stored ) && ! empty( $stored['key'] );
+$file_checks['файл виден в списке']       = 1 === WPPA_Curator_Files::count( $files_team );
+$file_checks['имя файла сохранено']       = 'методичка.pdf' === WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['name'];
+$file_checks['размер посчитан']           = 240 === WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['size'];
+$file_checks['файл лежит в папке']        = is_file( WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['file'] );
+$file_checks['папка закрыта от прямого доступа'] = is_file( WPPA_Curator_Files::dir()['dir'] . '/.htaccess' );
+
+// Второй файл: ключи не совпадают.
+$stored2 = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'план.xlsx', str_repeat( 'b', 120 ) ), 'план.xlsx', 12 );
+
+$file_checks['второй файл прикреплён'] = is_array( $stored2 );
+$file_checks['ключи файлов разные']    = $stored['key'] !== $stored2['key'];
+$file_checks['в списке два файла']     = 2 === WPPA_Curator_Files::count( $files_team );
+
+// Кому можно.
+$file_checks['наставник видит файлы']      = true === WPPA_Curator_Files::can_view( $files_team, 8 );
+$file_checks['куратор видит файлы']         = true === WPPA_Curator_Files::can_view( $files_team, 12 );
+
+$GLOBALS['wppa_test']['can_manage'] = false;
+$file_checks['участник не видит файлы']     = false === WPPA_Curator_Files::can_view( $files_team, 9 );
+$file_checks['чужой не видит файлы']        = false === WPPA_Curator_Files::can_view( $files_team, 555 );
+unset( $GLOBALS['wppa_test']['can_manage'] );
+
+$file_checks['куратор управляет файлами']   = true === WPPA_Curator_Files::can_manage( $files_team, 12 );
+$file_checks['наставник не управляет']      = false === WPPA_Curator_Files::can_manage( $files_team, 8 );
+
+// Отказы.
+$not_curator = WPPA_Curator_Files::store( $files_team, $pdf, 'чужой.pdf', 8 );
+$file_checks['не куратор — ошибка']         = is_wp_error( $not_curator ) && 'wppa_file_forbidden' === $not_curator->get_error_code();
+
+$bad_type = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'скрипт.php', '<?php echo 1;' ), 'скрипт.php', 12 );
+$file_checks['запрещённый тип отклонён']    = is_wp_error( $bad_type ) && 'wppa_file_type' === $bad_type->get_error_code();
+
+$empty = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'пусто.pdf' , '' ), 'пусто.pdf', 12 );
+$file_checks['пустой файл отклонён']        = is_wp_error( $empty ) && 'wppa_file_empty' === $empty->get_error_code();
+
+$missing = WPPA_Curator_Files::store( $files_team, sys_get_temp_dir() . '/нет-такого.pdf', 'нет.pdf', 12 );
+$file_checks['несуществующий файл отклонён'] = is_wp_error( $missing ) && 'wppa_file_missing' === $missing->get_error_code();
+
+function wppa_test_tiny_size() {
+	return 1;
+}
+
+add_filter( 'wppa_curator_file_max_size', 'wppa_test_tiny_size' );
+$big = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'большой.pdf', str_repeat( 'c', 500 ) ), 'большой.pdf', 12 );
+remove_filter( 'wppa_curator_file_max_size', 'wppa_test_tiny_size' );
+$file_checks['слишком большой файл отклонён'] = is_wp_error( $big ) && 'wppa_file_size' === $big->get_error_code();
+
+// Коды уведомлений.
+$file_checks['уведомление: тип']     = 'file_type' === WPPA_Curator_Files::notice_code( 'wppa_file_type' );
+$file_checks['уведомление: размер'] = 'file_size' === WPPA_Curator_Files::notice_code( 'wppa_file_size' );
+$file_checks['уведомление: прочее'] = 'file_missing' === WPPA_Curator_Files::notice_code( 'wppa_file_upload' );
+
+// Ссылка на скачивание.
+$download = WPPA_Curator_Files::download_url( $files_team, $stored['key'] );
+
+$file_checks['ссылка: точка входа']  = false !== strpos( $download, 'action=wppa_curator_file' );
+$file_checks['ссылка: номер команды'] = false !== strpos( $download, 'team=' . (int) $files_team );
+$file_checks['ссылка: одноразовый ключ'] = false !== strpos( $download, '_wpnonce' );
+
+// Удаление.
+$file_checks['куратор удалил файл']    = true === WPPA_Curator_Files::remove( $files_team, $stored2['key'], 12 );
+$file_checks['после удаления один файл'] = 1 === WPPA_Curator_Files::count( $files_team );
+$file_checks['файл удалён с диска']    = ! is_file( WPPA_Curator_Files::dir()['dir'] . '/' . $stored2['key'] . '-план.xlsx' );
+$file_checks['наставник не удаляет']   = false === WPPA_Curator_Files::remove( $files_team, $stored['key'], 8 );
+
+// Кабинет: карточка куратора и карточка наставника.
+$_GET['wppa_team'] = (int) $files_team;
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$curator_files_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array()
+);
+
+$file_checks['кабинет: карточка «Файлы для наставника»'] = false !== strpos( $curator_files_html, 'Файлы для наставника' );
+$file_checks['кабинет: форма загрузки']       = false !== strpos( $curator_files_html, 'enctype="multipart/form-data"' );
+$file_checks['кабинет: поле файла']           = false !== strpos( $curator_files_html, 'name="curator_file"' );
+$file_checks['кабинет: список файлов']        = false !== strpos( $curator_files_html, 'методичка.pdf' );
+$file_checks['кабинет: кнопка удаления']      = false !== strpos( $curator_files_html, 'curator_file_action" value="remove"' );
+
+unset( $_GET['wppa_team'] );
+
+// Наставник своей команды видит файлы, но не может их прикреплять.
+$mentor_files_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 8 ) )
+);
+
+$file_checks['кабинет: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
+$file_checks['кабинет: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
+$file_checks['кабинет: наставник не грузит файлы']    = false === strpos( $mentor_files_html, 'name="curator_file"' );
+$file_checks['кабинет: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
+
+unset( $GLOBALS['wppa_test']['current_user'] );
+
+// Роспуск команды удаляет файлы.
+$file_path = WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['file'];
+
+WPPA_Teams::dissolve( $files_team );
+
+$file_checks['роспуск удалил файлы с диска'] = ! is_file( $file_path );
+$file_checks['роспуск удалил список файлов'] = array() === WPPA_Curator_Files::files( $files_team );
+
+WPPA_Teams::set_curator( 12, false );
+
+$GLOBALS['wppa_test']['meta']  = $files_meta_backup;
+$GLOBALS['wppa_test']['posts'] = $files_posts_backup;
+
+foreach ( $file_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator files: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

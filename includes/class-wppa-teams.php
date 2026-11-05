@@ -962,6 +962,11 @@ class WPPA_Teams {
 	 * @return void
 	 */
 	public static function dissolve( $team_id ) {
+		// Файлы куратора живут вместе с командой: распустили — удалили.
+		if ( class_exists( 'WPPA_Curator_Files' ) ) {
+			WPPA_Curator_Files::clear( $team_id );
+		}
+
 		foreach ( self::members( $team_id ) as $member ) {
 			delete_user_meta( $member->ID, self::META_TEAM );
 			delete_user_meta( $member->ID, self::META_ROLE );

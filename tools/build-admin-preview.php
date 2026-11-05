@@ -30,6 +30,7 @@ require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
+require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-reset.php';

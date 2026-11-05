@@ -777,6 +777,26 @@
 	color: #b91c1c;
 }
 
+.wppa-curator-files .wppa-table {
+	margin-bottom: 18px;
+}
+
+.wppa-curator-files .wppa-field input[type="file"] {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 10px;
+	background: #fff;
+	font: inherit;
+	box-sizing: border-box;
+}
+
+.wppa-curator-files .wppa-field input[type="file"]:focus {
+	outline: none;
+	border-color: var(--wppa-accent, #2563eb);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+
 .wppa-copy {
 	display: flex;
 	gap: 8px;

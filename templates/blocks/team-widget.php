@@ -332,6 +332,122 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		</table>
 	</div>
 
+	<?php
+	// Файлы куратора: куратор прикрепляет, наставник команды скачивает.
+	$wppa_files = class_exists( 'WPPA_Curator_Files' ) ? WPPA_Curator_Files::files( $wppa_team_id ) : array();
+	?>
+
+	<?php if ( $wppa_is_curator && $wppa_team_id ) : ?>
+
+		<section class="wppa-card wppa-curator-files">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы для наставника', 'wp-personal-account' ); ?></h3>
+			<p class="wppa-hint">
+				<?php
+				printf(
+					/* translators: %d: максимальное число файлов */
+					esc_html__( 'Документы видит только наставник этой команды и вы. Разрешены документы, таблицы, презентации, архивы и изображения, до 10 МБ, не больше %d файлов.', 'wp-personal-account' ),
+					(int) WPPA_Curator_Files::MAX_FILES
+				);
+				?>
+			</p>
+
+			<?php if ( $wppa_files ) : ?>
+				<div class="wppa-table-wrap">
+					<table class="wppa-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'Прикреплён', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $wppa_files as $wppa_file ) : ?>
+								<tr>
+									<td data-label="<?php esc_attr_e( 'Файл', 'wp-personal-account' ); ?>">
+										<a href="<?php echo esc_url( WPPA_Curator_Files::download_url( $wppa_team_id, $wppa_file['key'] ) ); ?>">
+											<?php echo esc_html( $wppa_file['name'] ); ?>
+										</a>
+									</td>
+									<td data-label="<?php esc_attr_e( 'Размер', 'wp-personal-account' ); ?>"><?php echo esc_html( WPPA_Curator_Files::size_label( $wppa_file['size'] ) ); ?></td>
+									<td data-label="<?php esc_attr_e( 'Прикреплён', 'wp-personal-account' ); ?>">
+										<?php echo esc_html( $wppa_file['time'] ? date_i18n( get_option( 'date_format' ), $wppa_file['time'] ) : '—' ); ?>
+									</td>
+									<td data-label="<?php esc_attr_e( 'Действия', 'wp-personal-account' ); ?>">
+										<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+											<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
+											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
+											<input type="hidden" name="wppa_action" value="curator_file" />
+											<input type="hidden" name="curator_file_action" value="remove" />
+											<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
+											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Удалить файл?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></button>
+										</form>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php else : ?>
+				<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Файлов пока нет. Прикрепите первый — наставник увидит его сразу после загрузки.', 'wp-personal-account' ); ?></div>
+			<?php endif; ?>
+
+			<form class="wppa-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
+				<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
+				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
+				<input type="hidden" name="wppa_action" value="curator_file" />
+				<input type="hidden" name="curator_file_action" value="upload" />
+
+				<p class="wppa-field">
+					<label for="wppa-curator-file"><?php esc_html_e( 'Прикрепить файл', 'wp-personal-account' ); ?></label>
+					<input type="file" id="wppa-curator-file" name="curator_file" required />
+				</p>
+
+				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Прикрепить', 'wp-personal-account' ); ?></button>
+			</form>
+		</section>
+
+	<?php elseif ( $wppa_is_mentor ) : ?>
+
+		<section class="wppa-card wppa-curator-files">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от куратора', 'wp-personal-account' ); ?></h3>
+
+			<?php if ( $wppa_files ) : ?>
+				<div class="wppa-table-wrap">
+					<table class="wppa-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'Прикреплён', 'wp-personal-account' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $wppa_files as $wppa_file ) : ?>
+								<tr>
+									<td data-label="<?php esc_attr_e( 'Файл', 'wp-personal-account' ); ?>">
+										<a href="<?php echo esc_url( WPPA_Curator_Files::download_url( $wppa_team_id, $wppa_file['key'] ) ); ?>">
+											<?php echo esc_html( $wppa_file['name'] ); ?>
+										</a>
+									</td>
+									<td data-label="<?php esc_attr_e( 'Размер', 'wp-personal-account' ); ?>"><?php echo esc_html( WPPA_Curator_Files::size_label( $wppa_file['size'] ) ); ?></td>
+									<td data-label="<?php esc_attr_e( 'Прикреплён', 'wp-personal-account' ); ?>">
+										<?php echo esc_html( $wppa_file['time'] ? date_i18n( get_option( 'date_format' ), $wppa_file['time'] ) : '—' ); ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+				<p class="wppa-hint"><?php esc_html_e( 'Файлы прикрепил куратор. Их видят только наставники команды — участникам они недоступны.', 'wp-personal-account' ); ?></p>
+			<?php else : ?>
+				<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Куратор пока не прикреплял файлов для вашей команды.', 'wp-personal-account' ); ?></div>
+			<?php endif; ?>
+		</section>
+
+	<?php endif; ?>
+
 	<?php if ( $wppa_is_manager ) : ?>
 
 		<section class="wppa-card">
