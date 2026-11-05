@@ -2036,6 +2036,9 @@ $file_checks['команда: имя и фамилия']          = false !== st
 $file_checks['куратор: колонка «Наставник»']    = false !== strpos( $curator_team_html, 'Наставник' );
 $file_checks['куратор: колонки «Капитан» нет']  = false === strpos( $curator_team_html, 'Капитан' );
 $file_checks['куратор: email в таблице']        = false !== strpos( $curator_team_html, (string) $mentor_row['mentor_email'] );
+$file_checks['куратор: без счётчика участников'] = false === strpos( $curator_team_html, 'Участников' );
+$file_checks['куратор: без счётчика наставников'] = false === strpos( $curator_team_html, 'Наставников' );
+$file_checks['куратор: команда и состояние есть'] = false !== strpos( $curator_team_html, 'Состояние' ) && false !== strpos( $curator_team_html, 'Второй этап' );
 $GLOBALS['wppa_test']['users'][90] = array( 'Только отображаемое имя', 'noname@example.com', 'first_name' => '', 'last_name' => '' );
 $file_checks['имя: без имени и фамилии — display_name'] = 'Только отображаемое имя' === WPPA_Teams::full_name( new WP_User( 90 ) );
 unset( $GLOBALS['wppa_test']['users'][90] );
@@ -2176,10 +2179,11 @@ WPPA_Teams::set_curator( 63, true );
 
 $export_checks['команда создана']   = $export_team && ! is_wp_error( $export_team );
 $export_checks['выгрузка включена'] = true === WPPA_Team_Files_Export::enabled();
-$export_checks['папка: название и номер команды'] = 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: только название команды'] = 'Студия «Вектор»' === WPPA_Team_Files_Export::folder_name( $export_team );
+$export_checks['папка: без номера команды']      = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), (string) (int) $export_team );
 $export_checks['папка: общая папка «Команды»']    = 'Команды' === WPPA_Team_Files_Export::folder_root();
-$export_checks['папка: путь в общей папке']       = 'Команды/Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::folder_path( $export_team );
-$export_checks['папка: на диске в общей папке']   = $export_dir . DIRECTORY_SEPARATOR . 'Команды' . DIRECTORY_SEPARATOR . 'Студия «Вектор» (' . (int) $export_team . ')' === WPPA_Team_Files_Export::local_dir( $export_team );
+$export_checks['папка: путь в общей папке']       = 'Команды/Студия «Вектор»' === WPPA_Team_Files_Export::folder_path( $export_team );
+$export_checks['папка: на диске в общей папке']   = $export_dir . DIRECTORY_SEPARATOR . 'Команды' . DIRECTORY_SEPARATOR . 'Студия «Вектор»' === WPPA_Team_Files_Export::local_dir( $export_team );
 $export_checks['папка: служебные символы'] = false === strpos( WPPA_Team_Files_Export::folder_name( $export_team ), '/' );
 
 // Одинаковые названия не сливаются: номер команды всегда в имени папки.
@@ -2187,7 +2191,8 @@ $export_dup_one = WPPA_Teams::create( 'Дубль', 68 );
 $export_dup_two = WPPA_Teams::create( 'Дубль', 69 );
 
 $export_checks['одноимённые: разные папки'] = WPPA_Team_Files_Export::folder_name( $export_dup_one ) !== WPPA_Team_Files_Export::folder_name( $export_dup_two );
-$export_checks['одноимённые: номер в имени'] = 'Дубль (' . (int) $export_dup_two . ')' === WPPA_Team_Files_Export::folder_name( $export_dup_two );
+$export_checks['одноимённые: первая без суффикса'] = 'Дубль' === WPPA_Team_Files_Export::folder_name( $export_dup_one );
+$export_checks['одноимённые: вторая с « (2)»']     = 'Дубль (2)' === WPPA_Team_Files_Export::folder_name( $export_dup_two );
 
 WPPA_Teams::dissolve( $export_dup_one );
 WPPA_Teams::dissolve( $export_dup_two );

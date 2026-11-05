@@ -80,8 +80,6 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 						<tr>
 							<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></th>
-							<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
-							<th><?php esc_html_e( 'Наставников', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Состояние', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Второй этап', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Действие', 'wp-personal-account' ); ?></th>
@@ -109,8 +107,6 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 										<span class="wppa-hint"><?php esc_html_e( 'не назначен', 'wp-personal-account' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td data-label="<?php esc_attr_e( 'Участников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['participants'] ); ?></td>
-								<td data-label="<?php esc_attr_e( 'Наставников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['mentors'] ); ?></td>
 								<td data-label="<?php esc_attr_e( 'Состояние', 'wp-personal-account' ); ?>">
 									<?php if ( $wppa_row['complete'] ) : ?>
 										<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'сформирована', 'wp-personal-account' ); ?></span>

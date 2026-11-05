@@ -53,10 +53,11 @@ class WPPA_Team_Files_Export {
 	}
 
 	/**
-	 * Имя папки команды.
+	 * Имя папки команды — название без номера.
 	 *
-	 * Название очищается от служебных символов, номер команды добавляется,
-	 * чтобы папки не сливались при одинаковых названиях.
+	 * Переименовали команду — поменяется и папка. Одноимённым командам
+	 * достаётся « (2)», « (3)» по порядку номеров команд: папки не сливаются,
+	 * а имя не зависит от порядка обхода.
 	 *
 	 * @param int $team_id ID команды.
 	 * @return string
@@ -68,10 +69,46 @@ class WPPA_Team_Files_Export {
 			return '';
 		}
 
-		$name = self::clean_name( (string) get_the_title( $team_id ) );
+		return self::free_name( $team_id );
+	}
 
-		// Номер команды в имени папки: одноимённые команды не сливаются в одну.
-		return $name . ' (' . $team_id . ')';
+	/**
+	 * Название папки без учёта уже выданных имён.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return string
+	 */
+	private static function base_name( $team_id ) {
+		return self::clean_name( (string) get_the_title( $team_id ) );
+	}
+
+	/**
+	 * Свободное имя папки: «Название», при совпадении — «Название (2)» и далее.
+	 *
+	 * Совпадения считаются по командам с меньшим номером, поэтому имя не
+	 * зависит от порядка обхода и не «переезжает» между выгрузками.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return string
+	 */
+	private static function free_name( $team_id ) {
+		$team_id = (int) $team_id;
+		$base    = self::base_name( $team_id );
+		$same    = 0;
+
+		foreach ( WPPA_Teams::all_teams() as $team ) {
+			$other = (int) $team['id'];
+
+			if ( $other >= $team_id ) {
+				continue;
+			}
+
+			if ( mb_strtolower( self::base_name( $other ) ) === mb_strtolower( $base ) ) {
+				$same++;
+			}
+		}
+
+		return 0 === $same ? $base : $base . ' (' . ( $same + 1 ) . ')';
 	}
 
 	/**
