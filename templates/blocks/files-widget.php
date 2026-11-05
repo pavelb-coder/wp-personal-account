@@ -24,6 +24,16 @@ $wppa_can_upload      = $wppa_team_id && WPPA_Curator_Files::can_manage( $wppa_t
 $wppa_can_attach      = $wppa_team_id && WPPA_Curator_Files::can_attach( $wppa_team_id, $user->ID );
 $wppa_direction       = $wppa_team_id ? WPPA_Curator_Files::direction( $wppa_team_id, $user->ID ) : '';
 $wppa_files           = $wppa_can_view ? WPPA_Curator_Files::files( $wppa_team_id ) : array();
+
+// Участнику команды показываем только документы куратора.
+if ( '' === $wppa_direction ) {
+	$wppa_files = array_filter(
+		$wppa_files,
+		static function ( $wppa_entry ) {
+			return 'mentor' !== $wppa_entry['from'];
+		}
+	);
+}
 $wppa_team_name       = $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '';
 
 // Две встречные полки: что прислал куратор и что прислал наставник.
@@ -96,7 +106,9 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 			<?php
 			printf(
 				/* translators: %s: название команды */
-				esc_html__( 'Документы команды «%s». Их видят только наставник этой команды и куратор.', 'wp-personal-account' ),
+				'' === $wppa_direction
+					? esc_html__( 'Документы команды «%s», которые прислал куратор. Их можно скачать.', 'wp-personal-account' )
+					: esc_html__( 'Документы команды «%s». Их видят только наставник этой команды и куратор.', 'wp-personal-account' ),
 				esc_html( $wppa_team_name )
 			);
 			?>
@@ -158,7 +170,8 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 	</section>
 
 	<?php // Пока команда не отмечена, файлов наставника не бывает — блок не показываем.
-	if ( WPPA_Teams::is_stage2( $wppa_team_id ) ) : ?>
+	// Участнику команды полка наставника не нужна вовсе.
+	if ( WPPA_Teams::is_stage2( $wppa_team_id ) && '' !== $wppa_direction ) : ?>
 	<section class="wppa-card wppa-curator-files">
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от наставника', 'wp-personal-account' ); ?></h3>
 

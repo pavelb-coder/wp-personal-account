@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.28.0
+Stable tag: 3.29.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.29.0 =
+* Участник команды видит вкладку «Файлы», когда куратор прислал его команде документы: внутри только полка «Файлы от куратора» со ссылками на скачивание — без формы загрузки и без файлов наставника. Пока куратор ничего не присылал, вкладки нет.
 
 = 3.28.0 =
 * В экспорте команд папки называются только по названию команды — без номера: \\server\share\olimp\Команды\Студия «Вектор». Одноимённые команды получают « (2)», « (3)», чтобы папки не сливались; переименование команды меняет и папку.

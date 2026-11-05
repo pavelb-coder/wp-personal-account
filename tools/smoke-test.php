@@ -1886,7 +1886,9 @@ $file_checks['наставник видит файлы']      = true === WPPA_Cu
 $file_checks['куратор видит файлы']         = true === WPPA_Curator_Files::can_view( $files_team, 12 );
 
 $GLOBALS['wppa_test']['can_manage'] = false;
-$file_checks['участник не видит файлы']     = false === WPPA_Curator_Files::can_view( $files_team, 9 );
+$file_checks['участник видит файлы куратора'] = true === WPPA_Curator_Files::can_view( $files_team, 9 );
+$file_checks['есть файлы куратора в команде'] = true === WPPA_Curator_Files::has_curator_files( $files_team );
+$file_checks['чужой команде участник не нужен'] = false === WPPA_Curator_Files::can_view( $files_team, 555 );
 $file_checks['чужой не видит файлы']        = false === WPPA_Curator_Files::can_view( $files_team, 555 );
 unset( $GLOBALS['wppa_test']['can_manage'] );
 
@@ -1974,7 +1976,34 @@ $member_files_html = WPPA_Builder::render_block(
 );
 
 $file_checks['раздел: участнику не грузить']          = false === strpos( $member_files_html, 'name="curator_file"' );
-$file_checks['раздел: участнику файлы не видны']      = false === strpos( $member_files_html, 'методичка.pdf' );
+$file_checks['раздел: участнику файл куратора виден'] = false !== strpos( $member_files_html, 'методичка.pdf' );
+$file_checks['раздел: участнику карточка куратора']   = false !== strpos( $member_files_html, 'Файлы от куратора' );
+$file_checks['раздел: полки наставника нет']          = false === strpos( $member_files_html, 'Файлы от наставника' );
+$file_checks['раздел: файла наставника нет']          = false === strpos( $member_files_html, 'ответ.pdf' );
+
+// Команда, куда куратор ничего не присылал: у участника нет ни вкладки, ни раздела.
+$no_cur_team = WPPA_Teams::create( 'Команда без файлов куратора', 93 );
+WPPA_Teams::add_member( $no_cur_team, 94 );
+WPPA_Teams::make_mentor( $no_cur_team, 94 );
+WPPA_Teams::add_member( $no_cur_team, 95 );
+WPPA_Teams::set_stage2( $no_cur_team, true, 12 );
+
+$no_cur_file = WPPA_Curator_Files::store( $no_cur_team, wppa_test_file( 'только-наставник.pdf', 'm' ), 'только-наставник.pdf', 94 );
+
+$GLOBALS['wppa_test']['current_user'] = 95;
+$GLOBALS['wppa_test']['can_manage']   = false;
+
+$file_checks['без файлов куратора: файл наставника есть'] = is_array( $no_cur_file ) && ! empty( $no_cur_file['key'] );
+$file_checks['без файлов куратора: has_curator_files ложь'] = false === WPPA_Curator_Files::has_curator_files( $no_cur_team );
+$file_checks['без файлов куратора: can_view ложь']          = false === WPPA_Curator_Files::can_view( $no_cur_team, 95 );
+$file_checks['без файлов куратора: can_use_tab ложь']       = false === WPPA_Curator_Files::can_use_tab( 95 );
+$file_checks['без файлов куратора: вкладки нет']            = ! array_key_exists( 'files', WPPA_Template::tabs() );
+
+unset( $GLOBALS['wppa_test']['can_manage'] );
+
+WPPA_Teams::dissolve( $no_cur_team );
+
+$GLOBALS['wppa_test']['current_user'] = 9;
 $file_checks['раздел: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
 $file_checks['раздел: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
 $file_checks['раздел: наставник грузит файлы']       = false !== strpos( $mentor_files_html, 'name="curator_file"' );
@@ -2047,7 +2076,7 @@ $GLOBALS['wppa_test']['current_user'] = 12;
 $file_checks['вкладка: у куратора есть']   = array_key_exists( 'files', WPPA_Template::tabs() );
 
 $GLOBALS['wppa_test']['current_user'] = 9;
-$file_checks['вкладка: у участника нет']   = ! array_key_exists( 'files', WPPA_Template::tabs() );
+$file_checks['вкладка: у участника есть (куратор прислал)'] = array_key_exists( 'files', WPPA_Template::tabs() );
 
 $GLOBALS['wppa_test']['current_user'] = 0;
 $file_checks['вкладка: у гостя нет']       = ! array_key_exists( 'files', WPPA_Template::tabs() );
@@ -2056,7 +2085,7 @@ $file_checks['вкладка: у гостя нет']       = ! array_key_exists(
 $_GET['wppa_tab'] = 'files';
 
 $GLOBALS['wppa_test']['current_user'] = 9;
-$file_checks['вкладка: участнику по ссылке нельзя'] = 'files' !== WPPA_Account::current_tab();
+$file_checks['вкладка: участнику по ссылке можно'] = 'files' === WPPA_Account::current_tab();
 
 $GLOBALS['wppa_test']['current_user'] = 8;
 $file_checks['вкладка: наставнику по ссылке можно'] = 'files' === WPPA_Account::current_tab();
@@ -2071,7 +2100,8 @@ $file_checks['вкладка: гостю раздел закрыт'] = false ===
 
 $file_checks['вкладка: права на раздел'] = true === WPPA_Curator_Files::can_use_tab( 8 )
 	&& true === WPPA_Curator_Files::can_use_tab( 12 )
-	&& false === WPPA_Curator_Files::can_use_tab( 9 );
+	&& true === WPPA_Curator_Files::can_use_tab( 9 )
+	&& false === WPPA_Curator_Files::can_use_tab( 555 );
 
 $file_checks['вкладка: шаблон есть']       = is_file( WPPA_PATH . 'templates/tab-files.php' );
 $file_checks['вкладка: блок в конструкторе'] = array_key_exists( 'files-widget', WPPA_Builder::blocks() );

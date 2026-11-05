@@ -202,7 +202,8 @@ class WPPA_Curator_Files {
 	 * Кому показывать вкладку «Файлы».
 	 *
 	 * Раздел нужен наставнику команды (он получает файлы) и куратору (он их
-	 * прикрепляет). Остальным вкладка не выводится.
+	 * прикрепляет). Остальным участникам вкладка появляется только тогда,
+	 * когда куратор что-то прислал их команде: тогда им есть что скачать.
 	 *
 	 * @param int $user_id Пользователь.
 	 * @return bool
@@ -214,13 +215,36 @@ class WPPA_Curator_Files {
 			return false;
 		}
 
-		return WPPA_Teams::is_mentor( $user_id ) || WPPA_Teams::is_curator( $user_id );
+		if ( WPPA_Teams::is_mentor( $user_id ) || WPPA_Teams::is_curator( $user_id ) ) {
+			return true;
+		}
+
+		$team_id = (int) WPPA_Teams::team_id( $user_id );
+
+		return $team_id > 0 && self::has_curator_files( $team_id );
+	}
+
+	/**
+	 * Есть ли у команды файлы от куратора.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function has_curator_files( $team_id ) {
+		foreach ( self::files( (int) $team_id ) as $entry ) {
+			if ( 'mentor' !== $entry['from'] ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
 	 * Может ли пользователь смотреть файлы команды.
 	 *
-	 * Наставник этой команды, куратор и администратор сайта.
+	 * Наставник этой команды, куратор, администратор сайта и участник команды —
+	 * но участнику показываем раздел, только когда куратор уже прислал файлы.
 	 *
 	 * @param int $team_id ID команды.
 	 * @param int $user_id ID пользователя (0 — текущий).
@@ -242,7 +266,16 @@ class WPPA_Curator_Files {
 			return true;
 		}
 
-		return (int) WPPA_Teams::team_id( $user_id ) === $team_id && WPPA_Teams::is_mentor( $user_id );
+		if ( (int) WPPA_Teams::team_id( $user_id ) !== $team_id ) {
+			return false;
+		}
+
+		if ( WPPA_Teams::is_mentor( $user_id ) ) {
+			return true;
+		}
+
+		// Участник команды видит раздел, когда в нём есть документы куратора.
+		return self::has_curator_files( $team_id );
 	}
 
 	/**
