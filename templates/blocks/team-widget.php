@@ -175,16 +175,8 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	</div>
 <?php endif; ?>
 
-<?php if ( ! $wppa_has_team ) : ?>
-
-
-	<?php if ( $wppa_is_curator ) : ?>
-
-		<div class="wppa-notice wppa-notice--info">
-			<?php esc_html_e( 'Вы куратор и не состоите в команде — это нормально: куратор не занимает место в составе. Выберите команду в списке выше, чтобы посмотреть и поправить её.', 'wp-personal-account' ); ?>
-		</div>
-
-	<?php else : ?>
+<?php // Куратору без команды этой карточки не показываем: он не занимает место в составе. ?>
+<?php if ( ! $wppa_has_team && ! $wppa_is_curator ) : ?>
 
 	<div class="wppa-notice wppa-notice--info">
 		<?php esc_html_e( 'Вы пока не состоите в команде. Создайте свою или присоединитесь по ссылке-приглашению.', 'wp-personal-account' ); ?>
@@ -231,9 +223,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		</section>
 	</div>
 
-	<?php endif; ?>
-
-<?php else : ?>
+<?php elseif ( $wppa_has_team ) : ?>
 
 	<?php if ( ! $wppa_team ) : ?>
 		<div class="wppa-notice wppa-notice--info">

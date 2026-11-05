@@ -585,6 +585,12 @@ class WPPA_Curator_Files {
 			WPPA_Team_Files_Export::remove( $team_id, $key );
 		}
 
+		// Письмо «для команды прикреплены файлы» больше не актуально:
+		// убираем письма этой команды из очереди рассылки о файлах.
+		if ( ! $was_mentor && class_exists( 'WPPA_Mailing_Files' ) ) {
+			WPPA_Mailing_Files::drop_team( $team_id );
+		}
+
 		return true;
 	}
 
@@ -610,6 +616,11 @@ class WPPA_Curator_Files {
 
 		if ( class_exists( 'WPPA_Team_Files_Export' ) ) {
 			WPPA_Team_Files_Export::clear( (int) $team_id );
+		}
+
+		// Файлов не осталось — письма этой команде из очереди рассылки о файлах убираем.
+		if ( class_exists( 'WPPA_Mailing_Files' ) ) {
+			WPPA_Mailing_Files::drop_team( (int) $team_id );
 		}
 	}
 

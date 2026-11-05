@@ -33,6 +33,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
+require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-reset.php';
@@ -97,9 +98,41 @@ if ( ! empty( $demo_team_ids[0] ) ) {
 	);
 	WPPA_Mailing::start();
 	WPPA_Mailing::process_due();
+
+	update_post_meta(
+		$demo_team_ids[0],
+		WPPA_Curator_Files::META,
+		array(
+			'preview-file' => array(
+				'file' => 'preview.pdf',
+				'name' => 'Положение об олимпиаде.pdf',
+				'from' => 'curator',
+				'time' => time(),
+				'user' => 7,
+			),
+		)
+	);
+
+	WPPA_Mailing_Files::save(
+		array(
+			'subject'  => 'Файлы для команды «{команда}»',
+			'body'     => "Здравствуйте, {имя}!\n\nКуратор прикрепил файлы для команды «{команда}» — они уже в личном кабинете, во вкладке «Файлы».\n\nПисьмо отправлено на {email}.\n\n— {сайт}",
+			'interval' => 10,
+			'batch'    => 2,
+		)
+	);
 }
 
-$sections .= demo_page( 'Рассылка', 'Шаблон письма с подстановками, предпросмотр, очередь с интервалом между письмами, отмена и журнал', static function () { WPPA_Admin::page_mailing(); } );
+$sections .= demo_page( 'Рассылка: второй этап', 'Шаблон письма с подстановками, предпросмотр, очередь с интервалом между письмами, отмена и журнал', static function () { WPPA_Admin::page_mailing(); } );
+$sections .= demo_page(
+	'Рассылка: прикреплённые файлы',
+	'Вторая рассылка — тем же получателям, но со своим шаблоном, очередью и журналом',
+	static function () {
+		$_GET['wppa_kind'] = 'files';
+		WPPA_Admin::page_mailing();
+		unset( $_GET['wppa_kind'] );
+	}
+);
 // Демонстрация панели выгрузки в сетевую папку: настройки, расписание, журнал.
 $wppa_folder_snapshot = get_option( 'wppa_settings', array() );
 

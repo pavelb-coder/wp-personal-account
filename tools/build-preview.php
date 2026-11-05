@@ -26,6 +26,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
+require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -256,9 +257,21 @@ WPPA_Mailing::save(
 WPPA_Mailing::start();
 WPPA_Mailing::process_due();
 
+// Вторая рассылка — о прикреплённых файлах: те же люди, отдельный шаблон и очередь.
+WPPA_Mailing_Files::save(
+	array(
+		'subject'  => 'Для команды «{команда}» прикреплены файлы',
+		'body'     => "Здравствуйте, {имя}!\n\nКуратор прикрепил документы для команды «{команда}» — посмотреть и скачать их можно в личном кабинете, во вкладке «Файлы».\n\n— {сайт}",
+		'interval' => 10,
+		'batch'    => 2,
+	)
+);
+WPPA_Mailing_Files::start();
+WPPA_Mailing_Files::process_due();
+
 $sections .= demo_section(
-	'Куратор: главная страница и рассылка',
-	'Куратор видит состояние очереди писем участникам второго этапа: сколько отправлено, сколько осталось, когда следующее письмо, и ссылку на раздел «Рассылка»',
+	'Куратор: главная страница и рассылки',
+	'Куратор видит состояние очередей обеих рассылок — «второй этап» и «прикреплённые файлы»: сколько отправлено, сколько осталось, когда следующее письмо, и ссылку на раздел «Рассылка»',
 	WPPA_Template::get( 'tab-dashboard', array( 'user' => $curator_user, 'tabs' => $tabs ) )
 );
 
@@ -272,6 +285,7 @@ $sections .= demo_section(
 );
 
 WPPA_Mailing::cancel();
+WPPA_Mailing_Files::cancel();
 
 // Снятие отметки: письма уходят только тем командам, у которых отметка осталась.
 $wppa_notice_registry = WPPA_Notices::registry();

@@ -2,8 +2,8 @@
 /**
  * Админ-панель: страница «Рассылка участникам второго этапа».
  *
- * Доступные переменные: $notice, $settings, $stats, $logs, $recipients,
- * $sent_before, $placeholders, $next, $queue.
+ * Доступные переменные: $notice, $kind, $mailing, $settings, $stats, $logs,
+ * $recipients, $sent_before, $placeholders, $next, $queue.
  *
  * @package WP_Personal_Account
  */
@@ -20,12 +20,35 @@ $wppa_preview     = ! empty( $recipients ) ? $recipients[0] : array(
 	'team'  => __( 'Студия «Вектор»', 'wp-personal-account' ),
 	'date'  => date_i18n( get_option( 'date_format' ) ),
 );
-$wppa_subject     = WPPA_Mailing::render( $settings['subject'], $wppa_preview, true );
-$wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
+$wppa_kind        = isset( $kind ) ? (string) $kind : 'stage2';
+$wppa_class       = isset( $mailing ) ? (string) $mailing : 'WPPA_Mailing';
+$wppa_is_files    = 'files' === $wppa_kind;
+$wppa_subject     = $wppa_class::render( $settings['subject'], $wppa_preview, true );
+$wppa_body        = $wppa_class::render( $settings['body'], $wppa_preview );
 ?>
 <div class="wrap wppa-admin">
-	<h1 class="wp-heading-inline"><?php esc_html_e( 'Рассылка участникам второго этапа', 'wp-personal-account' ); ?></h1>
+	<h1 class="wp-heading-inline"><?php echo esc_html( $wppa_is_files ? __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' ) : __( 'Рассылка участникам второго этапа', 'wp-personal-account' ) ); ?></h1>
 	<hr class="wp-header-end" />
+
+	<nav class="nav-tab-wrapper">
+		<?php
+		$wppa_kinds = array(
+			'stage2' => __( 'Второй этап', 'wp-personal-account' ),
+			'files'  => __( 'Прикреплённые файлы', 'wp-personal-account' ),
+		);
+
+		foreach ( $wppa_kinds as $wppa_kind_slug => $wppa_kind_label ) :
+			$wppa_kind_url = add_query_arg(
+				array(
+					'page'      => 'wppa-mailing',
+					'wppa_kind' => $wppa_kind_slug,
+				),
+				admin_url( 'admin.php' )
+			);
+			?>
+			<a class="nav-tab<?php echo $wppa_kind === $wppa_kind_slug ? ' nav-tab-active' : ''; ?>" href="<?php echo esc_url( $wppa_kind_url ); ?>"><?php echo esc_html( $wppa_kind_label ); ?></a>
+		<?php endforeach; ?>
+	</nav>
 
 	<?php if ( $notice ) : ?>
 		<div class="notice notice-<?php echo esc_attr( 'success' === $notice[0] ? 'success' : ( 'error' === $notice[0] ? 'error' : 'warning' ) ); ?> is-dismissible">
@@ -36,12 +59,21 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 	<div class="notice notice-info">
 		<p>
 			<?php
-			printf(
-				/* translators: 1: получателей, 2: команд, 3: уже получили */
-				esc_html__( 'Письма уходят участникам, капитанам и наставникам команд, отмеченных «прошла во второй этап»: получателей сейчас %1$d, из них уже получали письмо — %2$d. Отправка идёт очередью: первое письмо сразу, каждое следующее — через заданный интервал, по несколько писем за один запуск WP-Cron. Рассылку можно отменить в любой момент.', 'wp-personal-account' ),
-				count( $recipients ),
-				(int) $sent_before
-			);
+			if ( $wppa_is_files ) {
+				printf(
+					/* translators: 1: получателей, 2: уже получали */
+					esc_html__( 'Письма уходят участникам, капитанам и наставникам всех команд — о том, что в кабинете появились прикреплённые файлы. Отметка второго этапа не нужна: пишем и тем командам, которые её ещё не получили. Получателей сейчас %1$d, из них уже получали письмо — %2$d. Отправка идёт очередью: первое письмо сразу, каждое следующее — через заданный интервал, по несколько писем за один запуск WP-Cron. Рассылку можно отменить в любой момент.', 'wp-personal-account' ),
+					count( $recipients ),
+					(int) $sent_before
+				);
+			} else {
+				printf(
+					/* translators: 1: получателей, 2: команд, 3: уже получили */
+					esc_html__( 'Письма уходят участникам, капитанам и наставникам команд, отмеченных «прошла во второй этап»: получателей сейчас %1$d, из них уже получали письмо — %2$d. Отправка идёт очередью: первое письмо сразу, каждое следующее — через заданный интервал, по несколько писем за один запуск WP-Cron. Рассылку можно отменить в любой момент.', 'wp-personal-account' ),
+					count( $recipients ),
+					(int) $sent_before
+				);
+			}
 			?>
 		</p>
 	</div>
@@ -52,6 +84,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'wppa_mailing' ); ?>
+				<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_kind ); ?>" />
 				<input type="hidden" name="action" value="wppa_mailing" />
 
 				<p>
@@ -99,7 +132,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 			<div class="wppa-admin__preview">
 				<p><strong><?php echo esc_html( $wppa_subject ); ?></strong></p>
 				<div class="wppa-admin__preview-body">
-					<?php echo wp_kses_post( WPPA_Mailing::to_html( $wppa_body ) ); ?>
+					<?php echo wp_kses_post( $wppa_class::to_html( $wppa_body ) ); ?>
 				</div>
 				<p class="wppa-admin__muted">
 					<?php
@@ -138,7 +171,15 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 							<td><?php echo esc_html( (string) $stats['failed'] ); ?></td>
 						</tr>
 						<tr>
-							<td><?php esc_html_e( 'Пропущено (отметка снята)', 'wp-personal-account' ); ?></td>
+							<td>
+								<?php
+								echo esc_html(
+									$wppa_is_files
+										? __( 'Пропущено', 'wp-personal-account' )
+										: __( 'Пропущено (отметка снята)', 'wp-personal-account' )
+								);
+								?>
+							</td>
 							<td><?php echo esc_html( (string) $stats['skipped'] ); ?></td>
 						</tr>
 						<tr>
@@ -180,6 +221,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 					<?php if ( ! empty( $stats['paused'] ) ) : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline">
 							<?php wp_nonce_field( 'wppa_mailing' ); ?>
+				<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_kind ); ?>" />
 							<input type="hidden" name="action" value="wppa_mailing" />
 							<button type="submit" class="button" name="wppa_mailing_action" value="resume"><?php esc_html_e( 'Продолжить рассылку', 'wp-personal-account' ); ?></button>
 						</form>
@@ -188,6 +230,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 					<?php if ( $stats['pending'] > 0 && empty( $stats['paused'] ) ) : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline">
 							<?php wp_nonce_field( 'wppa_mailing' ); ?>
+				<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_kind ); ?>" />
 							<input type="hidden" name="action" value="wppa_mailing" />
 							<button type="submit" class="button" name="wppa_mailing_action" value="send_now"><?php esc_html_e( 'Отправить остаток сейчас', 'wp-personal-account' ); ?></button>
 						</form>
@@ -195,6 +238,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline">
 						<?php wp_nonce_field( 'wppa_mailing' ); ?>
+				<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_kind ); ?>" />
 						<input type="hidden" name="action" value="wppa_mailing" />
 						<button type="submit" class="button button-link-delete" name="wppa_mailing_action" value="cancel"><?php esc_html_e( 'Отменить рассылку', 'wp-personal-account' ); ?></button>
 					</form>
@@ -231,7 +275,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 													echo esc_html( 'ошибка' . ( ! empty( $wppa_item['error'] ) ? ': ' . $wppa_item['error'] : '' ) );
 													break;
 												case 'skipped':
-													esc_html_e( 'пропущено: отметка снята', 'wp-personal-account' );
+													esc_html_e( 'пропущено', 'wp-personal-account' );
 													break;
 												default:
 													esc_html_e( 'ждёт отправки', 'wp-personal-account' );
@@ -249,7 +293,15 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 			<h2><?php esc_html_e( 'Получатели', 'wp-personal-account' ); ?></h2>
 
 			<?php if ( empty( $recipients ) ) : ?>
-				<p class="wppa-admin__muted"><?php esc_html_e( 'Команд второго этапа пока нет — отметьте их на странице «Команды».', 'wp-personal-account' ); ?></p>
+				<p class="wppa-admin__muted">
+					<?php
+					echo esc_html(
+						$wppa_is_files
+							? __( 'Команд пока нет — создайте их на странице «Команды».', 'wp-personal-account' )
+							: __( 'Команд второго этапа пока нет — отметьте их на странице «Команды».', 'wp-personal-account' )
+					);
+					?>
+				</p>
 			<?php else : ?>
 				<table class="widefat striped">
 					<thead>
@@ -292,6 +344,7 @@ $wppa_body        = WPPA_Mailing::render( $settings['body'], $wppa_preview );
 
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wppa-inline">
 					<?php wp_nonce_field( 'wppa_mailing' ); ?>
+				<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_kind ); ?>" />
 					<input type="hidden" name="action" value="wppa_mailing" />
 					<button type="submit" class="button button-link-delete" name="wppa_mailing_action" value="clear_log"><?php esc_html_e( 'Очистить журнал', 'wp-personal-account' ); ?></button>
 				</form>

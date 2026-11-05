@@ -42,14 +42,37 @@ $wppa_dash_team    = $wppa_dash_stage2 ? WPPA_Teams::get( $wppa_dash_team_id ) :
 <?php endif; ?>
 <?php
 
-// Куратору — состояние рассылки участникам второго этапа и кнопка отмены.
-$wppa_mail_stats   = WPPA_Teams::is_curator( $user->ID ) ? WPPA_Mailing::stats() : array();
-$wppa_mail_next    = ! empty( $wppa_mail_stats['active'] ) ? WPPA_Mailing::next_run() : 0;
-$wppa_mail_admin   = current_user_can( 'manage_options' );
+// Куратору — состояние рассылок и кнопки отмены: второй этап и прикреплённые файлы.
+$wppa_mail_admin = current_user_can( 'manage_options' );
+$wppa_mailings   = array();
+
+if ( WPPA_Teams::is_curator( $user->ID ) ) {
+	foreach ( array( 'stage2', 'files' ) as $wppa_mail_kind ) {
+		$wppa_mail_class = WPPA_Mailing::class_of( $wppa_mail_kind );
+		$wppa_mail_state = $wppa_mail_class::stats();
+
+		if ( empty( $wppa_mail_state['active'] ) ) {
+			continue;
+		}
+
+		$wppa_mailings[ $wppa_mail_kind ] = array(
+			'class' => $wppa_mail_class,
+			'stats' => $wppa_mail_state,
+			'next'  => $wppa_mail_class::next_run(),
+		);
+	}
+}
 ?>
-<?php if ( ! empty( $wppa_mail_stats['active'] ) ) : ?>
+<?php foreach ( $wppa_mailings as $wppa_mail_kind => $wppa_mail ) : ?>
+	<?php
+	$wppa_mail_stats = $wppa_mail['stats'];
+	$wppa_mail_next  = $wppa_mail['next'];
+	$wppa_mail_title = 'files' === $wppa_mail_kind
+		? __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' )
+		: __( 'Рассылка участникам второго этапа', 'wp-personal-account' );
+	?>
 	<div class="wppa-card wppa-card--mailing">
-		<h3 class="wppa-subtitle"><?php esc_html_e( 'Рассылка участникам второго этапа', 'wp-personal-account' ); ?></h3>
+		<h3 class="wppa-subtitle"><?php echo esc_html( $wppa_mail_title ); ?></h3>
 		<ul class="wppa-list wppa-mailing__stats">
 			<li><?php printf( esc_html__( 'Всего писем: %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['total'] ) ); ?></li>
 			<li><?php printf( esc_html__( 'Отправлено: %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['sent'] ) ); ?></li>
@@ -58,7 +81,18 @@ $wppa_mail_admin   = current_user_can( 'manage_options' );
 				<li><?php printf( esc_html__( 'Ошибок: %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['failed'] ) ); ?></li>
 			<?php endif; ?>
 			<?php if ( ! empty( $wppa_mail_stats['skipped'] ) ) : ?>
-				<li><?php printf( esc_html__( 'Пропущено (отметка снята): %s', 'wp-personal-account' ), esc_html( (string) $wppa_mail_stats['skipped'] ) ); ?></li>
+				<li>
+					<?php
+					printf(
+						esc_html(
+							'files' === $wppa_mail_kind
+								? __( 'Пропущено: %s', 'wp-personal-account' )
+								: __( 'Пропущено (отметка снята): %s', 'wp-personal-account' )
+						),
+						esc_html( (string) $wppa_mail_stats['skipped'] )
+					);
+					?>
+				</li>
 			<?php endif; ?>
 			<li>
 				<?php
@@ -93,15 +127,16 @@ $wppa_mail_admin   = current_user_can( 'manage_options' );
 					<?php wp_nonce_field( 'wppa_mailing', 'wppa_nonce' ); ?>
 					<input type="hidden" name="wppa_action" value="mailing" />
 					<input type="hidden" name="wppa_mailing_action" value="cancel" />
+					<input type="hidden" name="mailing_kind" value="<?php echo esc_attr( $wppa_mail_kind ); ?>" />
 					<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Отменить рассылку', 'wp-personal-account' ); ?></button>
 				</form>
 			<?php endif; ?>
 			<?php if ( $wppa_mail_admin ) : ?>
-				<a class="wppa-link" href="<?php echo esc_url( admin_url( 'admin.php?page=wppa-mailing' ) ); ?>"><?php esc_html_e( 'Шаблон и очередь в админке', 'wp-personal-account' ); ?></a>
+				<a class="wppa-link" href="<?php echo esc_url( add_query_arg( 'wppa_kind', $wppa_mail_kind, admin_url( 'admin.php?page=wppa-mailing' ) ) ); ?>"><?php esc_html_e( 'Шаблон и очередь в админке', 'wp-personal-account' ); ?></a>
 			<?php endif; ?>
 		</div>
 	</div>
-<?php endif; ?>
+<?php endforeach; ?>
 <?php
 
 WPPA_Builder::render_tab(

@@ -78,8 +78,51 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function init() {
-		add_action( self::CRON_HOOK, array( __CLASS__, 'run_cron' ) );
-		add_action( 'init', array( __CLASS__, 'reschedule' ), 21 );
+		add_action( static::CRON_HOOK, array( static::class, 'run_cron' ) );
+		add_action( 'init', array( static::class, 'reschedule' ), 21 );
+	}
+
+	/**
+	 * Код рассылки: stage2 — «команда прошла во второй этап», files — файлы.
+	 *
+	 * @return string
+	 */
+	public static function kind() {
+		return 'stage2';
+	}
+
+	/**
+	 * Попадает ли команда в список получателей этой рассылки.
+	 *
+	 * По умолчанию — только команды с отметкой второго этапа.
+	 *
+	 * @param int $team_id ID команды.
+	 * @return bool
+	 */
+	public static function team_allowed( $team_id ) {
+		return ! static::needs_stage2() || WPPA_Teams::is_stage2( (int) $team_id );
+	}
+
+	/**
+	 * Нужна ли команде отметка второго этапа, чтобы попасть в рассылку.
+	 *
+	 * У рассылки второго этапа — да; у рассылки о прикреплённых файлах — нет,
+	 * письма уходят всем командам независимо от отметки.
+	 *
+	 * @return bool
+	 */
+	public static function needs_stage2() {
+		return true;
+	}
+
+	/**
+	 * Класс рассылки по коду.
+	 *
+	 * @param string $kind Код.
+	 * @return string Имя класса.
+	 */
+	public static function class_of( $kind ) {
+		return 'files' === (string) $kind ? 'WPPA_Mailing_Files' : 'WPPA_Mailing';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -140,7 +183,7 @@ class WPPA_Mailing {
 	 * @return string
 	 */
 	public static function render( $text, $item, $is_subject = false ) {
-		$text = strtr( (string) $text, self::placeholders( $item ) );
+		$text = strtr( (string) $text, static::placeholders( $item ) );
 
 		return $is_subject ? sanitize_text_field( $text ) : $text;
 	}
@@ -151,8 +194,8 @@ class WPPA_Mailing {
 	 * @return array
 	 */
 	public static function settings() {
-		$saved = get_option( self::OPTION, array() );
-		$args  = wp_parse_args( is_array( $saved ) ? $saved : array(), self::defaults() );
+		$saved = get_option( static::OPTION, array() );
+		$args  = wp_parse_args( is_array( $saved ) ? $saved : array(), static::defaults() );
 
 		$args['interval']  = max( 0, min( 1440, (int) $args['interval'] ) );
 		$args['batch']     = max( 1, min( 50, (int) $args['batch'] ) );
@@ -181,18 +224,18 @@ class WPPA_Mailing {
 		);
 
 		if ( '' === $clean['subject'] ) {
-			$defaults          = self::defaults();
+			$defaults          = static::defaults();
 			$clean['subject'] = $defaults['subject'];
 		}
 
 		if ( '' === trim( $clean['body'] ) ) {
-			$defaults       = self::defaults();
+			$defaults       = static::defaults();
 			$clean['body'] = $defaults['body'];
 		}
 
-		update_option( self::OPTION, $clean );
+		update_option( static::OPTION, $clean );
 
-		return self::settings();
+		return static::settings();
 	}
 
 	/* ---------------------------------------------------------------------
@@ -200,7 +243,8 @@ class WPPA_Mailing {
 	 * ------------------------------------------------------------------ */
 
 	/**
-	 * Получатели: все участники, капитаны и наставники команд второго этапа.
+	 * Получатели: все участники, капитаны и наставники тех команд, которые
+	 * проходит фильтр `team_allowed()`.
 	 *
 	 * @return array
 	 */
@@ -211,7 +255,7 @@ class WPPA_Mailing {
 		foreach ( WPPA_Teams::all_teams() as $team ) {
 			$team_id = (int) $team['id'];
 
-			if ( ! WPPA_Teams::is_stage2( $team_id ) ) {
+			if ( ! static::team_allowed( $team_id ) ) {
 				continue;
 			}
 
@@ -260,7 +304,7 @@ class WPPA_Mailing {
 		$count = 0;
 
 		foreach ( (array) $rows as $row ) {
-			if ( (int) get_user_meta( (int) $row['user_id'], self::META_SENT, true ) > 0 ) {
+			if ( (int) get_user_meta( (int) $row['user_id'], static::META_SENT, true ) > 0 ) {
 				$count++;
 			}
 		}
@@ -278,7 +322,7 @@ class WPPA_Mailing {
 	 * @return array
 	 */
 	public static function run_state() {
-		$run = get_option( self::QUEUE, array() );
+		$run = get_option( static::QUEUE, array() );
 
 		if ( ! is_array( $run ) || empty( $run['items'] ) || ! is_array( $run['items'] ) ) {
 			return array();
@@ -293,7 +337,7 @@ class WPPA_Mailing {
 	 * @return array
 	 */
 	public static function stats() {
-		$run  = self::run_state();
+		$run  = static::run_state();
 		$out  = array(
 			'active'  => false,
 			'total'   => 0,
@@ -372,14 +416,14 @@ class WPPA_Mailing {
 	 * @return int|false Число писем в очереди или false, если отправлять некому.
 	 */
 	public static function start() {
-		$settings = self::settings();
-		$rows     = self::recipients();
+		$settings = static::settings();
+		$rows     = static::recipients();
 		$skip     = (int) $settings['skip_sent'];
 		$now      = time();
 		$items    = array();
 
 		foreach ( $rows as $row ) {
-			if ( $skip && (int) get_user_meta( (int) $row['user_id'], self::META_SENT, true ) > 0 ) {
+			if ( $skip && (int) get_user_meta( (int) $row['user_id'], static::META_SENT, true ) > 0 ) {
 				continue;
 			}
 
@@ -394,8 +438,8 @@ class WPPA_Mailing {
 			return false;
 		}
 
-		$items    = array_slice( $items, 0, self::MAX_QUEUE );
-		$interval = (int) $settings['interval'] * self::MINUTE;
+		$items    = array_slice( $items, 0, static::MAX_QUEUE );
+		$interval = (int) $settings['interval'] * static::MINUTE;
 
 		foreach ( $items as $index => $item ) {
 			$items[ $index ]['due'] = $now + ( $index * $interval );
@@ -413,9 +457,9 @@ class WPPA_Mailing {
 			'fails'    => 0,
 		);
 
-		update_option( self::QUEUE, $run, false );
-		self::schedule( (int) $items[0]['due'] );
-		self::log(
+		update_option( static::QUEUE, $run, false );
+		static::schedule( (int) $items[0]['due'] );
+		static::log(
 			sprintf(
 				/* translators: 1: количество писем, 2: интервал в минутах */
 				__( 'Рассылка запущена: %1$d писем, шаг %2$d мин.', 'wp-personal-account' ),
@@ -433,18 +477,18 @@ class WPPA_Mailing {
 	 * @return bool Была ли очередь.
 	 */
 	public static function cancel() {
-		$run = self::run_state();
+		$run = static::run_state();
 
-		delete_option( self::QUEUE );
-		self::unschedule();
+		delete_option( static::QUEUE );
+		static::unschedule();
 
 		if ( empty( $run ) ) {
 			return false;
 		}
 
-		$stats = self::stats();
+		$stats = static::stats();
 
-		self::log(
+		static::log(
 			sprintf(
 				/* translators: 1: отправлено, 2: всего */
 				__( 'Рассылка отменена вручную: отправлено %1$d из %2$d.', 'wp-personal-account' ),
@@ -462,7 +506,7 @@ class WPPA_Mailing {
 	 * @return bool
 	 */
 	public static function resume() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) ) {
 			return false;
@@ -471,7 +515,7 @@ class WPPA_Mailing {
 		$run['paused'] = '';
 		$run['fails']  = 0;
 
-		$next = self::next_due( $run );
+		$next = static::next_due( $run );
 
 		if ( $next <= 0 ) {
 			return false;
@@ -488,9 +532,9 @@ class WPPA_Mailing {
 			$run['items']
 		);
 
-		update_option( self::QUEUE, $run, false );
-		self::schedule( $next );
-		self::log( __( 'Рассылка продолжена.', 'wp-personal-account' ) );
+		update_option( static::QUEUE, $run, false );
+		static::schedule( $next );
+		static::log( __( 'Рассылка продолжена.', 'wp-personal-account' ) );
 
 		return true;
 	}
@@ -501,20 +545,20 @@ class WPPA_Mailing {
 	 * @return int Число отправленных писем.
 	 */
 	public static function send_all() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) ) {
 			return 0;
 		}
 
 		if ( ! empty( $run['paused'] ) ) {
-			self::resume();
+			static::resume();
 		}
 
-		$run['batch'] = self::MAX_QUEUE;
-		update_option( self::QUEUE, $run, false );
+		$run['batch'] = static::MAX_QUEUE;
+		update_option( static::QUEUE, $run, false );
 
-		return self::process_due( true );
+		return static::process_due( true );
 	}
 
 	/**
@@ -523,16 +567,16 @@ class WPPA_Mailing {
 	 * @return bool
 	 */
 	public static function clear() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) ) {
-			delete_option( self::QUEUE );
+			delete_option( static::QUEUE );
 
 			return false;
 		}
 
-		delete_option( self::QUEUE );
-		self::unschedule();
+		delete_option( static::QUEUE );
+		static::unschedule();
 
 		return true;
 	}
@@ -543,11 +587,21 @@ class WPPA_Mailing {
 	 * @return array
 	 */
 	public static function last_drop() {
-		return self::$last_drop;
+		return static::$last_drop;
 	}
 
 	/**
-	 * Убрать из очереди письма команды, у которой сняли отметку второго этапа.
+	 * Причина, по которой письма команды убрали из очереди (для журнала).
+	 *
+	 * @return string
+	 */
+	public static function drop_reason() {
+		return __( 'отметка второго этапа снята', 'wp-personal-account' );
+	}
+
+	/**
+	 * Убрать из очереди письма команды, которой письмо больше не актуально:
+	 * у рассылки второго этапа — сняли отметку, у рассылки о файлах — файлы удалили.
 	 *
 	 * Письма этой команды уже не уйдут: они удаляются из очереди, а не помечаются
 	 * отправленными. Если отметку сняли в течение минуты после установки, это
@@ -561,11 +615,11 @@ class WPPA_Mailing {
 		$team_id = (int) $team_id;
 		$team    = WPPA_Teams::get( $team_id );
 		$name    = $team ? (string) $team['name'] : sprintf( '#%d', $team_id );
-		$run     = self::run_state();
+		$run     = static::run_state();
 		$dropped = 0;
 		$items   = array();
 
-		self::$last_drop = array(
+		static::$last_drop = array(
 			'count' => 0,
 			'grace' => (bool) $grace,
 			'team'  => $name,
@@ -591,29 +645,30 @@ class WPPA_Mailing {
 		}
 
 		$run['items']     = $items;
-		self::$last_drop['count'] = $dropped;
+		static::$last_drop['count'] = $dropped;
 
-		if ( 0 === self::next_due( $run ) ) {
+		if ( 0 === static::next_due( $run ) ) {
 			$run['done'] = time();
 		}
 
-		update_option( self::QUEUE, $run, false );
+		update_option( static::QUEUE, $run, false );
 
 		if ( ! empty( $run['done'] ) ) {
-			self::unschedule();
+			static::unschedule();
 		}
 
-		self::log(
+		static::log(
 			sprintf(
-				/* translators: 1: название команды, 2: число писем */
-				__( 'Команда «%1$s»: отметка второго этапа снята, из очереди убрано писем — %2$d.', 'wp-personal-account' ),
+				/* translators: 1: название команды, 2: число писем, 3: причина */
+				__( 'Команда «%1$s»: %3$s, из очереди убрано писем — %2$d.', 'wp-personal-account' ),
 				$name,
-				$dropped
+				$dropped,
+				static::drop_reason()
 			)
 		);
 
-		if ( $grace ) {
-			self::log( __( 'Отметку сняли в течение минуты после установки — защита от случайного нажатия: письма этой команде не отправлялись.', 'wp-personal-account' ) );
+		if ( $grace && static::needs_stage2() ) {
+			static::log( __( 'Отметку сняли в течение минуты после установки — защита от случайного нажатия: письма этой команде не отправлялись.', 'wp-personal-account' ) );
 		}
 
 		return $dropped;
@@ -630,7 +685,7 @@ class WPPA_Mailing {
 	 * @return int Число отправленных писем.
 	 */
 	public static function process_due( $force = false ) {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) ) {
 			return 0;
@@ -659,36 +714,37 @@ class WPPA_Mailing {
 				continue;
 			}
 
-			// Отметку могли снять, пока письмо ждало своей очереди: тогда не отправляем.
-			if ( ! WPPA_Teams::is_stage2( (int) $item['team_id'] ) ) {
+			// Пока письмо ждало очереди, команда могла перестать подходить под рассылку:
+			// сняли отметку второго этапа или удалили файлы — тогда не отправляем.
+			if ( ! static::team_allowed( (int) $item['team_id'] ) ) {
 				$run['items'][ $index ]['status'] = 'skipped';
-				$run['items'][ $index ]['error']  = __( 'отметка второго этапа снята', 'wp-personal-account' );
+				$run['items'][ $index ]['error']  = static::drop_reason();
 				$skipped++;
 
 				continue;
 			}
 
-			if ( self::send( $item, $run ) ) {
+			if ( static::send( $item, $run ) ) {
 				$run['items'][ $index ]['status']  = 'sent';
 				$run['items'][ $index ]['sent_at'] = $now;
 				$run['items'][ $index ]['error']   = '';
 				$fails                             = 0;
 				$sent++;
 
-				update_user_meta( (int) $item['user_id'], self::META_SENT, $now );
+				update_user_meta( (int) $item['user_id'], static::META_SENT, $now );
 			} else {
 				$run['items'][ $index ]['status'] = 'failed';
 				$run['items'][ $index ]['error']  = __( 'wp_mail() вернул ошибку', 'wp-personal-account' );
 				$fails++;
 
-				if ( $fails >= self::MAX_FAILS ) {
+				if ( $fails >= static::MAX_FAILS ) {
 					$run['paused'] = sprintf(
 						/* translators: %d: число ошибок подряд */
 						__( 'Приостановлено автоматически: %d ошибок отправки подряд.', 'wp-personal-account' ),
 						(int) $fails
 					);
 
-					self::log( $run['paused'] );
+					static::log( $run['paused'] );
 					break;
 				}
 			}
@@ -696,14 +752,14 @@ class WPPA_Mailing {
 
 		$run['fails'] = $fails;
 
-		if ( 0 === self::next_due( $run ) && empty( $run['paused'] ) ) {
+		if ( 0 === static::next_due( $run ) && empty( $run['paused'] ) ) {
 			$run['done'] = $now;
 		}
 
-		update_option( self::QUEUE, $run, false );
+		update_option( static::QUEUE, $run, false );
 
 		if ( $sent > 0 ) {
-			self::log(
+			static::log(
 				sprintf(
 					/* translators: %d: число писем */
 					__( 'Отправлено писем: %d.', 'wp-personal-account' ),
@@ -713,7 +769,7 @@ class WPPA_Mailing {
 		}
 
 		if ( $skipped > 0 ) {
-			self::log(
+			static::log(
 				sprintf(
 					/* translators: %d: число писем */
 					__( 'Пропущено писем без отправки (отметка второго этапа снята): %d.', 'wp-personal-account' ),
@@ -723,13 +779,13 @@ class WPPA_Mailing {
 		}
 
 		if ( ! empty( $run['done'] ) ) {
-			self::unschedule();
-			self::log( __( 'Рассылка завершена: писем в очереди не осталось.', 'wp-personal-account' ) );
+			static::unschedule();
+			static::log( __( 'Рассылка завершена: писем в очереди не осталось.', 'wp-personal-account' ) );
 		} elseif ( empty( $run['paused'] ) ) {
-			$next = self::next_due( $run );
+			$next = static::next_due( $run );
 
 			if ( $next > 0 ) {
-				self::schedule( max( $now, $next ) );
+				static::schedule( max( $now, $next ) );
 			}
 		}
 
@@ -744,8 +800,8 @@ class WPPA_Mailing {
 	 * @return bool
 	 */
 	public static function send( $item, $run ) {
-		$subject = self::render( isset( $run['subject'] ) ? $run['subject'] : '', $item, true );
-		$body    = self::render( isset( $run['body'] ) ? $run['body'] : '', $item );
+		$subject = static::render( isset( $run['subject'] ) ? $run['subject'] : '', $item, true );
+		$body    = static::render( isset( $run['body'] ) ? $run['body'] : '', $item );
 
 		if ( '' === $subject || '' === trim( wp_strip_all_tags( $body ) ) ) {
 			return false;
@@ -753,7 +809,7 @@ class WPPA_Mailing {
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-		return (bool) wp_mail( (string) $item['email'], $subject, self::to_html( $body ), $headers );
+		return (bool) wp_mail( (string) $item['email'], $subject, static::to_html( $body ), $headers );
 	}
 
 	/**
@@ -787,8 +843,8 @@ class WPPA_Mailing {
 	public static function schedule( $timestamp ) {
 		$timestamp = max( time(), (int) $timestamp );
 
-		wp_clear_scheduled_hook( self::CRON_HOOK );
-		wp_schedule_single_event( $timestamp, self::CRON_HOOK );
+		wp_clear_scheduled_hook( static::CRON_HOOK );
+		wp_schedule_single_event( $timestamp, static::CRON_HOOK );
 	}
 
 	/**
@@ -797,7 +853,7 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function unschedule() {
-		wp_clear_scheduled_hook( self::CRON_HOOK );
+		wp_clear_scheduled_hook( static::CRON_HOOK );
 	}
 
 	/**
@@ -806,16 +862,16 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function reschedule() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) || ! empty( $run['paused'] ) || ! empty( $run['done'] ) ) {
 			return;
 		}
 
-		$next = self::next_due( $run );
+		$next = static::next_due( $run );
 
-		if ( $next > 0 && ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			self::schedule( $next );
+		if ( $next > 0 && ! wp_next_scheduled( static::CRON_HOOK ) ) {
+			static::schedule( $next );
 		}
 	}
 
@@ -825,15 +881,15 @@ class WPPA_Mailing {
 	 * @return int
 	 */
 	public static function run_cron() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) || ! empty( $run['paused'] ) || ! empty( $run['done'] ) ) {
-			self::unschedule();
+			static::unschedule();
 
 			return 0;
 		}
 
-		return self::process_due();
+		return static::process_due();
 	}
 
 	/**
@@ -842,13 +898,13 @@ class WPPA_Mailing {
 	 * @return int
 	 */
 	public static function next_run() {
-		$run = self::run_state();
+		$run = static::run_state();
 
 		if ( empty( $run ) || ! empty( $run['paused'] ) ) {
 			return 0;
 		}
 
-		return self::next_due( $run );
+		return static::next_due( $run );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -862,7 +918,7 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function log( $text ) {
-		$logs = get_option( self::LOG, array() );
+		$logs = get_option( static::LOG, array() );
 		$logs = is_array( $logs ) ? $logs : array();
 
 		array_unshift(
@@ -873,7 +929,7 @@ class WPPA_Mailing {
 			)
 		);
 
-		update_option( self::LOG, array_slice( $logs, 0, self::LOG_LIMIT ), false );
+		update_option( static::LOG, array_slice( $logs, 0, static::LOG_LIMIT ), false );
 	}
 
 	/**
@@ -882,7 +938,7 @@ class WPPA_Mailing {
 	 * @return array
 	 */
 	public static function logs() {
-		$logs = get_option( self::LOG, array() );
+		$logs = get_option( static::LOG, array() );
 
 		return is_array( $logs ) ? $logs : array();
 	}
@@ -893,7 +949,7 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function clear_logs() {
-		delete_option( self::LOG );
+		delete_option( static::LOG );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -928,34 +984,39 @@ class WPPA_Mailing {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
 		$action = isset( $_POST['wppa_mailing_action'] ) ? sanitize_key( wp_unslash( $_POST['wppa_mailing_action'] ) ) : '';
 
+		// Вид рассылки: «второй этап» или «файлы». У каждой свой шаблон и очередь.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+		$kind  = isset( $_POST['mailing_kind'] ) ? sanitize_key( wp_unslash( $_POST['mailing_kind'] ) ) : 'stage2';
+		$class = self::class_of( $kind );
+
 		switch ( $action ) {
 			case 'save':
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
-				self::save( $_POST );
+				$class::save( $_POST );
 				WPPA_Notices::redirect( 'mailing_saved', $back );
 				break;
 
 			case 'start':
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
-				self::save( $_POST );
-				$queued = self::start();
+				$class::save( $_POST );
+				$queued = $class::start();
 				WPPA_Notices::redirect( false === $queued ? 'mailing_nobody' : 'mailing_started', $back );
 				break;
 
 			case 'cancel':
-				WPPA_Notices::redirect( self::cancel() ? 'mailing_cancelled' : 'mailing_empty', $back );
+				WPPA_Notices::redirect( $class::cancel() ? 'mailing_cancelled' : 'mailing_empty', $back );
 				break;
 
 			case 'resume':
-				WPPA_Notices::redirect( self::resume() ? 'mailing_resumed' : 'mailing_empty', $back );
+				WPPA_Notices::redirect( $class::resume() ? 'mailing_resumed' : 'mailing_empty', $back );
 				break;
 
 			case 'send_now':
-				WPPA_Notices::redirect( self::send_all() > 0 ? 'mailing_sent_now' : 'mailing_send_failed', $back );
+				WPPA_Notices::redirect( $class::send_all() > 0 ? 'mailing_sent_now' : 'mailing_send_failed', $back );
 				break;
 
 			case 'clear_log':
-				self::clear_logs();
+				$class::clear_logs();
 				WPPA_Notices::redirect( 'mailing_log_cleared', $back );
 				break;
 

@@ -33,6 +33,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
+require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
@@ -1673,6 +1674,21 @@ if ( is_wp_error( $mail_admin_team ) ) {
 	WPPA_Teams::set_stage2( $mail_admin_team, true, 7 );
 	WPPA_Teams::set_curator( 7, false );
 
+	// Рассылка о файлах пишет командам, у которых есть файлы куратора.
+	update_post_meta(
+		$mail_admin_team,
+		WPPA_Curator_Files::META,
+		array(
+			'admin-probe-file' => array(
+				'file' => 'admin.pdf',
+				'name' => 'admin.pdf',
+				'from' => 'curator',
+				'time' => time(),
+				'user' => 7,
+			),
+		)
+	);
+
 	ob_start();
 	WPPA_Admin::page_mailing();
 	$mail_admin_html = ob_get_clean();
@@ -1728,11 +1744,58 @@ if ( is_wp_error( $mail_admin_team ) ) {
 	$mail_admin_checks['обработчик: отмена']        = 'mailing_cancelled' === $mail_admin_redirect( 'cancel' );
 	$mail_admin_checks['очередь: после отмены пусто'] = 0 === WPPA_Mailing::stats()['total'];
 
+	// Вторая рассылка — о прикреплённых файлах: своя вкладка и свои опции.
+	$_GET['wppa_kind'] = 'files';
+
+	ob_start();
+	WPPA_Admin::page_mailing();
+	$mail_admin_files_html = ob_get_clean();
+
+	unset( $_GET['wppa_kind'] );
+
+	$mail_admin_checks['страница: вкладка рассылок']  = false !== strpos( $mail_admin_html, 'Прикреплённые файлы' );
+	$mail_admin_checks['страница: заголовок файлов']  = false !== strpos( $mail_admin_files_html, 'Рассылка о прикреплённых файлах' );
+	$mail_admin_checks['страница: вид в форме']       = false !== strpos( $mail_admin_files_html, 'name="mailing_kind" value="files"' );
+	$mail_admin_checks['страница: шаблон файлов']     = false !== strpos( $mail_admin_files_html, 'прикреплены файлы' );
+
+	$mail_admin_checks['файлы: сохранение шаблона'] = 'mailing_saved' === $mail_admin_redirect(
+		'save',
+		array(
+			'mailing_kind' => 'files',
+			'subject'      => 'Файлы: {команда}',
+			'body'         => 'Файлы в кабинете',
+			'interval'     => 1,
+			'batch'        => 1,
+		)
+	);
+	$mail_admin_checks['файлы: тема сохранена']        = 'Файлы: {команда}' === WPPA_Mailing_Files::settings()['subject'];
+	$mail_admin_checks['файлы: второй этап не изменён'] = 'Этап два: {команда}' === WPPA_Mailing::settings()['subject'];
+
+	$mail_admin_checks['файлы: запуск очереди'] = 'mailing_started' === $mail_admin_redirect(
+		'start',
+		array(
+			'mailing_kind' => 'files',
+			'subject'      => 'Файлы: {команда}',
+			'body'         => 'Файлы в кабинете',
+			'interval'     => 1,
+			'batch'        => 1,
+		)
+	);
+	$mail_admin_checks['файлы: письма в очереди'] = WPPA_Mailing_Files::stats()['total'] > 0;
+
+	$mail_admin_checks['файлы: отмена']           = 'mailing_cancelled' === $mail_admin_redirect( 'cancel', array( 'mailing_kind' => 'files' ) );
+	$mail_admin_checks['файлы: очередь очищена']  = 0 === WPPA_Mailing_Files::stats()['total'];
+
+	delete_option( WPPA_Mailing_Files::OPTION );
+	delete_option( WPPA_Mailing_Files::LOG );
+
 	$_POST = array();
 
 	WPPA_Mailing::clear();
 	delete_option( WPPA_Mailing::OPTION );
 	delete_option( WPPA_Mailing::LOG );
+
+	delete_post_meta( $mail_admin_team, WPPA_Curator_Files::META );
 
 	WPPA_Teams::set_curator( 7, true );
 	WPPA_Teams::set_stage2( $mail_admin_team, false, 7 );

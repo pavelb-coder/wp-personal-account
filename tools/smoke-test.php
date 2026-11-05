@@ -25,6 +25,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
+require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -1438,6 +1439,10 @@ if ( is_wp_error( $curator_team_id ) ) {
 	$curator_checks['кабинет: панель куратора']     = false !== strpos( $curator_html, 'Куратор: все команды' );
 	$curator_checks['кабинет: команда в списке']    = false !== strpos( $curator_html, 'Команда для куратора' );
 	$curator_checks['кабинет: ссылка «Управлять»']  = false !== strpos( $curator_html, 'wppa_team=' . (int) $curator_team_id );
+
+	// Куратор не состоит в команде — и напоминания об этом в кабинете нет.
+	$curator_checks['кабинет: нет плашки «не в команде»'] = false === strpos( $curator_html, 'не занимает место в составе' );
+	$curator_checks['кабинет: нет формы создания команды'] = false === strpos( $curator_html, 'Создать команду' );
 
 	// Открываем чужую команду: ?wppa_team=ID.
 	$_GET['wppa_team'] = (int) $curator_team_id;
@@ -3062,6 +3067,21 @@ if ( is_wp_error( $mail_team ) ) {
 	WPPA_Teams::set_curator( 74, true );
 	WPPA_Teams::set_stage2( $mail_team, true, 74 );
 
+	// В рассылку о файлах попадают команды, которым куратор уже прикрепил файлы.
+	update_post_meta(
+		$mail_team,
+		WPPA_Curator_Files::META,
+		array(
+			'stage2-curator-file' => array(
+				'file' => 'plan.pdf',
+				'name' => 'plan.pdf',
+				'from' => 'curator',
+				'time' => time(),
+				'user' => 74,
+			),
+		)
+	);
+
 	$mail_recipients = array_values(
 		array_filter(
 			WPPA_Mailing::recipients(),
@@ -3232,9 +3252,11 @@ if ( is_wp_error( $mail_team ) ) {
 	$mail_html_curator = WPPA_Builder::render_block( $mail_block, array( 'user' => get_userdata( 74 ) ) );
 	$mail_html_member  = WPPA_Builder::render_block( $mail_block, array( 'user' => get_userdata( 73 ) ) );
 
-	$mail_checks['блок: у куратора форма']      = false !== strpos( $mail_html_curator, 'Шаблон письма' ) && false !== strpos( $mail_html_curator, 'wppa_mailing_action' );
+	$mail_checks['блок: у куратора форма']      = false !== strpos( $mail_html_curator, 'Тема' ) && false !== strpos( $mail_html_curator, 'wppa_mailing_action' );
+	$mail_checks['блок: обе рассылки']          = false !== strpos( $mail_html_curator, 'Рассылка участникам второго этапа' ) && false !== strpos( $mail_html_curator, 'Рассылка о прикреплённых файлах' );
+	$mail_checks['блок: вид рассылки в форме']  = false !== strpos( $mail_html_curator, 'name="mailing_kind" value="stage2"' ) && false !== strpos( $mail_html_curator, 'name="mailing_kind" value="files"' );
 	$mail_checks['блок: кнопка очереди']        = false !== strpos( $mail_html_curator, 'Поставить в очередь' );
-	$mail_checks['блок: журнал']                = false !== strpos( $mail_html_curator, 'Журнал рассылки' );
+	$mail_checks['блок: журнал']                = false !== strpos( $mail_html_curator, 'Журнал' ) && false !== strpos( $mail_html_curator, 'Очистить журнал' );
 	$mail_checks['блок: участнику пусто']       = '' === trim( $mail_html_member );
 	$mail_checks['блок: в конструкторе есть']   = array_key_exists( 'mailing-widget', WPPA_Builder::blocks() );
 
@@ -3278,7 +3300,243 @@ if ( is_wp_error( $mail_team ) ) {
 	$mail_dash_member = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => WPPA_Template::tabs() ) );
 	$mail_checks['главная: участник не видит']    = false === strpos( $mail_dash_member, 'Рассылка участникам второго этапа' );
 
+	WPPA_Mailing_Files::start();
+
+	$mail_dash_files = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 74 ), 'tabs' => WPPA_Template::tabs() ) );
+
+	$mail_checks['главная: карточка файлов']  = false !== strpos( $mail_dash_files, 'Рассылка о прикреплённых файлах' );
+	$mail_checks['главная: отмена по виду']   = false !== strpos( $mail_dash_files, 'name="mailing_kind" value="files"' );
+
+	WPPA_Mailing_Files::cancel();
+
 	$GLOBALS['wppa_test']['current_user'] = 73;
+
+	// Вторая рассылка — о прикреплённых файлах: свои шаблон, очередь, журнал и метка.
+	$mail_stage2_subject = WPPA_Mailing::settings()['subject'];
+
+	$mail_checks['файлы: свой код']          = 'files' === WPPA_Mailing_Files::kind() && 'WPPA_Mailing_Files' === WPPA_Mailing::class_of( 'files' );
+	$mail_checks['файлы: свой шаблон']       = false !== strpos( WPPA_Mailing_Files::settings()['subject'], 'файл' );
+	$mail_checks['файлы: тема отличается']   = WPPA_Mailing_Files::settings()['subject'] !== WPPA_Mailing::settings()['subject'];
+	$mail_checks['файлы: свой крон']         = WPPA_Mailing::CRON_HOOK !== WPPA_Mailing_Files::CRON_HOOK;
+	$mail_checks['файлы: своя метка письма'] = WPPA_Mailing::META_SENT !== WPPA_Mailing_Files::META_SENT;
+
+	$mail_files_saved = $mail_post(
+		74,
+		'save',
+		array(
+			'mailing_kind' => 'files',
+			'subject'      => 'Файлы для «{команда}»',
+			'body'         => 'Смотрите документы во вкладке «Файлы».',
+		)
+	);
+
+	$mail_checks['файлы: сохраняется отдельно']   = 'mailing_saved' === $mail_files_saved['code'] && 'Файлы для «{команда}»' === WPPA_Mailing_Files::settings()['subject'];
+	$mail_checks['файлы: второй этап не изменён'] = $mail_stage2_subject === WPPA_Mailing::settings()['subject'];
+
+	$mail_files_started = $mail_post( 74, 'start', array( 'mailing_kind' => 'files' ) );
+
+	$mail_checks['файлы: очередь ставится']      = 'mailing_started' === $mail_files_started['code'] && ! empty( WPPA_Mailing_Files::stats()['active'] );
+	$mail_checks['файлы: письма в своей очереди'] = WPPA_Mailing_Files::stats()['total'] > 0;
+	$mail_files_only_with_files = array() !== WPPA_Mailing_Files::recipients();
+
+	foreach ( WPPA_Mailing_Files::recipients() as $mail_files_row ) {
+		if ( ! WPPA_Curator_Files::has_curator_files( (int) $mail_files_row['team_id'] ) ) {
+			$mail_files_only_with_files = false;
+		}
+	}
+
+	$mail_checks['файлы: только команды с файлами'] = $mail_files_only_with_files;
+
+	$mail_files_cancelled = $mail_post( 74, 'cancel', array( 'mailing_kind' => 'files' ) );
+
+	$mail_checks['файлы: отмена'] = 'mailing_cancelled' === $mail_files_cancelled['code'] && empty( WPPA_Mailing_Files::stats()['active'] );
+
+	WPPA_Mailing_Files::log( 'Проверка журнала файлов' );
+
+	$mail_checks['файлы: свой журнал'] = count( WPPA_Mailing_Files::logs() ) > 0;
+
+	$mail_files_log_cleared = $mail_post( 74, 'clear_log', array( 'mailing_kind' => 'files' ) );
+
+	$mail_checks['файлы: чистка журнала'] = 'mailing_log_cleared' === $mail_files_log_cleared['code'] && array() === WPPA_Mailing_Files::logs();
+
+	// Удалили файл куратора — письма этой команды из очереди рассылки о файлах убираем.
+	$mail_file_key = 'probe-file';
+
+	update_post_meta(
+		$mail_team,
+		WPPA_Curator_Files::META,
+		array(
+			$mail_file_key => array(
+				'file' => 'probe.pdf',
+				'name' => 'probe.pdf',
+				'from' => 'curator',
+				'time' => time(),
+				'user' => 74,
+			),
+		)
+	);
+
+	WPPA_Mailing_Files::start();
+
+	$mail_files_before = 0;
+
+	foreach ( (array) ( WPPA_Mailing_Files::run_state()['items'] ?? array() ) as $mail_before_item ) {
+		if ( (int) $mail_before_item['team_id'] === (int) $mail_team ) {
+			$mail_files_before++;
+		}
+	}
+
+	$GLOBALS['wppa_test']['current_user'] = 74;
+	$mail_file_removed                     = WPPA_Curator_Files::remove( $mail_team, $mail_file_key, 74 );
+	$mail_files_run                        = WPPA_Mailing_Files::run_state();
+
+	$mail_checks['файлы: удаление файла прошло']  = true === $mail_file_removed;
+	$mail_checks['файлы: письма были в очереди']  = $mail_files_before > 0;
+	$mail_checks['файлы: очередь команды очищена'] = 0 === count(
+		array_filter(
+			isset( $mail_files_run['items'] ) ? (array) $mail_files_run['items'] : array(),
+			static function ( $row ) use ( $mail_team ) {
+				return (int) $row['team_id'] === (int) $mail_team;
+			}
+		)
+	);
+
+	$mail_drop_log = array();
+
+	foreach ( WPPA_Mailing_Files::logs() as $mail_log_row ) {
+		$mail_drop_log[] = isset( $mail_log_row['text'] ) ? (string) $mail_log_row['text'] : '';
+	}
+
+	$mail_checks['файлы: причина в журнале'] = false !== strpos( implode( "\n", $mail_drop_log ), 'файлы команды удалены' );
+
+	$mail_checks['файлы: команда ушла из получателей'] = 0 === count(
+		array_filter(
+			WPPA_Mailing_Files::recipients(),
+			static function ( $row ) use ( $mail_team ) {
+				return (int) $row['team_id'] === (int) $mail_team;
+			}
+		)
+	);
+
+	// Файл убрали мимо формы (мета обнулилась), а письмо уже в очереди — статус «пропущено».
+	update_post_meta(
+		$mail_team,
+		WPPA_Curator_Files::META,
+		array(
+			'late-file' => array(
+				'file' => 'late.pdf',
+				'name' => 'late.pdf',
+				'from' => 'curator',
+				'time' => time(),
+				'user' => 74,
+			),
+		)
+	);
+
+	WPPA_Mailing_Files::start();
+	delete_post_meta( $mail_team, WPPA_Curator_Files::META );
+	WPPA_Mailing_Files::send_all();
+
+	$mail_late_skip = false;
+
+	foreach ( (array) ( WPPA_Mailing_Files::run_state()['items'] ?? array() ) as $mail_late_item ) {
+		if ( (int) $mail_late_item['team_id'] === (int) $mail_team && 'skipped' === ( $mail_late_item['status'] ?? '' ) ) {
+			$mail_late_skip = true;
+		}
+	}
+
+	$mail_checks['файлы: без файлов письмо пропускается'] = $mail_late_skip;
+
+	WPPA_Mailing_Files::cancel();
+	delete_post_meta( $mail_team, WPPA_Curator_Files::META );
+
+	// Отметка второго этапа рассылке о файлах не нужна: письмо уходит и команде без отметки.
+	$mail_plain_team = WPPA_Teams::create( 'Команда без отметки', 79 );
+
+	if ( ! is_wp_error( $mail_plain_team ) ) {
+		update_post_meta(
+			$mail_plain_team,
+			WPPA_Curator_Files::META,
+			array(
+				'plain-file' => array(
+					'file' => 'plain.pdf',
+					'name' => 'plain.pdf',
+					'from' => 'curator',
+					'time' => time(),
+					'user' => 74,
+				),
+			)
+		);
+
+		$mail_files_rows  = WPPA_Mailing_Files::recipients();
+		$mail_stage2_rows = WPPA_Mailing::recipients();
+
+		$mail_checks['файлы: отметка не требуется']          = false === WPPA_Mailing_Files::needs_stage2();
+		$mail_checks['файлы: команда без отметки в списке']  = 1 === count(
+			array_filter(
+				$mail_files_rows,
+				static function ( $row ) use ( $mail_plain_team ) {
+					return (int) $row['team_id'] === (int) $mail_plain_team;
+				}
+			)
+		);
+		$mail_checks['файлы: второй этап её не видит']       = 0 === count(
+			array_filter(
+				$mail_stage2_rows,
+				static function ( $row ) use ( $mail_plain_team ) {
+					return (int) $row['team_id'] === (int) $mail_plain_team;
+				}
+			)
+		);
+		$mail_checks['файлы: снятие отметки очередь не трогает'] = 0 === WPPA_Mailing_Files::drop_team( (int) $mail_plain_team );
+
+		WPPA_Mailing_Files::start();
+		WPPA_Mailing_Files::send_all();
+
+		$mail_plain_sent = false;
+		$mail_plain_skip = false;
+
+		foreach ( WPPA_Mailing_Files::run_state()['items'] as $mail_plain_item ) {
+			$mail_plain_status = isset( $mail_plain_item['status'] ) ? (string) $mail_plain_item['status'] : 'pending';
+
+			if ( (int) $mail_plain_item['team_id'] !== (int) $mail_plain_team ) {
+				continue;
+			}
+
+			if ( 'sent' === $mail_plain_status ) {
+				$mail_plain_sent = true;
+			}
+
+			if ( 'skipped' === $mail_plain_status ) {
+				$mail_plain_skip = true;
+			}
+		}
+
+		$mail_checks['файлы: письмо без отметки отправлено'] = $mail_plain_sent && ! $mail_plain_skip;
+
+		// Удалили файл — команда исчезает и из списка получателей.
+		$GLOBALS['wppa_test']['current_user'] = 74;
+		WPPA_Curator_Files::remove( $mail_plain_team, 'plain-file', 74 );
+
+		$mail_checks['файлы: после удаления файла не получатель'] = 0 === count(
+			array_filter(
+				WPPA_Mailing_Files::recipients(),
+				static function ( $row ) use ( $mail_plain_team ) {
+					return (int) $row['team_id'] === (int) $mail_plain_team;
+				}
+			)
+		);
+
+		WPPA_Mailing_Files::cancel();
+		delete_user_meta( 79, WPPA_Mailing_Files::META_SENT );
+		WPPA_Teams::dissolve( $mail_plain_team );
+	}
+
+	delete_option( WPPA_Mailing_Files::OPTION );
+	delete_option( WPPA_Mailing_Files::QUEUE );
+	delete_option( WPPA_Mailing_Files::LOG );
+
+	WPPA_Mailing_Files::cancel();
 
 	WPPA_Mailing::cancel();
 	WPPA_Teams::set_stage2( $mail_team, false, 74 );

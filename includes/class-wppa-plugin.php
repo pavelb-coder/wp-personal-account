@@ -70,6 +70,7 @@ class WPPA_Plugin {
 		WPPA_Curator_Files::init();
 		WPPA_Team_Files_Export::init();
 		WPPA_Mailing::init();
+		WPPA_Mailing_Files::init();
 		WPPA_Builder::init();
 		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
 		WPPA_Blocks::init();

@@ -354,20 +354,25 @@ class WPPA_Admin {
 			return;
 		}
 
-		$recipients = WPPA_Mailing::recipients();
+		$kind  = self::mailing_kind( 'get' );
+		$class = WPPA_Mailing::class_of( $kind );
+
+		$recipients = $class::recipients();
 
 		self::render(
 			'mailing',
 			array(
 				'notice'     => self::tool_notice(),
-				'settings'   => WPPA_Mailing::settings(),
-				'stats'      => WPPA_Mailing::stats(),
-				'logs'       => WPPA_Mailing::logs(),
+				'kind'       => $kind,
+				'mailing'    => $class,
+				'settings'   => $class::settings(),
+				'stats'      => $class::stats(),
+				'logs'       => $class::logs(),
 				'recipients' => $recipients,
-				'sent_before' => WPPA_Mailing::already_sent( $recipients ),
-				'placeholders' => WPPA_Mailing::placeholder_list(),
-				'next'       => WPPA_Mailing::next_run(),
-				'queue'      => WPPA_Mailing::run_state(),
+				'sent_before' => $class::already_sent( $recipients ),
+				'placeholders' => $class::placeholder_list(),
+				'next'       => $class::next_run(),
+				'queue'      => $class::run_state(),
 			)
 		);
 	}
@@ -386,38 +391,54 @@ class WPPA_Admin {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
 		$action = isset( $_POST['wppa_mailing_action'] ) ? sanitize_key( wp_unslash( $_POST['wppa_mailing_action'] ) ) : '';
+		$class  = WPPA_Mailing::class_of( self::mailing_kind( 'post' ) );
 
 		switch ( $action ) {
 			case 'save':
-				WPPA_Mailing::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				$class::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
 				self::redirect_mailing( 'mailing_saved' );
 				break;
 			case 'start':
-				WPPA_Mailing::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
-				$queued = WPPA_Mailing::start();
+				$class::save( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				$queued = $class::start();
 				self::redirect_mailing( false === $queued ? 'mailing_nobody' : 'mailing_started' );
 				break;
 			case 'cancel':
-				self::redirect_mailing( WPPA_Mailing::cancel() ? 'mailing_cancelled' : 'mailing_empty' );
+				self::redirect_mailing( $class::cancel() ? 'mailing_cancelled' : 'mailing_empty' );
 				break;
 			case 'resume':
-				self::redirect_mailing( WPPA_Mailing::resume() ? 'mailing_resumed' : 'mailing_empty' );
+				self::redirect_mailing( $class::resume() ? 'mailing_resumed' : 'mailing_empty' );
 				break;
 			case 'send_now':
-				$sent = WPPA_Mailing::send_all();
+				$sent = $class::send_all();
 				self::redirect_mailing( $sent > 0 ? 'mailing_sent_now' : 'mailing_send_failed' );
 				break;
 			case 'clear':
-				WPPA_Mailing::clear();
+				$class::clear();
 				self::redirect_mailing( 'mailing_cleared' );
 				break;
 			case 'clear_log':
-				WPPA_Mailing::clear_logs();
+				$class::clear_logs();
 				self::redirect_mailing( 'mailing_log_cleared' );
 				break;
 			default:
 				self::redirect_mailing( 'mailing_failed' );
 		}
+	}
+
+	/**
+	 * Вид рассылки из запроса: «второй этап» или «файлы».
+	 *
+	 * @param string $from Источник: get или post.
+	 * @return string Код рассылки.
+	 */
+	private static function mailing_kind( $from = 'get' ) {
+		$source = 'post' === $from ? $_POST : $_GET;
+		$key    = 'post' === $from ? 'mailing_kind' : 'wppa_kind';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор раздела.
+		$kind = isset( $source[ $key ] ) ? sanitize_key( wp_unslash( $source[ $key ] ) ) : WPPA_Mailing::kind();
+
+		return in_array( $kind, array( 'stage2', 'files' ), true ) ? $kind : WPPA_Mailing::kind();
 	}
 
 	/**
