@@ -477,6 +477,11 @@ add_filter( 'wppa_smb_runner', function ( $result, $command ) {
 		return array( 'code' => 0, 'output' => '' );
 	}
 
+	// Файл кладём после создания папки — put в коде идёт отдельным заходом.
+	if ( false !== strpos( $command, 'put ' ) ) {
+		return array( 'code' => 0, 'output' => 'putting file /tmp/x as \\accounts.csv' );
+	}
+
 	return array( 'code' => 1, 'output' => 'cd "olimp"\: NT_STATUS_OBJECT_NAME_NOT_FOUND listing \\fs\share' );
 }, 50, 2 );
 

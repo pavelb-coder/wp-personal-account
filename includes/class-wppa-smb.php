@@ -361,6 +361,29 @@ class WPPA_SMB {
 	}
 
 	/**
+	 * Фатальные ошибки smbclient.
+	 *
+	 * «Уже существует» — не ошибка: папка могла быть создана раньше,
+	 * поэтому mkdir на существующем каталоге не должен ломать запись.
+	 *
+	 * @param string $output Вывод утилиты.
+	 * @return bool true — запись считать неудачной.
+	 */
+	public static function smbclient_fatal( $output ) {
+		$tolerated = array( 'NT_STATUS_OBJECT_NAME_COLLISION', 'NT_STATUS_OBJECT_ALREADY_EXISTS', 'NT_STATUS_DIRECTORY_NOT_EMPTY' );
+
+		preg_match_all( '/NT_STATUS_[A-Z_]+/', (string) $output, $matches );
+
+		foreach ( (array) $matches[0] as $status ) {
+			if ( ! in_array( $status, $tolerated, true ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Временный файл.
 	 *
 	 * wp_tempnam() живёт в wp-admin/includes/file.php: на фронтенде этот файл
@@ -810,8 +833,11 @@ class WPPA_SMB {
 			$put  = sprintf( 'put %s %s', self::quote_arg( $temp ), self::quote_arg( $name ) );
 			$sub  = $sub_all;
 
-			$cd      = '' !== $sub ? 'cd ' . self::quote_arg( $sub ) . '; ' : '';
-			$prepare = '' !== $sub ? 'mkdir ' . self::quote_arg( $sub ) . '; cd ' . self::quote_arg( $sub ) . '; ' : '';
+			// Папки создаём по одной: mkdir вложенного пути без родителей даёт
+			// NT_STATUS_OBJECT_PATH_NOT_FOUND, из-за чего файл падал в корень шары.
+			// Сначала проверяем каталог, и только потом кладём файл.
+			$dirs = '' !== $sub ? array_values( array_filter( explode( '/', str_replace( '\\', '/', $sub ) ), 'strlen' ) ) : array();
+			$deep = implode( '\\', $dirs );
 
 			$run = static function ( $script ) use ( $binary, $parsed, $auth ) {
 				return WPPA_SMB::run(
@@ -825,17 +851,32 @@ class WPPA_SMB {
 				);
 			};
 
-			$result  = $run( $cd . $put );
-			$output  = trim( wp_strip_all_tags( $result['output'] ) );
-			$failed  = 0 !== $result['code'] || preg_match( '/NT_STATUS_[A-Z_]+/', $output );
-			$created = false;
+			$output     = '';
+			$failed     = false;
+			$created    = false;
+			$dir_failed = false;
 
-			// Папки внутри шары может не быть — создаём её и повторяем запись.
-			if ( $failed && '' !== $sub && false !== strpos( $output, 'NT_STATUS_OBJECT_NAME_NOT_FOUND' ) ) {
-				$result  = $run( $prepare . $put );
-				$output  = trim( wp_strip_all_tags( $result['output'] ) );
-				$failed  = 0 !== $result['code'] || preg_match( '/NT_STATUS_[A-Z_]+/', $output );
-				$created = ! $failed;
+			if ( $dirs ) {
+				$script = '';
+
+				foreach ( $dirs as $index => $dir ) {
+					$chain   = implode( '\\', array_slice( $dirs, 0, $index + 1 ) );
+					$script .= 'mkdir ' . self::quote_arg( $chain ) . '; cd ' . self::quote_arg( $chain ) . '; ';
+				}
+
+				$result     = $run( $script );
+				$output     = trim( wp_strip_all_tags( $result['output'] ) );
+				$dir_failed = self::smbclient_fatal( $output ) || ( 0 !== $result['code'] && '' === $output );
+				$created    = ! $dir_failed && false === strpos( $output, 'NT_STATUS_' );
+				$failed     = $dir_failed;
+			}
+
+			// Файл не кладём, если каталога нет: иначе он оказался бы в корне шары.
+			if ( ! $failed ) {
+				$result = $run( ( '' !== $deep ? 'cd ' . self::quote_arg( $deep ) . '; ' : '' ) . $put );
+				$answer = trim( wp_strip_all_tags( $result['output'] ) );
+				$output = '' !== $output ? $output . "\n" . $answer : $answer;
+				$failed = self::smbclient_fatal( $answer ) || ( 0 !== $result['code'] && '' === $answer );
 			}
 
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
@@ -849,7 +890,14 @@ class WPPA_SMB {
 			if ( $failed ) {
 				return array(
 					'ok'      => false,
-					'message' => sprintf( /* translators: %s: вывод smbclient */ __( 'smbclient вернул ошибку: %s', 'wp-personal-account' ), $output ),
+					'message' => $dir_failed
+						? sprintf(
+							/* translators: 1: папка, 2: вывод smbclient */
+							__( 'smbclient не смог создать папку %1$s (нет прав на запись?): %2$s', 'wp-personal-account' ),
+							$deep,
+							$output
+						)
+						: sprintf( /* translators: %s: вывод smbclient */ __( 'smbclient вернул ошибку: %s', 'wp-personal-account' ), $output ),
 					'file'    => $remote,
 					'bytes'   => 0,
 				);
@@ -942,7 +990,8 @@ class WPPA_SMB {
 		}
 
 		$auth = self::auth_args( $config, $parsed );
-		$path = ( '' !== $sub_all ? $sub_all . '/' : '' ) . $name;
+		// smbclient ждёт обратные слэши: с «/» удаление не находит файл.
+		$path = ( '' !== $sub_all ? str_replace( '/', '\\', $sub_all ) . '\\' : '' ) . $name;
 		$run  = WPPA_SMB::run(
 			sprintf(
 				'%s %s %s -c %s -t 20 2>&1',

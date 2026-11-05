@@ -2200,6 +2200,108 @@ WPPA_Teams::dissolve( $export_off_team );
 $export_smb = WPPA_SMB::write( 'протокол.pdf', 'данные', array( 'path' => '\\\\fileserver\\exchange\\reports', 'user' => 'u', 'pass' => 'p' ), 'Студия (12)' );
 $export_checks['smb: папка команды в пути'] = is_array( $export_smb ) && false !== strpos( (string) $export_smb['file'], 'reports\Студия (12)\протокол.pdf' );
 
+// smbclient: вложенные папки создаём по одной, файл не падает в корень шары.
+$smb_dirs    = array();
+$smb_files   = array();
+$smb_deny    = false;
+$smb_scripts = array();
+
+$smb_fake = function ( $result, $command ) use ( &$smb_dirs, &$smb_files, &$smb_deny, &$smb_scripts ) {
+	if ( false !== strpos( $command, 'command -v smbclient' ) ) {
+		return array( 'code' => 0, 'output' => '/usr/bin/smbclient' );
+	}
+
+	if ( ! preg_match( "/-c '([^']*)'/", $command, $found ) ) {
+		return array( 'code' => 0, 'output' => '' );
+	}
+
+	$script        = $found[1];
+	$smb_scripts[] = $script;
+
+	$current = '';
+	$out     = array();
+	$code    = 0;
+
+	foreach ( array_filter( array_map( 'trim', explode( ';', $script ) ), 'strlen' ) as $step ) {
+		if ( ! preg_match( '/^(mkdir|cd|put)\s+"([^"]*)"(?:\s+"([^"]*)")?$/', $step, $parts ) ) {
+			continue;
+		}
+
+		$action = $parts[1];
+		$arg    = $parts[2];
+
+		if ( 'put' === $action ) {
+			$smb_files[ ( '' !== $current ? $current . '\\' : '' ) . $parts[3] ] = true;
+			$out[] = 'putting file ' . $arg . ' as \\' . $parts[3];
+			continue;
+		}
+
+		$exists = in_array( $arg, $smb_dirs, true );
+
+		if ( 'mkdir' === $action ) {
+			$slash  = strrpos( $arg, '\\' );
+			$parent = false !== $slash ? substr( $arg, 0, $slash ) : '';
+
+			if ( $exists ) {
+				$out[] = 'NT_STATUS_OBJECT_NAME_COLLISION making remote directory \\' . $arg;
+			} elseif ( $smb_deny || ( '' !== $parent && ! in_array( $parent, $smb_dirs, true ) ) ) {
+				$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND making remote directory \\' . $arg;
+				$code  = 1;
+			} else {
+				$smb_dirs[] = $arg;
+			}
+
+			continue;
+		}
+
+		if ( $exists ) {
+			$current = $arg;
+		} else {
+			$out[] = 'NT_STATUS_OBJECT_PATH_NOT_FOUND cd \\' . $arg . '\\';
+			$code  = 1;
+		}
+	}
+
+	return array( 'code' => $code, 'output' => implode( "\n", $out ) );
+};
+
+add_filter( 'wppa_smb_runner', $smb_fake, 10, 2 );
+
+$smb_conf  = array( 'path' => '\\\\fileserver\\kvant', 'user' => 'u', 'pass' => 'p' );
+$smb_write = WPPA_SMB::write( 'протокол.pdf', 'данные', $smb_conf, 'olimp/Команды/1 (337)' );
+
+$smb_checks = array();
+$smb_checks['smbclient: запись прошла']          = is_array( $smb_write ) && true === $smb_write['ok'];
+$smb_checks['smbclient: папки создаются по одной'] = in_array( 'olimp', $smb_dirs, true ) && in_array( 'olimp\\Команды', $smb_dirs, true ) && in_array( 'olimp\\Команды\\1 (337)', $smb_dirs, true );
+$smb_checks['smbclient: файл в папке команды']    = isset( $smb_files['olimp\\Команды\\1 (337)\\протокол.pdf'] );
+$smb_checks['smbclient: в корень шары не положил'] = ! isset( $smb_files['протокол.pdf'] );
+$smb_ensure = isset( $smb_scripts[0] ) ? (string) $smb_scripts[0] : '';
+$smb_checks['smbclient: mkdir по шагам']            = 3 === substr_count( $smb_ensure, 'mkdir ' );
+$smb_checks['smbclient: файл кладём отдельным заходом'] = false === strpos( $smb_ensure, 'put ' );
+
+// Папку создать нельзя: файл не кладём совсем, показываем причину.
+$smb_dirs  = array();
+$smb_files = array();
+$smb_deny  = true;
+$smb_write_denied = WPPA_SMB::write( 'протокол.pdf', 'данные', $smb_conf, 'olimp/Команды/1 (337)' );
+
+$smb_checks['smbclient: без папки отказ']       = is_array( $smb_write_denied ) && false === $smb_write_denied['ok'];
+$smb_checks['smbclient: в корень не положил (отказ)'] = empty( $smb_files );
+$smb_checks['smbclient: причина про права']     = false !== strpos( (string) $smb_write_denied['message'], 'нет прав' );
+
+$smb_checks['smbclient: коллизия не ошибка'] = false === WPPA_SMB::smbclient_fatal( 'NT_STATUS_OBJECT_NAME_COLLISION making remote directory' );
+$smb_checks['smbclient: доступ закрыт — ошибка'] = true === WPPA_SMB::smbclient_fatal( 'NT_STATUS_ACCESS_DENIED listing \\*' );
+
+remove_filter( 'wppa_smb_runner', $smb_fake, 10 );
+
+foreach ( $smb_checks as $smb_name => $smb_ok ) {
+	echo ( $smb_ok ? 'OK    ' : 'FAIL  ' ) . 'smbclient: ' . $smb_name . "\n";
+
+	if ( ! $smb_ok ) {
+		$fail++;
+	}
+}
+
 update_option( 'wppa_settings', $export_backup );
 
 // Итоговая уборка тестовой папки.
