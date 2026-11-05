@@ -2018,12 +2018,25 @@ $curator_no_stage_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 12 ) )
 );
 
+// Наставнику вкладка нужна, только если есть файлы куратора или отметка второго этапа.
+$file_checks['наставник без отметки: вкладки нет']  = false === WPPA_Curator_Files::can_use_tab( 97 );
+$file_checks['куратор всегда: вкладка есть']        = true === WPPA_Curator_Files::can_use_tab( 12 );
+
 $file_checks['куратор без отметки: can_attach']     = true === WPPA_Curator_Files::can_attach( $no_stage_team, 12 );
 $file_checks['куратор без отметки: форма есть']      = false !== strpos( $curator_no_stage_html, 'name="curator_file"' );
 $file_checks['куратор без отметки: team_id в форме'] = false !== strpos( $curator_no_stage_html, 'name="team_id" value="' . (int) $no_stage_team . '"' );
 $file_checks['куратор без отметки: полки наставника нет'] = false === strpos( $curator_no_stage_html, 'Файлы от наставника' );
 $file_checks['куратор без отметки: файл принят']     = is_array( WPPA_Curator_Files::store( $no_stage_team, wppa_test_file( 'куратор-файл.pdf', 'c' ), 'куратор-файл.pdf', 12 ) );
 $file_checks['куратор без отметки: файл в команде']  = true === WPPA_Curator_Files::has_curator_files( $no_stage_team );
+
+// Появились файлы куратора — вкладка у наставника открывается, хотя отметки нет.
+$file_checks['наставник: вкладка после файлов куратора'] = true === WPPA_Curator_Files::can_use_tab( 97 );
+
+WPPA_Teams::set_stage2( $no_stage_team, true, 12 );
+$file_checks['наставник: вкладка после отметки']         = true === WPPA_Curator_Files::can_use_tab( 97 );
+
+// Отметку возвращаем: дальше проверяем наставника без второго этапа.
+WPPA_Teams::set_stage2( $no_stage_team, false, 12 );
 
 // Наставнику без отметки по-прежнему нельзя.
 $GLOBALS['wppa_test']['current_user'] = 97;

@@ -201,9 +201,10 @@ class WPPA_Curator_Files {
 	/**
 	 * Кому показывать вкладку «Файлы».
 	 *
-	 * Раздел нужен наставнику команды (он получает файлы) и куратору (он их
-	 * прикрепляет). Остальным участникам вкладка появляется только тогда,
-	 * когда куратор что-то прислал их команде: тогда им есть что скачать.
+	 * Куратору вкладка нужна всегда: он прикрепляет файлы любой команде.
+	 * Наставнику — когда есть что скачать (куратор уже присылал файлы) или
+	 * когда команда прошла во второй этап (тогда он может прикреплять сам).
+	 * Остальным участникам — когда куратор что-то прислал их команде.
 	 *
 	 * @param int $user_id Пользователь.
 	 * @return bool
@@ -215,13 +216,21 @@ class WPPA_Curator_Files {
 			return false;
 		}
 
-		if ( WPPA_Teams::is_mentor( $user_id ) || WPPA_Teams::is_curator( $user_id ) ) {
+		if ( WPPA_Teams::is_curator( $user_id ) ) {
 			return true;
 		}
 
 		$team_id = (int) WPPA_Teams::team_id( $user_id );
 
-		return $team_id > 0 && self::has_curator_files( $team_id );
+		if ( ! $team_id ) {
+			return false;
+		}
+
+		if ( WPPA_Teams::is_mentor( $user_id ) ) {
+			return self::has_curator_files( $team_id ) || WPPA_Teams::is_stage2( $team_id );
+		}
+
+		return self::has_curator_files( $team_id );
 	}
 
 	/**
