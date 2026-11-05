@@ -2048,6 +2048,47 @@ $mentor_no_stage_html = WPPA_Builder::render_block(
 
 $file_checks['наставник без отметки: can_attach ложь'] = false === WPPA_Curator_Files::can_attach( $no_stage_team, 97 );
 $file_checks['наставник без отметки: формы нет']       = false === strpos( $mentor_no_stage_html, 'name="curator_file"' );
+
+// Куратор после загрузки остаётся в разделе «Файлы», а не в карточке команды.
+$file_back_redirect = function ( $stay ) use ( $no_stage_team ) {
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+	$GLOBALS['wppa_test']['current_user']   = 12;
+
+	$_POST = array(
+		'wppa_action'         => 'curator_file',
+		'curator_file_action' => 'upload',
+		'team_id'             => (int) $no_stage_team,
+		'wppa_nonce'          => wp_create_nonce( 'wppa_curator_file' ),
+	);
+
+	if ( '' !== $stay ) {
+		$_POST['wppa_back'] = $stay;
+	}
+
+	$_FILES = array();
+
+	try {
+		WPPA_Curator_Files::handle_request();
+	} catch ( RuntimeException $e ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return substr( $e->getMessage(), strlen( 'redirect:' ) );
+	}
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+	return '';
+};
+
+$files_back_url = $file_back_redirect( 'files' );
+$team_back_url  = $file_back_redirect( '' );
+
+$_POST  = array();
+$_FILES = array();
+
+$file_checks['куратор: после файла остаётся в «Файлах»'] = false !== strpos( $files_back_url, 'wppa_tab=files' ) && false !== strpos( $files_back_url, 'wppa_team=' . (int) $no_stage_team );
+$file_checks['куратор: карточка команды не открывается'] = false === strpos( $files_back_url, 'wppa_tab=team' );
+$file_checks['форма в карточке: возврат на команду']     = false !== strpos( $team_back_url, 'wppa_tab=team' );
 $file_checks['наставник без отметки: файл куратора виден'] = false !== strpos( $mentor_no_stage_html, 'куратор-файл.pdf' );
 
 unset( $_GET['wppa_team'] );

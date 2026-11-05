@@ -632,9 +632,21 @@ class WPPA_Curator_Files {
 		$team_id = $posted_team ? $posted_team : (int) WPPA_Teams::team_id( $user_id );
 		$is_curator = $user_id && WPPA_Teams::is_curator( $user_id );
 
-		$back = $is_curator
-			? ( $team_id ? add_query_arg( 'wppa_team', $team_id, WPPA_Plugin::tab_url( 'team' ) ) : WPPA_Plugin::tab_url( 'team' ) )
-			: WPPA_Plugin::tab_url( 'files' );
+		// Откуда пришла форма: из раздела «Файлы» возвращаем туда же, а не в карточку команды.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+		$stay = isset( $_POST['wppa_back'] ) ? sanitize_key( wp_unslash( $_POST['wppa_back'] ) ) : '';
+
+		if ( $is_curator ) {
+			if ( 'files' === $stay ) {
+				$back = $team_id
+					? add_query_arg( 'wppa_team', (int) $team_id, WPPA_Plugin::tab_url( 'files' ) )
+					: WPPA_Plugin::tab_url( 'files' );
+			} else {
+				$back = $team_id ? add_query_arg( 'wppa_team', $team_id, WPPA_Plugin::tab_url( 'team' ) ) : WPPA_Plugin::tab_url( 'team' );
+			}
+		} else {
+			$back = WPPA_Plugin::tab_url( 'files' );
+		}
 
 		if ( ! $user_id || '' === self::direction( $team_id, $user_id ) ) {
 			WPPA_Notices::redirect( 'file_forbidden', $back );

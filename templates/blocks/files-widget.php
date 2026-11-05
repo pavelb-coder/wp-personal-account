@@ -150,6 +150,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 												<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
 												<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 												<input type="hidden" name="wppa_action" value="curator_file" />
+						<input type="hidden" name="wppa_back" value="files" />
 												<input type="hidden" name="curator_file_action" value="remove" />
 												<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
 												<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Удалить файл?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></button>
@@ -205,6 +206,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 											<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
 											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 											<input type="hidden" name="wppa_action" value="curator_file" />
+						<input type="hidden" name="wppa_back" value="files" />
 											<input type="hidden" name="curator_file_action" value="remove" />
 											<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Удалить файл?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></button>
@@ -231,6 +233,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 				<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
 				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 				<input type="hidden" name="wppa_action" value="curator_file" />
+						<input type="hidden" name="wppa_back" value="files" />
 				<input type="hidden" name="curator_file_action" value="upload" />
 
 				<p class="wppa-field">
