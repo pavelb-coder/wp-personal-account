@@ -1525,6 +1525,25 @@ if ( is_wp_error( $stage_team ) ) {
 
 	$stage_checks['список: признак есть'] = ! empty( $stage_row['stage2'] );
 
+	// Отметка видна на главной странице кабинета — всем участникам команды и наставнику.
+	$stage_tabs        = WPPA_Template::tabs();
+	$stage_dash_member = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => $stage_tabs ) );
+	$stage_checks['главная: участник видит отметку'] = false !== strpos( $stage_dash_member, 'Прошла во второй этап' );
+	$stage_checks['главная: есть дата отметки']      = false !== strpos( $stage_dash_member, 'прошла во второй этап — отмечено' );
+	$stage_checks['главная: есть название команды']  = false !== strpos( $stage_dash_member, 'Команда второго этапа' );
+	$stage_checks['главная: ссылка на команду есть'] = false !== strpos( $stage_dash_member, 'Перейти к команде' );
+
+	$stage_dash_owner = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 71 ), 'tabs' => $stage_tabs ) );
+	$stage_checks['главная: капитан видит отметку'] = false !== strpos( $stage_dash_owner, 'Прошла во второй этап' );
+
+	$stage_dash_mentor = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 72 ), 'tabs' => $stage_tabs ) );
+	$stage_checks['главная: наставник видит отметку'] = false !== strpos( $stage_dash_mentor, 'Прошла во второй этап' );
+
+	// Блок «Сводка профиля» дублирует отметку бейджем в карточке команды.
+	$stage_summary_block = array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
+	$stage_summary_html  = WPPA_Builder::render_block( $stage_summary_block, array( 'user' => get_userdata( 73 ) ) );
+	$stage_checks['сводка профиля: бейдж отметки'] = false !== strpos( $stage_summary_html, 'Прошла во второй этап' );
+
 	// Бейдж видят все участники команды и куратор.
 	$stage_block = array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
 
@@ -1578,6 +1597,9 @@ if ( is_wp_error( $stage_team ) ) {
 	$stage_checks['обработчик: отметка появилась'] = true === WPPA_Teams::is_stage2( $stage_team );
 	$stage_checks['обработчик: куратор снимает']  = 'stage2_removed' === $wppa_run_stage( 74, 'stage2_remove' );
 	$stage_checks['обработчик: отметки нет']      = false === WPPA_Teams::is_stage2( $stage_team );
+
+	$stage_dash_after = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => $stage_tabs ) );
+	$stage_checks['главная: после снятия блока нет'] = false === strpos( $stage_dash_after, 'wppa-stage2--notice' );
 	$stage_checks['обработчик: наставнику нельзя'] = 'stage2_denied' === $wppa_run_stage( 72, 'stage2_add' );
 	$stage_checks['обработчик: участнику нельзя']  = 'stage2_denied' === $wppa_run_stage( 73, 'stage2_add' );
 

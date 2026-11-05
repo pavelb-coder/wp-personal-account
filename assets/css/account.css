@@ -752,6 +752,22 @@
 	border-left: 4px solid var(--wppa-accent, #2563eb);
 }
 
+.wppa-stage2--notice {
+	margin: 0 0 16px;
+}
+
+.wppa-stage2__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.wppa-stage2__team {
+	font-size: 15px;
+}
+
 .wppa-stage2-toggle {
 	margin: 0 0 16px;
 }
