@@ -161,6 +161,7 @@ class WPPA_Curator_Files {
 				'size' => isset( $entry['size'] ) ? (int) $entry['size'] : 0,
 				'time' => isset( $entry['time'] ) ? (int) $entry['time'] : 0,
 				'user' => isset( $entry['user'] ) ? (int) $entry['user'] : 0,
+				'from' => isset( $entry['from'] ) && 'mentor' === $entry['from'] ? 'mentor' : 'curator',
 				'ext'  => strtolower( (string) pathinfo( (string) $entry['file'], PATHINFO_EXTENSION ) ),
 			);
 		}
@@ -258,7 +259,60 @@ class WPPA_Curator_Files {
 			return false;
 		}
 
-		return WPPA_Teams::is_curator( $user_id );
+		// Прикреплять файлы может куратор (любой команде) и наставник своей команды.
+		return '' !== self::direction( (int) $team_id, $user_id );
+	}
+
+	/**
+	 * В каком качестве пользователь прикрепляет файлы к команде.
+	 *
+	 * @param int $team_id ID команды.
+	 * @param int $user_id Пользователь.
+	 * @return string curator|mentor|пустая строка, если прав нет.
+	 */
+	public static function direction( $team_id, $user_id = 0 ) {
+		$team_id = (int) $team_id;
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $team_id || ! $user_id ) {
+			return '';
+		}
+
+		if ( WPPA_Teams::is_curator( $user_id ) ) {
+			return 'curator';
+		}
+
+		if ( (int) WPPA_Teams::team_id( $user_id ) === $team_id && WPPA_Teams::is_mentor( $user_id ) ) {
+			return 'mentor';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Может ли пользователь удалить конкретный файл.
+	 *
+	 * Куратор удаляет любые файлы команды, наставник — только те, что прикрепил сам.
+	 *
+	 * @param int    $team_id ID команды.
+	 * @param string $key     Ключ файла.
+	 * @param int    $user_id Пользователь.
+	 * @return bool
+	 */
+	public static function can_remove( $team_id, $key, $user_id = 0 ) {
+		$direction = self::direction( (int) $team_id, $user_id );
+
+		if ( 'curator' === $direction ) {
+			return true;
+		}
+
+		if ( 'mentor' !== $direction ) {
+			return false;
+		}
+
+		$files = self::files( (int) $team_id );
+
+		return isset( $files[ (string) $key ] ) && 'mentor' === $files[ (string) $key ]['from'];
 	}
 
 	/**
@@ -277,8 +331,10 @@ class WPPA_Curator_Files {
 		$team_id = (int) $team_id;
 		$user_id = $user_id ? (int) $user_id : get_current_user_id();
 
-		if ( ! self::can_manage( $team_id, $user_id ) ) {
-			return new WP_Error( 'wppa_file_forbidden', __( 'Прикреплять файлы может только куратор.', 'wp-personal-account' ) );
+		$from = self::direction( $team_id, $user_id );
+
+		if ( '' === $from ) {
+			return new WP_Error( 'wppa_file_forbidden', __( 'Прикреплять файлы может куратор и наставник команды.', 'wp-personal-account' ) );
 		}
 
 		if ( ! is_file( $path ) ) {
@@ -346,6 +402,7 @@ class WPPA_Curator_Files {
 			'size' => $size,
 			'time' => time(),
 			'user' => (int) $user_id,
+			'from' => $from,
 		);
 
 		update_post_meta( $team_id, self::META, $files );
@@ -402,7 +459,7 @@ class WPPA_Curator_Files {
 		$team_id = (int) $team_id;
 		$key     = (string) $key;
 
-		if ( ! self::can_manage( $team_id, $user_id ) ) {
+		if ( ! self::can_remove( $team_id, $key, $user_id ) ) {
 			return false;
 		}
 
@@ -454,27 +511,36 @@ class WPPA_Curator_Files {
 	public static function handle_request() {
 		check_admin_referer( 'wppa_curator_file', 'wppa_nonce' );
 
-		$tab_url = WPPA_Plugin::tab_url( 'team' );
 		$user_id = get_current_user_id();
 
-		if ( ! $user_id || ! WPPA_Teams::is_curator( $user_id ) ) {
-			WPPA_Notices::redirect( 'file_forbidden', $tab_url );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+		$sub = isset( $_POST['curator_file_action'] ) ? sanitize_key( wp_unslash( $_POST['curator_file_action'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+		$posted_team = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+
+		// Куратор работает с любой командой, наставник — только со своей.
+		$team_id = $posted_team ? $posted_team : (int) WPPA_Teams::team_id( $user_id );
+		$is_curator = $user_id && WPPA_Teams::is_curator( $user_id );
+
+		$back = $is_curator
+			? ( $team_id ? add_query_arg( 'wppa_team', $team_id, WPPA_Plugin::tab_url( 'team' ) ) : WPPA_Plugin::tab_url( 'team' ) )
+			: WPPA_Plugin::tab_url( 'files' );
+
+		if ( ! $user_id || '' === self::direction( $team_id, $user_id ) ) {
+			WPPA_Notices::redirect( 'file_forbidden', $back );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
-		$sub     = isset( $_POST['curator_file_action'] ) ? sanitize_key( wp_unslash( $_POST['curator_file_action'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
-		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
-
-		$back = $team_id ? add_query_arg( 'wppa_team', $team_id, $tab_url ) : $tab_url;
-
 		if ( ! $team_id || WPPA_Teams::CPT !== get_post_type( $team_id ) ) {
-			WPPA_Notices::redirect( 'file_team_missing', $tab_url );
+			WPPA_Notices::redirect( 'file_team_missing', $back );
 		}
 
 		if ( 'remove' === $sub ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
 			$key = isset( $_POST['file_key'] ) ? sanitize_text_field( wp_unslash( $_POST['file_key'] ) ) : '';
+
+			if ( ! self::can_remove( $team_id, $key, $user_id ) ) {
+				WPPA_Notices::redirect( 'file_forbidden', $back );
+			}
 
 			WPPA_Notices::redirect( self::remove( $team_id, $key, $user_id ) ? 'file_removed' : 'file_missing', $back );
 		}

@@ -377,7 +377,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 				<?php
 				printf(
 					/* translators: %d: максимальное число файлов */
-					esc_html__( 'Документы видит только наставник этой команды и вы. Разрешены документы, таблицы, презентации, архивы и изображения, до 10 МБ, не больше %d файлов.', 'wp-personal-account' ),
+					esc_html__( 'Документы видит только наставник этой команды и вы. Наставник может прикреплять свои файлы — они появятся в этом списке с пометкой «наставник». Разрешены документы, таблицы, презентации, архивы и изображения, до 10 МБ, не больше %d файлов.', 'wp-personal-account' ),
 					(int) WPPA_Curator_Files::MAX_FILES
 				);
 				?>
@@ -389,6 +389,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 						<thead>
 							<tr>
 								<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
+								<th><?php esc_html_e( 'От кого', 'wp-personal-account' ); ?></th>
 								<th><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?></th>
 								<th><?php esc_html_e( 'Прикреплён', 'wp-personal-account' ); ?></th>
 								<th><?php esc_html_e( 'Действия', 'wp-personal-account' ); ?></th>
@@ -401,6 +402,9 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 										<a href="<?php echo esc_url( WPPA_Curator_Files::download_url( $wppa_team_id, $wppa_file['key'] ) ); ?>">
 											<?php echo esc_html( $wppa_file['name'] ); ?>
 										</a>
+									</td>
+									<td data-label="<?php esc_attr_e( 'От кого', 'wp-personal-account' ); ?>">
+										<?php echo 'mentor' === $wppa_file['from'] ? esc_html__( 'наставник', 'wp-personal-account' ) : esc_html__( 'куратор', 'wp-personal-account' ); ?>
 									</td>
 									<td data-label="<?php esc_attr_e( 'Размер', 'wp-personal-account' ); ?>"><?php echo esc_html( WPPA_Curator_Files::size_label( $wppa_file['size'] ) ); ?></td>
 									<td data-label="<?php esc_attr_e( 'Прикреплён', 'wp-personal-account' ); ?>">

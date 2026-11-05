@@ -1730,10 +1730,11 @@ $file_checks['чужой не видит файлы']        = false === WPPA_Cu
 unset( $GLOBALS['wppa_test']['can_manage'] );
 
 $file_checks['куратор управляет файлами']   = true === WPPA_Curator_Files::can_manage( $files_team, 12 );
-$file_checks['наставник не управляет']      = false === WPPA_Curator_Files::can_manage( $files_team, 8 );
+$file_checks['наставник управляет своей']    = true === WPPA_Curator_Files::can_manage( $files_team, 8 );
+$file_checks['наставник чужой не управляет'] = false === WPPA_Curator_Files::can_manage( $files_team, 555 );
 
 // Отказы.
-$not_curator = WPPA_Curator_Files::store( $files_team, $pdf, 'чужой.pdf', 8 );
+$not_curator = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'чужой.pdf', 'данные' ), 'чужой.pdf', 9 );
 $file_checks['не куратор — ошибка']         = is_wp_error( $not_curator ) && 'wppa_file_forbidden' === $not_curator->get_error_code();
 
 $bad_type = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'скрипт.php', '<?php echo 1;' ), 'скрипт.php', 12 );
@@ -1795,11 +1796,32 @@ $mentor_files_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 8 ) )
 );
 
+// Файл, присланный наставником: направление сохраняется, куратор его видит.
+$mentor_file = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'ответ.pdf', str_repeat( 'm', 64 ) ), 'ответ.pdf', 8 );
+
+$file_checks['наставник прикрепил файл']        = is_array( $mentor_file ) && ! empty( $mentor_file['key'] );
+$file_checks['направление: от наставника']      = 'mentor' === WPPA_Curator_Files::files( $files_team )[ $mentor_file['key'] ]['from'];
+$file_checks['направление: от куратора']        = 'curator' === WPPA_Curator_Files::files( $files_team )[ $stored['key'] ]['from'];
+$file_checks['наставник удаляет свой файл']     = true === WPPA_Curator_Files::can_remove( $files_team, $mentor_file['key'], 8 );
+$file_checks['наставник не удаляет чужой']      = false === WPPA_Curator_Files::can_remove( $files_team, $stored['key'], 8 );
+$file_checks['куратор удаляет любой']           = true === WPPA_Curator_Files::can_remove( $files_team, $mentor_file['key'], 12 );
+
+// Участнику раздел недоступен и загрузки у него нет.
+$member_files_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 9 ) )
+);
+
+$file_checks['раздел: участнику не грузить']          = false === strpos( $member_files_html, 'name="curator_file"' );
+$file_checks['раздел: участнику файлы не видны']      = false === strpos( $member_files_html, 'методичка.pdf' );
 $file_checks['раздел: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
 $file_checks['раздел: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
-$file_checks['раздел: наставник не грузит файлы']    = false === strpos( $mentor_files_html, 'name="curator_file"' );
+$file_checks['раздел: наставник грузит файлы']       = false !== strpos( $mentor_files_html, 'name="curator_file"' );
+$file_checks['раздел: подпись для куратора']         = false !== strpos( $mentor_files_html, 'Прикрепить файл для куратора' );
+$file_checks['раздел: форма multipart']              = false !== strpos( $mentor_files_html, 'enctype="multipart/form-data"' );
+
 $file_checks['раздел: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
-$file_checks['раздел: название команды']             = false !== strpos( $mentor_files_html, 'Студия' ) || false !== strpos( $mentor_files_html, 'Документы для команды' );
+$file_checks['раздел: название команды']             = false !== strpos( $mentor_files_html, 'Документы команды' );
 
 // Вкладка «Файлы» есть у наставника и куратора, но не у участника и гостя.
 $tabs_settings_backup = get_option( 'wppa_settings', array() );
@@ -1869,9 +1891,60 @@ $curator_files_team = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 12 ) )
 );
 $file_checks['раздел: куратор видит файлы команды'] = false !== strpos( $curator_files_team, 'методичка.pdf' );
-$file_checks['раздел: куратор идёт управлять']      = false !== strpos( $curator_files_team, 'wppa_tab=team' );
+$file_checks['раздел: куратор грузит файлы']         = false !== strpos( $curator_files_team, 'Прикрепить файл для наставника' );
+$file_checks['раздел: куратор видит файл наставника'] = false !== strpos( $curator_files_team, 'Файлы от наставника' );
 
-unset( $_GET['wppa_team'] );
+// Обработчик формы: кто что может удалять.
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+
+$wppa_run_file_action = function ( $user_id, $post ) {
+	$GLOBALS['wppa_test']['current_user'] = $user_id;
+	$_POST                                = $post;
+	$_GET                                 = array();
+
+	try {
+		WPPA_Curator_Files::handle_request();
+	} catch ( RuntimeException $e ) {
+		$url   = substr( $e->getMessage(), strlen( 'redirect:' ) );
+		$query = (string) parse_url( $url, PHP_URL_QUERY );
+		$args  = array();
+
+		parse_str( $query, $args );
+
+		return array(
+			'code' => isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '',
+			'url'  => $url,
+		);
+	}
+
+	return array( 'code' => '', 'url' => '' );
+};
+
+$file_action_member = $wppa_run_file_action(
+	9,
+	array( 'wppa_action' => 'curator_file', 'curator_file_action' => 'remove', 'team_id' => $files_team, 'file_key' => $mentor_file['key'] )
+);
+$file_checks['обработчик: участнику нельзя']      = 'file_forbidden' === $file_action_member['code'];
+
+$file_action_foreign = $wppa_run_file_action(
+	8,
+	array( 'wppa_action' => 'curator_file', 'curator_file_action' => 'remove', 'team_id' => $files_team, 'file_key' => $stored['key'] )
+);
+$file_checks['обработчик: чужой файл не удалить']  = 'file_forbidden' === $file_action_foreign['code'];
+$file_checks['обработчик: файл на месте']          = isset( WPPA_Curator_Files::files( $files_team )[ $stored['key'] ] );
+
+$file_action_own = $wppa_run_file_action(
+	8,
+	array( 'wppa_action' => 'curator_file', 'curator_file_action' => 'remove', 'team_id' => $files_team, 'file_key' => $mentor_file['key'] )
+);
+$file_checks['обработчик: наставник удалил свой']  = 'file_removed' === $file_action_own['code'];
+$file_checks['обработчик: возврат на «Файлы»']     = false !== strpos( $file_action_own['url'], 'wppa_tab=files' );
+$file_checks['обработчик: файл исчез']             = ! isset( WPPA_Curator_Files::files( $files_team )[ $mentor_file['key'] ] );
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST                                  = array();
+$_GET                                   = array();
+
 unset( $GLOBALS['wppa_test']['current_user'] );
 
 // Роспуск команды удаляет файлы.
