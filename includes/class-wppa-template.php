@@ -50,8 +50,17 @@ class WPPA_Template {
 			unset( $tabs['files'] );
 		}
 
+		// Куратор работает с командами и файлами: «Обзор» и «Профиль» ему не нужны.
+		$is_curator = WPPA_Teams::is_curator();
+
+		if ( $is_curator ) {
+			unset( $tabs['dashboard'], $tabs['profile'] );
+		}
+
 		if ( empty( $tabs ) ) {
-			$tabs = array( 'profile' => $all['profile'] );
+			$tabs = $is_curator
+				? array( 'team' => $all['team'] )
+				: array( 'profile' => $all['profile'] );
 		}
 
 		/**

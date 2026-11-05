@@ -142,7 +142,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 									<?php if ( (int) $wppa_row['id'] === (int) $wppa_team_id && $wppa_curator_view ) : ?>
 										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( $wppa_team_list ); ?>"><?php esc_html_e( 'Закрыть', 'wp-personal-account' ); ?></a>
 									<?php else : ?>
-										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', (int) $wppa_row['id'], $wppa_team_list ) ); ?>"><?php esc_html_e( 'Управлять', 'wp-personal-account' ); ?></a>
+										<a class="wppa-button" href="<?php echo esc_url( add_query_arg( array( 'wppa_tab' => 'files', 'wppa_team' => (int) $wppa_row['id'] ), WPPA_Plugin::tab_url( 'files' ) ) ); ?>"><?php esc_html_e( 'Добавить файлы', 'wp-personal-account' ); ?></a>
 									<?php endif; ?>
 								</td>
 							</tr>

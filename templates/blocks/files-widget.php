@@ -22,7 +22,6 @@ $wppa_team_id         = $wppa_curator_team_id ? $wppa_curator_team_id : $wppa_my
 $wppa_can_view        = $wppa_team_id && WPPA_Curator_Files::can_view( $wppa_team_id, $user->ID );
 $wppa_can_upload      = $wppa_team_id && WPPA_Curator_Files::can_manage( $wppa_team_id, $user->ID );
 $wppa_can_attach      = $wppa_team_id && WPPA_Curator_Files::can_attach( $wppa_team_id, $user->ID );
-$wppa_wait_stage2     = $wppa_team_id && WPPA_Curator_Files::waiting_stage2( $wppa_team_id, $user->ID );
 $wppa_direction       = $wppa_team_id ? WPPA_Curator_Files::direction( $wppa_team_id, $user->ID ) : '';
 $wppa_files           = $wppa_can_view ? WPPA_Curator_Files::files( $wppa_team_id ) : array();
 $wppa_team_name       = $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '';
@@ -158,6 +157,8 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 		<?php endif; ?>
 	</section>
 
+	<?php // Пока команда не отмечена, файлов наставника не бывает — блок не показываем.
+	if ( WPPA_Teams::is_stage2( $wppa_team_id ) ) : ?>
 	<section class="wppa-card wppa-curator-files">
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от наставника', 'wp-personal-account' ); ?></h3>
 
@@ -208,12 +209,6 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 			<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Наставник пока не прикреплял файлов.', 'wp-personal-account' ); ?></div>
 		<?php endif; ?>
 
-		<?php if ( $wppa_wait_stage2 ) : ?>
-			<div class="wppa-notice wppa-notice--info">
-				<?php esc_html_e( 'Прикреплять файлы можно после того, как команда прошла во второй этап. Пока отметки нет — документы куратора можно скачать.', 'wp-personal-account' ); ?>
-			</div>
-		<?php endif; ?>
-
 		<?php if ( $wppa_can_attach ) : ?>
 			<?php echo $wppa_upload_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- статическая разметка формы. ?>
 				<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
@@ -245,7 +240,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 			</form>
 		<?php endif; ?>
 	</section>
-
+	<?php endif; ?>
 	<?php if ( $wppa_is_curator && $wppa_curator_team_id ) : ?>
 		<p class="wppa-hint">
 			<a href="<?php echo esc_url( WPPA_Plugin::tab_url( 'files' ) ); ?>"><?php esc_html_e( 'Выбрать другую команду', 'wp-personal-account' ); ?></a>

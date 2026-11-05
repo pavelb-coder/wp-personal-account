@@ -1822,7 +1822,9 @@ $mentor_wait_html = WPPA_Builder::render_block(
 $mentor_early_store = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'рано.pdf', 'x' ), 'рано.pdf', 8 );
 
 $file_checks['второй этап: наставнику рано грузить']  = false === strpos( $mentor_wait_html, 'name="curator_file"' );
-$file_checks['второй этап: подсказка наставнику']     = false !== strpos( $mentor_wait_html, 'после того, как команда прошла во второй этап' );
+$file_checks['второй этап: блока наставника нет']     = false === strpos( $mentor_wait_html, 'Файлы от наставника' );
+$file_checks['второй этап: подсказки тоже нет']       = false === strpos( $mentor_wait_html, 'второй этап' );
+$file_checks['второй этап: файлы куратора видны']     = false !== strpos( $mentor_wait_html, 'Файлы от куратора' );
 $file_checks['второй этап: store отклоняет']          = is_wp_error( $mentor_early_store ) && 'wppa_file_stage2' === $mentor_early_store->get_error_code();
 $file_checks['второй этап: код уведомления']          = 'file_stage2' === WPPA_Curator_Files::notice_code( 'wppa_file_stage2' );
 $file_checks['второй этап: can_attach запрещает']     = false === WPPA_Curator_Files::can_attach( $files_team, 8 );
@@ -1833,6 +1835,14 @@ WPPA_Teams::set_stage2( $files_team, true, 12 );
 
 $file_checks['второй этап: can_attach разрешает']     = true === WPPA_Curator_Files::can_attach( $files_team, 8 );
 $file_checks['второй этап: подсказки больше нет']     = false === WPPA_Curator_Files::waiting_stage2( $files_team, 8 );
+
+// После отметки блок файлов наставника появляется вместе с формой.
+$mentor_ready_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 8 ) )
+);
+$file_checks['после отметки: блок наставника есть'] = false !== strpos( $mentor_ready_html, 'Файлы от наставника' );
+$file_checks['после отметки: форма прикрепления']   = false !== strpos( $mentor_ready_html, 'name="curator_file"' );
 
 /**
  * Временный файл для проверки загрузки.
@@ -1984,6 +1994,31 @@ update_option(
 
 $GLOBALS['wppa_test']['current_user'] = 8;
 $file_checks['вкладка: у наставника есть'] = array_key_exists( 'files', WPPA_Template::tabs() );
+
+// Куратор: вкладки «Обзор» и «Профиль» убраны, список команд и файлы остались.
+$GLOBALS['wppa_test']['current_user'] = 12;
+$curator_tabs = WPPA_Template::tabs();
+
+$file_checks['вкладки куратора: без «Обзора»']    = ! array_key_exists( 'dashboard', $curator_tabs );
+$file_checks['вкладки куратора: без «Профиля»']   = ! array_key_exists( 'profile', $curator_tabs );
+$file_checks['вкладки куратора: команда на месте'] = array_key_exists( 'team', $curator_tabs );
+$file_checks['вкладки куратора: файлы на месте']   = array_key_exists( 'files', $curator_tabs );
+$file_checks['вкладки куратора: порядок']          = array( 'team', 'files', 'security' ) === array_keys( array_intersect_key( $curator_tabs, array_flip( array( 'team', 'files', 'security' ) ) ) );
+
+$GLOBALS['wppa_test']['current_user'] = 7;
+
+$file_checks['вкладки участника: «Обзор» есть']   = array_key_exists( 'dashboard', WPPA_Template::tabs() );
+$file_checks['вкладки участника: «Профиль» есть'] = array_key_exists( 'profile', WPPA_Template::tabs() );
+
+// Куратор в списке команд: вместо «Управлять» — «Добавить файлы».
+$curator_team_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$file_checks['куратор: кнопка «Добавить файлы»'] = false !== strpos( $curator_team_html, 'Добавить файлы' );
+$file_checks['куратор: кнопки «Управлять» нет']  = false === strpos( $curator_team_html, 'Управлять' );
+$file_checks['куратор: ссылка на вкладку файлов'] = false !== strpos( $curator_team_html, 'wppa_tab=files' );
 
 $GLOBALS['wppa_test']['current_user'] = 12;
 $file_checks['вкладка: у куратора есть']   = array_key_exists( 'files', WPPA_Template::tabs() );
