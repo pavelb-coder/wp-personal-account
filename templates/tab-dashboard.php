@@ -81,6 +81,12 @@ $wppa_mail_admin   = current_user_can( 'manage_options' );
 			<div class="wppa-notice wppa-notice--error"><?php echo esc_html( $wppa_mail_stats['paused'] ); ?></div>
 		<?php endif; ?>
 
+		<?php if ( isset( $tabs['mailing'] ) ) : ?>
+			<p class="wppa-hint">
+				<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'mailing' ) ); ?>"><?php esc_html_e( 'Открыть раздел «Рассылка»: шаблон письма, очередь и журнал', 'wp-personal-account' ); ?></a>
+			</p>
+		<?php endif; ?>
+
 		<div class="wppa-actions">
 			<?php if ( $wppa_mail_stats['pending'] > 0 || ! empty( $wppa_mail_stats['paused'] ) ) : ?>
 				<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'dashboard' ) ); ?>" class="wppa-inline-form">

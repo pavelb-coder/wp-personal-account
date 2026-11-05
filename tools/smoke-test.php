@@ -2019,6 +2019,26 @@ $curator_team_html = WPPA_Builder::render_block(
 $file_checks['куратор: кнопка «Добавить файлы»'] = false !== strpos( $curator_team_html, 'Добавить файлы' );
 $file_checks['куратор: кнопки «Управлять» нет']  = false === strpos( $curator_team_html, 'Управлять' );
 $file_checks['куратор: ссылка на вкладку файлов'] = false !== strpos( $curator_team_html, 'wppa_tab=files' );
+// Вместо капитана куратор видит данные наставника: имя, фамилию и email.
+$mentor_row = array();
+
+foreach ( WPPA_Teams::all_teams() as $wppa_team_row ) {
+	if ( (int) $wppa_team_row['id'] === (int) $files_team ) {
+		$mentor_row = $wppa_team_row;
+	}
+}
+
+$mentor_user = get_userdata( 8 );
+
+$file_checks['команда: наставник в данных']     = isset( $mentor_row['mentor'] ) && '' !== (string) $mentor_row['mentor'];
+$file_checks['команда: email наставника']       = isset( $mentor_row['mentor_email'] ) && false !== strpos( (string) $mentor_row['mentor_email'], '@' );
+$file_checks['команда: имя и фамилия']          = false !== strpos( (string) $mentor_row['mentor'], (string) $mentor_user->first_name );
+$file_checks['куратор: колонка «Наставник»']    = false !== strpos( $curator_team_html, 'Наставник' );
+$file_checks['куратор: колонки «Капитан» нет']  = false === strpos( $curator_team_html, 'Капитан' );
+$file_checks['куратор: email в таблице']        = false !== strpos( $curator_team_html, (string) $mentor_row['mentor_email'] );
+$GLOBALS['wppa_test']['users'][90] = array( 'Только отображаемое имя', 'noname@example.com', 'first_name' => '', 'last_name' => '' );
+$file_checks['имя: без имени и фамилии — display_name'] = 'Только отображаемое имя' === WPPA_Teams::full_name( new WP_User( 90 ) );
+unset( $GLOBALS['wppa_test']['users'][90] );
 
 $GLOBALS['wppa_test']['current_user'] = 12;
 $file_checks['вкладка: у куратора есть']   = array_key_exists( 'files', WPPA_Template::tabs() );
@@ -2808,6 +2828,14 @@ foreach ( $csv_checks as $check_name => $ok ) {
 
 // Рассылка участникам команд второго этапа: шаблон, очередь, задержка, отмена.
 $mail_checks = array();
+
+// Включённые вкладки: у существующих установок «Рассылка» появляется в обновлении.
+$mail_settings_backup = get_option( 'wppa_settings', array() );
+$mail_settings_tabs   = (array) ( $mail_settings_backup['enabled_tabs'] ?? array() );
+$mail_settings_tabs[] = 'mailing';
+
+update_option( 'wppa_settings', array_merge( (array) $mail_settings_backup, array( 'enabled_tabs' => $mail_settings_tabs ) ) );
+$mail_checks = array();
 $mail_snapshot = array(
 	'meta'   => isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array(),
 	'users'  => isset( $GLOBALS['wppa_test']['users'] ) ? $GLOBALS['wppa_test']['users'] : array(),
@@ -3013,6 +3041,89 @@ if ( is_wp_error( $mail_team ) ) {
 
 	$_POST = array();
 
+	// Раздел «Рассылка» в кабинете куратора: вкладка, форма, шаблон, очередь.
+	$mail_post = function ( $user_id, $action, $extra = array() ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = true;
+		$GLOBALS['wppa_test']['current_user']   = $user_id;
+		$_POST                                  = array_merge(
+			array(
+				'wppa_action'         => 'mailing',
+				'wppa_mailing_action' => $action,
+				'wppa_nonce'          => wp_create_nonce( 'wppa_mailing' ),
+			),
+			$extra
+		);
+
+		try {
+			WPPA_Mailing::handle_request();
+		} catch ( RuntimeException $e ) {
+			$GLOBALS['wppa_test']['catch_redirect'] = false;
+			$url   = substr( $e->getMessage(), strlen( 'redirect:' ) );
+			$args  = array();
+			parse_str( (string) parse_url( $url, PHP_URL_QUERY ), $args );
+
+			return array(
+				'code' => isset( $args['wppa_notice'] ) ? (string) $args['wppa_notice'] : '',
+				'url'  => $url,
+			);
+		}
+
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+
+		return array( 'code' => '', 'url' => '' );
+	};
+
+	$GLOBALS['wppa_test']['current_user'] = 74;
+	$mail_curator_tabs                    = WPPA_Template::tabs();
+
+	$mail_checks['вкладка: у куратора есть']  = array_key_exists( 'mailing', $mail_curator_tabs );
+	$mail_checks['вкладка: подпись']          = isset( $mail_curator_tabs['mailing'] ) && 'Рассылка' === $mail_curator_tabs['mailing'];
+
+	$GLOBALS['wppa_test']['current_user'] = 73;
+	$mail_checks['вкладка: участнику нет']    = ! array_key_exists( 'mailing', WPPA_Template::tabs() );
+
+	$GLOBALS['wppa_test']['current_user'] = 74;
+
+	$mail_block = array( 'type' => 'block', 'id' => 'mailing-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
+	$mail_html_curator = WPPA_Builder::render_block( $mail_block, array( 'user' => get_userdata( 74 ) ) );
+	$mail_html_member  = WPPA_Builder::render_block( $mail_block, array( 'user' => get_userdata( 73 ) ) );
+
+	$mail_checks['блок: у куратора форма']      = false !== strpos( $mail_html_curator, 'Шаблон письма' ) && false !== strpos( $mail_html_curator, 'wppa_mailing_action' );
+	$mail_checks['блок: кнопка очереди']        = false !== strpos( $mail_html_curator, 'Поставить в очередь' );
+	$mail_checks['блок: журнал']                = false !== strpos( $mail_html_curator, 'Журнал рассылки' );
+	$mail_checks['блок: участнику пусто']       = '' === trim( $mail_html_member );
+	$mail_checks['блок: в конструкторе есть']   = array_key_exists( 'mailing-widget', WPPA_Builder::blocks() );
+
+	$mail_saved = $mail_post(
+		74,
+		'save',
+		array(
+			'subject'  => 'Письмо от куратора',
+			'body'     => 'Текст письма {имя}',
+			'interval' => 3,
+			'batch'    => 2,
+		)
+	);
+
+	$mail_checks['кабинет: шаблон сохраняется'] = 'mailing_saved' === $mail_saved['code'];
+	$mail_checks['кабинет: тема сохранена']    = 'Письмо от куратора' === WPPA_Mailing::settings()['subject'];
+	$mail_checks['кабинет: возврат на вкладку'] = false !== strpos( $mail_saved['url'], 'wppa_tab=mailing' );
+
+	$mail_started = $mail_post( 74, 'start' );
+	$mail_checks['кабинет: очередь ставится']  = 'mailing_started' === $mail_started['code'] && ! empty( WPPA_Mailing::stats()['active'] );
+
+	$mail_send = $mail_post( 74, 'send_now' );
+	$mail_checks['кабинет: отправка остатка']  = in_array( $mail_send['code'], array( 'mailing_sent_now', 'mailing_send_failed' ), true );
+
+	WPPA_Mailing::log( 'Проверка журнала' );
+
+	$mail_clear_log = $mail_post( 74, 'clear_log' );
+	$mail_checks['кабинет: журнал чистится']   = 'mailing_log_cleared' === $mail_clear_log['code'] && array() === WPPA_Mailing::logs();
+
+	$mail_checks['кабинет: участнику не сохранить'] = 'mailing_denied' === $mail_post( 73, 'save', array( 'subject' => 'Взлом' ) )['code'];
+
+	$_POST = array();
+
 	// Карточка состояния на главной видна только куратору.
 	WPPA_Mailing::start();
 
@@ -3042,6 +3153,8 @@ foreach ( array( 71, 72, 73, 75, 76, 77, 79 ) as $mail_reset_user ) {
 
 $GLOBALS['wppa_test']['meta'] = $mail_snapshot['meta'];
 $GLOBALS['wppa_test']['mail'] = $mail_snapshot['mail'];
+
+update_option( 'wppa_settings', $mail_settings_backup );
 
 foreach ( $mail_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mailing: ' . $check_name . "\n";

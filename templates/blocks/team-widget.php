@@ -79,7 +79,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 					<thead>
 						<tr>
 							<th><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></th>
-							<th><?php esc_html_e( 'Капитан', 'wp-personal-account' ); ?></th>
+							<th><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Участников', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Наставников', 'wp-personal-account' ); ?></th>
 							<th><?php esc_html_e( 'Состояние', 'wp-personal-account' ); ?></th>
@@ -96,7 +96,19 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 										<span class="wppa-hint">(<?php esc_html_e( 'ваша команда', 'wp-personal-account' ); ?>)</span>
 									<?php endif; ?>
 								</td>
-								<td data-label="<?php esc_attr_e( 'Капитан', 'wp-personal-account' ); ?>"><?php echo esc_html( $wppa_row['owner'] ); ?></td>
+								<td data-label="<?php esc_attr_e( 'Наставник', 'wp-personal-account' ); ?>">
+									<?php if ( ! empty( $wppa_row['mentor'] ) ) : ?>
+										<strong><?php echo esc_html( $wppa_row['mentor'] ); ?></strong>
+										<?php if ( ! empty( $wppa_row['mentor_email'] ) ) : ?>
+											<br />
+											<span class="wppa-hint">
+												<a href="mailto:<?php echo esc_attr( $wppa_row['mentor_email'] ); ?>"><?php echo esc_html( $wppa_row['mentor_email'] ); ?></a>
+											</span>
+										<?php endif; ?>
+									<?php else : ?>
+										<span class="wppa-hint"><?php esc_html_e( 'не назначен', 'wp-personal-account' ); ?></span>
+									<?php endif; ?>
+								</td>
 								<td data-label="<?php esc_attr_e( 'Участников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['participants'] ); ?></td>
 								<td data-label="<?php esc_attr_e( 'Наставников', 'wp-personal-account' ); ?>"><?php echo esc_html( (string) $wppa_row['mentors'] ); ?></td>
 								<td data-label="<?php esc_attr_e( 'Состояние', 'wp-personal-account' ); ?>">

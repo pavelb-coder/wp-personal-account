@@ -25,6 +25,7 @@ class WPPA_Template {
 			'profile'   => __( 'Профиль', 'wp-personal-account' ),
 			'team'      => __( 'Команда', 'wp-personal-account' ),
 			'files'     => __( 'Файлы', 'wp-personal-account' ),
+			'mailing'   => __( 'Рассылка', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
 		);
 	}
@@ -48,6 +49,11 @@ class WPPA_Template {
 		// Вкладка «Файлы» нужна только наставнику команды и куратору.
 		if ( isset( $tabs['files'] ) && ! WPPA_Curator_Files::can_use_tab() ) {
 			unset( $tabs['files'] );
+		}
+
+		// «Рассылка участникам второго этапа» — только куратору.
+		if ( isset( $tabs['mailing'] ) && ! WPPA_Teams::is_curator() ) {
+			unset( $tabs['mailing'] );
 		}
 
 		// Куратор работает с командами и файлами: «Обзор» и «Профиль» ему не нужны.

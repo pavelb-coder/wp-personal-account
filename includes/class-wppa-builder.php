@@ -130,6 +130,11 @@ class WPPA_Builder {
 				'tabs'  => array( 'files' ),
 				'desc'  => __( 'Документы куратора для наставника команды', 'wp-personal-account' ),
 			),
+			'mailing-widget'  => array(
+				'label' => __( 'Рассылка участникам второго этапа', 'wp-personal-account' ),
+				'tabs'  => array( 'mailing' ),
+				'desc'  => __( 'Шаблон письма, очередь и журнал для куратора', 'wp-personal-account' ),
+			),
 			'password-form'   => array(
 				'label' => __( 'Смена пароля', 'wp-personal-account' ),
 				'tabs'  => array( 'security' ),

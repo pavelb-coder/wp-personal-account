@@ -906,7 +906,13 @@ class WPPA_Mailing {
 	 * @return void
 	 */
 	public static function handle_request() {
-		$back = WPPA_Plugin::tab_url( 'dashboard' );
+		$back = WPPA_Plugin::tab_url( 'mailing' );
+
+		// Старые формы с «Обзора» просят вернуть туда.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверка ниже.
+		if ( isset( $_POST['wppa_stay'] ) && 'dashboard' === sanitize_key( wp_unslash( $_POST['wppa_stay'] ) ) ) {
+			$back = WPPA_Plugin::tab_url( 'dashboard' );
+		}
 
 		if ( ! is_user_logged_in() || ! WPPA_Teams::is_curator( get_current_user_id() ) ) {
 			WPPA_Notices::redirect( 'mailing_denied', $back );
@@ -922,10 +928,39 @@ class WPPA_Mailing {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
 		$action = isset( $_POST['wppa_mailing_action'] ) ? sanitize_key( wp_unslash( $_POST['wppa_mailing_action'] ) ) : '';
 
-		if ( 'cancel' !== $action ) {
-			WPPA_Notices::redirect( 'mailing_denied', $back );
-		}
+		switch ( $action ) {
+			case 'save':
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				self::save( $_POST );
+				WPPA_Notices::redirect( 'mailing_saved', $back );
+				break;
 
-		WPPA_Notices::redirect( self::cancel() ? 'mailing_cancelled' : 'mailing_empty', $back );
+			case 'start':
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверено выше.
+				self::save( $_POST );
+				$queued = self::start();
+				WPPA_Notices::redirect( false === $queued ? 'mailing_nobody' : 'mailing_started', $back );
+				break;
+
+			case 'cancel':
+				WPPA_Notices::redirect( self::cancel() ? 'mailing_cancelled' : 'mailing_empty', $back );
+				break;
+
+			case 'resume':
+				WPPA_Notices::redirect( self::resume() ? 'mailing_resumed' : 'mailing_empty', $back );
+				break;
+
+			case 'send_now':
+				WPPA_Notices::redirect( self::send_all() > 0 ? 'mailing_sent_now' : 'mailing_send_failed', $back );
+				break;
+
+			case 'clear_log':
+				self::clear_logs();
+				WPPA_Notices::redirect( 'mailing_log_cleared', $back );
+				break;
+
+			default:
+				WPPA_Notices::redirect( 'mailing_denied', $back );
+		}
 	}
 }

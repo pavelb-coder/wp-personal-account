@@ -141,7 +141,7 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'mailing', 'security' ),
 			'registration_enabled' => 1,
 			'hide_admin_bar'       => 1,
 			'registration_start'   => '',

@@ -504,13 +504,18 @@ class WPPA_Teams {
 		$out = array();
 
 		foreach ( (array) $posts as $post ) {
-			$owner = get_userdata( (int) $post->post_author );
+			$owner   = get_userdata( (int) $post->post_author );
+			$mentors = self::mentors( (int) $post->ID );
+			$mentor  = $mentors ? $mentors[0] : null;
 
 			$out[] = array(
 				'id'           => (int) $post->ID,
 				'name'         => (string) $post->post_title,
 				'owner'        => $owner ? $owner->display_name : '',
 				'owner_id'     => (int) $post->post_author,
+				'mentor'       => $mentor ? self::full_name( $mentor ) : '',
+				'mentor_email' => $mentor ? (string) $mentor->user_email : '',
+				'mentor_id'    => $mentor ? (int) $mentor->ID : 0,
 				'participants' => (int) self::members_count( (int) $post->ID ),
 				'mentors'      => (int) self::mentors_count( (int) $post->ID ),
 				'complete'     => (bool) self::is_complete( (int) $post->ID ),
@@ -520,6 +525,24 @@ class WPPA_Teams {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Имя и фамилия пользователя, а если их нет — отображаемое имя.
+	 *
+	 * @param WP_User|int $user Пользователь или его ID.
+	 * @return string
+	 */
+	public static function full_name( $user ) {
+		$user = $user instanceof WP_User ? $user : get_userdata( (int) $user );
+
+		if ( ! $user instanceof WP_User ) {
+			return '';
+		}
+
+		$name = trim( (string) $user->first_name . ' ' . (string) $user->last_name );
+
+		return '' !== $name ? $name : (string) $user->display_name;
 	}
 
 	/**
