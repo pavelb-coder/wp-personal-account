@@ -1,10 +1,10 @@
 # WP Personal Account
 
-**Версия: 3.45.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
+**Версия: 3.46.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
 
 Плагин личного кабинета для WordPress: профиль, пароль, смена email, команды пользователей, вход и регистрация — на шорткодах, без зависимостей и сборки.
 
-**Что нового в 3.45.0:** имя выводится в порядке **«Фамилия Имя Отчество»** — в кабинете, команде, участниках, файлах, сертификатах и админке; отчество включено в анкете по умолчанию, поля идут Фамилия → Имя → Отчество. Полная история — в [CHANGELOG.md](CHANGELOG.md).
+**Что нового в 3.46.0:** в кабинете больше не показываются параметры проверки подлинности сертификата — код проверки и ссылка «Проверить подлинность»; номер, программа, дата и «Скачать» на месте. Полная история — в [CHANGELOG.md](CHANGELOG.md).
 
 ## Что внутри
 
@@ -379,7 +379,7 @@ API: `WPPA_Mailing::recipients()`, `settings()`/`save()`, `start()`, `cancel()`,
 * **Настройки**: «Настройки → Сертификаты» — `certificate_template` (ID бланка `wpdc_template`, 0 — бланк WP Diplom по умолчанию, фильтр `wppa_certificate_template`) и `certificate_email` (отправлять письмо с PDF сразу при выдаче, `WPDC_Email::send()`, фильтр `wppa_certificate_send_email`).
 * **Что хранится**: мета участника `_wppa_certificates` — `cert-<ID> => { id, number, code, course, time, by, sent }`; список сортируется по дате выдачи, сначала новые.
 * **Скачивание**: `admin-post.php?action=wppa_certificate_download&user=…&cert=…` с nonce `wppa_certificate_{user}_{cert}` (`WPPA_Certificates::download_url()`). Доступ — участнику и куратору (`can_view()`), PDF берётся из `WPDC_Certificate::pdf()`.
-* **Проверка подлинности**: `WPPA_Certificates::verify_url()` отдаёт ссылку на страницу проверки WP Diplom (`WPDC_Certificate::verify_url()` с бланком из `_wpdc_template`), а если такого метода нет — на `/certificate/{код}/`. Ссылка настраивается фильтром `wppa_certificate_verify_url` (ссылка, код, ID сертификата) и открывается из вкладки «Сертификаты».
+* **Проверка подлинности в кабинете не показывается**: участник видит только номер, программу, дату и «Скачать». Код проверки и ссылка на страницу проверки остаются в данных записи (`code`, `verify`) и доступны разработчику: `WPPA_Certificates::verify_url()` строит ссылку через `WPDC_Certificate::verify_url()` (бланк берётся из `_wpdc_template`), а без этого метода — `/certificate/{код}/`; фильтр `wppa_certificate_verify_url` (ссылка, код, ID сертификата) позволяет отдать свою. Чтобы показать их в кабинете, достаточно переопределить шаблон `templates/blocks/certificates-widget.php` в теме.
 * **Отзыв**: `is_revoked()` читает `_wpdc_revoked` при каждом показе. Отозванный сертификат помечен значком «отозван», кнопка «Скачать» заменена пояснением, а `handle_download()` отвечает отказом — прямая ссылка тоже не работает. У куратора в списке участников пометка дублируется.
 * **«Убрать»** убирает сертификат только из кабинета — в WP Diplom запись и PDF остаются.
 * **Формы**: `wppa_action=certificate` + `certificate_action=issue|issue_threshold|remove`, nonce `wppa_certificate` (поле `wppa_nonce`), обработчик — `WPPA_Certificates::handle_request()`.
@@ -897,9 +897,9 @@ add_filter( 'wppa_password_rules', function ( $rules ) {
 
 | Место | Строка |
 | --- | --- |
-| `wp-personal-account.php` | `* Version: 3.45.0` |
-| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.45.0' )` |
-| `readme.txt` | `Stable tag: 3.45.0` |
+| `wp-personal-account.php` | `* Version: 3.46.0` |
+| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.46.0' )` |
+| `readme.txt` | `Stable tag: 3.46.0` |
 
 Правила инкремента:
 

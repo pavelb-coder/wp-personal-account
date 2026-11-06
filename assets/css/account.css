@@ -1490,12 +1490,6 @@
 	margin-top: 10px;
 }
 
-.wppa-certificates__verify {
-	display: inline-block;
-	margin-top: 4px;
-	font-size: .88em;
-}
-
 .wppa-certificates__row--revoked td {
 	opacity: .75;
 }

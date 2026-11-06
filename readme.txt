@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.45.0
+Stable tag: 3.46.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.46.0 =
+* В кабинете не показываются параметры проверки подлинности сертификата: убраны код проверки и ссылка «Проверить подлинность». Номер, программа, дата и «Скачать» остались.
+* Код и ссылка проверки остаются в данных записи — доступны своему шаблону и фильтру wppa_certificate_verify_url.
 
 = 3.45.0 =
 * Имя выводится в порядке «Фамилия Имя Отчество» — в кабинете, команде, списке участников, файлах, сертификатах и админке. Фильтр wppa_full_name меняет порядок.

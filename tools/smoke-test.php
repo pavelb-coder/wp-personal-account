@@ -4911,7 +4911,8 @@ $cr_widget_html = WPPA_Builder::render_block(
 );
 
 $cr_checks['блок показывает номер']        = false !== strpos( $cr_widget_html, 'КРТ-2026-' );
-$cr_checks['блок показывает код']          = false !== strpos( $cr_widget_html, 'c700' );
+$cr_checks['блок не показывает код']        = false === strpos( $cr_widget_html, 'c700' ) && false === strpos( $cr_widget_html, 'код проверки' );
+$cr_checks['блок не даёт проверить']        = false === strpos( $cr_widget_html, 'Проверить подлинность' );
 $cr_checks['блок даёт скачать PDF']        = false !== strpos( $cr_widget_html, 'admin-post.php' ) && false !== strpos( $cr_widget_html, 'action=wppa_certificate_download' );
 
 $cr_tab_html = WPPA_Template::get( 'tab-certificates', array( 'user' => get_userdata( 911 ), 'tabs' => WPPA_Template::all_tabs() ) );
@@ -4962,7 +4963,7 @@ $cr_revoked_html = WPPA_Builder::render_block(
 
 $cr_checks['отозванный помечен в блоке']        = false !== strpos( $cr_revoked_html, 'отозван' );
 $cr_checks['отозванному не предлагают скачать'] = false === strpos( $cr_revoked_html, 'action=wppa_certificate_download' );
-$cr_checks['в блоке есть проверка подлинности']  = false !== strpos( $cr_revoked_html, 'Проверить подлинность' );
+$cr_checks['параметры проверки не показываются'] = false === strpos( $cr_revoked_html, 'Проверить подлинность' ) && false === strpos( $cr_revoked_html, 'код проверки' );
 
 update_post_meta( $cr_last_id, '_wpdc_revoked', 0 );
 
