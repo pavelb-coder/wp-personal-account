@@ -1,6 +1,10 @@
 # WP Personal Account
 
+**Версия: 3.42.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
+
 Плагин личного кабинета для WordPress: профиль, пароль, смена email, команды пользователей, вход и регистрация — на шорткодах, без зависимостей и сборки.
+
+**Что нового в 3.42.0:** у куратора появилась отдельная вкладка **«Участники»** — блок «Участники и баллы» со списком участников команд без наставников, их баллами и процентом за тесты и настройкой минимального процента правильных ответов. Полная история — в [CHANGELOG.md](CHANGELOG.md).
 
 ## Что внутри
 
@@ -870,9 +874,9 @@ add_filter( 'wppa_password_rules', function ( $rules ) {
 
 | Место | Строка |
 | --- | --- |
-| `wp-personal-account.php` | `* Version: 1.0.0` |
-| `wp-personal-account.php` | `define( 'WPPA_VERSION', '1.0.0' )` |
-| `readme.txt` | `Stable tag: 1.0.0` |
+| `wp-personal-account.php` | `* Version: 3.42.0` |
+| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.42.0' )` |
+| `readme.txt` | `Stable tag: 3.42.0` |
 
 Правила инкремента:
 
