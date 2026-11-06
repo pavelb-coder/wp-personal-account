@@ -552,11 +552,109 @@ class WPPA_Curator_Files {
 		$tmp = (string) $file['tmp_name'];
 
 		// Загруженный файл обязан быть результатом загрузки, а не путём из запроса.
-		if ( ! is_uploaded_file( $tmp ) ) {
+		if ( ! self::is_uploaded( $tmp ) ) {
 			return new WP_Error( 'wppa_file_upload', __( 'Не удалось загрузить файл.', 'wp-personal-account' ) );
 		}
 
 		return self::store( $team_id, $tmp, (string) $file['name'], $user_id );
+	}
+
+	/**
+	 * Файл действительно пришёл из формы загрузки.
+	 *
+	 * В тестах проверку можно отключить фильтром: временный файл создаётся
+	 * на диске, а не браузером.
+	 *
+	 * @param string $tmp Временный путь.
+	 * @return bool
+	 */
+	public static function is_uploaded( $tmp ) {
+		if ( is_uploaded_file( (string) $tmp ) ) {
+			return true;
+		}
+
+		/**
+		 * Пропустить проверку «файл из формы» — только для автотестов.
+		 *
+		 * @param bool   $skip Пропускать ли проверку.
+		 * @param string $tmp  Временный путь.
+		 */
+		return (bool) apply_filters( 'wppa_skip_upload_check', false, (string) $tmp );
+	}
+
+	/**
+	 * Прикрепить несколько файлов за раз.
+	 *
+	 * Принимает как массив полей одного файла, так и «многомерный» $_FILES:
+	 * `array( 'name' => array( … ), 'tmp_name' => array( … ), … )`.
+	 *
+	 * @param int   $team_id ID команды.
+	 * @param array $files   $_FILES-элемент или список файлов.
+	 * @param int   $user_id Кто прикрепляет.
+	 * @return array added (массив результатов), errors (коды ошибок), count_added, count_failed.
+	 */
+	public static function upload_many( $team_id, $files, $user_id = 0 ) {
+		$list   = self::normalize_files( $files );
+		$added  = array();
+		$errors = array();
+
+		foreach ( $list as $file ) {
+			$result = self::upload( $team_id, $file, $user_id );
+
+			if ( is_wp_error( $result ) ) {
+				$errors[] = $result->get_error_code();
+
+				continue;
+			}
+
+			$added[] = $result;
+		}
+
+		return array(
+			'added'        => $added,
+			'errors'       => $errors,
+			'count_added'  => count( $added ),
+			'count_failed' => count( $errors ),
+		);
+	}
+
+	/**
+	 * Привести $_FILES к списку одиночных файлов.
+	 *
+	 * @param array $files $_FILES-элемент, список или «многомерный» массив.
+	 * @return array Список array( 'name', 'tmp_name', 'error', 'size' ).
+	 */
+	public static function normalize_files( $files ) {
+		$files = is_array( $files ) ? $files : array();
+
+		// Один файл: обычный $_FILES-элемент.
+		if ( isset( $files['name'] ) && ! is_array( $files['name'] ) ) {
+			return '' === (string) $files['name'] && UPLOAD_ERR_NO_FILE === ( isset( $files['error'] ) ? (int) $files['error'] : UPLOAD_ERR_NO_FILE )
+				? array()
+				: array( $files );
+		}
+
+		// Несколько файлов: name/tmp_name/error/size — массивы.
+		$names = isset( $files['name'] ) && is_array( $files['name'] ) ? $files['name'] : array();
+		$out   = array();
+
+		foreach ( $names as $index => $name ) {
+			$error = isset( $files['error'][ $index ] ) ? (int) $files['error'][ $index ] : UPLOAD_ERR_NO_FILE;
+
+			// Пустые строки формы (браузер шлёт их, когда выбрали меньше файлов) пропускаем.
+			if ( UPLOAD_ERR_NO_FILE === $error || '' === (string) $name ) {
+				continue;
+			}
+
+			$out[] = array(
+				'name'     => (string) $name,
+				'tmp_name' => isset( $files['tmp_name'][ $index ] ) ? (string) $files['tmp_name'][ $index ] : '',
+				'error'    => $error,
+				'size'     => isset( $files['size'][ $index ] ) ? (int) $files['size'][ $index ] : 0,
+			);
+		}
+
+		return $out;
 	}
 
 	/**
@@ -695,17 +793,32 @@ class WPPA_Curator_Files {
 			WPPA_Notices::redirect( '', $back );
 		}
 
+		// Можно прикрепить сразу несколько файлов: поле curator_files[] — массив.
+		// Старое одиночное поле curator_file тоже принимаем.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- проверяется в upload().
-		$file   = isset( $_FILES['curator_file'] ) ? $_FILES['curator_file'] : array();
-		$result = self::upload( $team_id, $file, $user_id );
+		$files = isset( $_FILES['curator_files'] ) ? $_FILES['curator_files'] : array();
 
-		if ( is_wp_error( $result ) ) {
-			WPPA_Notices::redirect( self::notice_code( $result->get_error_code() ), $back );
+		if ( ! $files ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- проверяется в upload().
+			$files = isset( $_FILES['curator_file'] ) ? $_FILES['curator_file'] : array();
 		}
 
-		// Копирование в сетевую папку могло не получиться, но файл уже в кабинете:
-		// молча показываем «файл прикреплён», подробности — в журнале выгрузки.
-		WPPA_Notices::redirect( 'file_added', $back );
+		$result = self::upload_many( $team_id, $files, $user_id );
+
+		// Ни один файл не прошёл — показываем первую ошибку.
+		if ( 0 === $result['count_added'] ) {
+			$code = ! empty( $result['errors'] ) ? self::notice_code( (string) $result['errors'][0] ) : 'file_empty';
+			WPPA_Notices::redirect( $code, $back );
+		}
+
+		// Часть файлов прикрепилась, часть нет — говорим об этом отдельно.
+		if ( $result['count_failed'] > 0 ) {
+			WPPA_Notices::redirect( 'files_added_partial', $back );
+		}
+
+		// Копирование в сетевую папку могло не получиться, но файлы уже в кабинете:
+		// молча показываем «файлы прикреплены», подробности — в журнале выгрузки.
+		WPPA_Notices::redirect( $result['count_added'] > 1 ? 'files_added' : 'file_added', $back );
 	}
 
 	/**

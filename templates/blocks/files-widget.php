@@ -237,8 +237,9 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 				<input type="hidden" name="curator_file_action" value="upload" />
 
 				<p class="wppa-field">
-					<label for="wppa-team-file"><?php echo 'curator' === $wppa_direction ? esc_html__( 'Прикрепить файл для наставника', 'wp-personal-account' ) : esc_html__( 'Прикрепить файл для куратора', 'wp-personal-account' ); ?></label>
-					<input type="file" id="wppa-team-file" name="curator_file" required />
+					<label for="wppa-team-file"><?php echo 'curator' === $wppa_direction ? esc_html__( 'Прикрепить файлы для наставника', 'wp-personal-account' ) : esc_html__( 'Прикрепить файлы для куратора', 'wp-personal-account' ); ?></label>
+					<input type="file" id="wppa-team-file" name="curator_files[]" multiple required />
+					<span class="wppa-hint"><?php esc_html_e( 'Можно выбрать сразу несколько файлов — они прикрепятся за один раз.', 'wp-personal-account' ); ?></span>
 				</p>
 
 				<p class="wppa-hint">

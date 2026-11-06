@@ -1866,7 +1866,7 @@ $mentor_wait_html = WPPA_Builder::render_block(
 );
 $mentor_early_store = WPPA_Curator_Files::store( $files_team, wppa_test_file( 'рано.pdf', 'x' ), 'рано.pdf', 8 );
 
-$file_checks['второй этап: наставнику рано грузить']  = false === strpos( $mentor_wait_html, 'name="curator_file"' );
+$file_checks['второй этап: наставнику рано грузить']  = false === strpos( $mentor_wait_html, 'name="curator_files[]"' );
 $file_checks['второй этап: блока наставника нет']     = false === strpos( $mentor_wait_html, 'Файлы от наставника' );
 $file_checks['второй этап: подсказки тоже нет']       = false === strpos( $mentor_wait_html, 'второй этап' );
 $file_checks['второй этап: файлы куратора видны']     = false !== strpos( $mentor_wait_html, 'Файлы от куратора' );
@@ -1887,7 +1887,7 @@ $mentor_ready_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 8 ) )
 );
 $file_checks['после отметки: блок наставника есть'] = false !== strpos( $mentor_ready_html, 'Файлы от наставника' );
-$file_checks['после отметки: форма прикрепления']   = false !== strpos( $mentor_ready_html, 'name="curator_file"' );
+$file_checks['после отметки: форма прикрепления']   = false !== strpos( $mentor_ready_html, 'name="curator_files[]"' ) && false !== strpos( $mentor_ready_html, 'multiple' );
 
 /**
  * Временный файл для проверки загрузки.
@@ -1992,7 +1992,7 @@ $curator_files_html = WPPA_Builder::render_block(
 
 $file_checks['кабинет: карточка «Файлы для наставника»'] = false !== strpos( $curator_files_html, 'Файлы для наставника' );
 $file_checks['кабинет: форма загрузки']       = false !== strpos( $curator_files_html, 'enctype="multipart/form-data"' );
-$file_checks['кабинет: поле файла']           = false !== strpos( $curator_files_html, 'name="curator_file"' );
+$file_checks['кабинет: поле файла']           = false !== strpos( $curator_files_html, 'name="curator_files[]"' );
 $file_checks['кабинет: список файлов']        = false !== strpos( $curator_files_html, 'методичка.pdf' );
 $file_checks['кабинет: кнопка удаления']      = false !== strpos( $curator_files_html, 'curator_file_action" value="remove"' );
 
@@ -2020,7 +2020,7 @@ $member_files_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 9 ) )
 );
 
-$file_checks['раздел: участнику не грузить']          = false === strpos( $member_files_html, 'name="curator_file"' );
+$file_checks['раздел: участнику не грузить']          = false === strpos( $member_files_html, 'name="curator_files[]"' );
 $file_checks['раздел: участнику файл куратора виден'] = false !== strpos( $member_files_html, 'методичка.pdf' );
 $file_checks['раздел: участнику карточка куратора']   = false !== strpos( $member_files_html, 'Файлы от куратора' );
 $file_checks['раздел: полки наставника нет']          = false === strpos( $member_files_html, 'Файлы от наставника' );
@@ -2068,7 +2068,7 @@ $file_checks['наставник без отметки: вкладки нет'] 
 $file_checks['куратор всегда: вкладка есть']        = true === WPPA_Curator_Files::can_use_tab( 12 );
 
 $file_checks['куратор без отметки: can_attach']     = true === WPPA_Curator_Files::can_attach( $no_stage_team, 12 );
-$file_checks['куратор без отметки: форма есть']      = false !== strpos( $curator_no_stage_html, 'name="curator_file"' );
+$file_checks['куратор без отметки: форма есть']      = false !== strpos( $curator_no_stage_html, 'name="curator_files[]"' );
 $file_checks['куратор без отметки: team_id в форме'] = false !== strpos( $curator_no_stage_html, 'name="team_id" value="' . (int) $no_stage_team . '"' );
 $file_checks['куратор без отметки: полки наставника нет'] = false === strpos( $curator_no_stage_html, 'Файлы от наставника' );
 $file_checks['куратор без отметки: файл принят']     = is_array( WPPA_Curator_Files::store( $no_stage_team, wppa_test_file( 'куратор-файл.pdf', 'c' ), 'куратор-файл.pdf', 12 ) );
@@ -2092,7 +2092,7 @@ $mentor_no_stage_html = WPPA_Builder::render_block(
 );
 
 $file_checks['наставник без отметки: can_attach ложь'] = false === WPPA_Curator_Files::can_attach( $no_stage_team, 97 );
-$file_checks['наставник без отметки: формы нет']       = false === strpos( $mentor_no_stage_html, 'name="curator_file"' );
+$file_checks['наставник без отметки: формы нет']       = false === strpos( $mentor_no_stage_html, 'name="curator_files[]"' );
 
 // Куратор после загрузки остаётся в разделе «Файлы», а не в карточке команды.
 $file_back_redirect = function ( $stay ) use ( $no_stage_team ) {
@@ -2143,8 +2143,8 @@ WPPA_Teams::dissolve( $no_stage_team );
 $GLOBALS['wppa_test']['current_user'] = 9;
 $file_checks['раздел: карточка «Файлы от куратора»'] = false !== strpos( $mentor_files_html, 'Файлы от куратора' );
 $file_checks['раздел: наставник видит файл']         = false !== strpos( $mentor_files_html, 'методичка.pdf' );
-$file_checks['раздел: наставник грузит файлы']       = false !== strpos( $mentor_files_html, 'name="curator_file"' );
-$file_checks['раздел: подпись для куратора']         = false !== strpos( $mentor_files_html, 'Прикрепить файл для куратора' );
+$file_checks['раздел: наставник грузит файлы']       = false !== strpos( $mentor_files_html, 'name="curator_files[]"' );
+$file_checks['раздел: подпись для куратора']         = false !== strpos( $mentor_files_html, 'Прикрепить файлы для куратора' );
 $file_checks['раздел: форма multipart']              = false !== strpos( $mentor_files_html, 'enctype="multipart/form-data"' );
 
 $file_checks['раздел: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
@@ -2265,7 +2265,7 @@ $owner_team_html = WPPA_Builder::render_block(
 $file_checks['участник: полка куратора в команде']  = false !== strpos( $member_team_html, 'Файлы от куратора' );
 $file_checks['участник: файл куратора в команде']    = false !== strpos( $member_team_html, 'методичка.pdf' );
 $file_checks['участник: файла наставника нет']      = false === strpos( $member_team_html, 'ответ.pdf' );
-$file_checks['участник: без формы загрузки']        = false === strpos( $member_team_html, 'name="curator_file"' );
+$file_checks['участник: без формы загрузки']        = false === strpos( $member_team_html, 'name="curator_files[]"' );
 $file_checks['капитан: файл куратора в команде']    = false !== strpos( $owner_team_html, 'методичка.pdf' );
 $file_checks['наставник: полки куратора в команде нет'] = false === strpos( $mentor_team_html, 'Файлы от куратора' );
 $GLOBALS['wppa_test']['current_user'] = 12;
@@ -2284,7 +2284,7 @@ $curator_files_team = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 12 ) )
 );
 $file_checks['раздел: куратор видит файлы команды'] = false !== strpos( $curator_files_team, 'методичка.pdf' );
-$file_checks['раздел: куратор грузит файлы']         = false !== strpos( $curator_files_team, 'Прикрепить файл для наставника' );
+$file_checks['раздел: куратор грузит файлы']         = false !== strpos( $curator_files_team, 'Прикрепить файлы для наставника' );
 $file_checks['раздел: куратор видит файл наставника'] = false !== strpos( $curator_files_team, 'Файлы от наставника' );
 
 // Обработчик формы: кто что может удалять.
@@ -2788,6 +2788,155 @@ $GLOBALS['wppa_test']['posts'] = $files_posts_backup;
 
 foreach ( $file_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'curator files: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---- Массовая загрузка файлов: несколько файлов за один раз (3.33.0) ----
+$multi_checks = array();
+
+WPPA_Teams::set_curator( 12, true );
+
+$multi_one = WPPA_Curator_Files::normalize_files(
+	array( 'name' => 'док.pdf', 'tmp_name' => '/tmp/док.pdf', 'error' => UPLOAD_ERR_OK, 'size' => 12 )
+);
+$multi_checks['нормализация: одиночный файл']   = 1 === count( $multi_one ) && 'док.pdf' === $multi_one[0]['name'];
+$multi_checks['нормализация: ничего не выбрано'] = array() === WPPA_Curator_Files::normalize_files(
+	array( 'name' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0 )
+);
+$multi_checks['нормализация: не массив']        = array() === WPPA_Curator_Files::normalize_files( null );
+
+$multi_many = WPPA_Curator_Files::normalize_files(
+	array(
+		'name'     => array( 'a.pdf', '', 'b.txt' ),
+		'tmp_name' => array( '/tmp/a.pdf', '', '/tmp/b.txt' ),
+		'error'    => array( UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE, UPLOAD_ERR_OK ),
+		'size'     => array( 10, 0, 20 ),
+	)
+);
+$multi_checks['нормализация: пустые слоты пропущены'] = 2 === count( $multi_many ) && 'b.txt' === $multi_many[1]['name'];
+
+// Временные файлы созданы тестом на диске, а не браузером.
+$multi_allow = static function () {
+	return true;
+};
+add_filter( 'wppa_skip_upload_check', $multi_allow );
+
+$multi_team = WPPA_Teams::create( 'Команда массовой загрузки', 301 );
+
+/**
+ * Собрать $_FILES-массив из настоящих временных файлов.
+ *
+ * @param array $names Имена файлов.
+ * @return array
+ */
+function wppa_test_files_array( array $names ) {
+	$files = array(
+		'name'     => array(),
+		'tmp_name' => array(),
+		'error'    => array(),
+		'size'     => array(),
+	);
+
+	foreach ( array_values( $names ) as $index => $name ) {
+		$path = wppa_test_file( $name, str_repeat( 'z', 40 ) );
+
+		$files['name'][ $index ]     = $name;
+		$files['tmp_name'][ $index ] = $path;
+		$files['error'][ $index ]    = UPLOAD_ERR_OK;
+		$files['size'][ $index ]     = (int) filesize( $path );
+	}
+
+	return $files;
+}
+
+$multi_result = WPPA_Curator_Files::upload_many(
+	$multi_team,
+	wppa_test_files_array( array( 'multi-one.pdf', 'multi-two.txt', 'multi-bad.exe' ) ),
+	12
+);
+
+$multi_checks['upload_many: два файла добавлены'] = 2 === $multi_result['count_added'];
+$multi_checks['upload_many: плохой тип отклонён'] = 1 === $multi_result['count_failed'];
+$multi_checks['upload_many: код ошибки типа']     = in_array( 'wppa_file_type', $multi_result['errors'], true );
+$multi_checks['upload_many: файлы на месте']      = 2 === WPPA_Curator_Files::count( $multi_team );
+
+// Лимит количества файлов: пачка сверх MAX_FILES проходит поштучно и упирается в лимит.
+$multi_over_names = array();
+
+foreach ( range( 1, WPPA_Curator_Files::MAX_FILES ) as $multi_index ) {
+	$multi_over_names[] = 'over-' . $multi_index . '.pdf';
+}
+
+$multi_over = WPPA_Curator_Files::upload_many( $multi_team, wppa_test_files_array( $multi_over_names ), 12 );
+$multi_checks['upload_many: лимит файлов соблюдён'] = WPPA_Curator_Files::MAX_FILES === WPPA_Curator_Files::count( $multi_team );
+$multi_checks['upload_many: лишние отклонены']      = $multi_over['count_failed'] > 0 && 2 + $multi_over['count_added'] === WPPA_Curator_Files::MAX_FILES;
+
+$multi_after = WPPA_Curator_Files::upload_many( $multi_team, wppa_test_files_array( array( 'one-more.pdf' ) ), 12 );
+$multi_checks['upload_many: сверх лимита не добавляется'] = 0 === $multi_after['count_added'] && 1 === $multi_after['count_failed'];
+
+$multi_notices = WPPA_Notices::registry();
+$multi_checks['уведомление files_added: success']         = isset( $multi_notices['files_added'] ) && 'success' === $multi_notices['files_added'][0];
+$multi_checks['уведомление files_added_partial: warning'] = isset( $multi_notices['files_added_partial'] ) && 'warning' === $multi_notices['files_added_partial'][0];
+
+// Полный путь через обработчик формы: какое уведомление увидит куратор.
+$multi_notice = function ( $team_id, $files_array ) {
+	$_POST  = array(
+		'wppa_action'         => 'curator_file',
+		'curator_file_action' => 'upload',
+		'team_id'             => (int) $team_id,
+		'wppa_nonce'          => wp_create_nonce( 'wppa_curator_file' ),
+		'wppa_back'           => 'files',
+	);
+	$_FILES = array( 'curator_files' => $files_array );
+
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+	$GLOBALS['wppa_test']['current_user']   = 12;
+
+	ob_start();
+
+	try {
+		WPPA_Curator_Files::handle_request();
+	} catch ( RuntimeException $e ) {
+		ob_end_clean();
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+		$_POST  = array();
+		$_FILES = array();
+
+		return substr( $e->getMessage(), strlen( 'redirect:' ) );
+	}
+
+	ob_end_clean();
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	$_POST  = array();
+	$_FILES = array();
+
+	return '';
+};
+
+$multi_notice_team = WPPA_Teams::create( 'Команда уведомлений о файлах', 302 );
+$multi_notice_two  = $multi_notice( $multi_notice_team, wppa_test_files_array( array( 'n-one.pdf', 'n-two.pdf' ) ) );
+
+$multi_checks['форма: несколько файлов → files_added'] = false !== strpos( $multi_notice_two, 'wppa_notice=files_added' ) && 2 === WPPA_Curator_Files::count( $multi_notice_team );
+
+$multi_notice_one = $multi_notice( $multi_notice_team, wppa_test_files_array( array( 'n-three.pdf' ) ) );
+$multi_checks['форма: один файл → file_added']        = false !== strpos( $multi_notice_one, 'wppa_notice=file_added' );
+
+$multi_notice_part = $multi_notice( $multi_notice_team, wppa_test_files_array( array( 'n-four.pdf', 'n-bad.exe' ) ) );
+$multi_checks['форма: часть не прошла → files_added_partial'] = false !== strpos( $multi_notice_part, 'wppa_notice=files_added_partial' );
+
+$multi_notice_none = $multi_notice( $multi_notice_team, wppa_test_files_array( array( 'n-bad.exe' ) ) );
+$multi_checks['форма: всё не прошло → без files_added'] = false === strpos( $multi_notice_none, 'files_added' ) && false !== strpos( $multi_notice_none, 'wppa_notice=file_type' );
+
+remove_filter( 'wppa_skip_upload_check', $multi_allow );
+WPPA_Teams::set_curator( 12, false );
+
+WPPA_Teams::dissolve( $multi_notice_team );
+WPPA_Teams::dissolve( $multi_team );
+
+foreach ( $multi_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'multi files: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

@@ -490,8 +490,9 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 				<input type="hidden" name="curator_file_action" value="upload" />
 
 				<p class="wppa-field">
-					<label for="wppa-curator-file"><?php esc_html_e( 'Прикрепить файл', 'wp-personal-account' ); ?></label>
-					<input type="file" id="wppa-curator-file" name="curator_file" required />
+					<label for="wppa-curator-file"><?php esc_html_e( 'Прикрепить файлы', 'wp-personal-account' ); ?></label>
+					<input type="file" id="wppa-curator-file" name="curator_files[]" multiple required />
+					<span class="wppa-hint"><?php esc_html_e( 'Можно выбрать сразу несколько файлов — они прикрепятся за один раз.', 'wp-personal-account' ); ?></span>
 				</p>
 
 				<button type="submit" class="wppa-button wppa-button--primary"><?php esc_html_e( 'Прикрепить', 'wp-personal-account' ); ?></button>
