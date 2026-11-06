@@ -27,15 +27,6 @@ $wppa_below     = WPPA_Participants::count_below( $wppa_rows, $wppa_scores );
 
 $wppa_certs_ready = class_exists( 'WPPA_Certificates' ) && WPPA_Certificates::available();
 
-// Команды для массовой выдачи: только те, что попали в список.
-$wppa_team_ids = array();
-
-foreach ( $wppa_rows as $wppa_row_item ) {
-	if ( ! in_array( (int) $wppa_row_item['team'], $wppa_team_ids, true ) ) {
-		$wppa_team_ids[] = (int) $wppa_row_item['team'];
-	}
-}
-
 $wppa_single_team = WPPA_Teams::viewing_team_id( $wppa_viewer->ID );
 $wppa_block_url   = WPPA_Plugin::tab_url( 'files' );
 
@@ -226,7 +217,7 @@ if ( $wppa_single_team ) {
 					<?php
 					printf(
 						/* translators: %d: минимальный процент правильных ответов */
-						esc_html__( 'Сертификат получает участник с процентом не ниже порога (%d%%). Номер и PDF присваивает WP Diplom; участнику уходит уведомление письмом, если оно включено в настройках, а наставник видит сертификаты участников в своей вкладке «Сертификаты».', 'wp-personal-account' ),
+						esc_html__( 'Сертификат получает участник с процентом не ниже порога (%d%%). Кнопка ниже выдаёт сертификаты сразу всем участникам всех команд, кто прошёл порог, — команду выбирать не нужно. Номер и PDF присваивает WP Diplom, а наставник видит сертификаты своих участников во вкладке «Сертификаты».', 'wp-personal-account' ),
 						(int) $wppa_threshold
 					);
 					?>
@@ -237,19 +228,6 @@ if ( $wppa_single_team ) {
 					<input type="hidden" name="wppa_action" value="certificate" />
 										<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 					<input type="hidden" name="certificate_action" value="issue_threshold" />
-
-					<?php if ( $wppa_single_team ) : ?>
-						<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_single_team ); ?>" />
-					<?php else : ?>
-						<label class="wppa-participants__label" for="wppa-cert-team"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></label>
-						<select id="wppa-cert-team" name="team_id">
-							<?php foreach ( $wppa_team_ids as $wppa_team_option ) : ?>
-								<option value="<?php echo esc_attr( (string) (int) $wppa_team_option ); ?>">
-									<?php echo esc_html( (string) get_the_title( (int) $wppa_team_option ) ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					<?php endif; ?>
 
 					<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
 						<?php esc_html_e( 'Выдать всем, кто выше порога', 'wp-personal-account' ); ?>

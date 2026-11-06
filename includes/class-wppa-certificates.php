@@ -442,6 +442,52 @@ class WPPA_Certificates {
 	}
 
 	/**
+	 * Выдать сертификаты всем участникам всех команд, кто выше порога.
+	 *
+	 * Кнопка «Выдать всем, кто выше порога» работает без выбора команды:
+	 * обходит все команды и выдаёт сертификат каждому, кто прошёл порог.
+	 *
+	 * @param int $curator_id Куратор.
+	 * @return array issued, skipped, failed, errors.
+	 */
+	public static function issue_all_above_threshold( $curator_id = 0 ) {
+		$curator_id = (int) ( $curator_id ? $curator_id : get_current_user_id() );
+		$result     = array(
+			'issued'  => array(),
+			'skipped' => array(),
+			'errors'  => array(),
+		);
+
+		if ( ! self::available() ) {
+			$result['errors'][] = 'wppa_certificate_unavailable';
+
+			return $result;
+		}
+
+		if ( ! WPPA_Teams::is_curator( $curator_id ) ) {
+			$result['errors'][] = 'wppa_certificate_forbidden';
+
+			return $result;
+		}
+
+		foreach ( WPPA_Teams::all_teams() as $team ) {
+			$team_id = (int) $team['id'];
+
+			if ( ! $team_id ) {
+				continue;
+			}
+
+			$batch = self::issue_team_above_threshold( $team_id, $curator_id );
+
+			$result['issued']  = array_replace( $result['issued'], (array) $batch['issued'] );
+			$result['skipped'] = array_merge( $result['skipped'], (array) $batch['skipped'] );
+			$result['errors']  = array_merge( $result['errors'], (array) $batch['errors'] );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Убрать сертификат из кабинета участника (сам сертификат в WP Diplom остаётся).
 	 *
 	 * @param int $user_id    Участник.
@@ -984,7 +1030,8 @@ class WPPA_Certificates {
 		}
 
 		if ( 'issue_threshold' === $sub ) {
-			$batch = self::issue_team_above_threshold( $team, $curator_id );
+			// Команду не выбираем: выдаём всем, кто прошёл порог, по всем командам.
+			$batch = self::issue_all_above_threshold( $curator_id );
 
 			if ( empty( $batch['issued'] ) ) {
 				WPPA_Notices::redirect( 'certificate_nobody', $back );

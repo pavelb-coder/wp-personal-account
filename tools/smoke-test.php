@@ -4971,6 +4971,36 @@ $cr_checks['наставнику в пакете нет места']   = ! isset
 $cr_checks['в команде есть сертификаты']      = true === WPPA_Certificates::team_has( $cr_team );
 $cr_checks['пакет не-куратору запрещён']      = array( 'wppa_certificate_forbidden' ) === WPPA_Certificates::issue_team_above_threshold( $cr_team, 912 )['errors'];
 
+// Массовая выдача без выбора команды: все команды сразу.
+$GLOBALS['wppa_test']['users'][921] = array( 'Второй Капитан', 'cap921@example.com', 'first_name' => 'Второй', 'last_name' => 'Капитан' );
+
+$cr_certs_backup = get_user_meta( 911, WPPA_Certificates::META, true );
+$cr_second_team  = WPPA_Teams::create( 'Вторая команда сертификатов', 921 );
+
+delete_user_meta( 921, WPPA_Certificates::META );
+
+$wpdb->data['attempts'][] = (object) array( 'user_id' => 921, 'score' => 8, 'max_score' => 10, 'percentage' => '80.00', 'status' => 'completed' );
+
+WPPA_Olympiad::flush();
+
+$cr_all = WPPA_Certificates::issue_all_above_threshold( 12 );
+
+$cr_checks['всем командам: выдано двоим']       = 2 === count( $cr_all['issued'] );
+$cr_checks['всем командам: первая команда']     = isset( $cr_all['issued'][911] );
+$cr_checks['всем командам: вторая команда']     = isset( $cr_all['issued'][921] );
+$cr_checks['всем командам: ниже порога нет']    = ! isset( $cr_all['issued'][912] );
+$cr_checks['всем командам: сертификат есть']    = 1 === WPPA_Certificates::count( 921 );
+$cr_checks['всем командам: не-куратору нельзя'] = array( 'wppa_certificate_forbidden' ) === WPPA_Certificates::issue_all_above_threshold( 912 )['errors'];
+
+// Уборка: у 911 снова один сертификат, у 921 — ни одного.
+update_user_meta( 911, WPPA_Certificates::META, $cr_certs_backup );
+delete_user_meta( 921, WPPA_Certificates::META );
+WPPA_Teams::dissolve( (int) $cr_second_team );
+array_pop( $wpdb->data['attempts'] );
+WPPA_Olympiad::flush();
+
+$cr_checks['всем командам: состояние вернулось'] = 1 === WPPA_Certificates::count( 911 ) && 0 === WPPA_Certificates::count( 921 );
+
 // Вкладка и блок.
 WPPA_Teams::set_curator( 12, true );
 $GLOBALS['wppa_test']['current_user'] = 12;
@@ -5106,6 +5136,9 @@ $cr_panel_html = WPPA_Builder::render_block(
 
 $cr_checks['у куратора кнопка выдачи']     = false !== strpos( $cr_panel_html, 'certificate_action=issue' ) || false !== strpos( $cr_panel_html, 'value="issue"' );
 $cr_checks['у куратора массовая выдача']   = false !== strpos( $cr_panel_html, 'value="issue_threshold"' );
+$cr_checks['у куратора нет выбора команды'] = false === strpos( $cr_panel_html, 'wppa-cert-team' )
+	&& false === strpos( $cr_panel_html, 'name="team_id"' . '>' . 'Выдать' );
+$cr_checks['подсказка про все команды']     = false !== strpos( $cr_panel_html, 'всем участникам всех команд' );
 $cr_checks['у куратора ссылка скачивания'] = false !== strpos( $cr_panel_html, 'action=wppa_certificate_download' );
 
 // Проверка подлинности и отзыв.
