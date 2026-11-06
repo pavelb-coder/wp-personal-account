@@ -124,6 +124,8 @@ class WPPA_Notices {
 			'file_forbidden'        => array( 'error', __( 'Файлы прикрепляют куратор и наставник команды; удалить можно только свой файл.', 'wp-personal-account' ) ),
 			'file_stage2'         => array( 'error', __( 'Прикреплять файлы можно после того, как команда прошла во второй этап.', 'wp-personal-account' ) ),
 			'file_team_missing'     => array( 'error', __( 'Команда не найдена — откройте её из списка команд.', 'wp-personal-account' ) ),
+			'participant_threshold_saved'     => array( 'success', __( 'Минимальный процент правильных ответов сохранён.', 'wp-personal-account' ) ),
+			'participant_threshold_forbidden' => array( 'error', __( 'Минимальный процент задаёт куратор.', 'wp-personal-account' ) ),
 			'files_added'           => array( 'success', __( 'Файлы прикреплены — они уже в кабинете, наставник и куратор увидят их сразу.', 'wp-personal-account' ) ),
 			'files_added_partial'   => array( 'warning', __( 'Часть файлов прикреплена, часть — нет: проверьте тип, размер (до 10 МБ) и лимит файлов на команду.', 'wp-personal-account' ) ),
 			'file_exported'         => array( 'success', __( 'Файл скопирован в сетевую папку команды.', 'wp-personal-account' ) ),

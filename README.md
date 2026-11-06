@@ -351,6 +351,17 @@ API: `WPPA_Mailing::recipients()`, `settings()`/`save()`, `start()`, `cancel()`,
 * Права: `can_view( $team_id, $user_id )` — куратор, наставник команды и администратор; `can_manage()` — куратор и наставник этой команды; `direction()` — в каком качестве прикрепляет файл (`curator` / `mentor`, это же значение хранится в записи); `can_remove( $team_id, $key, $user_id )` — куратор удаляет любой файл, наставник только свой. API: `files()`, `count()`, `store()`, `upload()`, `remove()`, `clear()`, `download_url()`, `size_label()`.
 * Коды уведомлений: `file_added`, `file_removed`, `file_missing`, `file_type`, `file_size`, `file_empty`, `file_limit`, `file_save_failed`, `file_forbidden`, `file_team_missing`.
 
+### Участники и баллы: список, проценты и порог
+
+Отдельный кураторский блок — `participants-widget` («Участники и баллы») в «Конструкторе»; по умолчанию стоит на вкладке «Файлы» (`WPPA_Builder::defaults()`), существующим установкам добавляется один раз при обновлении (`maybe_upgrade()` → `seed_block( 'participants-widget', 'files' )`, флаг `wppa_participants_block_seeded`). Класс — `WPPA_Participants`, шаблон — `templates/blocks/participants-widget.php`.
+
+* **Кому виден**: только куратору — шаблон выходит сразу, если `WPPA_Participants::can_manage()` (это `WPPA_Teams::is_curator()`) ложно. Участникам, капитанам и наставникам блока нет.
+* **Кто в списке**: `WPPA_Participants::rows()` → `WPPA_Teams::participants()` — капитан и участники, **без наставников**. Без открытой команды показываются все команды (`all_teams()`), с открытой (`?wppa_team=ID`) — только её участники.
+* **Баллы и процент**: `WPPA_Participants::scores()` → `WPPA_Olympiad::summary_map()` — один запрос на весь список: тесты, сумма баллов, максимум, процент и число работ на проверке. Если плагина олимпиад нет (`is_active()`), вместо цифр — «—» и подсказка об интеграции.
+* **Порог процента**: форма `wppa_action=participant_threshold`, nonce `wppa_participant_threshold`, поле `min_percent` (0–100). Хранится в `wppa_settings[participant_min_percent]`, по умолчанию 60; чтение — `WPPA_Participants::min_percent()` (фильтр `wppa_participant_min_percent`), запись — `set_min_percent()` с ограничением 0–100, сравнение — `below_threshold()`.
+* **Как это видно**: под формой подпись «Порог N%: ниже него — X из Y участников» (`count_below()`), у строки с низким процентом значок `wppa-badge--warn` и подпись «ниже порога N%», у остальных — `wppa-badge--ok`. Процент выводит `percent_label()`: «75 %» без лишнего нуля, «72,5 %» с десятыми.
+* **Коды уведомлений**: `participant_threshold_saved`, `participant_threshold_forbidden`.
+
 ## Установка
 
 ```bash

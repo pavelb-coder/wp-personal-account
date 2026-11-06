@@ -25,6 +25,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-participants.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -42,10 +43,10 @@ require $base . 'includes/class-wppa-widget.php';
 require $base . 'includes/class-wppa-blocks.php';
 
 $GLOBALS['wppa_test']['users'] = array(
-	7 => array( 'Иван Петров', 'email' => 'ivan@example.com' ),
-	8 => array( 'Мария Соколова', 'email' => 'maria@example.com' ),
-	9 => array( 'Пётр Сидоров', 'email' => 'petr@example.com' ),
-	12 => array( 'Ольга Куратова', 'email' => 'olga@example.com' ),
+	7 => array( 'Иван Петров', 'email' => 'ivan@example.com', 'first_name' => 'Иван', 'last_name' => 'Петров' ),
+	8 => array( 'Мария Соколова', 'email' => 'maria@example.com', 'first_name' => 'Мария', 'last_name' => 'Соколова' ),
+	9 => array( 'Пётр Сидоров', 'email' => 'petr@example.com', 'first_name' => 'Пётр', 'last_name' => 'Сидоров' ),
+	12 => array( 'Ольга Куратова', 'email' => 'olga@example.com', 'first_name' => 'Ольга', 'last_name' => 'Куратова' ),
 );
 
 // Демо-персональные данные пользователя.
@@ -309,6 +310,40 @@ $sections .= demo_section(
 		)
 	)
 );
+
+// Блок куратора «Участники и баллы»: участники без наставников, баллы, процент и порог.
+// Попытки привязываем к людям: у капитана (7) — 80 %, у участника (9) — 40 % (ниже порога 60 %).
+global $wpdb;
+
+if ( $wpdb instanceof WPPA_Test_WPDB ) {
+	// Строки уже свёрнуты по участнику: в демо-стабе SQL не выполняется.
+	$wpdb->data = array(
+		'var'      => $wpdb->prefix . 'olympiad_attempts',
+		'attempts' => array(
+			(object) array( 'user_id' => 7, 'score' => 8, 'max_score' => 10, 'tests' => 2, 'pending' => 0 ),
+			(object) array( 'user_id' => 9, 'score' => 3, 'max_score' => 10, 'tests' => 2, 'pending' => 1 ),
+		),
+	);
+}
+
+$wppa_preview_active = static function () {
+	return true;
+};
+
+add_filter( 'wppa_olympiad_active', $wppa_preview_active );
+
+WPPA_Olympiad::flush();
+
+$sections .= demo_section(
+	'Куратор: участники и баллы',
+	'Список участников команд без наставников: баллы и процент за тесты и порог минимального процента. У Петра 30 % — ниже порога 60 %, поэтому процент помечен предупреждением и подписью «ниже порога 60%»',
+	WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		array( 'user' => $curator_user )
+	)
+);
+
+remove_filter( 'wppa_olympiad_active', $wppa_preview_active );
 
 WPPA_Teams::set_curator( 12, false );
 

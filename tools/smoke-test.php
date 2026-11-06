@@ -24,6 +24,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-participants.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -4352,7 +4353,7 @@ $lay_backup = get_option( WPPA_Builder::OPTION, null );
 
 $lay_dead = array(
 	'type'     => 'block',
-	'id'       => 'participants-widget',
+	'id'       => 'removed-block',
 	'enabled'  => 1,
 	'title'    => '',
 	'audience' => 'all',
@@ -4383,7 +4384,7 @@ $lay_files_ids = array_map(
 	(array) $lay_layout['files']
 );
 
-$lay_checks['чужой блок не попадает в раскладку'] = ! in_array( 'participants-widget', $lay_files_ids, true );
+$lay_checks['чужой блок не попадает в раскладку'] = ! in_array( 'removed-block', $lay_files_ids, true );
 $lay_checks['свой блок остаётся']                 = 2 === count( $lay_layout['dashboard'] )
 	&& 'custom-0' === (string) $lay_layout['dashboard'][1]['id'];
 
@@ -4442,16 +4443,16 @@ WPPA_Plugin::maybe_upgrade();
 
 $lay_checks['обновление: флаг чистки поставлен'] = 1 === (int) get_option( 'wppa_layout_cleaned', 0 );
 $lay_checks['обновление: след 3.37 убран']       = false === get_option( 'wppa_participants_seeded', false );
-$lay_checks['обновление: раскладка починена']    = in_array(
-	'files-widget',
-	array_map(
-		static function ( $item ) {
-			return isset( $item['id'] ) ? (string) $item['id'] : '';
-		},
-		(array) ( get_option( WPPA_Builder::OPTION, array() )['files'] ?? array() )
-	),
-	true
+$lay_files_ids_after = array_map(
+	static function ( $item ) {
+		return isset( $item['id'] ) ? (string) $item['id'] : '';
+	},
+	(array) ( get_option( WPPA_Builder::OPTION, array() )['files'] ?? array() )
 );
+
+$lay_checks['обновление: раскладка починена']       = in_array( 'files-widget', $lay_files_ids_after, true );
+$lay_checks['обновление: блок участников добавлен'] = in_array( 'participants-widget', $lay_files_ids_after, true )
+	&& 1 === (int) get_option( 'wppa_participants_block_seeded', 0 );
 
 update_option( 'wppa_settings', $lay_settings_backup );
 
@@ -4463,6 +4464,170 @@ if ( null === $lay_backup ) {
 
 foreach ( $lay_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'layout: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---- Блок куратора «Участники и баллы»: список, проценты и порог (3.41.0) ----
+$pw_checks = array();
+
+$GLOBALS['wppa_test']['users'][901] = array( 'Капитан Баллов', 'cap901@example.com', 'first_name' => 'Капитан', 'last_name' => 'Баллов' );
+$GLOBALS['wppa_test']['users'][902] = array( 'Участник Слабый', 'weak902@example.com', 'first_name' => 'Участник', 'last_name' => 'Слабый' );
+$GLOBALS['wppa_test']['users'][903] = array( 'Наставник Баллов', 'mentor903@example.com', 'first_name' => 'Наставник', 'last_name' => 'Баллов' );
+
+$pw_team = WPPA_Teams::create( 'Команда баллов', 901 );
+
+if ( ! is_wp_error( $pw_team ) ) {
+	WPPA_Teams::add_member( $pw_team, 902 );
+	WPPA_Teams::add_member( $pw_team, 903 );
+	WPPA_Teams::set_role( $pw_team, 903, 'mentor' );
+}
+
+$pw_settings_backup = get_option( 'wppa_settings', array() );
+$pw_db_backup       = isset( $wpdb->data ) ? $wpdb->data : array();
+
+$wpdb->data = array(
+	'var'      => $wpdb->prefix . 'olympiad_attempts',
+	'attempts' => array(
+		(object) array( 'user_id' => 901, 'score' => 8, 'max_score' => 10, 'percentage' => '80.00', 'status' => 'completed' ),
+		(object) array( 'user_id' => 902, 'score' => 2, 'max_score' => 10, 'percentage' => '20.00', 'status' => 'completed' ),
+	),
+);
+
+$pw_active = static function () {
+	return true;
+};
+
+add_filter( 'wppa_olympiad_active', $pw_active );
+
+WPPA_Olympiad::flush();
+WPPA_Participants::set_min_percent( 60 );
+
+// Порог: чтение, запись, ограничения.
+$pw_checks['порог по умолчанию — 60']      = 60 === WPPA_Participants::MIN_PERCENT_DEFAULT && 60 === WPPA_Participants::min_percent();
+$pw_checks['порог сверху ограничен']       = 100 === WPPA_Participants::set_min_percent( 250 );
+$pw_checks['порог снизу ограничен']        = 0 === WPPA_Participants::set_min_percent( -5 );
+
+WPPA_Participants::set_min_percent( 60 );
+
+$pw_checks['ниже порога: 20 %']            = true === WPPA_Participants::below_threshold( 20 );
+$pw_checks['не ниже порога: 80 %']         = false === WPPA_Participants::below_threshold( 80 );
+$pw_checks['процент без лишнего нуля']     = '75 %' === WPPA_Participants::percent_label( 75.0 );
+$pw_checks['процент с десятыми']           = '72.5 %' === WPPA_Participants::percent_label( 72.5 );
+
+// Блок есть в конструкторе и стоит по умолчанию на вкладке «Файлы».
+$pw_blocks  = WPPA_Builder::blocks();
+$pw_layout  = WPPA_Builder::defaults();
+
+$pw_checks['блок в конструкторе'] = isset( $pw_blocks['participants-widget'] )
+	&& in_array( 'files', (array) $pw_blocks['participants-widget']['tabs'], true );
+
+$pw_files_ids = array_map(
+	static function ( $item ) {
+		return (string) $item['id'];
+	},
+	(array) $pw_layout['files']
+);
+
+$pw_checks['блок по умолчанию на «Файлах»'] = in_array( 'participants-widget', $pw_files_ids, true );
+
+// Список: только участники, без наставников.
+$pw_rows = WPPA_Participants::rows( 12 );
+
+$pw_checks['в списке капитан и участник'] = isset( $pw_rows[901], $pw_rows[902] );
+$pw_checks['наставника в списке нет']     = ! isset( $pw_rows[903] );
+$pw_checks['счётчик ниже порога']         = 1 === WPPA_Participants::count_below( $pw_rows, WPPA_Participants::scores( $pw_rows ) );
+
+// Рендер блока куратору.
+WPPA_Teams::set_curator( 12, true );
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$pw_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$pw_checks['блок: заголовок']              = false !== strpos( $pw_html, 'Участники и баллы' );
+$pw_checks['блок: форма порога']           = false !== strpos( $pw_html, 'name="min_percent"' )
+	&& false !== strpos( $pw_html, 'value="participant_threshold"' )
+	&& false !== strpos( $pw_html, 'value="60"' );
+$pw_checks['блок: сводка по порогу']       = false !== strpos( $pw_html, 'ниже него — 1 из 2 участников' );
+$pw_checks['блок: капитан в таблице']      = false !== strpos( $pw_html, 'Капитан Баллов' );
+$pw_checks['блок: баллы и процент']        = false !== strpos( $pw_html, '8 / 10' )
+	&& false !== strpos( $pw_html, '80 %' )
+	&& false !== strpos( $pw_html, '20 %' );
+$pw_checks['блок: пометка ниже порога']    = false !== strpos( $pw_html, 'ниже порога 60%' );
+$pw_checks['блок: наставника нет']         = false === strpos( $pw_html, 'Наставник Баллов' );
+
+// Участнику и наставнику блок не показывается.
+$pw_member_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 902 ) )
+);
+
+$pw_mentor_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 903 ) )
+);
+
+$pw_checks['участнику блок не выводится']  = '' === trim( $pw_member_html );
+$pw_checks['наставнику блок не выводится'] = '' === trim( $pw_mentor_html );
+
+// Обработчик формы порога: сохраняет и отказывает не-куратору.
+$pw_request = static function ( $user_id, $value, $team_id ) {
+	$_POST = array(
+		'wppa_action' => 'participant_threshold',
+		'min_percent' => (string) $value,
+		'team_id'     => (int) $team_id,
+		'wppa_nonce'  => wp_create_nonce( 'wppa_participant_threshold' ),
+	);
+
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+	$GLOBALS['wppa_test']['current_user']   = (int) $user_id;
+
+	try {
+		WPPA_Participants::handle_threshold();
+	} catch ( RuntimeException $e ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+		$_POST = array();
+
+		return substr( $e->getMessage(), strlen( 'redirect:' ) );
+	}
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	$_POST = array();
+
+	return '';
+};
+
+$pw_saved_url = $pw_request( 12, 45, $pw_team );
+$pw_checks['обработчик: порог сохранён']        = false !== strpos( $pw_saved_url, 'wppa_notice=participant_threshold_saved' )
+	&& 45 === WPPA_Participants::min_percent();
+$pw_checks['обработчик: возврат в команду']     = false !== strpos( $pw_saved_url, 'wppa_team=' . (int) $pw_team );
+
+$pw_deny_url = $pw_request( 902, 10, $pw_team );
+$pw_checks['обработчик: участнику нельзя']      = false !== strpos( $pw_deny_url, 'wppa_notice=participant_threshold_forbidden' )
+	&& 45 === WPPA_Participants::min_percent();
+
+$pw_notices = WPPA_Notices::registry();
+$pw_checks['уведомления о пороге'] = isset( $pw_notices['participant_threshold_saved'], $pw_notices['participant_threshold_forbidden'] );
+
+// Настройка в опции, а не только в статике.
+$pw_checks['порог лежит в настройках'] = 45 === (int) ( get_option( 'wppa_settings', array() )['participant_min_percent'] ?? 0 );
+
+remove_filter( 'wppa_olympiad_active', $pw_active );
+
+WPPA_Olympiad::flush();
+WPPA_Teams::dissolve( $pw_team );
+WPPA_Teams::set_curator( 12, false );
+
+update_option( 'wppa_settings', $pw_settings_backup );
+$wpdb->data = $pw_db_backup;
+
+foreach ( $pw_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'participants-block: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

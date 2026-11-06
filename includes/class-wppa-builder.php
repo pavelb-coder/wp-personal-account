@@ -130,6 +130,11 @@ class WPPA_Builder {
 				'tabs'  => array( 'files' ),
 				'desc'  => __( 'Документы куратора для наставника команды', 'wp-personal-account' ),
 			),
+			'participants-widget' => array(
+				'label' => __( 'Участники и баллы', 'wp-personal-account' ),
+				'tabs'  => array( 'files' ),
+				'desc'  => __( 'Только куратору: участники команд без наставников, их баллы и процент за тесты, порог процента', 'wp-personal-account' ),
+			),
 			'mailing-widget'  => array(
 				'label' => __( 'Рассылка участникам второго этапа', 'wp-personal-account' ),
 				'tabs'  => array( 'mailing' ),
