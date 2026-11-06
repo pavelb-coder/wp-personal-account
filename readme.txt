@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.43.0
+Stable tag: 3.44.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.44.0 =
+* Ссылка проверки подлинности сертификата: страница проверки WP Diplom или /certificate/{код}/ — прямо из вкладки «Сертификаты».
+* Отзыв сертификата в WP Diplom виден в кабинете: значок «отозван», скачивание PDF закрыто, у куратора в списке участников тоже пометка.
+* Фильтр wppa_certificate_verify_url — своя ссылка проверки.
 
 = 3.43.0 =
 * Сертификаты участников — интеграция с плагином WP Diplom: куратор выдаёт сертификат участнику во вкладке «Участники», участник видит новую вкладку «Сертификаты» и скачивает PDF.

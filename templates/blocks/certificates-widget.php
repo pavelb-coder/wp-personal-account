@@ -38,19 +38,31 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 				</thead>
 				<tbody>
 					<?php foreach ( $wppa_certificates as $wppa_cert ) : ?>
-						<tr>
+						<tr<?php echo $wppa_cert['revoked'] ? ' class="wppa-certificates__row--revoked"' : ''; ?>>
 							<td data-label="<?php esc_attr_e( 'Номер', 'wp-personal-account' ); ?>">
 								<strong><?php echo esc_html( '' !== $wppa_cert['number'] ? $wppa_cert['number'] : '—' ); ?></strong>
 								<?php if ( '' !== $wppa_cert['code'] ) : ?>
 									<br /><span class="wppa-hint"><?php esc_html_e( 'код проверки:', 'wp-personal-account' ); ?> <code><?php echo esc_html( $wppa_cert['code'] ); ?></code></span>
 								<?php endif; ?>
+								<?php if ( $wppa_cert['revoked'] ) : ?>
+									<br /><span class="wppa-badge wppa-badge--warn"><?php esc_html_e( 'отозван', 'wp-personal-account' ); ?></span>
+								<?php endif; ?>
 							</td>
 							<td data-label="<?php esc_attr_e( 'Программа', 'wp-personal-account' ); ?>"><?php echo esc_html( '' !== $wppa_cert['course'] ? $wppa_cert['course'] : '—' ); ?></td>
 							<td data-label="<?php esc_attr_e( 'Выдан', 'wp-personal-account' ); ?>"><?php echo esc_html( $wppa_cert['time'] ? date_i18n( get_option( 'date_format' ), $wppa_cert['time'] ) : '—' ); ?></td>
 							<td data-label="<?php esc_attr_e( 'PDF', 'wp-personal-account' ); ?>">
-								<a class="wppa-button wppa-button--primary wppa-button--sm" href="<?php echo esc_url( $wppa_cert['url'] ); ?>">
-									<?php esc_html_e( 'Скачать', 'wp-personal-account' ); ?>
-								</a>
+								<?php if ( $wppa_cert['revoked'] ) : ?>
+									<span class="wppa-hint"><?php esc_html_e( 'Сертификат отозван куратором — скачивание закрыто.', 'wp-personal-account' ); ?></span>
+								<?php else : ?>
+									<a class="wppa-button wppa-button--primary wppa-button--sm" href="<?php echo esc_url( $wppa_cert['url'] ); ?>">
+										<?php esc_html_e( 'Скачать', 'wp-personal-account' ); ?>
+									</a>
+								<?php endif; ?>
+								<?php if ( '' !== $wppa_cert['verify'] ) : ?>
+									<br /><a class="wppa-link wppa-certificates__verify" href="<?php echo esc_url( $wppa_cert['verify'] ); ?>" target="_blank" rel="noopener noreferrer">
+										<?php esc_html_e( 'Проверить подлинность', 'wp-personal-account' ); ?>
+									</a>
+								<?php endif; ?>
 								<?php if ( $wppa_cert['sent'] ) : ?>
 									<br /><span class="wppa-hint"><?php esc_html_e( 'отправлен на e-mail', 'wp-personal-account' ); ?></span>
 								<?php endif; ?>

@@ -179,6 +179,9 @@ if ( $wppa_single_team ) {
 											<a class="wppa-link" href="<?php echo esc_url( $wppa_cert['url'] ); ?>">
 												<?php echo esc_html( '' !== $wppa_cert['number'] ? $wppa_cert['number'] : __( 'PDF', 'wp-personal-account' ) ); ?>
 											</a>
+										<?php if ( $wppa_cert['revoked'] ) : ?>
+											<span class="wppa-badge wppa-badge--warn"><?php esc_html_e( 'отозван', 'wp-personal-account' ); ?></span>
+										<?php endif; ?>
 											<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__cert-remove">
 												<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 												<input type="hidden" name="wppa_action" value="certificate" />

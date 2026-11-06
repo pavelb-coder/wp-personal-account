@@ -4929,6 +4929,51 @@ $cr_checks['у куратора кнопка выдачи']     = false !== strp
 $cr_checks['у куратора массовая выдача']   = false !== strpos( $cr_panel_html, 'value="issue_threshold"' );
 $cr_checks['у куратора ссылка скачивания'] = false !== strpos( $cr_panel_html, 'action=wppa_certificate_download' );
 
+// Проверка подлинности и отзыв.
+$cr_last_key  = array_key_first( WPPA_Certificates::for_user( 911 ) );
+$cr_last_id   = (int) substr( (string) $cr_last_key, 5 );
+$cr_last      = WPPA_Certificates::for_user( 911 )[ $cr_last_key ];
+$cr_last_code = $cr_last['code'];
+
+$cr_checks['у записи есть ссылка проверки'] = '' !== $cr_last_code && false !== strpos( $cr_last['verify'], $cr_last_code );
+$cr_checks['ссылка ведёт на /certificate/'] = false !== strpos( $cr_last['verify'], '/certificate/' );
+$cr_checks['по умолчанию не отозван']       = false === $cr_last['revoked'] && false === WPPA_Certificates::is_revoked( $cr_last_id );
+
+$cr_verify_filter = static function ( $url, $code, $cert_id ) {
+	return 'https://example.com/verify?code=' . $code . '&cert=' . $cert_id;
+};
+add_filter( 'wppa_certificate_verify_url', $cr_verify_filter, 10, 3 );
+
+$cr_checks['фильтр ссылки проверки работает'] = 'https://example.com/verify?code=' . $cr_last_code . '&cert=' . $cr_last_id === WPPA_Certificates::verify_url( $cr_last_id );
+
+remove_filter( 'wppa_certificate_verify_url', $cr_verify_filter, 10 );
+
+$cr_checks['код не указан — ссылки нет']       = '' === WPPA_Certificates::verify_url( 9999 );
+
+update_post_meta( $cr_last_id, '_wpdc_revoked', 1 );
+
+$cr_checks['отзыв виден в is_revoked']        = true === WPPA_Certificates::is_revoked( $cr_last_id );
+$cr_checks['отзыв виден в списке']            = true === WPPA_Certificates::for_user( 911 )[ $cr_last_key ]['revoked'];
+
+$cr_revoked_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 911 ) )
+);
+
+$cr_checks['отозванный помечен в блоке']        = false !== strpos( $cr_revoked_html, 'отозван' );
+$cr_checks['отозванному не предлагают скачать'] = false === strpos( $cr_revoked_html, 'action=wppa_certificate_download' );
+$cr_checks['в блоке есть проверка подлинности']  = false !== strpos( $cr_revoked_html, 'Проверить подлинность' );
+
+update_post_meta( $cr_last_id, '_wpdc_revoked', 0 );
+
+$cr_checks['снятый отзыв снова качается']       = false !== strpos(
+	WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		array( 'user' => get_userdata( 911 ) )
+	),
+	'action=wppa_certificate_download'
+);
+
 // Удаление из кабинета.
 $cr_current = array_key_first( WPPA_Certificates::for_user( 911 ) );
 $cr_cert_id = (int) substr( (string) $cr_current, 5 );

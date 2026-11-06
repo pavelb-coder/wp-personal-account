@@ -165,15 +165,19 @@ class WPPA_Certificates {
 				continue;
 			}
 
+			$code = isset( $entry['code'] ) ? (string) $entry['code'] : '';
+
 			$out[ (string) $key ] = array(
-				'id'     => (int) $entry['id'],
-				'number' => isset( $entry['number'] ) ? (string) $entry['number'] : '',
-				'code'   => isset( $entry['code'] ) ? (string) $entry['code'] : '',
-				'course' => isset( $entry['course'] ) ? (string) $entry['course'] : '',
-				'time'   => isset( $entry['time'] ) ? (int) $entry['time'] : 0,
-				'by'     => isset( $entry['by'] ) ? (int) $entry['by'] : 0,
-				'sent'   => ! empty( $entry['sent'] ),
-				'url'    => self::download_url( $user_id, (int) $entry['id'] ),
+				'id'      => (int) $entry['id'],
+				'number'  => isset( $entry['number'] ) ? (string) $entry['number'] : '',
+				'code'    => $code,
+				'course'  => isset( $entry['course'] ) ? (string) $entry['course'] : '',
+				'time'    => isset( $entry['time'] ) ? (int) $entry['time'] : 0,
+				'by'      => isset( $entry['by'] ) ? (int) $entry['by'] : 0,
+				'sent'    => ! empty( $entry['sent'] ),
+				'revoked' => self::is_revoked( (int) $entry['id'] ),
+				'verify'  => '' !== $code ? self::verify_url( (int) $entry['id'], $code ) : '',
+				'url'     => self::download_url( $user_id, (int) $entry['id'] ),
 			);
 		}
 
@@ -412,6 +416,56 @@ class WPPA_Certificates {
 	}
 
 	/**
+	 * Отозван ли сертификат в WP Diplom (`_wpdc_revoked`).
+	 *
+	 * @param int $cert_id ID сертификата.
+	 * @return bool
+	 */
+	public static function is_revoked( $cert_id ) {
+		return (bool) get_post_meta( (int) $cert_id, '_wpdc_revoked', true );
+	}
+
+	/**
+	 * Публичная ссылка проверки сертификата: страница проверки WP Diplom
+	 * или `/certificate/{код}/`.
+	 *
+	 * @param int    $cert_id ID сертификата.
+	 * @param string $code    Код проверки.
+	 * @return string
+	 */
+	public static function verify_url( $cert_id, $code = '' ) {
+		$cert_id = (int) $cert_id;
+		$code    = (string) ( '' !== $code ? $code : get_post_meta( $cert_id, '_wpdc_code', true ) );
+
+		if ( '' === $code ) {
+			return '';
+		}
+
+		$template = (int) get_post_meta( $cert_id, '_wpdc_template', true );
+
+		if ( class_exists( 'WPDC_Certificate' ) && method_exists( 'WPDC_Certificate', 'verify_url' ) ) {
+			try {
+				$url = (string) WPDC_Certificate::verify_url( $code, $template );
+
+				if ( '' !== $url ) {
+					return $url;
+				}
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Падение плагина не должно ломать кабинет.
+				// Молча уходим на запасную ссылку.
+			}
+		}
+
+		/**
+		 * Фильтр ссылки проверки сертификата.
+		 *
+		 * @param string $url     Ссылка проверки.
+		 * @param string $code    Код проверки.
+		 * @param int    $cert_id ID сертификата.
+		 */
+		return (string) apply_filters( 'wppa_certificate_verify_url', home_url( '/certificate/' . rawurlencode( $code ) . '/' ), $code, $cert_id );
+	}
+
+	/**
 	 * Ссылка на скачивание PDF сертификата.
 	 *
 	 * @param int $user_id Участник.
@@ -490,6 +544,10 @@ class WPPA_Certificates {
 
 		if ( ! isset( $files[ 'cert-' . $cert_id ] ) ) {
 			wp_die( esc_html__( 'Сертификат не найден.', 'wp-personal-account' ) );
+		}
+
+		if ( self::is_revoked( $cert_id ) ) {
+			wp_die( esc_html__( 'Сертификат отозван — скачать его нельзя. Обратитесь к куратору.', 'wp-personal-account' ) );
 		}
 
 		if ( ! self::available() ) {
