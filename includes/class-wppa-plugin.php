@@ -149,6 +149,14 @@ class WPPA_Plugin {
 			'registration_end'     => '',
 			'login_redirect'       => '',
 			'accent_color'         => '#2563eb',
+			'accent_hover_color'   => '',
+			'accent_contrast_color' => '',
+			'color_bg'             => '#f8fafc',
+			'color_surface'        => '#ffffff',
+			'color_text'           => '#0f172a',
+			'color_muted'          => '#64748b',
+			'color_border'         => '#e2e8f0',
+			'radius'               => 14,
 			'custom_css'           => '',
 			'max_team_members'     => 10,
 			'min_team_members'     => 2,
@@ -495,18 +503,9 @@ class WPPA_Plugin {
 			return;
 		}
 
-		$accent = self::setting( 'accent_color', '#2563eb' );
-		$accent = sanitize_hex_color( $accent );
-		$accent = $accent ? $accent : '#2563eb';
-
-		$inline = ':root{--wppa-accent:' . $accent . ';--wppa-accent-contrast:#ffffff;}';
-		$custom = (string) self::setting( 'custom_css', '' );
-		if ( '' !== trim( $custom ) ) {
-			$inline .= "\n" . wp_strip_all_tags( $custom );
-		}
-
+		// Цвета, скругления и свой CSS из настроек оформления.
 		wp_enqueue_style( 'wppa-account' );
-		wp_add_inline_style( 'wppa-account', $inline );
+		wp_add_inline_style( 'wppa-account', WPPA_Theme::css() );
 
 		wp_enqueue_script( 'wppa-account' );
 		wp_localize_script(

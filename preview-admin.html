@@ -1848,7 +1848,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 01:14							</td>
+								06.11.2026 01:32							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -1887,7 +1887,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">ivan@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:04</td>
+										<td>06.11.2026 01:22</td>
 										<td>
 											отправлено										</td>
 									</tr>
@@ -1897,7 +1897,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">maria@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:14</td>
+										<td>06.11.2026 01:32</td>
 										<td>
 											ждёт отправки										</td>
 									</tr>
@@ -1940,11 +1940,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<table class="widefat striped">
 					<tbody>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:04</td>
+								<td class="wppa-admin__muted">06.11.2026 01:22</td>
 								<td>Отправлено писем: 1.</td>
 							</tr>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:04</td>
+								<td class="wppa-admin__muted">06.11.2026 01:22</td>
 								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
 							</tr>
 											</tbody>
@@ -3033,7 +3033,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:09.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:27.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3165,15 +3165,245 @@ EOF</code></p>
 				</table>
 
 				<h2>Оформление</h2>
+				<p class="description" style="max-width:820px">
+					Цвета кабинета хранятся в CSS-переменных (--wppa-accent, --wppa-bg, --wppa-surface, --wppa-text, --wppa-muted, --wppa-border, --wppa-radius) и применяются к шорткодам, виджету и блоку Gutenberg сразу после сохранения. Значения по умолчанию можно вернуть одной галочкой ниже.				</p>
+								<style>
+					.wppa-theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; }
+					.wppa-theme-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+					.wppa-theme-field input[type="color"] { width: 46px; height: 32px; padding: 2px; border-radius: 6px; }
+					.wppa-theme-field code { background: #f0f0f1; padding: 2px 6px; border-radius: 4px; }
+					.wppa-theme-hint { display: block; color: #646970; font-size: 12px; margin-top: 4px; }
+					.wppa-theme-presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+					.wppa-theme-preview { margin-top: 8px; padding: 18px; border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); background: var(--wppa-bg, #f8fafc); max-width: 520px; }
+					.wppa-theme-preview__card { background: var(--wppa-surface, #fff); border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); padding: 16px; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__title { margin: 0 0 6px; font-size: 1rem; font-weight: 650; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__muted { margin: 0 0 12px; font-size: .86rem; color: var(--wppa-muted, #64748b); }
+					.wppa-theme-preview__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+					.wppa-theme-preview__tab { padding: 6px 12px; border-radius: 999px; font-size: .84rem; background: var(--wppa-bg, #f8fafc); color: var(--wppa-muted, #64748b); border: 1px solid var(--wppa-border, #e2e8f0); }
+					.wppa-theme-preview__tab.is-active { background: var(--wppa-accent, #2563eb); color: var(--wppa-accent-contrast, #fff); border-color: var(--wppa-accent, #2563eb); }
+					.wppa-theme-preview__btn { display: inline-block; padding: 8px 16px; border: 0; border-radius: calc(var(--wppa-radius, 14px) / 2); background: var(--wppa-accent, #2563eb); color: var(--wppa-accent-contrast, #fff); font-size: .88rem; cursor: default; }
+					.wppa-theme-preview__range { display: flex; align-items: center; gap: 10px; }
+				</style>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="wppa-accent">Акцентный цвет</label></th>
-						<td><input type="color" id="wppa-accent" name="wppa_settings[accent_color]" value="#2563eb" /></td>
+						<th scope="row">Готовые наборы</th>
+						<td>
+							<div class="wppa-theme-presets">
+																	<button
+										type="button"
+										class="button"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#2563eb&quot;,&quot;color_bg&quot;:&quot;#f8fafc&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#0f172a&quot;,&quot;color_muted&quot;:&quot;#64748b&quot;,&quot;color_border&quot;:&quot;#e2e8f0&quot;}"
+									>Синяя</button>
+																	<button
+										type="button"
+										class="button"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#15803d&quot;,&quot;color_bg&quot;:&quot;#f4f9f4&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#10241a&quot;,&quot;color_muted&quot;:&quot;#5b7263&quot;,&quot;color_border&quot;:&quot;#d9e6dc&quot;}"
+									>Зелёная</button>
+																	<button
+										type="button"
+										class="button"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#7c3aed&quot;,&quot;color_bg&quot;:&quot;#f7f5fd&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#1b1330&quot;,&quot;color_muted&quot;:&quot;#6b6580&quot;,&quot;color_border&quot;:&quot;#e4dff2&quot;}"
+									>Фиолетовая</button>
+																	<button
+										type="button"
+										class="button"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#60a5fa&quot;,&quot;color_bg&quot;:&quot;#0f172a&quot;,&quot;color_surface&quot;:&quot;#1e293b&quot;,&quot;color_text&quot;:&quot;#e2e8f0&quot;,&quot;color_muted&quot;:&quot;#94a3b8&quot;,&quot;color_border&quot;:&quot;#334155&quot;}"
+									>Тёмная</button>
+															</div>
+							<span class="wppa-theme-hint">Набор подставляет цвета в поля ниже — сохраните настройки, чтобы применить.</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Цвета</th>
+						<td>
+							<div class="wppa-theme-grid">
+																										<div>
+										<label for="wppa-theme-accent_color"><strong>Акцентный цвет</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-accent_color"
+													name="wppa_settings[accent_color]"
+													value="#2563eb"
+													data-wppa-var="--wppa-accent"
+													data-wppa-fallback="#2563eb"
+												/>
+																						<code>--wppa-accent</code>
+										</div>
+										<span class="wppa-theme-hint">Кнопки, ссылки, активная вкладка.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-accent_hover_color"><strong>Акцент при наведении</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="text"
+													class="regular-text code wppa-theme-input"
+													id="wppa-theme-accent_hover_color"
+													name="wppa_settings[accent_hover_color]"
+													value=""
+													placeholder="#2157cf"
+													data-wppa-var="--wppa-accent-hover"
+													data-wppa-fallback="#2157cf"
+													style="width:130px"
+												/>
+																						<code>--wppa-accent-hover</code>
+										</div>
+										<span class="wppa-theme-hint">Пусто — затемнение акцентного цвета на 12%.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-accent_contrast_color"><strong>Текст на акцентном фоне</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="text"
+													class="regular-text code wppa-theme-input"
+													id="wppa-theme-accent_contrast_color"
+													name="wppa_settings[accent_contrast_color]"
+													value=""
+													placeholder="#ffffff"
+													data-wppa-var="--wppa-accent-contrast"
+													data-wppa-fallback="#ffffff"
+													style="width:130px"
+												/>
+																						<code>--wppa-accent-contrast</code>
+										</div>
+										<span class="wppa-theme-hint">Пусто — подбирается автоматически: белый или тёмный.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-color_bg"><strong>Фон страницы</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-color_bg"
+													name="wppa_settings[color_bg]"
+													value="#f8fafc"
+													data-wppa-var="--wppa-bg"
+													data-wppa-fallback="#f8fafc"
+												/>
+																						<code>--wppa-bg</code>
+										</div>
+										<span class="wppa-theme-hint">Пустая область вокруг карточек кабинета.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-color_surface"><strong>Фон карточек</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-color_surface"
+													name="wppa_settings[color_surface]"
+													value="#ffffff"
+													data-wppa-var="--wppa-surface"
+													data-wppa-fallback="#ffffff"
+												/>
+																						<code>--wppa-surface</code>
+										</div>
+										<span class="wppa-theme-hint">Карточки, полки файлов, таблицы.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-color_text"><strong>Основной текст</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-color_text"
+													name="wppa_settings[color_text]"
+													value="#0f172a"
+													data-wppa-var="--wppa-text"
+													data-wppa-fallback="#0f172a"
+												/>
+																						<code>--wppa-text</code>
+										</div>
+										<span class="wppa-theme-hint">Заголовки, значения полей, подписи кнопок.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-color_muted"><strong>Второстепенный текст</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-color_muted"
+													name="wppa_settings[color_muted]"
+													value="#64748b"
+													data-wppa-var="--wppa-muted"
+													data-wppa-fallback="#64748b"
+												/>
+																						<code>--wppa-muted</code>
+										</div>
+										<span class="wppa-theme-hint">Подсказки, описания, неактивные вкладки.</span>
+									</div>
+																										<div>
+										<label for="wppa-theme-color_border"><strong>Рамки и разделители</strong></label>
+										<div class="wppa-theme-field">
+																							<input
+													type="color"
+													class="wppa-theme-input"
+													id="wppa-theme-color_border"
+													name="wppa_settings[color_border]"
+													value="#e2e8f0"
+													data-wppa-var="--wppa-border"
+													data-wppa-fallback="#e2e8f0"
+												/>
+																						<code>--wppa-border</code>
+										</div>
+										<span class="wppa-theme-hint">Границы полей, карточек и таблиц.</span>
+									</div>
+															</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-theme-radius">Скругление карточек</label></th>
+						<td>
+							<div class="wppa-theme-preview__range">
+								<input
+									type="range"
+									id="wppa-theme-radius"
+									name="wppa_settings[radius]"
+									min="0"
+									max="32"
+									step="2"
+									value="14"
+									data-wppa-var="--wppa-radius"
+								/>
+								<output for="wppa-theme-radius"><code>14px</code></output>
+							</div>
+							<span class="wppa-theme-hint">От 0 (строгие прямоугольники) до 32 px. Половина значения уходит на кнопки и вкладки.</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Предпросмотр</th>
+						<td>
+							<div class="wppa-theme-preview" id="wppa-theme-preview" style="--wppa-accent:#2563eb;--wppa-accent-hover:#2157cf;--wppa-accent-contrast:#ffffff;--wppa-bg:#f8fafc;--wppa-surface:#ffffff;--wppa-text:#0f172a;--wppa-muted:#64748b;--wppa-border:#e2e8f0;--wppa-radius:14px;">
+								<div class="wppa-theme-preview__card">
+									<p class="wppa-theme-preview__title">Моя команда</p>
+									<p class="wppa-theme-preview__muted">Так выглядят подсказки и второстепенный текст.</p>
+									<div class="wppa-theme-preview__tabs">
+										<span class="wppa-theme-preview__tab is-active">Обзор</span>
+										<span class="wppa-theme-preview__tab">Профиль</span>
+										<span class="wppa-theme-preview__tab">Файлы</span>
+									</div>
+									<button type="button" class="wppa-theme-preview__btn">Сохранить</button>
+								</div>
+							</div>
+							<span class="wppa-theme-hint">Предпросмотр обновляется, как только вы меняете цвет или скругление — до сохранения.</span>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="wppa-css">Дополнительный CSS</label></th>
 						<td>
 							<textarea class="large-text code" rows="8" id="wppa-css" name="wppa_settings[custom_css]"></textarea>
+							<span class="wppa-theme-hint">Печатается после переменных: правила отсюда перекрывают стили плагина. Теги вырезаются, остаётся только CSS.</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Сброс</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[theme_reset]" value="1" />
+								Вернуть оформление по умолчанию (цвета, скругление и свой CSS)							</label>
+							<span class="wppa-theme-hint">
+								Сейчас используется оформление по умолчанию.							</span>
 						</td>
 					</tr>
 				</table>
@@ -3337,10 +3567,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 06.11.2026 09:04 (Раз в день).							</p>
+									Следующая выгрузка: 06.11.2026 09:22 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:09				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:27				</p>
 			
 			
 			
@@ -3377,7 +3607,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>06.11.2026 01:04</td>
+								<td>06.11.2026 01:22</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3386,7 +3616,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:04</td>
+								<td>06.11.2026 01:22</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3395,7 +3625,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:04</td>
+								<td>06.11.2026 01:22</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3494,5 +3724,169 @@ EOF</code></p>
 	</section>
 </div>
 </div></section>
+<script>
+/**
+ * Оформление: предпросмотр и готовые наборы цветов на странице настроек.
+ */
+( function () {
+	'use strict';
+
+	var preview = document.getElementById( 'wppa-theme-preview' );
+
+	if ( ! preview ) {
+		return;
+	}
+
+	var inputs = document.querySelectorAll( '.wppa-theme-input' );
+	var radius = document.getElementById( 'wppa-theme-radius' );
+	var output = radius ? radius.parentNode.querySelector( 'output code' ) : null;
+
+	/**
+	 * Записать значение переменной в предпросмотр.
+	 *
+	 * @param {string} name Имя переменной.
+	 * @param {string} value Значение.
+	 */
+	function setVar( name, value ) {
+		if ( ! name || ! value ) {
+			return;
+		}
+
+		preview.style.setProperty( name, value );
+	}
+
+	/**
+	 * Цвет текста на акцентном фоне: тёмный на светлом, белый на тёмном.
+	 *
+	 * @param {string} hex Цвет фона.
+	 * @return {string}
+	 */
+	function contrastColor( hex ) {
+		var value = String( hex || '' ).replace( '#', '' );
+
+		if ( 3 === value.length ) {
+			value = value[ 0 ] + value[ 0 ] + value[ 1 ] + value[ 1 ] + value[ 2 ] + value[ 2 ];
+		}
+
+		if ( 6 !== value.length ) {
+			return '#ffffff';
+		}
+
+		var channels = [ 0, 2, 4 ].map( function ( offset ) {
+			var part = parseInt( value.substr( offset, 2 ), 16 ) / 255;
+
+			return part <= 0.03928 ? part / 12.92 : Math.pow( ( part + 0.055 ) / 1.055, 2.4 );
+		} );
+
+		var luminance = 0.2126 * channels[ 0 ] + 0.7152 * channels[ 1 ] + 0.0722 * channels[ 2 ];
+
+		return luminance > 0.55 ? '#0f172a' : '#ffffff';
+	}
+
+	/**
+	 * Затемнить цвет — как это делает WPPA_Theme::darken().
+	 *
+	 * @param {string} hex    Цвет.
+	 * @param {number} amount Доля затемнения.
+	 * @return {string}
+	 */
+	function darken( hex, amount ) {
+		var value = String( hex || '' ).replace( '#', '' );
+
+		if ( 6 !== value.length ) {
+			return hex;
+		}
+
+		var out = '#';
+
+		[ 0, 2, 4 ].forEach( function ( offset ) {
+			var part = Math.round( parseInt( value.substr( offset, 2 ), 16 ) * ( 1 - amount ) );
+
+			part = Math.max( 0, Math.min( 255, part ) );
+			out += ( '0' + part.toString( 16 ) ).slice( -2 );
+		} );
+
+		return out;
+	}
+
+	/**
+	 * Пересчитать производные переменные: наведение и текст на акценте.
+	 */
+	function syncDerived() {
+		var accentInput = document.querySelector( '.wppa-theme-input[data-wppa-var="--wppa-accent"]' );
+		var hoverInput = document.querySelector( '.wppa-theme-input[data-wppa-var="--wppa-accent-hover"]' );
+		var contrastInput = document.querySelector( '.wppa-theme-input[data-wppa-var="--wppa-accent-contrast"]' );
+		var accent = accentInput ? accentInput.value : '#2563eb';
+
+		setVar( '--wppa-accent', accent );
+		setVar( '--wppa-accent-hover', hoverInput && hoverInput.value ? hoverInput.value : darken( accent, 0.12 ) );
+		setVar( '--wppa-accent-contrast', contrastInput && contrastInput.value ? contrastInput.value : contrastColor( accent ) );
+	}
+
+	Array.prototype.forEach.call( inputs, function ( input ) {
+		input.addEventListener( 'input', function () {
+			var name = input.getAttribute( 'data-wppa-var' );
+			var value = input.value;
+
+			if ( ! value || ! /^#?[0-9a-f]{3,6}$/i.test( value ) ) {
+				value = input.getAttribute( 'data-wppa-fallback' ) || '';
+				input.classList.add( 'wppa-theme-input--invalid' );
+			} else {
+				input.classList.remove( 'wppa-theme-input--invalid' );
+
+				if ( '#' !== value.charAt( 0 ) ) {
+					value = '#' + value;
+				}
+			}
+
+			setVar( name, value );
+			syncDerived();
+		} );
+	} );
+
+	if ( radius ) {
+		radius.addEventListener( 'input', function () {
+			var value = parseInt( radius.value, 10 ) || 0;
+
+			setVar( '--wppa-radius', value + 'px' );
+
+			if ( output ) {
+				output.textContent = value + 'px';
+			}
+		} );
+	}
+
+	Array.prototype.forEach.call( document.querySelectorAll( '[data-wppa-preset]' ), function ( button ) {
+		button.addEventListener( 'click', function () {
+			var colors;
+
+			try {
+				colors = JSON.parse( button.getAttribute( 'data-wppa-preset' ) || '{}' );
+			} catch ( error ) {
+				return;
+			}
+
+			Object.keys( colors ).forEach( function ( key ) {
+				var input = document.getElementById( 'wppa-theme-' + key );
+
+				if ( ! input ) {
+					return;
+				}
+
+				input.value = colors[ key ];
+
+				if ( input.getAttribute( 'data-wppa-var' ) ) {
+					setVar( input.getAttribute( 'data-wppa-var' ), colors[ key ] );
+				}
+			} );
+
+			syncDerived();
+		} );
+	} );
+
+	syncDerived();
+}() );
+
+</script>
 </body>
 </html>

@@ -20,6 +20,27 @@ class WPPA_Settings {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
+	}
+
+	/**
+	 * Скрипт предпросмотра оформления — только на странице настроек плагина.
+	 *
+	 * @param string $hook Текущий хук.
+	 * @return void
+	 */
+	public static function assets( $hook ) {
+		if ( false === strpos( (string) $hook, 'wppa-settings' ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'wppa-admin-theme',
+			WPPA_URL . 'assets/js/admin-theme.js',
+			array(),
+			WPPA_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -87,10 +108,8 @@ class WPPA_Settings {
 		$min_team              = isset( $input['min_team_members'] ) ? absint( $input['min_team_members'] ) : 2;
 		$out['min_team_members'] = min( $out['max_team_members'], max( 1, $min_team ) );
 
-		$accent                = isset( $input['accent_color'] ) ? sanitize_hex_color( $input['accent_color'] ) : '';
-		$out['accent_color']   = $accent ? $accent : $defaults['accent_color'];
-
-		$out['custom_css']     = isset( $input['custom_css'] ) ? wp_strip_all_tags( (string) $input['custom_css'] ) : '';
+		// Оформление: цвета, скругления и свой CSS (WPPA_Theme).
+		$out = array_merge( $out, WPPA_Theme::sanitize( $input ) );
 
 		// Персональные данные: разделы и поля (подпись, раздел, порядок, показ, обязательность,
 		// добавление своих полей и разделов, удаление своих).
@@ -1082,15 +1101,158 @@ class WPPA_Settings {
 				</table>
 
 				<h2><?php esc_html_e( 'Оформление', 'wp-personal-account' ); ?></h2>
+				<p class="description" style="max-width:820px">
+					<?php esc_html_e( 'Цвета кабинета хранятся в CSS-переменных (--wppa-accent, --wppa-bg, --wppa-surface, --wppa-text, --wppa-muted, --wppa-border, --wppa-radius) и применяются к шорткодам, виджету и блоку Gutenberg сразу после сохранения. Значения по умолчанию можно вернуть одной галочкой ниже.', 'wp-personal-account' ); ?>
+				</p>
+				<?php
+				$wppa_theme     = WPPA_Theme::get();
+				$wppa_presets   = WPPA_Theme::presets();
+				$wppa_defaults  = WPPA_Theme::defaults();
+				$wppa_vars      = WPPA_Theme::vars( $wppa_theme );
+				$wppa_preview   = '';
+				foreach ( $wppa_vars as $wppa_var_name => $wppa_var_value ) {
+					$wppa_preview .= $wppa_var_name . ':' . $wppa_var_value . ';';
+				}
+				?>
+				<style>
+					.wppa-theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; }
+					.wppa-theme-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+					.wppa-theme-field input[type="color"] { width: 46px; height: 32px; padding: 2px; border-radius: 6px; }
+					.wppa-theme-field code { background: #f0f0f1; padding: 2px 6px; border-radius: 4px; }
+					.wppa-theme-hint { display: block; color: #646970; font-size: 12px; margin-top: 4px; }
+					.wppa-theme-presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+					.wppa-theme-preview { margin-top: 8px; padding: 18px; border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); background: var(--wppa-bg, #f8fafc); max-width: 520px; }
+					.wppa-theme-preview__card { background: var(--wppa-surface, #fff); border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); padding: 16px; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__title { margin: 0 0 6px; font-size: 1rem; font-weight: 650; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__muted { margin: 0 0 12px; font-size: .86rem; color: var(--wppa-muted, #64748b); }
+					.wppa-theme-preview__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+					.wppa-theme-preview__tab { padding: 6px 12px; border-radius: 999px; font-size: .84rem; background: var(--wppa-bg, #f8fafc); color: var(--wppa-muted, #64748b); border: 1px solid var(--wppa-border, #e2e8f0); }
+					.wppa-theme-preview__tab.is-active { background: var(--wppa-accent, #2563eb); color: var(--wppa-accent-contrast, #fff); border-color: var(--wppa-accent, #2563eb); }
+					.wppa-theme-preview__btn { display: inline-block; padding: 8px 16px; border: 0; border-radius: calc(var(--wppa-radius, 14px) / 2); background: var(--wppa-accent, #2563eb); color: var(--wppa-accent-contrast, #fff); font-size: .88rem; cursor: default; }
+					.wppa-theme-preview__range { display: flex; align-items: center; gap: 10px; }
+				</style>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="wppa-accent"><?php esc_html_e( 'Акцентный цвет', 'wp-personal-account' ); ?></label></th>
-						<td><input type="color" id="wppa-accent" name="wppa_settings[accent_color]" value="<?php echo esc_attr( $s['accent_color'] ); ?>" /></td>
+						<th scope="row"><?php esc_html_e( 'Готовые наборы', 'wp-personal-account' ); ?></th>
+						<td>
+							<div class="wppa-theme-presets">
+								<?php foreach ( $wppa_presets as $wppa_preset_id => $wppa_preset ) : ?>
+									<button
+										type="button"
+										class="button"
+										data-wppa-preset="<?php echo esc_attr( wp_json_encode( $wppa_preset['colors'] ) ); ?>"
+									><?php echo esc_html( $wppa_preset['label'] ); ?></button>
+								<?php endforeach; ?>
+							</div>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'Набор подставляет цвета в поля ниже — сохраните настройки, чтобы применить.', 'wp-personal-account' ); ?></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Цвета', 'wp-personal-account' ); ?></th>
+						<td>
+							<div class="wppa-theme-grid">
+								<?php foreach ( WPPA_Theme::colors() as $wppa_key => $wppa_color ) : ?>
+									<?php
+									$wppa_value      = (string) $wppa_theme[ $wppa_key ];
+									$wppa_is_optional = '' === (string) $wppa_defaults[ $wppa_key ];
+									$wppa_var        = '--wppa-' . str_replace( array( 'accent_color', 'accent_hover_color', 'accent_contrast_color', 'color_' ), array( 'accent', 'accent-hover', 'accent-contrast', '' ), $wppa_key );
+									$wppa_fallback   = isset( $wppa_vars[ $wppa_var ] ) ? $wppa_vars[ $wppa_var ] : '';
+									$wppa_field_id   = 'wppa-theme-' . $wppa_key;
+									?>
+									<div>
+										<label for="<?php echo esc_attr( $wppa_field_id ); ?>"><strong><?php echo esc_html( $wppa_color['label'] ); ?></strong></label>
+										<div class="wppa-theme-field">
+											<?php if ( $wppa_is_optional ) : ?>
+												<input
+													type="text"
+													class="regular-text code wppa-theme-input"
+													id="<?php echo esc_attr( $wppa_field_id ); ?>"
+													name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
+													value="<?php echo esc_attr( $wppa_value ); ?>"
+													placeholder="<?php echo esc_attr( $wppa_fallback ); ?>"
+													data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
+													data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
+													style="width:130px"
+												/>
+											<?php else : ?>
+												<input
+													type="color"
+													class="wppa-theme-input"
+													id="<?php echo esc_attr( $wppa_field_id ); ?>"
+													name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
+													value="<?php echo esc_attr( $wppa_value ); ?>"
+													data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
+													data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
+												/>
+											<?php endif; ?>
+											<code><?php echo esc_html( $wppa_var ); ?></code>
+										</div>
+										<span class="wppa-theme-hint"><?php echo esc_html( $wppa_color['hint'] ); ?></span>
+									</div>
+								<?php endforeach; ?>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-theme-radius"><?php esc_html_e( 'Скругление карточек', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<div class="wppa-theme-preview__range">
+								<input
+									type="range"
+									id="wppa-theme-radius"
+									name="wppa_settings[radius]"
+									min="<?php echo esc_attr( WPPA_Theme::RADIUS_MIN ); ?>"
+									max="<?php echo esc_attr( WPPA_Theme::RADIUS_MAX ); ?>"
+									step="2"
+									value="<?php echo esc_attr( $wppa_theme['radius'] ); ?>"
+									data-wppa-var="--wppa-radius"
+								/>
+								<output for="wppa-theme-radius"><code><?php echo esc_html( $wppa_theme['radius'] . 'px' ); ?></code></output>
+							</div>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'От 0 (строгие прямоугольники) до 32 px. Половина значения уходит на кнопки и вкладки.', 'wp-personal-account' ); ?></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Предпросмотр', 'wp-personal-account' ); ?></th>
+						<td>
+							<div class="wppa-theme-preview" id="wppa-theme-preview" style="<?php echo esc_attr( $wppa_preview ); ?>">
+								<div class="wppa-theme-preview__card">
+									<p class="wppa-theme-preview__title"><?php esc_html_e( 'Моя команда', 'wp-personal-account' ); ?></p>
+									<p class="wppa-theme-preview__muted"><?php esc_html_e( 'Так выглядят подсказки и второстепенный текст.', 'wp-personal-account' ); ?></p>
+									<div class="wppa-theme-preview__tabs">
+										<span class="wppa-theme-preview__tab is-active"><?php esc_html_e( 'Обзор', 'wp-personal-account' ); ?></span>
+										<span class="wppa-theme-preview__tab"><?php esc_html_e( 'Профиль', 'wp-personal-account' ); ?></span>
+										<span class="wppa-theme-preview__tab"><?php esc_html_e( 'Файлы', 'wp-personal-account' ); ?></span>
+									</div>
+									<button type="button" class="wppa-theme-preview__btn"><?php esc_html_e( 'Сохранить', 'wp-personal-account' ); ?></button>
+								</div>
+							</div>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'Предпросмотр обновляется, как только вы меняете цвет или скругление — до сохранения.', 'wp-personal-account' ); ?></span>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="wppa-css"><?php esc_html_e( 'Дополнительный CSS', 'wp-personal-account' ); ?></label></th>
 						<td>
 							<textarea class="large-text code" rows="8" id="wppa-css" name="wppa_settings[custom_css]"><?php echo esc_textarea( $s['custom_css'] ); ?></textarea>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'Печатается после переменных: правила отсюда перекрывают стили плагина. Теги вырезаются, остаётся только CSS.', 'wp-personal-account' ); ?></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Сброс', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[theme_reset]" value="1" />
+								<?php esc_html_e( 'Вернуть оформление по умолчанию (цвета, скругление и свой CSS)', 'wp-personal-account' ); ?>
+							</label>
+							<span class="wppa-theme-hint">
+								<?php
+								if ( WPPA_Theme::is_default() ) {
+									esc_html_e( 'Сейчас используется оформление по умолчанию.', 'wp-personal-account' );
+								} else {
+									esc_html_e( 'Сейчас заданы свои цвета: галочка и «Сохранить» вернут исходные значения.', 'wp-personal-account' );
+								}
+								?>
+							</span>
 						</td>
 					</tr>
 				</table>

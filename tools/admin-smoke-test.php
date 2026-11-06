@@ -37,6 +37,7 @@ require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
+require $base . 'includes/class-wppa-theme.php';
 require $base . 'includes/class-wppa-settings.php';
 
 $fail = 0;
@@ -133,6 +134,32 @@ update_option(
 
 foreach ( $file_export_switch_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'file export switch: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---------- Оформление: цвета и стили на странице настроек (3.34.0) ----------
+$theme_admin_checks = array();
+
+$theme_admin_checks['настройки: раздел «Оформление»']      = false !== strpos( $settings_html, '>Оформление<' );
+$theme_admin_checks['настройки: поле акцента']             = false !== strpos( $settings_html, 'name="wppa_settings[accent_color]"' );
+$theme_admin_checks['настройки: поле фона страницы']       = false !== strpos( $settings_html, 'name="wppa_settings[color_bg]"' );
+$theme_admin_checks['настройки: поле фона карточек']       = false !== strpos( $settings_html, 'name="wppa_settings[color_surface]"' );
+$theme_admin_checks['настройки: поле основного текста']    = false !== strpos( $settings_html, 'name="wppa_settings[color_text]"' );
+$theme_admin_checks['настройки: поле рамок']               = false !== strpos( $settings_html, 'name="wppa_settings[color_border]"' );
+$theme_admin_checks['настройки: авто-наведение — текст']   = false !== strpos( $settings_html, 'name="wppa_settings[accent_hover_color]"' );
+$theme_admin_checks['настройки: скругление — ползунок']    = false !== strpos( $settings_html, 'id="wppa-theme-radius"' )
+	&& false !== strpos( $settings_html, 'name="wppa_settings[radius]"' );
+$theme_admin_checks['настройки: предпросмотр']             = false !== strpos( $settings_html, 'id="wppa-theme-preview"' )
+	&& false !== strpos( $settings_html, '--wppa-accent:' );
+$theme_admin_checks['настройки: четыре готовых набора']    = 4 === substr_count( $settings_html, 'data-wppa-preset=' );
+$theme_admin_checks['настройки: свой CSS']                 = false !== strpos( $settings_html, 'name="wppa_settings[custom_css]"' );
+$theme_admin_checks['настройки: галочка сброса']           = false !== strpos( $settings_html, 'name="wppa_settings[theme_reset]"' );
+$theme_admin_checks['настройки: подсказка о переменных']   = false !== strpos( $settings_html, '--wppa-surface' );
+
+foreach ( $theme_admin_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme settings: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

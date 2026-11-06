@@ -36,6 +36,7 @@ require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-settings.php';
+require $base . 'includes/class-wppa-theme.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
 
@@ -304,6 +305,9 @@ $html = '<!DOCTYPE html>
 	<p>Отдельное меню «Личный кабинет» в wp-admin: обзор со статистикой, аккаунты и инструменты. Демо-данные.</p>
 </div>
 ' . $sections . '
+<script>
+' . file_get_contents( $base . 'assets/js/admin-theme.js' ) . '
+</script>
 </body>
 </html>';
 

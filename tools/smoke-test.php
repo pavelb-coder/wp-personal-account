@@ -16,6 +16,7 @@ require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
 require $base . 'includes/class-wppa-template.php';
 require $base . 'includes/class-wppa-notices.php';
+require $base . 'includes/class-wppa-theme.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
@@ -2937,6 +2938,117 @@ WPPA_Teams::dissolve( $multi_team );
 
 foreach ( $multi_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'multi files: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---- Оформление: цвета, скругления и свой CSS (3.34.0) ----
+$theme_checks = array();
+$theme_backup = get_option( 'wppa_settings', array() );
+
+$theme_defaults = WPPA_Theme::defaults();
+$theme_checks['умолчания: все цвета на месте'] = isset(
+	$theme_defaults['accent_color'],
+	$theme_defaults['accent_hover_color'],
+	$theme_defaults['accent_contrast_color'],
+	$theme_defaults['color_bg'],
+	$theme_defaults['color_surface'],
+	$theme_defaults['color_text'],
+	$theme_defaults['color_muted'],
+	$theme_defaults['color_border']
+);
+$theme_checks['умолчания: радиус и пустой свой CSS'] = 14 === $theme_defaults['radius'] && '' === $theme_defaults['custom_css'];
+$theme_checks['умолчания: акцент синий']             = '#2563eb' === $theme_defaults['accent_color'];
+$theme_checks['умолчания в настройках плагина']      = '#2563eb' === WPPA_Plugin::defaults()['accent_color'] && 14 === WPPA_Plugin::defaults()['radius'];
+
+$theme_checks['hex: короткая запись'] = '#aabbcc' === WPPA_Theme::normalize_hex( '#abc' );
+$theme_checks['hex: без решётки, верхний регистр'] = '#2563eb' === WPPA_Theme::normalize_hex( '2563EB' );
+$theme_checks['hex: мусор — пусто']   = '' === WPPA_Theme::normalize_hex( 'синий' );
+$theme_checks['hex: запасное значение'] = '#ffffff' === WPPA_Theme::hex( 'мусор', '#ffffff' );
+
+$theme_checks['контраст: на светлом тёмный'] = '#0f172a' === WPPA_Theme::contrast_color( '#f8fafc' );
+$theme_checks['контраст: на тёмном белый']   = '#ffffff' === WPPA_Theme::contrast_color( '#0f172a' );
+$theme_checks['затемнение акцента']          = '#2157cf' === WPPA_Theme::darken( '#2563eb' );
+$theme_checks['радиус: ограничение сверху']  = 32 === WPPA_Theme::clamp_radius( 999 );
+$theme_checks['радиус: ограничение снизу']   = 0 === WPPA_Theme::clamp_radius( -5 );
+
+// Сохранение формы оформления.
+$theme_saved = WPPA_Settings::sanitize(
+	array_merge(
+		(array) $theme_backup,
+		array(
+			'accent_color'          => '#16A34A',
+			'accent_hover_color'    => '',
+			'accent_contrast_color' => '#FFF8E1',
+			'color_bg'              => '#f4f9f4',
+			'color_surface'         => '#ffffff',
+			'color_text'            => '#10241a',
+			'color_muted'           => '#5b7263',
+			'color_border'          => 'мусор',
+			'radius'                => 999,
+			'custom_css'            => '.wppa-extra{color:red}</style><script>alert(1)</script>',
+		)
+	)
+);
+
+$theme_checks['сохранение: акцент в нижнем регистре']  = '#16a34a' === $theme_saved['accent_color'];
+$theme_checks['сохранение: свой текст на акценте']     = '#fff8e1' === $theme_saved['accent_contrast_color'];
+$theme_checks['сохранение: авто-наведение остаётся пустым'] = '' === $theme_saved['accent_hover_color'];
+$theme_checks['сохранение: мусорный цвет → умолчание'] = '#e2e8f0' === $theme_saved['color_border'];
+$theme_checks['сохранение: радиус ограничен']          = 32 === $theme_saved['radius'];
+$theme_checks['сохранение: CSS без тегов']             = false === strpos( $theme_saved['custom_css'], '<' )
+	&& false === strpos( $theme_saved['custom_css'], '>' )
+	&& false !== strpos( $theme_saved['custom_css'], '.wppa-extra{color:red}' );
+
+// Действующие значения и итоговый CSS.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $theme_backup,
+		array(
+			'accent_color' => '#16a34a',
+			'radius'       => 20,
+			'custom_css'   => '.wppa-extra{color:red}',
+		)
+	)
+);
+
+$theme_css = WPPA_Theme::css();
+
+$theme_checks['CSS: свои переменные']            = false !== strpos( $theme_css, '--wppa-accent:#16a34a' )
+	&& false !== strpos( $theme_css, '--wppa-radius:20px' );
+$theme_checks['CSS: переменные и на .wppa']      = false !== strpos( $theme_css, ':root,.wppa' );
+$theme_checks['CSS: наведение считается само']   = false !== strpos( $theme_css, '--wppa-accent-hover:' . WPPA_Theme::darken( '#16a34a' ) );
+$theme_checks['CSS: контраст подбирается сам']   = false !== strpos( $theme_css, '--wppa-accent-contrast:' . WPPA_Theme::contrast_color( '#16a34a' ) );
+$theme_checks['CSS: свой CSS после переменных']  = strpos( $theme_css, ':root' ) < strpos( $theme_css, '.wppa-extra' );
+$theme_checks['CSS: свой CSS в style-теге']      = false !== strpos( WPPA_Theme::style_tag(), '<style id="wppa-theme-inline">' )
+	&& false !== strpos( WPPA_Theme::style_tag(), '.wppa-extra{color:red}' );
+$theme_checks['оформление не по умолчанию']      = false === WPPA_Theme::is_default();
+
+// Сброс галочкой.
+$theme_reset = WPPA_Settings::sanitize(
+	array_merge(
+		(array) $theme_backup,
+		array(
+			'theme_reset' => '1',
+			'accent_color' => '#000000',
+			'radius'       => 30,
+			'custom_css'   => '.x{color:red}',
+		)
+	)
+);
+
+$theme_checks['сброс: акцент по умолчанию']  = '#2563eb' === $theme_reset['accent_color'];
+$theme_checks['сброс: радиус по умолчанию']  = 14 === $theme_reset['radius'];
+$theme_checks['сброс: свой CSS очищен']      = '' === $theme_reset['custom_css'];
+
+update_option( 'wppa_settings', $theme_backup );
+
+$theme_checks['оформление по умолчанию — снова да'] = true === WPPA_Theme::is_default();
+
+foreach ( $theme_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

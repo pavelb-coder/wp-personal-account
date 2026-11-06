@@ -18,6 +18,7 @@ define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/
 
 require $base . 'includes/class-wppa-time.php';
 require $base . 'includes/class-wppa-plugin.php';
+require $base . 'includes/class-wppa-theme.php';
 require $base . 'includes/class-wppa-fields.php';
 require $base . 'includes/class-wppa-password.php';
 require $base . 'includes/class-wppa-export.php';
@@ -489,6 +490,30 @@ $sections .= demo_section(
 		. '<div>' . WPPA_Template::get( 'lost-password', array() ) . '</div>'
 		. '<div>' . WPPA_Template::get( 'reset-password', array( 'key' => 'test-reset-key', 'login' => 'ivan' ) ) . '</div>'
 		. '</div>'
+);
+
+// Оформление: готовые наборы цветов (3.34.0).
+$palette_css   = '';
+$palette_cards = '';
+
+foreach ( WPPA_Theme::presets() as $preset_id => $preset ) {
+	$palette_theme = array_merge( WPPA_Theme::defaults(), $preset['colors'] );
+	$palette_decl  = array();
+
+	foreach ( WPPA_Theme::vars( $palette_theme ) as $palette_var => $palette_value ) {
+		$palette_decl[] = $palette_var . ':' . $palette_value;
+	}
+
+	$palette_css .= '.palette-' . $preset_id . ' .wppa{' . implode( ';', $palette_decl ) . "}\n";
+
+	$palette_cards .= '<div class="palette-' . $preset_id . '"><p class="demo-label">' . htmlspecialchars( $preset['label'] ) . '</p>'
+		. WPPA_Template::get( 'login', array( 'title' => 'Вход в кабинет' ) ) . '</div>';
+}
+
+$sections .= demo_section(
+	'Оформление: цвета и стили',
+	'Наборы из «Настройки → Оформление»: акцент, фон страницы и карточек, текст, подсказки, рамки и скругление применяются ко всем формам кабинета сразу',
+	'<style>' . $palette_css . '</style><div class="demo-three">' . $palette_cards . '</div>'
 );
 
 $css = file_get_contents( $base . 'assets/css/account.css' );

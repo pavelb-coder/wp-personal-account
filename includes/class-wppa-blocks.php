@@ -337,7 +337,6 @@ class WPPA_Blocks {
 
 		wp_enqueue_style( 'wppa-account', WPPA_URL . 'assets/css/account.css', array(), WPPA_VERSION );
 
-		$accent = sanitize_hex_color( (string) WPPA_Plugin::setting( 'accent_color', '#2563eb' ) );
-		wp_add_inline_style( 'wppa-account', ':root{--wppa-accent:' . ( $accent ? $accent : '#2563eb' ) . ';--wppa-accent-contrast:#ffffff;}' );
+		wp_add_inline_style( 'wppa-account', WPPA_Theme::css() );
 	}
 }

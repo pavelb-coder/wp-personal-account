@@ -1,10 +1,11 @@
 /**
  * WP Personal Account — стили личного кабинета.
- * Акцентный цвет задаётся переменной --wppa-accent (настройки плагина).
+ * Цвета задаются переменными --wppa-* (Настройки → Оформление, класс WPPA_Theme).
  */
 
 .wppa {
 	--wppa-accent: #2563eb;
+	--wppa-accent-hover: #1d4ed8;
 	--wppa-accent-contrast: #ffffff;
 	--wppa-bg: #f8fafc;
 	--wppa-surface: #ffffff;
@@ -394,7 +395,8 @@
 }
 
 .wppa-button--primary:hover {
-	filter: brightness(.93);
+	background: var(--wppa-accent-hover, var(--wppa-accent));
+	filter: brightness(.98);
 }
 
 .wppa-button--ghost {
@@ -547,7 +549,7 @@
 .wppa-pagination__item .current {
 	background: var(--wppa-accent);
 	border-color: var(--wppa-accent);
-	color: #fff;
+	color: var(--wppa-accent-contrast, #fff);
 }
 
 /* Адреса */
