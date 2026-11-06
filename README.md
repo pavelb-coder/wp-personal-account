@@ -349,6 +349,21 @@ API: `WPPA_Mailing::recipients()`, `settings()`/`save()`, `start()`, `cancel()`,
 * Права: `can_view( $team_id, $user_id )` — куратор, наставник команды и администратор; `can_manage()` — куратор и наставник этой команды; `direction()` — в каком качестве прикрепляет файл (`curator` / `mentor`, это же значение хранится в записи); `can_remove( $team_id, $key, $user_id )` — куратор удаляет любой файл, наставник только свой. API: `files()`, `count()`, `store()`, `upload()`, `remove()`, `clear()`, `download_url()`, `size_label()`.
 * Коды уведомлений: `file_added`, `file_removed`, `file_missing`, `file_type`, `file_size`, `file_empty`, `file_limit`, `file_save_failed`, `file_forbidden`, `file_team_missing`.
 
+### Участники и баллы: адресные документы
+
+Отдельный блок куратора — `participants-widget` («Участники и баллы») в конструкторе; по умолчанию стоит на вкладке «Файлы» (`WPPA_Builder::defaults()`), существующим установкам добавляется один раз при обновлении (`maybe_upgrade()` → `seed_block( 'participants-widget', 'files' )`, флаг `wppa_participants_seeded`).
+
+* **Кому виден**: только куратору — шаблон `templates/blocks/participants-widget.php` выходит сразу, если `WPPA_Teams::is_curator()` ложно. Участникам, капитанам и наставникам блока нет.
+* **Кто в списке**: `WPPA_Teams::participants()` — капитан и участники, **без наставников**. Без выбранной команды показываются все команды (`all_teams()`), с открытой (`?wppa_team=ID`) — только её участники.
+* **Баллы**: `WPPA_Olympiad::summary_map()` (один запрос на весь список) даёт тесты, сумму баллов, максимум, процент и число работ на проверке. Процент выводится значком: ≥ 60% — «успех», меньше — «предупреждение». Если плагина олимпиад нет (`is_active()`), вместо цифр — «—» и подсказка об интеграции.
+* **Документы участнику**: у каждой строки своя форма `participant_files[]` с `multiple` — файл получает **конкретный участник**, а не вся команда.
+* **Хранение**: мета пользователя `_wppa_participant_files` (ключ → имя, файл, размер, время, автор), папка `uploads/wppa-participants/` с `index.php` и `.htaccess`. Лимиты те же: до 20 файлов на участника, до 10 МБ каждый, тип — из `WPPA_Curator_Files::types()` (свой фильтр `wppa_participant_file_types`, размер — `wppa_curator_file_max_size`).
+* **Кто видит файл**: `can_view( $participant_id, $viewer_id )` — куратор и сам участник; скачивание — `admin-post.php?action=wppa_participant_download&user=ID&file=KEY&_wpnonce=…` с ключом `wppa_participant_file_{user}_{key}`.
+* **Прикреплять может только куратор**: `can_manage()` → `WPPA_Teams::is_curator()`; участнику и наставнику `store()` вернёт `WP_Error( 'wppa_participant_forbidden' )`, а в качестве цели годится только участник команды — `is_participant()` (капитан или участник), иначе `wppa_participant_missing`.
+* **Где участник видит своё**: в разделе «Файлы» — карточка «Документы для вас» (`files-widget.php`, `WPPA_Participant_Files::files( $user->ID )`).
+* **Уборка**: документы удаляются вместе с участием в команде — `leave()`, `remove_member()`, `dissolve()`, `on_user_deleted()` вызывают `WPPA_Participant_Files::clear()`; при деинсталляции с галочкой удаления данных убираются мета и папка.
+* **Форма**: `wppa_action=participant_file` → `WPPA_Participant_Files::handle_request()`; `participant_file_action=upload` (несколько файлов за раз, `upload_many()`) или `remove` с `file_key`. Коды уведомлений: `participant_file_added`, `participant_files_added`, `participant_files_added_partial`, `participant_file_removed`, `participant_file_forbidden`, `participant_missing`.
+
 ## Установка
 
 ```bash

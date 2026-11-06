@@ -24,6 +24,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-participant-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -3261,6 +3262,142 @@ update_option( 'wppa_settings', $heading_backup );
 
 foreach ( $heading_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'heading: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---- Участники и баллы: список куратора и адресные документы (3.37.0) ----
+$parts_checks = array();
+
+WPPA_Teams::set_curator( 12, true );
+
+$parts_team = WPPA_Teams::create( 'Команда баллов', 401 );
+WPPA_Teams::add_member( $parts_team, 402 );
+WPPA_Teams::add_member( $parts_team, 403 );
+WPPA_Teams::set_role( $parts_team, 403, 'mentor' );
+
+$GLOBALS['wppa_test']['users'][401] = array( 'Иван Баллов', 'points@example.com', 'first_name' => 'Иван', 'last_name' => 'Баллов' );
+$GLOBALS['wppa_test']['users'][402] = array( 'Пётр Тестов', 'tests@example.com', 'first_name' => 'Пётр', 'last_name' => 'Тестов' );
+$GLOBALS['wppa_test']['users'][403] = array( 'Наставник Мудрый', 'mentor@example.com', 'first_name' => 'Наставник', 'last_name' => 'Мудрый' );
+
+// Баллы: плагин олимпиад «активен», попытки в заглушке базы.
+global $wpdb;
+$parts_db_backup = isset( $wpdb->data ) ? $wpdb->data : array();
+
+$wpdb->data = array(
+	'var'      => $wpdb->prefix . 'olympiad_attempts',
+	'attempts' => array(
+		(object) array( 'user_id' => 401, 'score' => 30, 'max_score' => 40, 'tests' => 2, 'pending' => 0 ),
+		(object) array( 'user_id' => 402, 'score' => 5, 'max_score' => 20, 'tests' => 1, 'pending' => 1 ),
+	),
+);
+
+WPPA_Olympiad::flush();
+
+$parts_checks['тесты считаются активными'] = true === WPPA_Olympiad::is_active();
+$parts_checks['баллы участника 401']       = 75.0 === (float) WPPA_Olympiad::summary_map( array( 401, 402 ) )[401]['percentage'];
+
+// Блок целиком: как его видит куратор.
+$parts_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$parts_checks['блок в реестре конструктора']   = isset( WPPA_Builder::blocks()['participants-widget'] );
+$parts_checks['блок: заголовок']               = false !== strpos( $parts_html, 'Участники и баллы' );
+$parts_checks['блок: участник в списке']       = false !== strpos( $parts_html, 'Иван Баллов' );
+$parts_checks['блок: второй участник']         = false !== strpos( $parts_html, 'Пётр Тестов' );
+$parts_checks['блок: наставника нет']          = false === strpos( $parts_html, 'Наставник Мудрый' );
+$parts_checks['блок: баллы и процент']         = false !== strpos( $parts_html, '30 / 40' ) && false !== strpos( $parts_html, '75 %' );
+$parts_checks['блок: процент второго']         = false !== strpos( $parts_html, '25 %' );
+$parts_checks['блок: файл участнику']          = false !== strpos( $parts_html, 'name="participant_files[]"' )
+	&& false !== strpos( $parts_html, 'multiple' );
+$parts_checks['блок: действие формы']          = false !== strpos( $parts_html, 'value="participant_file"' )
+	&& false !== strpos( $parts_html, 'value="upload"' );
+$parts_checks['блок: скрыт от участника']      = '' === WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 402 ) )
+);
+
+// Файлы участнику: прикрепление, проверки, удаление.
+$parts_allow = static function () {
+	return true;
+};
+add_filter( 'wppa_skip_upload_check', $parts_allow );
+
+$parts_dir  = sys_get_temp_dir() . '/wppa-files-test';
+wp_mkdir_p( $parts_dir );
+$parts_one  = wppa_test_file( 'parts-one.pdf', str_repeat( 'p', 48 ) );
+$parts_two  = wppa_test_file( 'parts-two.txt', str_repeat( 'q', 64 ) );
+$parts_bad  = wppa_test_file( 'parts-bad.exe', 'MZ' );
+
+$parts_many = WPPA_Participant_Files::upload_many(
+	401,
+	array(
+		'name'     => array( 'parts-one.pdf', 'parts-two.txt', 'parts-bad.exe' ),
+		'tmp_name' => array( $parts_one, $parts_two, $parts_bad ),
+		'error'    => array( UPLOAD_ERR_OK, UPLOAD_ERR_OK, UPLOAD_ERR_OK ),
+		'size'     => array( 48, 64, 2 ),
+	),
+	12
+);
+
+$parts_checks['загрузка: два файла участнику'] = 2 === $parts_many['count_added'];
+$parts_checks['загрузка: плохой тип отклонён'] = 1 === $parts_many['count_failed'];
+$parts_checks['загрузка: файлы у участника']   = 2 === WPPA_Participant_Files::count( 401 );
+
+$parts_file_key = array_keys( WPPA_Participant_Files::files( 401 ) )[0];
+
+$parts_checks['просмотр: куратор']         = true === WPPA_Participant_Files::can_view( 401, 12 );
+$parts_checks['просмотр: сам участник']    = true === WPPA_Participant_Files::can_view( 401, 401 );
+$parts_checks['просмотр: другой участник'] = false === WPPA_Participant_Files::can_view( 401, 402 );
+$parts_checks['прикреплять: только куратор'] = true === WPPA_Participant_Files::can_manage( 12 )
+	&& false === WPPA_Participant_Files::can_manage( 402 );
+
+$parts_denied = WPPA_Participant_Files::store( 402, wppa_test_file( 'deny.pdf', 'x' ), 'deny.pdf', 402 );
+$parts_checks['участник не прикрепляет']   = is_wp_error( $parts_denied ) && 'wppa_participant_forbidden' === $parts_denied->get_error_code();
+
+$parts_mentor_target = WPPA_Participant_Files::store( 403, wppa_test_file( 'to-mentor.pdf', 'x' ), 'to-mentor.pdf', 12 );
+$parts_checks['наставнику не прикрепляют'] = is_wp_error( $parts_mentor_target ) && 'wppa_participant_missing' === $parts_mentor_target->get_error_code();
+
+// Участник видит адресные документы в разделе «Файлы».
+$_GET['wppa_team'] = 0;
+
+$parts_member_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 401 ) )
+);
+
+$parts_checks['участник: раздел своих документов'] = false !== strpos( $parts_member_html, 'Документы для вас' )
+	&& false !== strpos( $parts_member_html, 'parts-one.pdf' );
+
+$parts_checks['удаление: участник не может']  = false === WPPA_Participant_Files::remove( 401, $parts_file_key, 402 );
+$parts_checks['удаление: куратор может']      = true === WPPA_Participant_Files::remove( 401, $parts_file_key, 12 );
+$parts_checks['удаление: остался один файл']  = 1 === WPPA_Participant_Files::count( 401 );
+
+// Документы уходят вместе с участием в команде.
+$parts_member_file = WPPA_Participant_Files::store( 402, wppa_test_file( 'member-doc.pdf', 'm' ), 'member-doc.pdf', 12 );
+$parts_checks['документ участнику 402']       = is_array( $parts_member_file ) && 1 === WPPA_Participant_Files::count( 402 );
+
+WPPA_Teams::remove_member( $parts_team, 402 );
+
+$parts_checks['вышел из команды — документы удалены'] = 0 === WPPA_Participant_Files::count( 402 );
+
+$parts_notices = WPPA_Notices::registry();
+$parts_checks['уведомления о документах']     = isset( $parts_notices['participant_file_added'], $parts_notices['participant_files_added'], $parts_notices['participant_file_removed'], $parts_notices['participant_missing'] );
+
+remove_filter( 'wppa_skip_upload_check', $parts_allow );
+
+WPPA_Participant_Files::clear( 401 );
+WPPA_Teams::dissolve( $parts_team );
+WPPA_Teams::set_curator( 12, false );
+
+$wpdb->data = $parts_db_backup;
+WPPA_Olympiad::flush();
+
+foreach ( $parts_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'participants: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

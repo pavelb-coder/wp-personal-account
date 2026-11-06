@@ -68,6 +68,7 @@ class WPPA_Plugin {
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
 		WPPA_Curator_Files::init();
+		WPPA_Participant_Files::init();
 		WPPA_Team_Files_Export::init();
 		WPPA_Mailing::init();
 		WPPA_Mailing_Files::init();
@@ -569,6 +570,9 @@ class WPPA_Plugin {
 			case 'curator_file':
 				WPPA_Curator_Files::handle_request();
 				break;
+			case 'participant_file':
+				WPPA_Participant_Files::handle_request();
+				break;
 			case 'mailing':
 				WPPA_Mailing::handle_request();
 				break;
@@ -628,6 +632,12 @@ class WPPA_Plugin {
 		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
 			WPPA_Builder::seed_block( 'link-button', 'dashboard' );
 			update_option( 'wppa_link_button_seeded', 1 );
+		}
+
+		// Блок «Участники и баллы» (3.37.0): один раз добавляем куратору на вкладку «Файлы».
+		if ( ! get_option( 'wppa_participants_seeded' ) ) {
+			WPPA_Builder::seed_block( 'participants-widget', 'files' );
+			update_option( 'wppa_participants_seeded', 1 );
 		}
 
 		update_option( 'wppa_settings', $settings );

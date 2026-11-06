@@ -1404,3 +1404,48 @@
 		border: 0;
 	}
 }
+
+/* Участники и баллы: список куратора и адресные документы (3.37.0) */
+
+.wppa-participants__files {
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+}
+
+.wppa-participants__files li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 0 0 6px;
+}
+
+.wppa-participants__remove {
+	display: inline;
+	margin: 0;
+}
+
+.wppa-participants__upload {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 0;
+}
+
+.wppa-participants__label {
+	font-size: .85em;
+	color: var(--wppa-muted);
+}
+
+.wppa-participants__upload input[type="file"] {
+	max-width: 100%;
+	font-size: .85em;
+	color: var(--wppa-text);
+}
+
+.wppa-participants__table td,
+.wppa-participants__table th {
+	vertical-align: top;
+}

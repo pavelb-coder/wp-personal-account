@@ -25,6 +25,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-participant-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -110,6 +111,16 @@ if ( $wpdb instanceof WPPA_Test_WPDB ) {
 
 	WPPA_Olympiad::flush();
 }
+
+// Блок куратора «Участники и баллы»: участники без наставников, баллы, документы.
+$sections .= demo_section(
+	'Куратор: участники и баллы',
+	'Список участников команд без наставников: баллы и процент за тесты, адресные документы конкретному участнику',
+	WPPA_Builder::render_block(
+		array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		array( 'user' => get_userdata( 12 ) )
+	)
+);
 
 $sections  = demo_section(
 	'Кабинет целиком (активна вкладка «Обзор»)',

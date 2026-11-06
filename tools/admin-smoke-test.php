@@ -31,6 +31,7 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
+require $base . 'includes/class-wppa-participant-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -181,6 +182,27 @@ $theme_admin_checks['настройки: стиль надписи']            
 $theme_admin_checks['настройки: цвет надписи']                = false !== strpos( $settings_html, 'name="wppa_settings[heading_color]"' );
 $theme_admin_checks['настройки: скрыть заголовок темы']       = false !== strpos( $settings_html, 'name="wppa_settings[hide_page_title]"' );
 $theme_admin_checks['настройки: заголовок в предпросмотре']   = false !== strpos( $settings_html, 'id="wppa-theme-preview-heading"' );
+
+// ---------- Куратор: блок «Участники и баллы» (3.37.0) ----------
+$parts_admin_checks = array();
+$parts_registry     = WPPA_Builder::blocks();
+
+$parts_admin_checks['конструктор: блок участников']   = isset( $parts_registry['participants-widget'] );
+$parts_admin_checks['конструктор: вкладки блока']     = isset( $parts_registry['participants-widget']['tabs'] )
+	&& in_array( 'files', (array) $parts_registry['participants-widget']['tabs'], true );
+$parts_admin_checks['макет: блок на вкладке «Файлы»'] = in_array(
+	'participants-widget',
+	array_column( (array) ( WPPA_Builder::defaults()['files'] ?? array() ), 'id' ),
+	true
+);
+$parts_admin_checks['страница конструктора: подпись'] = false !== strpos( (string) file_get_contents( WPPA_PATH . 'includes/class-wppa-builder.php' ), 'Участники и баллы' );
+
+foreach ( $parts_admin_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'participants block: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
 
 foreach ( $theme_admin_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme settings: ' . $check_name . "\n";
