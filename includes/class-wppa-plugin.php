@@ -464,6 +464,60 @@ class WPPA_Plugin {
 	}
 
 	/**
+	 * Адрес текущей страницы — чтобы после действия вернуть пользователя туда,
+	 * откуда он пришёл, а не на «главную» вкладку.
+	 *
+	 * @return string
+	 */
+	public static function current_url() {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- только путь запроса.
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+
+		if ( '' === $uri ) {
+			return self::account_url();
+		}
+
+		$home  = wp_parse_url( home_url( '/' ) );
+		$parts = wp_parse_url( $uri );
+		$host  = isset( $parts['host'] ) ? (string) $parts['host'] : ( isset( $home['host'] ) ? (string) $home['host'] : '' );
+
+		if ( '' === $host ) {
+			return self::account_url();
+		}
+
+		$scheme = isset( $home['scheme'] ) ? (string) $home['scheme'] : 'https';
+		$path   = isset( $parts['path'] ) && '' !== (string) $parts['path'] ? (string) $parts['path'] : '/';
+		$query  = isset( $parts['query'] ) && '' !== (string) $parts['query'] ? '?' . (string) $parts['query'] : '';
+
+		return $scheme . '://' . $host . $path . $query;
+	}
+
+	/**
+	 * Куда вернуть пользователя после действия: адрес из скрытого поля формы
+	 * (если он ведёт на этот же сайт) или запасной адрес.
+	 *
+	 * @param string $fallback Запасной адрес.
+	 * @return string
+	 */
+	public static function posted_return( $fallback = '' ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- адрес проверяется ниже.
+		$raw = isset( $_POST['wppa_return'] ) ? trim( (string) wp_unslash( $_POST['wppa_return'] ) ) : '';
+
+		if ( '' === $raw ) {
+			return $fallback;
+		}
+
+		$url  = wp_parse_url( $raw );
+		$home = wp_parse_url( home_url( '/' ) );
+
+		if ( empty( $url['host'] ) || empty( $home['host'] ) || strtolower( (string) $url['host'] ) !== strtolower( (string) $home['host'] ) ) {
+			return $fallback;
+		}
+
+		return $raw;
+	}
+
+	/**
 	 * Является ли текущий запрос страницей личного кабинета.
 	 *
 	 * @return bool

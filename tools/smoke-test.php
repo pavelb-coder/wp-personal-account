@@ -5877,6 +5877,242 @@ foreach ( $cx_checks as $check_name => $ok ) {
 	}
 }
 
+// Групповая отправка файлов командам второго этапа и возврат на ту же страницу.
+$fb_checks = array();
+
+$GLOBALS['wppa_test']['users'][981] = array( 'Первый Командир', 'bulk981@example.com', 'first_name' => 'Первый', 'last_name' => 'Командир' );
+$GLOBALS['wppa_test']['users'][982] = array( 'Второй Командир', 'bulk982@example.com', 'first_name' => 'Второй', 'last_name' => 'Командир' );
+$GLOBALS['wppa_test']['users'][983] = array( 'Третий Командир', 'bulk983@example.com', 'first_name' => 'Третий', 'last_name' => 'Командир' );
+
+$fb_settings_backup = (array) get_option( 'wppa_settings', array() );
+
+$fb_team_one = WPPA_Teams::create( 'Команда Альфа', 981 );
+$fb_team_two = WPPA_Teams::create( 'Команда Бета', 982 );
+$fb_team_old = WPPA_Teams::create( 'Команда Первого этапа', 983 );
+
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+WPPA_Teams::set_stage2( $fb_team_one, true, 12 );
+WPPA_Teams::set_stage2( $fb_team_two, true, 12 );
+
+$fb_stage2 = WPPA_Curator_Files::stage2_teams();
+
+$fb_checks['в списке только второй этап']       = isset( $fb_stage2[ $fb_team_one ], $fb_stage2[ $fb_team_two ] ) && ! isset( $fb_stage2[ $fb_team_old ] );
+$fb_checks['название команды в списке']        = 'Команда Альфа' === $fb_stage2[ $fb_team_one ];
+
+$fb_skip = static function () {
+	return true;
+};
+
+add_filter( 'wppa_skip_upload_check', $fb_skip );
+
+$fb_path  = wppa_test_file( 'положение.pdf', str_repeat( 'b', 120 ) );
+$fb_files = array(
+	'name'     => 'положение.pdf',
+	'tmp_name' => $fb_path,
+	'error'    => UPLOAD_ERR_OK,
+	'size'     => 120,
+);
+
+$fb_result = WPPA_Curator_Files::bulk_upload( $fb_files, array( $fb_team_one, $fb_team_two ), 12 );
+
+$fb_checks['отправлено двум командам']          = is_array( $fb_result ) && 2 === $fb_result['sent'] && 0 === $fb_result['failed'];
+$fb_checks['у альфы файл появился']             = 1 === WPPA_Curator_Files::count( $fb_team_one );
+$fb_checks['у беты файл появился']              = 1 === WPPA_Curator_Files::count( $fb_team_two );
+$fb_checks['команда первого этапа не тронута']  = 0 === WPPA_Curator_Files::count( $fb_team_old );
+$fb_checks['загруженный файл не пропал']        = is_file( $fb_path );
+
+$fb_one_key = array_key_first( WPPA_Curator_Files::files( $fb_team_one ) );
+$fb_two_key = array_key_first( WPPA_Curator_Files::files( $fb_team_two ) );
+
+$fb_checks['у команд свои копии']               = $fb_one_key !== $fb_two_key;
+$fb_checks['копии на диске']                    = is_file( WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $fb_team_one )[ $fb_one_key ]['file'] )
+	&& is_file( WPPA_Curator_Files::dir()['dir'] . '/' . WPPA_Curator_Files::files( $fb_team_two )[ $fb_two_key ]['file'] );
+$fb_checks['направление — от куратора']         = 'curator' === WPPA_Curator_Files::files( $fb_team_one )[ $fb_one_key ]['from'];
+$fb_checks['имя файла сохранилось']             = 'положение.pdf' === WPPA_Curator_Files::files( $fb_team_one )[ $fb_one_key ]['name'];
+
+// Ничего не отмечено — уходит всем командам второго этапа.
+$fb_all = WPPA_Curator_Files::bulk_upload( $fb_files, array(), 12 );
+
+$fb_checks['пустой список — всем второго этапа'] = 2 === $fb_all['sent'];
+$fb_checks['второй заход добавил файлы']         = 2 === WPPA_Curator_Files::count( $fb_team_one );
+
+// Отмеченная команда первого этапа пропускается.
+$fb_old_before = WPPA_Curator_Files::count( $fb_team_old );
+WPPA_Curator_Files::bulk_upload( $fb_files, array( $fb_team_old ), 12 );
+
+$fb_checks['команда первого этапа пропущена']   = $fb_old_before === WPPA_Curator_Files::count( $fb_team_old );
+
+// Права и пустая форма.
+$fb_checks['наставнику групповая отправка запрещена'] = 'wppa_file_forbidden' === WPPA_Curator_Files::bulk_upload( $fb_files, array( $fb_team_one ), 981 )->get_error_code();
+$fb_checks['участнику групповая отправка запрещена']  = 'wppa_file_forbidden' === WPPA_Curator_Files::bulk_upload( $fb_files, array( $fb_team_one ), 982 )->get_error_code();
+$fb_checks['без файла — ошибка']                      = 'wppa_file_missing' === WPPA_Curator_Files::bulk_upload( array(), array( $fb_team_one ), 12 )->get_error_code();
+
+// Обработчик формы и возврат на ту же страницу.
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+
+$fb_return = 'https://example.com/personal-account/?wppa_tab=files';
+$fb_capture = static function ( $post, $files, $handler = 'files' ) {
+	$_POST  = $post;
+	$_FILES = $files;
+	$_GET   = array();
+
+	try {
+		if ( 'certificate' === $handler ) {
+			WPPA_Certificates::handle_request();
+		} else {
+			WPPA_Curator_Files::handle_request();
+		}
+	} catch ( RuntimeException $e ) {
+		return substr( $e->getMessage(), strlen( 'redirect:' ) );
+	}
+
+	return '';
+};
+
+$fb_bulk_url = $fb_capture(
+	array(
+		'wppa_action'         => 'curator_file',
+		'curator_file_action' => 'bulk',
+		'wppa_back'           => 'files',
+		'wppa_return'         => $fb_return,
+		'bulk_teams'          => array( $fb_team_one ),
+	),
+	array( 'curator_files' => $fb_files )
+);
+
+$fb_checks['обработчик: отправка прошла']       = false !== strpos( $fb_bulk_url, 'wppa_notice=files_bulk_sent' );
+$fb_checks['обработчик: вернул на ту же страницу'] = 0 === strpos( $fb_bulk_url, $fb_return );
+
+$GLOBALS['wppa_test']['current_user'] = 981;
+
+$fb_denied_url = $fb_capture(
+	array(
+		'wppa_action'         => 'curator_file',
+		'curator_file_action' => 'bulk',
+		'bulk_teams'          => array( $fb_team_one ),
+	),
+	array( 'curator_files' => $fb_files )
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$fb_checks['обработчик: наставнику нельзя']     = false !== strpos( $fb_denied_url, 'wppa_notice=files_bulk_denied' );
+
+// Возврат после выдачи сертификата: та же страница, та же команда.
+$fb_cert_url = $fb_capture(
+	array(
+		'wppa_action'        => 'certificate',
+		'certificate_action' => 'issue',
+		'participant_id'     => 981,
+		'team_id'            => $fb_team_one,
+		'wppa_return'        => 'https://example.com/personal-account/?wppa_tab=participants&wppa_team=' . $fb_team_one,
+	),
+	array(),
+	'certificate'
+);
+
+$fb_checks['сертификат: выдача вернула на страницу'] = 0 === strpos( $fb_cert_url, 'https://example.com/personal-account/?wppa_tab=participants&wppa_team=' . $fb_team_one );
+$fb_checks['сертификат: уведомление о выдаче']       = false !== strpos( $fb_cert_url, 'wppa_notice=certificate_issued' );
+
+$fb_cert_key = array_key_first( WPPA_Certificates::for_user( 981 ) );
+$fb_cert_id  = (int) substr( (string) $fb_cert_key, 5 );
+
+if ( $fb_cert_id ) {
+	WPPA_Certificates::remove( 981, $fb_cert_id, 12 );
+}
+
+$fb_checks['сертификат убран после проверки']        = 0 === WPPA_Certificates::count( 981 );
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST                                  = array();
+$_FILES                                 = array();
+$_GET                                   = array();
+
+// Адрес возврата: свой принимаем, чужой — нет.
+$_SERVER['REQUEST_URI'] = '/personal-account/?wppa_tab=files&wppa_team=' . $fb_team_one;
+
+$fb_checks['current_url собирается']            = 'https://example.com/personal-account/?wppa_tab=files&wppa_team=' . $fb_team_one === WPPA_Plugin::current_url();
+
+$_POST['wppa_return'] = 'https://example.com/personal-account/?wppa_tab=participants';
+
+$fb_checks['posted_return берёт свой адрес']    = 'https://example.com/personal-account/?wppa_tab=participants' === WPPA_Plugin::posted_return( 'fallback' );
+
+$_POST['wppa_return'] = 'https://evil.example.net/steal';
+
+$fb_checks['чужой адрес отбрасывается']         = 'fallback' === WPPA_Plugin::posted_return( 'fallback' );
+
+unset( $_POST['wppa_return'] );
+unset( $_SERVER['REQUEST_URI'] );
+
+$fb_checks['без поля — запасной адрес']         = 'fallback' === WPPA_Plugin::posted_return( 'fallback' );
+
+// Формы кабинета присылают адрес возврата и не теряют команду.
+$fb_curator_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$fb_checks['у куратора карточка групповой отправки'] = false !== strpos( $fb_curator_html, 'Отправить файлы командам второго этапа' );
+$fb_checks['в карточке кнопка отправки']             = false !== strpos( $fb_curator_html, 'value="bulk"' );
+$fb_checks['в карточке список команд']               = false !== strpos( $fb_curator_html, 'bulk_teams[]' );
+$fb_bulk_start = strpos( $fb_curator_html, 'Отправить файлы командам второго этапа' );
+$fb_bulk_html  = false !== $fb_bulk_start ? substr( $fb_curator_html, $fb_bulk_start ) : '';
+
+$fb_checks['в карточке только второй этап']          = false !== strpos( $fb_bulk_html, 'Команда Альфа' ) && false === strpos( $fb_bulk_html, 'Команда Первого этапа' );
+$fb_checks['в карточке поле файлов']                 = false !== strpos( $fb_curator_html, 'name="curator_files[]"' );
+$fb_checks['в карточке адрес возврата']              = false !== strpos( $fb_curator_html, 'name="wppa_return"' );
+
+$fb_participant_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 981 ) )
+);
+
+$fb_checks['участнику карточки нет']                 = false === strpos( $fb_participant_html, 'Отправить файлы командам второго этапа' );
+
+$fb_notices = WPPA_Notices::registry();
+
+$fb_checks['уведомления групповой отправки']         = isset( $fb_notices['files_bulk_sent'], $fb_notices['files_bulk_partial'], $fb_notices['files_bulk_nobody'], $fb_notices['files_bulk_denied'] );
+
+// Формы сертификатов тоже присылают адрес возврата — иначе после выдачи
+// куратора уводило с открытой команды на общий список.
+$fb_forms_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$fb_checks['формам сертификатов передаётся возврат'] = false !== strpos( $fb_forms_html, 'name="wppa_return"' );
+
+// Уборка.
+$fb_files_dir = WPPA_Curator_Files::dir()['dir'];
+
+foreach ( array( $fb_team_one, $fb_team_two, $fb_team_old ) as $fb_clean_team ) {
+	foreach ( WPPA_Curator_Files::files( $fb_clean_team ) as $fb_clean_file ) {
+		$fb_clean_path = $fb_files_dir . '/' . $fb_clean_file['file'];
+
+		if ( is_file( $fb_clean_path ) ) {
+			@unlink( $fb_clean_path );
+		}
+	}
+
+	WPPA_Teams::dissolve( (int) $fb_clean_team );
+}
+
+remove_filter( 'wppa_skip_upload_check', $fb_skip );
+WPPA_Teams::set_curator( 12, false );
+
+update_option( 'wppa_settings', $fb_settings_backup );
+
+$GLOBALS['wppa_test']['current_user'] = 0;
+
+foreach ( $fb_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'files bulk: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

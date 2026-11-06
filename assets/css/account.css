@@ -1602,3 +1602,31 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* Групповая отправка файлов командам второго этапа. */
+.wppa-bulk-teams {
+	margin: 0 0 14px;
+	padding: 12px 14px;
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	background: var(--wppa-surface-alt);
+}
+
+.wppa-bulk-teams__legend {
+	padding: 0 6px;
+	font-weight: 600;
+	color: var(--wppa-text);
+}
+
+.wppa-bulk-teams__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+	color: var(--wppa-text);
+}
+
+.wppa-bulk-teams__item .wppa-hint {
+	margin-left: auto;
+}

@@ -91,6 +91,72 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 				</div>
 			<?php endif; ?>
 		</section>
+
+		<?php $wppa_stage2_teams = WPPA_Curator_Files::stage2_teams(); ?>
+
+		<section class="wppa-card wppa-curator-files wppa-curator-files--bulk">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Отправить файлы командам второго этапа', 'wp-personal-account' ); ?></h3>
+
+			<?php if ( ! $wppa_stage2_teams ) : ?>
+				<div class="wppa-notice wppa-notice--info">
+					<?php esc_html_e( 'Команд второго этапа пока нет: отметьте команду в разделе «Команда» — и здесь появится групповая отправка.', 'wp-personal-account' ); ?>
+				</div>
+			<?php else : ?>
+				<p class="wppa-hint">
+					<?php
+					printf(
+						/* translators: %d: число команд второго этапа */
+						esc_html__( 'Один раз загрузите документы — они прикрепятся каждой отмеченной команде (%d команд второго этапа). Ничего не отмечать — файлы уйдут всем.', 'wp-personal-account' ),
+						count( $wppa_stage2_teams )
+					);
+					?>
+				</p>
+
+				<form class="wppa-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'files' ) ); ?>">
+					<?php wp_nonce_field( 'wppa_curator_file', 'wppa_nonce' ); ?>
+					<input type="hidden" name="wppa_action" value="curator_file" />
+					<input type="hidden" name="curator_file_action" value="bulk" />
+					<input type="hidden" name="wppa_back" value="files" />
+					<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
+
+					<p class="wppa-field">
+						<label for="wppa-bulk-files"><?php esc_html_e( 'Файлы для команд', 'wp-personal-account' ); ?></label>
+						<input type="file" id="wppa-bulk-files" name="curator_files[]" multiple required />
+						<span class="wppa-hint">
+							<?php
+							printf(
+								/* translators: 1: максимальный размер, 2: максимальное число файлов */
+								esc_html__( 'До %1$s на файл и не больше %2$d файлов на команду: документы, таблицы, презентации, архивы, изображения.', 'wp-personal-account' ),
+								esc_html( WPPA_Curator_Files::size_label( WPPA_Curator_Files::max_size() ) ),
+								(int) WPPA_Curator_Files::MAX_FILES
+							);
+							?>
+						</span>
+					</p>
+
+					<fieldset class="wppa-bulk-teams">
+						<legend class="wppa-bulk-teams__legend"><?php esc_html_e( 'Кому отправить', 'wp-personal-account' ); ?></legend>
+
+						<?php foreach ( $wppa_stage2_teams as $wppa_stage2_id => $wppa_stage2_name ) : ?>
+							<label class="wppa-bulk-teams__item" for="wppa-bulk-team-<?php echo esc_attr( (string) $wppa_stage2_id ); ?>">
+								<input
+									type="checkbox"
+									id="wppa-bulk-team-<?php echo esc_attr( (string) $wppa_stage2_id ); ?>"
+									name="bulk_teams[]"
+									value="<?php echo esc_attr( (string) $wppa_stage2_id ); ?>"
+								/>
+								<?php echo esc_html( $wppa_stage2_name ); ?>
+								<span class="wppa-hint"><?php echo esc_html( sprintf( /* translators: %d: число файлов */ __( 'файлов: %d', 'wp-personal-account' ), WPPA_Curator_Files::count( (int) $wppa_stage2_id ) ) ); ?></span>
+							</label>
+						<?php endforeach; ?>
+					</fieldset>
+
+					<button type="submit" class="wppa-button wppa-button--primary">
+						<?php esc_html_e( 'Отправить командам', 'wp-personal-account' ); ?>
+					</button>
+				</form>
+			<?php endif; ?>
+		</section>
 	<?php else : ?>
 		<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Раздел с файлами доступен наставнику команды и куратору.', 'wp-personal-account' ); ?></div>
 	<?php endif; ?>

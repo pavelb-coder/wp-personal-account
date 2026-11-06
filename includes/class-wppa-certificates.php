@@ -942,6 +942,9 @@ class WPPA_Certificates {
 			$back = add_query_arg( 'wppa_team', $team, $back );
 		}
 
+		// Форма могла прийти с любой страницы кабинета — возвращаем туда же.
+		$back = WPPA_Plugin::posted_return( $back );
+
 		if ( ! WPPA_Teams::is_curator( $curator_id ) ) {
 			WPPA_Notices::redirect( 'certificate_forbidden', $back );
 		}

@@ -206,10 +206,14 @@ $wppa_cert_edit_fields = array(
 						<form method="post" action="<?php echo esc_url( $wppa_cert_action_url ); ?>" class="wppa-certificates__edit">
 							<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 							<input type="hidden" name="wppa_action" value="certificate" />
+							<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 							<input type="hidden" name="certificate_action" value="update" />
 							<input type="hidden" name="certificate_back" value="certificates" />
 							<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_cert_pid ); ?>" />
 							<input type="hidden" name="certificate_id" value="<?php echo esc_attr( (string) $wppa_cert_cid ); ?>" />
+							<?php if ( ! empty( $wppa_cert_row['team'] ) ) : ?>
+								<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_cert_row['team'] ); ?>" />
+							<?php endif; ?>
 
 							<div class="wppa-certificates__fields">
 								<?php foreach ( $wppa_cert_edit_fields as $wppa_cert_key => $wppa_cert_field ) : ?>
@@ -258,10 +262,14 @@ $wppa_cert_edit_fields = array(
 							<form method="post" action="<?php echo esc_url( $wppa_cert_action_url ); ?>">
 								<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 								<input type="hidden" name="wppa_action" value="certificate" />
+							<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 								<input type="hidden" name="certificate_action" value="rebuild" />
 								<input type="hidden" name="certificate_back" value="certificates" />
 								<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_cert_pid ); ?>" />
 								<input type="hidden" name="certificate_id" value="<?php echo esc_attr( (string) $wppa_cert_cid ); ?>" />
+							<?php if ( ! empty( $wppa_cert_row['team'] ) ) : ?>
+								<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_cert_row['team'] ); ?>" />
+							<?php endif; ?>
 								<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm">
 									<?php esc_html_e( 'Пересобрать PDF', 'wp-personal-account' ); ?>
 								</button>
@@ -270,10 +278,14 @@ $wppa_cert_edit_fields = array(
 							<form method="post" action="<?php echo esc_url( $wppa_cert_action_url ); ?>">
 								<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 								<input type="hidden" name="wppa_action" value="certificate" />
+							<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 								<input type="hidden" name="certificate_action" value="remove" />
 								<input type="hidden" name="certificate_back" value="certificates" />
 								<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_cert_pid ); ?>" />
 								<input type="hidden" name="certificate_id" value="<?php echo esc_attr( (string) $wppa_cert_cid ); ?>" />
+							<?php if ( ! empty( $wppa_cert_row['team'] ) ) : ?>
+								<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_cert_row['team'] ); ?>" />
+							<?php endif; ?>
 								<button type="submit" class="wppa-button wppa-button--danger wppa-button--sm">
 									<?php esc_html_e( 'Убрать из кабинета', 'wp-personal-account' ); ?>
 								</button>

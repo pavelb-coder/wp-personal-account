@@ -658,6 +658,146 @@ class WPPA_Curator_Files {
 	}
 
 	/**
+	 * Команды, прошедшие во второй этап: ID => название.
+	 *
+	 * @return array
+	 */
+	public static function stage2_teams() {
+		$out = array();
+
+		foreach ( WPPA_Teams::all_teams() as $team ) {
+			$team_id = (int) $team['id'];
+
+			if ( ! $team_id || ! WPPA_Teams::is_stage2( $team_id ) ) {
+				continue;
+			}
+
+			$out[ $team_id ] = (string) $team['name'];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Отправить файлы сразу нескольким командам второго этапа.
+	 *
+	 * Каждая команда получает свою копию файла в кабинете: файлы куратора
+	 * живут в папке кабинета, в сетевую папку уходят только файлы наставников.
+	 *
+	 * @param array $files    $_FILES-элемент или список файлов.
+	 * @param array $team_ids Отмеченные команды; пусто — все команды второго этапа.
+	 * @param int   $user_id  Кто отправляет.
+	 * @return array|WP_Error teams, files, sent, failed, errors.
+	 */
+	public static function bulk_upload( $files, $team_ids = array(), $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		if ( ! $user_id || ! WPPA_Teams::is_curator( $user_id ) ) {
+			return new WP_Error( 'wppa_file_forbidden', __( 'Файлы командам отправляет куратор.', 'wp-personal-account' ) );
+		}
+
+		$list = self::normalize_files( $files );
+
+		if ( ! $list ) {
+			return new WP_Error( 'wppa_file_missing', __( 'Файл не выбран.', 'wp-personal-account' ) );
+		}
+
+		$stage2 = self::stage2_teams();
+		$wanted = array();
+
+		foreach ( (array) $team_ids as $team_id ) {
+			$team_id = (int) $team_id;
+
+			if ( isset( $stage2[ $team_id ] ) ) {
+				$wanted[ $team_id ] = $stage2[ $team_id ];
+			}
+		}
+
+		// Ничего не отмечено — отправляем всем командам второго этапа.
+		if ( ! $wanted ) {
+			$wanted = $stage2;
+		}
+
+		$result = array(
+			'teams'  => count( $wanted ),
+			'files'  => count( $list ),
+			'sent'   => 0,
+			'failed' => 0,
+			'errors' => array(),
+		);
+
+		foreach ( $wanted as $team_id => $team_name ) {
+			foreach ( $list as $file ) {
+				// Один загруженный файл нельзя «переместить» дважды — каждой
+				// команде достаётся своя копия.
+				$copy = self::copy_upload( $file );
+
+				if ( is_wp_error( $copy ) ) {
+					++$result['failed'];
+					$result['errors'][] = $copy->get_error_code();
+
+					continue;
+				}
+
+				$stored = self::store( (int) $team_id, $copy, (string) $file['name'], $user_id );
+
+				if ( is_file( $copy ) ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+					@unlink( $copy );
+				}
+
+				if ( is_wp_error( $stored ) ) {
+					++$result['failed'];
+					$result['errors'][] = $stored->get_error_code();
+
+					continue;
+				}
+
+				++$result['sent'];
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Копия загруженного файла: каждая команда получает свою.
+	 *
+	 * @param array $file Элемент $_FILES.
+	 * @return string|WP_Error Путь к копии.
+	 */
+	protected static function copy_upload( $file ) {
+		$file  = is_array( $file ) ? $file : array();
+		$error = isset( $file['error'] ) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE;
+
+		if ( UPLOAD_ERR_NO_FILE === $error || '' === (string) ( isset( $file['name'] ) ? $file['name'] : '' ) ) {
+			return new WP_Error( 'wppa_file_missing', __( 'Файл не выбран.', 'wp-personal-account' ) );
+		}
+
+		if ( UPLOAD_ERR_OK !== $error ) {
+			return new WP_Error( 'wppa_file_upload', __( 'Не удалось загрузить файл: сервер отклонил загрузку.', 'wp-personal-account' ) );
+		}
+
+		$tmp = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+
+		if ( '' === $tmp || ! is_file( $tmp ) ) {
+			return new WP_Error( 'wppa_file_missing', __( 'Файл не найден.', 'wp-personal-account' ) );
+		}
+
+		if ( ! self::is_uploaded( $tmp ) ) {
+			return new WP_Error( 'wppa_file_upload', __( 'Не удалось загрузить файл.', 'wp-personal-account' ) );
+		}
+
+		$copy = $tmp . '-wppa-' . strtolower( wp_generate_password( 8, false, false ) );
+
+		if ( ! @copy( $tmp, $copy ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_copy
+			return new WP_Error( 'wppa_file_copy', __( 'Не удалось сохранить файл.', 'wp-personal-account' ) );
+		}
+
+		return $copy;
+	}
+
+	/**
 	 * Удалить файл команды.
 	 *
 	 * @param int    $team_id ID команды.
@@ -781,6 +921,32 @@ class WPPA_Curator_Files {
 			}
 		} else {
 			$back = WPPA_Plugin::tab_url( 'files' );
+		}
+
+		// Возвращаем туда, откуда пришла форма: та же вкладка, та же команда.
+		$back = WPPA_Plugin::posted_return( $back );
+
+		if ( 'bulk' === $sub ) {
+			if ( ! $is_curator ) {
+				WPPA_Notices::redirect( 'files_bulk_denied', $back );
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- проверяется в bulk_upload().
+			$bulk_files = isset( $_FILES['curator_files'] ) ? $_FILES['curator_files'] : array();
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+			$bulk_teams = isset( $_POST['bulk_teams'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['bulk_teams'] ) ) : array();
+
+			$bulk = self::bulk_upload( $bulk_files, $bulk_teams, $user_id );
+
+			if ( is_wp_error( $bulk ) ) {
+				WPPA_Notices::redirect( self::notice_code( $bulk->get_error_code() ), $back );
+			}
+
+			if ( 0 === $bulk['sent'] ) {
+				WPPA_Notices::redirect( 'files_bulk_nobody', $back );
+			}
+
+			WPPA_Notices::redirect( $bulk['failed'] > 0 ? 'files_bulk_partial' : 'files_bulk_sent', $back );
 		}
 
 		if ( ! $user_id || '' === self::direction( $team_id, $user_id ) ) {

@@ -185,6 +185,7 @@ if ( $wppa_single_team ) {
 											<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__cert-remove">
 												<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 												<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 												<input type="hidden" name="certificate_action" value="remove" />
 												<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_participant_id ); ?>" />
 												<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['team'] ); ?>" />
@@ -196,6 +197,7 @@ if ( $wppa_single_team ) {
 									<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__cert-issue">
 										<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 										<input type="hidden" name="certificate_action" value="issue" />
 										<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_participant_id ); ?>" />
 										<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['team'] ); ?>" />
@@ -232,6 +234,7 @@ if ( $wppa_single_team ) {
 				<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__issue-all">
 					<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 					<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 					<input type="hidden" name="certificate_action" value="issue_threshold" />
 
 					<?php if ( $wppa_single_team ) : ?>
@@ -255,6 +258,7 @@ if ( $wppa_single_team ) {
 				<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__export">
 					<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
 					<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 					<input type="hidden" name="certificate_action" value="export_all" />
 					<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_single_team ); ?>" />
 					<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm">
