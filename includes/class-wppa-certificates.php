@@ -36,6 +36,11 @@ class WPPA_Certificates {
 	const EMAIL_KEY = 'certificate_email';
 
 	/**
+	 * Ключ настройки «уведомлять участника письмом о выданном сертификате».
+	 */
+	const NOTIFY_KEY = 'certificate_notify';
+
+	/**
 	 * Подписка на события.
 	 *
 	 * @return void
@@ -83,6 +88,121 @@ class WPPA_Certificates {
 		 * @param bool $send Отправлять.
 		 */
 		return (bool) apply_filters( 'wppa_certificate_send_email', $send );
+	}
+
+	/**
+	 * Уведомлять участника письмом о выданном сертификате.
+	 *
+	 * @return bool
+	 */
+	public static function notify() {
+		$notify = (bool) (int) WPPA_Plugin::setting( self::NOTIFY_KEY, 1 );
+
+		/**
+		 * Фильтр уведомления о сертификате.
+		 *
+		 * @param bool $notify Отправлять уведомление.
+		 */
+		return (bool) apply_filters( 'wppa_certificate_notify', $notify );
+	}
+
+	/**
+	 * Тема письма-уведомления о сертификате.
+	 *
+	 * @param array   $entry Запись сертификата.
+	 * @param WP_User $user  Участник.
+	 * @return string
+	 */
+	public static function notify_subject( $entry, $user ) {
+		$subject = sprintf(
+			/* translators: 1: номер сертификата, 2: название сайта */
+			__( '[%2$s] Сертификат №%1$s', 'wp-personal-account' ),
+			isset( $entry['number'] ) && '' !== $entry['number'] ? $entry['number'] : '',
+			wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES )
+		);
+
+		/**
+		 * Фильтр темы письма-уведомления о сертификате.
+		 *
+		 * @param string  $subject Тема.
+		 * @param array   $entry   Запись сертификата.
+		 * @param WP_User $user    Участник.
+		 */
+		return (string) apply_filters( 'wppa_certificate_email_subject', $subject, $entry, $user );
+	}
+
+	/**
+	 * Текст письма-уведомления о сертификате.
+	 *
+	 * @param array   $entry Запись сертификата.
+	 * @param WP_User $user  Участник.
+	 * @param string  $url   Ссылка на вкладку «Сертификаты».
+	 * @return string
+	 */
+	public static function notify_body( $entry, $user, $url ) {
+		$body = sprintf(
+			/* translators: %s: имя пользователя */
+			__( 'Здравствуйте, %s!', 'wp-personal-account' ),
+			WPPA_Teams::full_name( $user )
+		) . "\n\n";
+
+		$body .= __( 'Вам выдан сертификат участника.', 'wp-personal-account' ) . "\n\n";
+
+		if ( isset( $entry['number'] ) && '' !== $entry['number'] ) {
+			/* translators: %s: номер сертификата */
+			$body .= sprintf( __( 'Номер: %s', 'wp-personal-account' ), $entry['number'] ) . "\n";
+		}
+
+		if ( isset( $entry['course'] ) && '' !== $entry['course'] ) {
+			/* translators: %s: название программы */
+			$body .= sprintf( __( 'Программа: %s', 'wp-personal-account' ), $entry['course'] ) . "\n";
+		}
+
+		if ( ! empty( $entry['time'] ) ) {
+			/* translators: %s: дата выдачи */
+			$body .= sprintf( __( 'Выдан: %s', 'wp-personal-account' ), date_i18n( get_option( 'date_format' ), (int) $entry['time'] ) ) . "\n";
+		}
+
+		$body .= "\n" . __( 'Скачать сертификат можно в личном кабинете:', 'wp-personal-account' ) . "\n\n";
+		$body .= $url . "\n";
+
+		/**
+		 * Фильтр текста письма-уведомления о сертификате.
+		 *
+		 * @param string  $body  Текст.
+		 * @param array   $entry Запись сертификата.
+		 * @param WP_User $user  Участник.
+		 * @param string  $url   Ссылка на кабинет.
+		 */
+		return (string) apply_filters( 'wppa_certificate_email_body', $body, $entry, $user, $url );
+	}
+
+	/**
+	 * Отправка уведомления о выданном сертификате.
+	 *
+	 * @param int   $user_id Участник.
+	 * @param array $entry   Запись сертификата.
+	 * @return bool
+	 */
+	public static function send_notification( $user_id, $entry ) {
+		$user = get_userdata( (int) $user_id );
+
+		if ( ! $user instanceof WP_User || '' === (string) $user->user_email ) {
+			return false;
+		}
+
+		if ( ! self::notify() ) {
+			return false;
+		}
+
+		$url = WPPA_Plugin::tab_url( 'certificates' );
+
+		return (bool) wp_mail(
+			$user->user_email,
+			self::notify_subject( $entry, $user ),
+			self::notify_body( $entry, $user, $url ),
+			array( 'Content-Type: text/plain; charset=UTF-8' )
+		);
 	}
 
 	/**
@@ -175,6 +295,7 @@ class WPPA_Certificates {
 				'time'    => isset( $entry['time'] ) ? (int) $entry['time'] : 0,
 				'by'      => isset( $entry['by'] ) ? (int) $entry['by'] : 0,
 				'sent'    => ! empty( $entry['sent'] ),
+				'notified' => ! empty( $entry['notified'] ),
 				'revoked' => self::is_revoked( (int) $entry['id'] ),
 				'verify'  => '' !== $code ? self::verify_url( (int) $entry['id'], $code ) : '',
 				'url'     => self::download_url( $user_id, (int) $entry['id'] ),
@@ -215,6 +336,57 @@ class WPPA_Certificates {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Сертификаты участников команд, доступных зрителю: наставнику — своей
+	 * команды, куратору — всех (или открытой через `?wppa_team=ID`).
+	 *
+	 * @param int $viewer_id Кто смотрит.
+	 * @return array Строки: user, team, cert.
+	 */
+	public static function team_rows( $viewer_id = 0 ) {
+		$viewer_id = (int) ( $viewer_id ? $viewer_id : get_current_user_id() );
+
+		if ( ! $viewer_id ) {
+			return array();
+		}
+
+		$teams = array();
+
+		if ( WPPA_Teams::is_curator( $viewer_id ) ) {
+			$single = (int) WPPA_Teams::viewing_team_id( $viewer_id );
+			$teams  = $single ? array( $single ) : array_map( 'intval', array_column( WPPA_Teams::all_teams(), 'id' ) );
+		} elseif ( WPPA_Teams::is_mentor( $viewer_id ) ) {
+			$teams = array( (int) WPPA_Teams::team_id( $viewer_id ) );
+		}
+
+		$rows = array();
+
+		foreach ( $teams as $team_id ) {
+			if ( ! $team_id ) {
+				continue;
+			}
+
+			foreach ( WPPA_Teams::participants( $team_id ) as $member ) {
+				foreach ( self::for_user( (int) $member->ID ) as $cert ) {
+					$rows[] = array(
+						'user' => $member,
+						'team' => (int) $team_id,
+						'cert' => $cert,
+					);
+				}
+			}
+		}
+
+		usort(
+			$rows,
+			static function ( $a, $b ) {
+				return (int) $b['cert']['time'] <=> (int) $a['cert']['time'];
+			}
+		);
+
+		return $rows;
 	}
 
 	/**
@@ -301,14 +473,20 @@ class WPPA_Certificates {
 		}
 
 		$entry = array(
-			'id'     => $cert_id,
-			'number' => (string) get_post_meta( $cert_id, '_wpdc_number', true ),
-			'code'   => (string) get_post_meta( $cert_id, '_wpdc_code', true ),
-			'course' => $course,
-			'time'   => time(),
-			'by'     => $curator_id,
-			'sent'   => $sent,
+			'id'       => $cert_id,
+			'number'   => (string) get_post_meta( $cert_id, '_wpdc_number', true ),
+			'code'     => (string) get_post_meta( $cert_id, '_wpdc_code', true ),
+			'course'   => $course,
+			'time'     => time(),
+			'by'       => $curator_id,
+			'sent'     => $sent,
+			'notified' => false,
 		);
+
+		// Письмо с PDF отправляет WP Diplom; если оно не ушло — шлём своё уведомление.
+		if ( ! $sent ) {
+			$entry['notified'] = self::send_notification( $user_id, $entry );
+		}
 
 		$saved = get_user_meta( $user_id, self::META, true );
 		$saved = is_array( $saved ) ? $saved : array();

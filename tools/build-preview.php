@@ -437,6 +437,24 @@ $sections .= demo_section(
 
 $GLOBALS['wppa_test']['current_user'] = 12;
 
+// Наставник: сертификаты участников своей команды.
+$GLOBALS['wppa_test']['current_user'] = 8;
+
+$sections .= demo_section(
+	'Наставник: сертификаты участников',
+	'Наставник видит вкладку «Сертификаты»: свои сертификаты и сертификаты участников своей команды — кто получил, номер, программа, дата и скачивание PDF',
+	WPPA_Template::get(
+		'account',
+		array(
+			'user'        => new WP_User( 8 ),
+			'tabs'        => WPPA_Template::tabs(),
+			'current_tab' => 'certificates',
+		)
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
 $sections .= demo_section(
 	'Безопасность',
 	'Вкладка security: смена пароля, смена email с подтверждением, выход',

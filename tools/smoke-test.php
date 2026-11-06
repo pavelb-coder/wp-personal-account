@@ -5135,6 +5135,165 @@ foreach ( $nm_checks as $check_name => $ok ) {
 	}
 }
 
+// Уведомление о сертификате и сертификаты участников у наставника.
+$cf_checks = array();
+
+$GLOBALS['wppa_test']['users'][921] = array( 'Первый Участник', 'first921@example.com', 'first_name' => 'Первый', 'last_name' => 'Участник' );
+$GLOBALS['wppa_test']['users'][923] = array( 'Наставник Команды', 'mentor923@example.com', 'first_name' => 'Наставник', 'last_name' => 'Команды' );
+$GLOBALS['wppa_test']['users'][931] = array( 'Чужой Участник', 'alien931@example.com', 'first_name' => 'Чужой', 'last_name' => 'Участник' );
+
+$cf_settings_backup = (array) get_option( 'wppa_settings', array() );
+
+$cf_team = WPPA_Teams::create( 'Команда наставника', 921 );
+
+if ( ! is_wp_error( $cf_team ) ) {
+	WPPA_Teams::add_member( $cf_team, 923 );
+	WPPA_Teams::set_role( $cf_team, 923, 'mentor' );
+}
+
+$cf_other = WPPA_Teams::create( 'Чужая команда', 931 );
+
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		$cf_settings_backup,
+		array(
+			'certificate_template' => 0,
+			'certificate_email'    => 0,
+			'certificate_notify'   => 1,
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ),
+		)
+	)
+);
+
+// Уведомление включено по умолчанию.
+$cf_defaults = WPPA_Plugin::defaults();
+$cf_checks['уведомление включено по умолчанию'] = 1 === (int) $cf_defaults['certificate_notify'];
+$cf_checks['notify() читает настройку']         = true === WPPA_Certificates::notify();
+
+$cf_saved = WPPA_Settings::sanitize( array( 'certificate_notify' => '1' ) );
+$cf_checks['настройка сохраняется']             = 1 === (int) $cf_saved['certificate_notify'];
+$cf_checks['снятая галочка — 0']                = 0 === (int) WPPA_Settings::sanitize( array() )['certificate_notify'];
+
+// Письмо уходит участнику.
+$GLOBALS['wppa_test']['mail'] = array();
+
+$cf_entry = WPPA_Certificates::issue( 921, 12 );
+
+$cf_mail = $GLOBALS['wppa_test']['mail'];
+$cf_last = $cf_mail ? $cf_mail[ count( $cf_mail ) - 1 ] : array();
+
+$cf_checks['уведомление отправлено']            = is_array( $cf_entry ) && ! empty( $cf_entry['notified'] );
+$cf_checks['письмо ушло участнику']             = isset( $cf_last['to'] ) && 'first921@example.com' === $cf_last['to'];
+$cf_checks['в теме номер сертификата']           = isset( $cf_last['subject'] ) && false !== strpos( $cf_last['subject'], (string) $cf_entry['number'] );
+$cf_checks['в письме номер и программа']         = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], (string) $cf_entry['number'] )
+	&& false !== strpos( $cf_last['message'], 'Команда наставника' );
+$cf_checks['в письме ссылка на кабинет']         = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], 'wppa_tab=certificates' );
+$cf_checks['в письме обращение по имени']        = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], 'Участник Первый' );
+$cf_checks['отметка об уведомлении в записи']    = true === WPPA_Certificates::for_user( 921 )[ 'cert-' . (int) $cf_entry['id'] ]['notified'];
+
+// Фильтры письма.
+$cf_subject_filter = static function ( $subject ) {
+	return 'Тема: ' . $subject;
+};
+add_filter( 'wppa_certificate_email_subject', $cf_subject_filter );
+$cf_checks['фильтр темы письма']                 = 0 === strpos( WPPA_Certificates::notify_subject( $cf_entry, get_userdata( 921 ) ), 'Тема: ' );
+remove_filter( 'wppa_certificate_email_subject', $cf_subject_filter );
+
+$cf_body_filter = static function ( $body ) {
+	return $body . "\nПодпись";
+};
+add_filter( 'wppa_certificate_email_body', $cf_body_filter );
+$cf_checks['фильтр текста письма']               = false !== strpos( WPPA_Certificates::notify_body( $cf_entry, get_userdata( 921 ), 'https://example.com' ), 'Подпись' );
+remove_filter( 'wppa_certificate_email_body', $cf_body_filter );
+
+// Письмо с PDF от WP Diplom: отдельное уведомление не шлётся.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_email' => 1, 'certificate_notify' => 1 ) ) );
+
+$GLOBALS['wppa_test']['mail'] = array();
+WPDC_Email::$sent             = array();
+
+$cf_pdf_entry = WPPA_Certificates::issue( 921, 12 );
+
+$cf_checks['письмо с PDF от WP Diplom ушло']     = is_array( $cf_pdf_entry ) && ! empty( $cf_pdf_entry['sent'] );
+$cf_checks['второго письма нет']                 = array() === $GLOBALS['wppa_test']['mail'];
+$cf_checks['отметки уведомления нет']            = false === $cf_pdf_entry['notified'];
+
+// Уведомление выключено.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_email' => 0, 'certificate_notify' => 0 ) ) );
+
+$GLOBALS['wppa_test']['mail'] = array();
+
+$cf_off_entry = WPPA_Certificates::issue( 921, 12 );
+
+$cf_checks['без галочки письма нет']             = array() === $GLOBALS['wppa_test']['mail'] && false === $cf_off_entry['notified'];
+$cf_checks['notify() видит выключенное']         = false === WPPA_Certificates::notify();
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_notify' => 1 ) ) );
+
+// Наставник видит сертификаты участников своей команды.
+WPPA_Certificates::issue( 931, 12 );
+
+$GLOBALS['wppa_test']['current_user'] = 923;
+$cf_mentor_tabs                       = WPPA_Template::tabs();
+
+$cf_checks['наставник видит вкладку']            = isset( $cf_mentor_tabs['certificates'] );
+$cf_checks['наставник не куратор']               = false === WPPA_Teams::is_curator( 923 ) && true === WPPA_Teams::is_mentor( 923 );
+
+$cf_rows = WPPA_Certificates::team_rows( 923 );
+$cf_rows_users = array_map(
+	static function ( $row ) {
+		return (int) $row['user']->ID;
+	},
+	$cf_rows
+);
+
+$cf_checks['наставнику видны свои участники']    = in_array( 921, $cf_rows_users, true );
+$cf_checks['чужой команды в списке нет']         = ! in_array( 931, $cf_rows_users, true );
+$cf_checks['себя в списке нет']                  = ! in_array( 923, $cf_rows_users, true );
+
+$cf_mentor_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 923 ) )
+);
+
+$cf_checks['блок: заголовок секции']             = false !== strpos( $cf_mentor_html, 'Сертификаты участников' );
+$cf_checks['блок: имя участника']                = false !== strpos( $cf_mentor_html, 'Участник Первый' );
+$cf_checks['блок: номер сертификата']            = false !== strpos( $cf_mentor_html, (string) $cf_entry['number'] );
+$cf_checks['блок: скачивание PDF']               = false !== strpos( $cf_mentor_html, 'action=wppa_certificate_download' );
+$cf_checks['блок: без параметров проверки']      = false === strpos( $cf_mentor_html, 'код проверки' ) && false === strpos( $cf_mentor_html, 'Проверить подлинность' );
+
+// Куратору секция наставника не нужна — у него колонка в «Участниках».
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cf_curator_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$cf_checks['куратору секции наставника нет']     = false === strpos( $cf_curator_html, 'Сертификаты участников' );
+$cf_checks['куратор видит все команды']          = 2 <= count( WPPA_Certificates::team_rows( 12 ) );
+
+// Уборка.
+WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 921 ) );
+WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 931 ) );
+WPPA_Teams::set_curator( 12, false );
+
+$GLOBALS['wppa_test']['current_user'] = 0;
+$GLOBALS['wppa_test']['mail']         = array();
+
+update_option( 'wppa_settings', $cf_settings_backup );
+
+foreach ( $cf_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificates-mail: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

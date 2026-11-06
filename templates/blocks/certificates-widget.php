@@ -57,6 +57,8 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 								<?php endif; ?>
 								<?php if ( $wppa_cert['sent'] ) : ?>
 									<br /><span class="wppa-hint"><?php esc_html_e( 'отправлен на e-mail', 'wp-personal-account' ); ?></span>
+								<?php elseif ( $wppa_cert['notified'] ) : ?>
+									<br /><span class="wppa-hint"><?php esc_html_e( 'уведомление отправлено', 'wp-personal-account' ); ?></span>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -64,6 +66,66 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 				</tbody>
 			</table>
 		</div>
+
+	<?php endif; ?>
+
+	<?php
+	// Наставник видит сертификаты участников своей команды; куратору хватает колонки в «Участниках».
+	$wppa_team_certs = WPPA_Teams::is_mentor( $wppa_cert_user->ID ) && ! WPPA_Teams::is_curator( $wppa_cert_user->ID )
+		? WPPA_Certificates::team_rows( $wppa_cert_user->ID )
+		: array();
+	?>
+
+	<?php if ( $wppa_team_certs ) : ?>
+
+		<section class="wppa-certificates__team">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Сертификаты участников', 'wp-personal-account' ); ?></h3>
+			<p class="wppa-hint"><?php esc_html_e( 'Сертификаты, которые получили участники вашей команды.', 'wp-personal-account' ); ?></p>
+
+			<div class="wppa-table-wrap">
+				<table class="wppa-table wppa-certificates__table">
+					<thead>
+						<tr>
+							<th scope="col"><?php esc_html_e( 'Участник', 'wp-personal-account' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Номер', 'wp-personal-account' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Программа', 'wp-personal-account' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Выдан', 'wp-personal-account' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'PDF', 'wp-personal-account' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $wppa_team_certs as $wppa_team_cert ) : ?>
+							<tr<?php echo $wppa_team_cert['cert']['revoked'] ? ' class="wppa-certificates__row--revoked"' : ''; ?>>
+								<td data-label="<?php esc_attr_e( 'Участник', 'wp-personal-account' ); ?>">
+									<?php echo esc_html( WPPA_Teams::full_name( $wppa_team_cert['user'] ) ); ?>
+									<?php if ( $wppa_team_cert['cert']['revoked'] ) : ?>
+										<span class="wppa-badge wppa-badge--warn"><?php esc_html_e( 'отозван', 'wp-personal-account' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Номер', 'wp-personal-account' ); ?>">
+									<?php echo esc_html( '' !== $wppa_team_cert['cert']['number'] ? $wppa_team_cert['cert']['number'] : '—' ); ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Программа', 'wp-personal-account' ); ?>">
+									<?php echo esc_html( '' !== $wppa_team_cert['cert']['course'] ? $wppa_team_cert['cert']['course'] : '—' ); ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'Выдан', 'wp-personal-account' ); ?>">
+									<?php echo esc_html( $wppa_team_cert['cert']['time'] ? date_i18n( get_option( 'date_format' ), (int) $wppa_team_cert['cert']['time'] ) : '—' ); ?>
+								</td>
+								<td data-label="<?php esc_attr_e( 'PDF', 'wp-personal-account' ); ?>">
+									<?php if ( $wppa_team_cert['cert']['revoked'] ) : ?>
+										<span class="wppa-hint"><?php esc_html_e( 'отозван', 'wp-personal-account' ); ?></span>
+									<?php else : ?>
+										<a class="wppa-button wppa-button--ghost wppa-button--sm" href="<?php echo esc_url( $wppa_team_cert['cert']['url'] ); ?>">
+											<?php esc_html_e( 'Скачать', 'wp-personal-account' ); ?>
+										</a>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		</section>
 
 	<?php endif; ?>
 </section>

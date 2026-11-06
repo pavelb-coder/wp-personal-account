@@ -1497,3 +1497,13 @@
 .wppa-participants__cert .wppa-badge {
 	margin-left: 6px;
 }
+
+.wppa-certificates__team {
+	margin-top: 22px;
+	padding-top: 16px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-certificates__team .wppa-subtitle {
+	margin-top: 0;
+}

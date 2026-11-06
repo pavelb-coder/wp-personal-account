@@ -66,7 +66,7 @@ class WPPA_Template {
 			$wppa_cert_lib  = class_exists( 'WPPA_Certificates' );
 			$wppa_cert_show = $wppa_cert_lib && (
 				WPPA_Certificates::count( $wppa_cert_user ) > 0
-				|| ( WPPA_Certificates::available() && WPPA_Teams::is_curator( $wppa_cert_user ) )
+				|| ( WPPA_Certificates::available() && ( WPPA_Teams::is_curator( $wppa_cert_user ) || WPPA_Teams::is_mentor( $wppa_cert_user ) ) )
 			);
 
 			if ( ! $wppa_cert_show ) {

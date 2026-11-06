@@ -148,6 +148,7 @@ class WPPA_Plugin {
 			'participant_min_percent' => 60,
 			'certificate_template'    => 0,
 			'certificate_email'       => 0,
+			'certificate_notify'      => 1,
 			'registration_enabled' => 1,
 			'hide_admin_bar'       => 1,
 			'registration_start'   => '',
