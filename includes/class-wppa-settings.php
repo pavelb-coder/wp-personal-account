@@ -1108,6 +1108,7 @@ class WPPA_Settings {
 				$wppa_theme     = WPPA_Theme::get();
 				$wppa_presets   = WPPA_Theme::presets();
 				$wppa_defaults  = WPPA_Theme::defaults();
+				$wppa_heading   = WPPA_Theme::heading();
 				$wppa_vars      = WPPA_Theme::vars( $wppa_theme );
 				$wppa_preview   = '';
 				foreach ( $wppa_vars as $wppa_var_name => $wppa_var_value ) {
@@ -1126,6 +1127,7 @@ class WPPA_Settings {
 					.wppa-theme-preview { margin-top: 8px; padding: 18px; border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); background: var(--wppa-bg, #f8fafc); max-width: 520px; }
 					.wppa-theme-preview__card { background: var(--wppa-surface, #fff); border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); padding: 16px; color: var(--wppa-text, #0f172a); }
 					.wppa-theme-preview__title { margin: 0 0 6px; font-size: 1rem; font-weight: 650; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__heading { margin: 0 0 var(--wppa-heading-gap, 18px); font-size: calc(var(--wppa-heading-size, 28px) * .62); font-weight: var(--wppa-heading-weight, 700); line-height: 1.25; color: var(--wppa-heading-color, var(--wppa-text, #0f172a)); text-transform: var(--wppa-heading-case, none); text-align: var(--wppa-heading-align, left); }
 					.wppa-theme-preview__muted { margin: 0 0 12px; font-size: .86rem; color: var(--wppa-muted, #64748b); }
 					.wppa-theme-preview__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
 					.wppa-theme-preview__tab { padding: 6px 12px; border-radius: 999px; font-size: .84rem; background: var(--wppa-bg, #f8fafc); color: var(--wppa-muted, #64748b); border: 1px solid var(--wppa-border, #e2e8f0); }
@@ -1206,6 +1208,126 @@ class WPPA_Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="wppa-heading-text"><?php esc_html_e( 'Заголовок кабинета', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<p style="margin:0 0 8px">
+								<label>
+									<input type="checkbox" name="wppa_settings[heading_show]" value="1" <?php checked( 1, (int) $wppa_heading['heading_show'] ); ?> />
+									<?php esc_html_e( 'Показывать заголовок над кабинетом', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<input
+								type="text"
+								class="regular-text"
+								id="wppa-heading-text"
+								name="wppa_settings[heading_text]"
+								value="<?php echo esc_attr( $wppa_heading['heading_text'] ); ?>"
+								placeholder="<?php echo esc_attr( WPPA_Theme::heading_defaults()['heading_text'] ); ?>"
+								data-wppa-heading-text="1"
+							/>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'Пустой текст — заголовок не выводится (останется только заголовок страницы из темы).', 'wp-personal-account' ); ?></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Стиль надписи', 'wp-personal-account' ); ?></th>
+						<td>
+							<div class="wppa-theme-grid">
+								<div>
+									<label for="wppa-heading-tag"><strong><?php esc_html_e( 'Тег', 'wp-personal-account' ); ?></strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-tag" name="wppa_settings[heading_tag]" class="wppa-theme-var" data-wppa-var="--wppa-heading-tag">
+											<?php foreach ( WPPA_Theme::heading_choices()['heading_tag'] as $wppa_tag ) : ?>
+												<option value="<?php echo esc_attr( $wppa_tag ); ?>" <?php selected( $wppa_heading['tag'], $wppa_tag ); ?>><?php echo esc_html( $wppa_tag ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+									<span class="wppa-theme-hint"><?php esc_html_e( 'Для SEO обычно h1; если на странице уже есть h1 — выберите h2.', 'wp-personal-account' ); ?></span>
+								</div>
+								<div>
+									<label for="wppa-heading-size"><strong><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?>, px</strong></label>
+									<div class="wppa-theme-field">
+										<input type="number" min="12" max="72" step="1" id="wppa-heading-size" name="wppa_settings[heading_size]" value="<?php echo esc_attr( $wppa_heading['size'] ); ?>" class="small-text wppa-theme-var" data-wppa-var="--wppa-heading-size" data-wppa-unit="px" />
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-weight"><strong><?php esc_html_e( 'Насыщенность', 'wp-personal-account' ); ?></strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-weight" name="wppa_settings[heading_weight]" class="wppa-theme-var" data-wppa-var="--wppa-heading-weight">
+											<?php foreach ( WPPA_Theme::heading_choices()['heading_weight'] as $wppa_weight ) : ?>
+												<option value="<?php echo esc_attr( $wppa_weight ); ?>" <?php selected( (string) $wppa_heading['weight'], (string) $wppa_weight ); ?>><?php echo esc_html( $wppa_weight ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-case"><strong><?php esc_html_e( 'Регистр', 'wp-personal-account' ); ?></strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-case" name="wppa_settings[heading_case]" class="wppa-theme-var" data-wppa-var="--wppa-heading-case">
+											<?php
+											$wppa_cases = array(
+												'none'       => __( 'Как есть', 'wp-personal-account' ),
+												'uppercase'  => __( 'ВСЕ ЗАГЛАВНЫЕ', 'wp-personal-account' ),
+												'capitalize' => __( 'С Заглавной', 'wp-personal-account' ),
+												'lowercase'  => __( 'все строчные', 'wp-personal-account' ),
+											);
+											foreach ( $wppa_cases as $wppa_case_value => $wppa_case_label ) :
+												?>
+												<option value="<?php echo esc_attr( $wppa_case_value ); ?>" <?php selected( $wppa_heading['case'], $wppa_case_value ); ?>><?php echo esc_html( $wppa_case_label ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-align"><strong><?php esc_html_e( 'Выравнивание', 'wp-personal-account' ); ?></strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-align" name="wppa_settings[heading_align]" class="wppa-theme-var" data-wppa-var="--wppa-heading-align">
+											<?php
+											$wppa_aligns = array(
+												'left'   => __( 'По левому краю', 'wp-personal-account' ),
+												'center' => __( 'По центру', 'wp-personal-account' ),
+												'right'  => __( 'По правому краю', 'wp-personal-account' ),
+											);
+											foreach ( $wppa_aligns as $wppa_align_value => $wppa_align_label ) :
+												?>
+												<option value="<?php echo esc_attr( $wppa_align_value ); ?>" <?php selected( $wppa_heading['align'], $wppa_align_value ); ?>><?php echo esc_html( $wppa_align_label ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-color"><strong><?php esc_html_e( 'Цвет надписи', 'wp-personal-account' ); ?></strong></label>
+									<div class="wppa-theme-field">
+										<input
+											type="text"
+											class="regular-text code wppa-theme-input"
+											id="wppa-heading-color"
+											name="wppa_settings[heading_color]"
+											value="<?php echo esc_attr( $wppa_heading['heading_color'] ); ?>"
+											placeholder="<?php echo esc_attr( $wppa_vars['--wppa-text'] ); ?>"
+											data-wppa-var="--wppa-heading-color"
+											data-wppa-fallback="<?php echo esc_attr( $wppa_vars['--wppa-text'] ); ?>"
+											style="width:130px"
+										/>
+									</div>
+									<span class="wppa-theme-hint"><?php esc_html_e( 'Пусто — цвет основного текста.', 'wp-personal-account' ); ?></span>
+								</div>
+								<div>
+									<label for="wppa-heading-gap"><strong><?php esc_html_e( 'Отступ снизу', 'wp-personal-account' ); ?>, px</strong></label>
+									<div class="wppa-theme-field">
+										<input type="number" min="0" max="64" step="2" id="wppa-heading-gap" name="wppa_settings[heading_gap]" value="<?php echo esc_attr( $wppa_heading['gap'] ); ?>" class="small-text wppa-theme-var" data-wppa-var="--wppa-heading-gap" data-wppa-unit="px" />
+									</div>
+								</div>
+							</div>
+							<p style="margin:12px 0 0">
+								<label>
+									<input type="checkbox" name="wppa_settings[hide_page_title]" value="1" <?php checked( 1, (int) $wppa_heading['hide_page_title'] ); ?> />
+									<?php esc_html_e( 'Скрыть заголовок страницы, который выводит тема (только на странице кабинета)', 'wp-personal-account' ); ?>
+								</label>
+							</p>
+							<span class="wppa-theme-hint"><?php esc_html_e( 'Стиль применяется и к заголовкам внутри кабинета (форм входа, профиля, команды, файлов). Заголовок темы скрывается только при выбранной «Странице кабинета» в разделе «Основное».', 'wp-personal-account' ); ?></span>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="wppa-theme-radius"><?php esc_html_e( 'Скругление карточек', 'wp-personal-account' ); ?></label></th>
 						<td>
 							<div class="wppa-theme-preview__range">
@@ -1228,6 +1350,7 @@ class WPPA_Settings {
 						<th scope="row"><?php esc_html_e( 'Предпросмотр', 'wp-personal-account' ); ?></th>
 						<td>
 							<div class="wppa-theme-preview" id="wppa-theme-preview" style="<?php echo esc_attr( $wppa_preview ); ?>">
+								<p class="wppa-theme-preview__heading" id="wppa-theme-preview-heading"><?php echo esc_html( '' !== $wppa_heading['text'] ? $wppa_heading['text'] : WPPA_Theme::heading_defaults()['heading_text'] ); ?></p>
 								<div class="wppa-theme-preview__card">
 									<p class="wppa-theme-preview__title"><?php esc_html_e( 'Моя команда', 'wp-personal-account' ); ?></p>
 									<p class="wppa-theme-preview__muted"><?php esc_html_e( 'Так выглядят подсказки и второстепенный текст.', 'wp-personal-account' ); ?></p>

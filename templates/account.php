@@ -11,6 +11,19 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="wppa">
 
+	<?php
+	// Заголовок кабинета: текст, тег и оформление задаются в «Настройки → Оформление».
+	$wppa_heading = WPPA_Theme::heading();
+
+	if ( ! empty( $wppa_heading['show'] ) ) :
+		?>
+		<<?php echo esc_attr( $wppa_heading['tag'] ); ?> class="wppa-title wppa-page-title">
+			<?php echo esc_html( $wppa_heading['text'] ); ?>
+		</<?php echo esc_attr( $wppa_heading['tag'] ); ?>>
+		<?php
+	endif;
+	?>
+
 	<header class="wppa-header">
 		<div class="wppa-header__user">
 			<div class="wppa-avatar" aria-hidden="true">

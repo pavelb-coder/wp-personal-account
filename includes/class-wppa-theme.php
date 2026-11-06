@@ -156,7 +156,50 @@ class WPPA_Theme {
 		$out['radius']     = self::RADIUS_DEFAULT;
 		$out['custom_css'] = '';
 
-		return $out;
+		return array_merge( $out, self::heading_defaults() );
+	}
+
+	/**
+	 * Значения по умолчанию для заголовка кабинета.
+	 *
+	 * @return array
+	 */
+	public static function heading_defaults() {
+		return array(
+			'heading_text'    => __( 'Личный кабинет', 'wp-personal-account' ),
+			'heading_show'    => 1,
+			'heading_tag'     => 'h1',
+			'heading_size'    => 22,
+			'heading_weight'  => 700,
+			'heading_case'    => 'none',
+			'heading_align'   => 'left',
+			'heading_gap'     => 18,
+			'heading_color'   => '',
+			'hide_page_title' => 1,
+		);
+	}
+
+	/**
+	 * Ключи, у которых пустое значение — осмысленное («нет текста», «авто-цвет»).
+	 *
+	 * @return array
+	 */
+	public static function empty_allowed() {
+		return array( 'heading_text', 'heading_color', 'accent_hover_color', 'accent_contrast_color', 'custom_css' );
+	}
+
+	/**
+	 * Допустимые значения для выпадающих списков заголовка.
+	 *
+	 * @return array
+	 */
+	public static function heading_choices() {
+		return array(
+			'heading_tag'    => array( 'h1', 'h2', 'h3', 'div' ),
+			'heading_weight' => array( 400, 500, 600, 700, 800 ),
+			'heading_case'   => array( 'none', 'uppercase', 'capitalize', 'lowercase' ),
+			'heading_align'  => array( 'left', 'center', 'right' ),
+		);
 	}
 
 	/**
@@ -250,7 +293,8 @@ class WPPA_Theme {
 			$value = $saved[ $key ];
 
 			// Пустая строка у цвета — «авто», у остальных ключей берём умолчание.
-			if ( is_string( $value ) && '' === trim( $value ) && '' !== (string) $default ) {
+			// Исключение — ключи из empty_allowed(): там пусто и есть значение.
+			if ( is_string( $value ) && '' === trim( $value ) && '' !== (string) $default && ! in_array( $key, self::empty_allowed(), true ) ) {
 				continue;
 			}
 
@@ -261,6 +305,108 @@ class WPPA_Theme {
 		$out['radius']     = self::clamp_radius( $out['radius'] );
 
 		return $out;
+	}
+
+	/**
+	 * Целое в заданных границах.
+	 *
+	 * @param mixed $value    Значение.
+	 * @param int   $min      Минимум.
+	 * @param int   $max      Максимум.
+	 * @param int   $fallback Значение по умолчанию.
+	 * @return int
+	 */
+	public static function clamp_int( $value, $min, $max, $fallback ) {
+		$value = (int) $value;
+
+		if ( $value < $min || $value > $max ) {
+			$value = (int) $fallback;
+		}
+
+		return (int) min( $max, max( $min, $value ) );
+	}
+
+	/**
+	 * Значение из белого списка для ключей заголовка.
+	 *
+	 * @param string $key   Ключ.
+	 * @param mixed  $value Значение.
+	 * @return string
+	 */
+	public static function heading_choice( $key, $value ) {
+		$choices = self::heading_choices();
+		$allowed = isset( $choices[ $key ] ) ? $choices[ $key ] : array();
+		$value   = is_string( $value ) ? strtolower( trim( $value ) ) : $value;
+
+		foreach ( $allowed as $option ) {
+			if ( (string) $option === (string) $value ) {
+				return (string) $option;
+			}
+		}
+
+		$defaults = self::heading_defaults();
+
+		return isset( $defaults[ $key ] ) ? (string) $defaults[ $key ] : '';
+	}
+
+	/**
+	 * Настройки заголовка кабинета.
+	 *
+	 * @return array text, show, tag, size, weight, case, align, gap, color, hide_page_title.
+	 */
+	public static function heading() {
+		$theme    = self::get();
+		$defaults = self::heading_defaults();
+		$out      = array();
+
+		foreach ( $defaults as $key => $default ) {
+			$out[ $key ] = isset( $theme[ $key ] ) ? $theme[ $key ] : $default;
+		}
+
+		$out['text']            = trim( (string) $out['heading_text'] );
+		$out['show']            = ! empty( $out['heading_show'] ) && '' !== $out['text'];
+		$out['tag']             = self::heading_choice( 'heading_tag', $out['heading_tag'] );
+		$out['size']            = self::clamp_int( $out['heading_size'], 12, 72, 22 );
+		$out['weight']          = self::heading_choice( 'heading_weight', $out['heading_weight'] );
+		$out['case']            = self::heading_choice( 'heading_case', $out['heading_case'] );
+		$out['align']           = self::heading_choice( 'heading_align', $out['heading_align'] );
+		$out['gap']             = self::clamp_int( $out['heading_gap'], 0, 64, 18 );
+		$out['color']           = self::hex( $out['heading_color'] );
+		$out['hide_page_title'] = ! empty( $out['hide_page_title'] ) ? 1 : 0;
+
+		return $out;
+	}
+
+	/**
+	 * CSS заголовков кабинета.
+	 *
+	 * @param array|null $theme Значения; null — сохранённые.
+	 * @return string
+	 */
+	public static function heading_css() {
+		$hd = self::heading();
+
+		$css = '.wppa .wppa-title,.wppa-page-title{'
+			. 'margin:0 0 var(--wppa-heading-gap,18px);'
+			. 'font-size:var(--wppa-heading-size,22px);'
+			. 'font-weight:var(--wppa-heading-weight,700);'
+			. 'line-height:1.25;'
+			. 'color:var(--wppa-heading-color,var(--wppa-text));'
+			. 'text-transform:var(--wppa-heading-case,none);'
+			. 'text-align:var(--wppa-heading-align,left);}';
+
+		// Заголовок страницы выводит тема: прячем его только на странице кабинета —
+		// и только если эта страница выбрана, иначе пострадали бы все страницы сайта.
+		$page_id = (int) WPPA_Plugin::setting( 'account_page_id', 0 );
+
+		if ( ! empty( $hd['hide_page_title'] ) && $page_id ) {
+			$scope = 'body.page-id-' . $page_id . ' ';
+
+			$css .= "\n" . $scope . '.entry-title,' . $scope . '.page-title,' . $scope . '.wp-block-post-title,'
+				. $scope . '.entry-header h1{display:none;}';
+		}
+
+		return $css;
 	}
 
 	/**
@@ -432,6 +578,12 @@ class WPPA_Theme {
 			'--wppa-danger'          => self::hex( isset( $theme['color_danger'] ) ? $theme['color_danger'] : '', $base['color_danger'] ),
 			'--wppa-info'            => self::hex( isset( $theme['color_info'] ) ? $theme['color_info'] : '', $base['color_info'] ),
 			'--wppa-radius'          => self::clamp_radius( isset( $theme['radius'] ) ? $theme['radius'] : $base['radius'] ) . 'px',
+			'--wppa-heading-size'    => self::clamp_int( isset( $theme['heading_size'] ) ? $theme['heading_size'] : $base['heading_size'], 12, 72, 22 ) . 'px',
+			'--wppa-heading-weight'  => (string) self::heading_choice( 'heading_weight', isset( $theme['heading_weight'] ) ? $theme['heading_weight'] : $base['heading_weight'] ),
+			'--wppa-heading-color'   => self::hex( isset( $theme['heading_color'] ) ? $theme['heading_color'] : '', self::hex( isset( $theme['color_text'] ) ? $theme['color_text'] : '', $base['color_text'] ) ),
+			'--wppa-heading-case'    => self::heading_choice( 'heading_case', isset( $theme['heading_case'] ) ? $theme['heading_case'] : $base['heading_case'] ),
+			'--wppa-heading-align'   => self::heading_choice( 'heading_align', isset( $theme['heading_align'] ) ? $theme['heading_align'] : $base['heading_align'] ),
+			'--wppa-heading-gap'     => self::clamp_int( isset( $theme['heading_gap'] ) ? $theme['heading_gap'] : $base['heading_gap'], 0, 64, 18 ) . 'px',
 		);
 	}
 
@@ -452,6 +604,8 @@ class WPPA_Theme {
 		// Переменные нужны и в :root, и на контейнерах кабинета: стили объявляют
 		// значения по умолчанию на .wppa, поэтому инлайновый блок должен их перекрыть.
 		$css = self::selectors() . '{' . implode( ';', $parts ) . ';}';
+
+		$css .= "\n" . self::heading_css();
 
 		$custom = self::sanitize_custom_css( isset( $theme['custom_css'] ) ? $theme['custom_css'] : '' );
 
@@ -524,6 +678,24 @@ class WPPA_Theme {
 		$out['custom_css'] = $reset
 			? ''
 			: self::sanitize_custom_css( isset( $input['custom_css'] ) ? $input['custom_css'] : '' );
+
+		// Заголовок кабинета.
+		$heading_defaults = self::heading_defaults();
+
+		if ( $reset ) {
+			return array_merge( $out, $heading_defaults );
+		}
+
+		$out['heading_text']    = isset( $input['heading_text'] ) ? sanitize_text_field( (string) $input['heading_text'] ) : $heading_defaults['heading_text'];
+		$out['heading_show']    = empty( $input['heading_show'] ) ? 0 : 1;
+		$out['heading_tag']     = self::heading_choice( 'heading_tag', isset( $input['heading_tag'] ) ? $input['heading_tag'] : '' );
+		$out['heading_size']    = isset( $input['heading_size'] ) ? self::clamp_int( $input['heading_size'], 12, 72, $heading_defaults['heading_size'] ) : $heading_defaults['heading_size'];
+		$out['heading_weight']  = (int) self::heading_choice( 'heading_weight', isset( $input['heading_weight'] ) ? $input['heading_weight'] : '' );
+		$out['heading_case']    = self::heading_choice( 'heading_case', isset( $input['heading_case'] ) ? $input['heading_case'] : '' );
+		$out['heading_align']   = self::heading_choice( 'heading_align', isset( $input['heading_align'] ) ? $input['heading_align'] : '' );
+		$out['heading_gap']     = isset( $input['heading_gap'] ) ? self::clamp_int( $input['heading_gap'], 0, 64, $heading_defaults['heading_gap'] ) : $heading_defaults['heading_gap'];
+		$out['heading_color']   = self::normalize_hex( isset( $input['heading_color'] ) ? $input['heading_color'] : '' );
+		$out['hide_page_title'] = empty( $input['hide_page_title'] ) ? 0 : 1;
 
 		return $out;
 	}

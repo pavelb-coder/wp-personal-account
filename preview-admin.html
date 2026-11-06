@@ -1848,7 +1848,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 01:43							</td>
+								06.11.2026 01:48							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -1887,7 +1887,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">ivan@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:33</td>
+										<td>06.11.2026 01:38</td>
 										<td>
 											отправлено										</td>
 									</tr>
@@ -1897,7 +1897,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">maria@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:43</td>
+										<td>06.11.2026 01:48</td>
 										<td>
 											ждёт отправки										</td>
 									</tr>
@@ -1940,11 +1940,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<table class="widefat striped">
 					<tbody>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:33</td>
+								<td class="wppa-admin__muted">06.11.2026 01:38</td>
 								<td>Отправлено писем: 1.</td>
 							</tr>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:33</td>
+								<td class="wppa-admin__muted">06.11.2026 01:38</td>
 								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
 							</tr>
 											</tbody>
@@ -3033,7 +3033,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:38.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:43.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3179,6 +3179,7 @@ EOF</code></p>
 					.wppa-theme-preview { margin-top: 8px; padding: 18px; border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); background: var(--wppa-bg, #f8fafc); max-width: 520px; }
 					.wppa-theme-preview__card { background: var(--wppa-surface, #fff); border: 1px solid var(--wppa-border, #e2e8f0); border-radius: var(--wppa-radius, 14px); padding: 16px; color: var(--wppa-text, #0f172a); }
 					.wppa-theme-preview__title { margin: 0 0 6px; font-size: 1rem; font-weight: 650; color: var(--wppa-text, #0f172a); }
+					.wppa-theme-preview__heading { margin: 0 0 var(--wppa-heading-gap, 18px); font-size: calc(var(--wppa-heading-size, 28px) * .62); font-weight: var(--wppa-heading-weight, 700); line-height: 1.25; color: var(--wppa-heading-color, var(--wppa-text, #0f172a)); text-transform: var(--wppa-heading-case, none); text-align: var(--wppa-heading-align, left); }
 					.wppa-theme-preview__muted { margin: 0 0 12px; font-size: .86rem; color: var(--wppa-muted, #64748b); }
 					.wppa-theme-preview__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
 					.wppa-theme-preview__tab { padding: 6px 12px; border-radius: 999px; font-size: .84rem; background: var(--wppa-bg, #f8fafc); color: var(--wppa-muted, #64748b); border: 1px solid var(--wppa-border, #e2e8f0); }
@@ -3439,6 +3440,113 @@ EOF</code></p>
 													</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="wppa-heading-text">Заголовок кабинета</label></th>
+						<td>
+							<p style="margin:0 0 8px">
+								<label>
+									<input type="checkbox" name="wppa_settings[heading_show]" value="1"  checked="checked" />
+									Показывать заголовок над кабинетом								</label>
+							</p>
+							<input
+								type="text"
+								class="regular-text"
+								id="wppa-heading-text"
+								name="wppa_settings[heading_text]"
+								value="Личный кабинет"
+								placeholder="Личный кабинет"
+								data-wppa-heading-text="1"
+							/>
+							<span class="wppa-theme-hint">Пустой текст — заголовок не выводится (останется только заголовок страницы из темы).</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Стиль надписи</th>
+						<td>
+							<div class="wppa-theme-grid">
+								<div>
+									<label for="wppa-heading-tag"><strong>Тег</strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-tag" name="wppa_settings[heading_tag]" class="wppa-theme-var" data-wppa-var="--wppa-heading-tag">
+																							<option value="h1"  selected="selected">h1</option>
+																							<option value="h2" >h2</option>
+																							<option value="h3" >h3</option>
+																							<option value="div" >div</option>
+																					</select>
+									</div>
+									<span class="wppa-theme-hint">Для SEO обычно h1; если на странице уже есть h1 — выберите h2.</span>
+								</div>
+								<div>
+									<label for="wppa-heading-size"><strong>Размер, px</strong></label>
+									<div class="wppa-theme-field">
+										<input type="number" min="12" max="72" step="1" id="wppa-heading-size" name="wppa_settings[heading_size]" value="22" class="small-text wppa-theme-var" data-wppa-var="--wppa-heading-size" data-wppa-unit="px" />
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-weight"><strong>Насыщенность</strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-weight" name="wppa_settings[heading_weight]" class="wppa-theme-var" data-wppa-var="--wppa-heading-weight">
+																							<option value="400" >400</option>
+																							<option value="500" >500</option>
+																							<option value="600" >600</option>
+																							<option value="700"  selected="selected">700</option>
+																							<option value="800" >800</option>
+																					</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-case"><strong>Регистр</strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-case" name="wppa_settings[heading_case]" class="wppa-theme-var" data-wppa-var="--wppa-heading-case">
+																							<option value="none"  selected="selected">Как есть</option>
+																							<option value="uppercase" >ВСЕ ЗАГЛАВНЫЕ</option>
+																							<option value="capitalize" >С Заглавной</option>
+																							<option value="lowercase" >все строчные</option>
+																					</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-align"><strong>Выравнивание</strong></label>
+									<div class="wppa-theme-field">
+										<select id="wppa-heading-align" name="wppa_settings[heading_align]" class="wppa-theme-var" data-wppa-var="--wppa-heading-align">
+																							<option value="left"  selected="selected">По левому краю</option>
+																							<option value="center" >По центру</option>
+																							<option value="right" >По правому краю</option>
+																					</select>
+									</div>
+								</div>
+								<div>
+									<label for="wppa-heading-color"><strong>Цвет надписи</strong></label>
+									<div class="wppa-theme-field">
+										<input
+											type="text"
+											class="regular-text code wppa-theme-input"
+											id="wppa-heading-color"
+											name="wppa_settings[heading_color]"
+											value=""
+											placeholder="#0f172a"
+											data-wppa-var="--wppa-heading-color"
+											data-wppa-fallback="#0f172a"
+											style="width:130px"
+										/>
+									</div>
+									<span class="wppa-theme-hint">Пусто — цвет основного текста.</span>
+								</div>
+								<div>
+									<label for="wppa-heading-gap"><strong>Отступ снизу, px</strong></label>
+									<div class="wppa-theme-field">
+										<input type="number" min="0" max="64" step="2" id="wppa-heading-gap" name="wppa_settings[heading_gap]" value="18" class="small-text wppa-theme-var" data-wppa-var="--wppa-heading-gap" data-wppa-unit="px" />
+									</div>
+								</div>
+							</div>
+							<p style="margin:12px 0 0">
+								<label>
+									<input type="checkbox" name="wppa_settings[hide_page_title]" value="1"  checked="checked" />
+									Скрыть заголовок страницы, который выводит тема (только на странице кабинета)								</label>
+							</p>
+							<span class="wppa-theme-hint">Стиль применяется и к заголовкам внутри кабинета (форм входа, профиля, команды, файлов). Заголовок темы скрывается только при выбранной «Странице кабинета» в разделе «Основное».</span>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="wppa-theme-radius">Скругление карточек</label></th>
 						<td>
 							<div class="wppa-theme-preview__range">
@@ -3460,7 +3568,8 @@ EOF</code></p>
 					<tr>
 						<th scope="row">Предпросмотр</th>
 						<td>
-							<div class="wppa-theme-preview" id="wppa-theme-preview" style="--wppa-accent:#2563eb;--wppa-accent-hover:#2157cf;--wppa-accent-contrast:#ffffff;--wppa-bg:#f8fafc;--wppa-surface:#ffffff;--wppa-text:#0f172a;--wppa-muted:#64748b;--wppa-surface-alt:#f1f5f9;--wppa-border:#e2e8f0;--wppa-success:#047857;--wppa-warning:#b45309;--wppa-danger:#b91c1c;--wppa-info:#0284c7;--wppa-radius:14px;">
+							<div class="wppa-theme-preview" id="wppa-theme-preview" style="--wppa-accent:#2563eb;--wppa-accent-hover:#2157cf;--wppa-accent-contrast:#ffffff;--wppa-bg:#f8fafc;--wppa-surface:#ffffff;--wppa-text:#0f172a;--wppa-muted:#64748b;--wppa-surface-alt:#f1f5f9;--wppa-border:#e2e8f0;--wppa-success:#047857;--wppa-warning:#b45309;--wppa-danger:#b91c1c;--wppa-info:#0284c7;--wppa-radius:14px;--wppa-heading-size:22px;--wppa-heading-weight:700;--wppa-heading-color:#0f172a;--wppa-heading-case:none;--wppa-heading-align:left;--wppa-heading-gap:18px;">
+								<p class="wppa-theme-preview__heading" id="wppa-theme-preview-heading">Личный кабинет</p>
 								<div class="wppa-theme-preview__card">
 									<p class="wppa-theme-preview__title">Моя команда</p>
 									<p class="wppa-theme-preview__muted">Так выглядят подсказки и второстепенный текст.</p>
@@ -3653,10 +3762,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 06.11.2026 09:33 (Раз в день).							</p>
+									Следующая выгрузка: 06.11.2026 09:38 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:38				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:43				</p>
 			
 			
 			
@@ -3693,7 +3802,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>06.11.2026 01:33</td>
+								<td>06.11.2026 01:38</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3702,7 +3811,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:33</td>
+								<td>06.11.2026 01:38</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3711,7 +3820,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:33</td>
+								<td>06.11.2026 01:38</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3929,6 +4038,32 @@ EOF</code></p>
 			syncDerived();
 		} );
 	} );
+
+	// Прочие переменные: селекты, числовые поля, ползунки вида «--wppa-heading-size».
+	Array.prototype.forEach.call( document.querySelectorAll( '.wppa-theme-var[data-wppa-var]' ), function ( input ) {
+		var update = function () {
+			var unit = input.getAttribute( 'data-wppa-unit' ) || '';
+
+			if ( input.value ) {
+				setVar( input.getAttribute( 'data-wppa-var' ), input.value + unit );
+			}
+		};
+
+		input.addEventListener( 'input', update );
+		input.addEventListener( 'change', update );
+	} );
+
+	// Текст заголовка в предпросмотре.
+	var headingText = document.querySelector( '[data-wppa-heading-text]' );
+	var headingPreview = document.getElementById( 'wppa-theme-preview-heading' );
+
+	if ( headingText && headingPreview ) {
+		var headingDefault = headingText.getAttribute( 'placeholder' ) || headingPreview.textContent;
+
+		headingText.addEventListener( 'input', function () {
+			headingPreview.textContent = headingText.value.trim() || headingDefault;
+		} );
+	}
 
 	if ( radius ) {
 		radius.addEventListener( 'input', function () {

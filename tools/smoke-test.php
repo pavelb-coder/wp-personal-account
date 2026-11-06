@@ -3127,6 +3127,145 @@ foreach ( $theme_checks as $check_name => $ok ) {
 	}
 }
 
+// ---- Заголовок кабинета: текст и стиль надписи (3.36.0) ----
+$heading_checks = array();
+$heading_backup = get_option( 'wppa_settings', array() );
+$heading_defaults = WPPA_Theme::heading_defaults();
+
+$heading_checks['по умолчанию: «Личный кабинет»']  = 'Личный кабинет' === $heading_defaults['heading_text'] && 1 === $heading_defaults['heading_show'];
+$heading_checks['по умолчанию: h1, 22px, 700']     = 'h1' === $heading_defaults['heading_tag'] && 22 === $heading_defaults['heading_size'] && 700 === $heading_defaults['heading_weight'];
+$heading_checks['по умолчанию: слева, без капса']  = 'left' === $heading_defaults['heading_align'] && 'none' === $heading_defaults['heading_case'];
+
+$heading_saved = WPPA_Theme::sanitize(
+	array_merge(
+		(array) $heading_backup,
+		array(
+			'heading_text'    => '  Мой кабинет  ',
+			'heading_show'    => '1',
+			'heading_tag'     => 'section',
+			'heading_size'    => '999',
+			'heading_weight'  => '650',
+			'heading_case'    => 'uppercase',
+			'heading_align'   => 'center',
+			'heading_gap'     => '24',
+			'heading_color'   => '#ABC',
+			'hide_page_title' => '1',
+		)
+	)
+);
+
+$heading_checks['сохранение: текст обрезан']       = 'Мой кабинет' === $heading_saved['heading_text'];
+$heading_checks['сохранение: чужой тег → h1']      = 'h1' === $heading_saved['heading_tag'];
+$heading_checks['сохранение: размер ограничен']    = 22 === $heading_saved['heading_size'];
+$heading_checks['сохранение: вес из списка']       = 700 === $heading_saved['heading_weight'];
+$heading_checks['сохранение: регистр и выравнивание'] = 'uppercase' === $heading_saved['heading_case'] && 'center' === $heading_saved['heading_align'];
+$heading_checks['сохранение: отступ и цвет']       = 24 === $heading_saved['heading_gap'] && '#aabbcc' === $heading_saved['heading_color'];
+$heading_checks['сохранение: скрыть заголовок темы'] = 1 === $heading_saved['hide_page_title'];
+
+// Заголовок выводится в кабинете и подчиняется настройкам.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $heading_backup,
+		array(
+			'heading_text' => 'Мой кабинет',
+			'heading_show' => 1,
+			'heading_tag'  => 'h2',
+		)
+	)
+);
+
+$heading_html = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => get_userdata( 7 ),
+		'tabs'        => array( 'dashboard' => 'Обзор' ),
+		'current_tab' => 'dashboard',
+	)
+);
+
+$heading_checks['кабинет: свой текст и тег'] = false !== strpos( $heading_html, '<h2 class="wppa-title wppa-page-title">' )
+	&& false !== strpos( $heading_html, 'Мой кабинет' );
+
+update_option(
+	'wppa_settings',
+	array_merge( (array) $heading_backup, array( 'heading_text' => 'Мой кабинет', 'heading_show' => 0 ) )
+);
+
+$heading_off_html = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => get_userdata( 7 ),
+		'tabs'        => array( 'dashboard' => 'Обзор' ),
+		'current_tab' => 'dashboard',
+	)
+);
+
+$heading_checks['кабинет: заголовок отключается'] = false === strpos( $heading_off_html, 'wppa-page-title' );
+
+update_option(
+	'wppa_settings',
+	array_merge( (array) $heading_backup, array( 'heading_text' => '', 'heading_show' => 1 ) )
+);
+
+$heading_empty_html = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => get_userdata( 7 ),
+		'tabs'        => array( 'dashboard' => 'Обзор' ),
+		'current_tab' => 'dashboard',
+	)
+);
+
+$heading_checks['кабинет: пустой текст — без надписи'] = false === strpos( $heading_empty_html, 'wppa-page-title' );
+
+// CSS: переменные и правила заголовка.
+update_option( 'wppa_settings', $heading_backup );
+
+$heading_css = WPPA_Theme::css();
+
+$heading_checks['css: переменные заголовка']   = false !== strpos( $heading_css, '--wppa-heading-size:22px' )
+	&& false !== strpos( $heading_css, '--wppa-heading-weight:700' )
+	&& false !== strpos( $heading_css, '--wppa-heading-gap:18px' );
+$heading_checks['css: правила для заголовков'] = false !== strpos( $heading_css, '.wppa .wppa-title' )
+	&& false !== strpos( $heading_css, 'var(--wppa-heading-size,22px)' );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $heading_backup,
+		array(
+			'account_page_id' => 42,
+			'hide_page_title' => 1,
+			'heading_color'   => '#7c2d12',
+		)
+	)
+);
+
+$heading_hidden_css = WPPA_Theme::css();
+
+$heading_checks['css: цвет надписи']            = false !== strpos( $heading_hidden_css, '--wppa-heading-color:#7c2d12' );
+$heading_checks['css: скрытие заголовка темы']  = false !== strpos( $heading_hidden_css, 'body.page-id-42 .entry-title' );
+
+update_option( 'wppa_settings', array_merge( (array) $heading_backup, array( 'hide_page_title' => 1, 'account_page_id' => 0 ) ) );
+$heading_checks['css: без страницы заголовок темы цел'] = false === strpos( WPPA_Theme::css(), 'display:none' );
+
+// Сброс возвращает заголовок по умолчанию.
+$heading_reset = WPPA_Theme::sanitize( array_merge( (array) $heading_backup, array( 'theme_reset' => '1', 'heading_text' => 'Другое', 'heading_tag' => 'div' ) ) );
+
+$heading_checks['сброс: заголовок по умолчанию'] = 'Личный кабинет' === $heading_reset['heading_text']
+	&& 'h1' === $heading_reset['heading_tag']
+	&& 1 === $heading_reset['hide_page_title'];
+
+update_option( 'wppa_settings', $heading_backup );
+
+foreach ( $heading_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'heading: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Разделы и свои поля персональных данных (3.8.0).
 $sections_checks = array();
 $settings_backup = get_option( 'wppa_settings', array() );

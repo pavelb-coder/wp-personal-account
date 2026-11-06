@@ -163,7 +163,24 @@ $theme_admin_checks['настройки: поле цвета ошибки']     
 $theme_admin_checks['настройки: поле цвета предупреждения']   = false !== strpos( $settings_html, 'name="wppa_settings[color_warning]"' );
 $theme_admin_checks['настройки: поле цвета информации']       = false !== strpos( $settings_html, 'name="wppa_settings[color_info]"' );
 $theme_admin_checks['настройки: поле подложек']               = false !== strpos( $settings_html, 'name="wppa_settings[color_surface_alt]"' );
-$theme_admin_checks['настройки: тринадцать цветовых полей']   = 13 === substr_count( $settings_html, 'wppa-theme-input' );
+$theme_color_fields_ok = true;
+
+foreach ( array_keys( WPPA_Theme::colors() ) as $theme_color_key ) {
+	if ( false === strpos( $settings_html, 'name="wppa_settings[' . $theme_color_key . ']"' ) ) {
+		$theme_color_fields_ok = false;
+	}
+}
+
+$theme_admin_checks['настройки: все тринадцать цветовых полей'] = $theme_color_fields_ok;
+$theme_admin_checks['настройки: поле текста заголовка']       = false !== strpos( $settings_html, 'name="wppa_settings[heading_text]"' );
+$theme_admin_checks['настройки: показ заголовка']             = false !== strpos( $settings_html, 'name="wppa_settings[heading_show]"' );
+$theme_admin_checks['настройки: стиль надписи']               = false !== strpos( $settings_html, 'name="wppa_settings[heading_size]"' )
+	&& false !== strpos( $settings_html, 'name="wppa_settings[heading_weight]"' )
+	&& false !== strpos( $settings_html, 'name="wppa_settings[heading_case]"' )
+	&& false !== strpos( $settings_html, 'name="wppa_settings[heading_align]"' );
+$theme_admin_checks['настройки: цвет надписи']                = false !== strpos( $settings_html, 'name="wppa_settings[heading_color]"' );
+$theme_admin_checks['настройки: скрыть заголовок темы']       = false !== strpos( $settings_html, 'name="wppa_settings[hide_page_title]"' );
+$theme_admin_checks['настройки: заголовок в предпросмотре']   = false !== strpos( $settings_html, 'id="wppa-theme-preview-heading"' );
 
 foreach ( $theme_admin_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme settings: ' . $check_name . "\n";

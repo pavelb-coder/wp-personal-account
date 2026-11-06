@@ -492,6 +492,38 @@ $sections .= demo_section(
 		. '</div>'
 );
 
+// Заголовок кабинета: текст и стиль надписи задаются в настройках (3.36.0).
+$heading_variants = array(
+	array(
+		'label' => 'По умолчанию: 22 px, слева',
+		'vars'  => '',
+	),
+	array(
+		'label' => 'Крупный, по центру',
+		'vars'  => '--wppa-heading-size:34px;--wppa-heading-weight:800;--wppa-heading-align:center;--wppa-heading-gap:12px;',
+	),
+	array(
+		'label' => 'Капсом, свой цвет и отступ',
+		'vars'  => '--wppa-heading-case:uppercase;--wppa-heading-color:#7c2d12;--wppa-heading-gap:6px;--wppa-heading-weight:600;',
+	),
+);
+
+$heading_cards = '';
+
+foreach ( $heading_variants as $heading_variant ) {
+	$heading_cards .= '<div class="wppa" style="' . esc_attr( $heading_variant['vars'] ) . '">'
+		. '<p class="demo-label">' . htmlspecialchars( $heading_variant['label'] ) . '</p>'
+		. '<h2 class="wppa-title wppa-page-title">Личный кабинет</h2>'
+		. '<p class="wppa-hint">Текст, тег, размер, насыщенность, регистр, выравнивание, цвет и отступ — всё в «Настройки → Оформление».</p>'
+		. '</div>';
+}
+
+$sections .= demo_section(
+	'Заголовок кабинета',
+	'Надпись «Личный кабинет» выводит плагин: свой текст, тег (h1/h2/h3), размер, насыщенность, регистр, выравнивание, цвет и отступ; заголовок темы на странице кабинета скрывается галочкой',
+	'<div class="demo-three">' . $heading_cards . '</div>'
+);
+
 // Оформление: готовые наборы цветов (3.34.0).
 $palette_css   = '';
 $palette_cards = '';

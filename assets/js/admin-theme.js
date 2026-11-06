@@ -117,6 +117,32 @@
 		} );
 	} );
 
+	// Прочие переменные: селекты, числовые поля, ползунки вида «--wppa-heading-size».
+	Array.prototype.forEach.call( document.querySelectorAll( '.wppa-theme-var[data-wppa-var]' ), function ( input ) {
+		var update = function () {
+			var unit = input.getAttribute( 'data-wppa-unit' ) || '';
+
+			if ( input.value ) {
+				setVar( input.getAttribute( 'data-wppa-var' ), input.value + unit );
+			}
+		};
+
+		input.addEventListener( 'input', update );
+		input.addEventListener( 'change', update );
+	} );
+
+	// Текст заголовка в предпросмотре.
+	var headingText = document.querySelector( '[data-wppa-heading-text]' );
+	var headingPreview = document.getElementById( 'wppa-theme-preview-heading' );
+
+	if ( headingText && headingPreview ) {
+		var headingDefault = headingText.getAttribute( 'placeholder' ) || headingPreview.textContent;
+
+		headingText.addEventListener( 'input', function () {
+			headingPreview.textContent = headingText.value.trim() || headingDefault;
+		} );
+	}
+
 	if ( radius ) {
 		radius.addEventListener( 'input', function () {
 			var value = parseInt( radius.value, 10 ) || 0;
