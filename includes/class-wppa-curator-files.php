@@ -691,8 +691,21 @@ class WPPA_Curator_Files {
 		unset( $files[ $key ] );
 		update_post_meta( $team_id, self::META, $files );
 
-		// Копия в сетевой папке больше не нужна.
-		if ( $was_mentor && class_exists( 'WPPA_Team_Files_Export' ) ) {
+		/**
+		 * Удалять ли копию файла наставника из сетевой папки вместе с файлом
+		 * в кабинете.
+		 *
+		 * По умолчанию — нет: сетевая папка команды служит архивом документов,
+		 * которые прислал наставник, и удаление файла из кабинета её не чистит.
+		 * Вернуть прежнее поведение можно фильтром, вернув `true`.
+		 *
+		 * @param bool   $remove  Удалять копию из сетевой папки.
+		 * @param int    $team_id ID команды.
+		 * @param string $key     Ключ файла.
+		 */
+		$remove_copy = (bool) apply_filters( 'wppa_team_files_remove_copy', false, $team_id, $key );
+
+		if ( $was_mentor && $remove_copy && class_exists( 'WPPA_Team_Files_Export' ) ) {
 			WPPA_Team_Files_Export::remove( $team_id, $key );
 		}
 

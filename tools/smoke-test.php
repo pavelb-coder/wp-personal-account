@@ -2399,6 +2399,24 @@ $export_checks['папка создана']         = is_dir( WPPA_Team_Files_Ex
 $export_checks['содержимое совпадает']  = str_repeat( 'e', 80 ) === file_get_contents( WPPA_Team_Files_Export::local_dir( $export_team ) . '/протокол.pdf' );
 $export_checks['запись в мете']         = isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
 
+// Наставнику сказано, что копия в папке остаётся, и кнопка у него — «Убрать».
+$GLOBALS['wppa_test']['current_user'] = 62;
+
+$export_mentor_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 62 ) )
+);
+
+$export_checks['наставнику видно: копия остаётся'] = false !== strpos( $export_mentor_html, 'копия в сетевой папке команды остаётся' );
+$export_checks['у наставника кнопка «Убрать»']     = false !== strpos( $export_mentor_html, 'Убрать' );
+$export_checks['у наставника нет «Удалить»']       = false === strpos( $export_mentor_html, '>Удалить<' );
+
+$export_notices = WPPA_Notices::registry();
+
+$export_checks['уведомление говорит про копию']    = false !== strpos( (string) $export_notices['file_removed'][1], 'сетевой папке' );
+
+$GLOBALS['wppa_test']['current_user'] = 63;
+
 // Файл куратора не выгружается.
 $export_curator = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'письмо.pdf', 'данные' ), 'письмо.pdf', 63 );
 
@@ -2410,13 +2428,42 @@ $export_second = WPPA_Curator_Files::store( $export_team, wppa_test_file( 'пр�
 $export_checks['одноимённый не перезаписал'] = ! empty( $export_second['export']['ok'] ) && is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/протокол.pdf' );
 $export_checks['второй файл под своим именем'] = is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . ( WPPA_Team_Files_Export::record( $export_team )[ $export_second['key'] ] ) );
 
-// Удаление файла убирает копию.
-$export_copy = WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ];
+// Удаление файла в кабинете копию в сетевой папке не трогает.
+$export_copy   = WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ];
+$export_record = WPPA_Team_Files_Export::record( $export_team );
+
+$export_count_before = WPPA_Curator_Files::count( $export_team );
+
+$export_checks['копия на месте до удаления'] = is_file( $export_copy );
+$export_checks['файл был в кабинете']        = $export_count_before > 0;
 
 WPPA_Curator_Files::remove( $export_team, $export_file['key'], 63 );
 
-$export_checks['копия удалена']       = ! is_file( $export_copy );
-$export_checks['мета обновилась']     = ! isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
+$export_checks['копия в сетевой папке осталась'] = is_file( $export_copy );
+$export_checks['содержимое копии цело']          = str_repeat( 'e', 80 ) === file_get_contents( $export_copy );
+$export_checks['файл убран из кабинета']         = $export_count_before - 1 === WPPA_Curator_Files::count( $export_team );
+$export_checks['запись о выгрузке осталась']     = isset( WPPA_Team_Files_Export::record( $export_team )[ $export_file['key'] ] );
+$export_checks['другие файлы не тронуты']        = is_file( WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . $export_record[ $export_second['key'] ] );
+$export_checks['копий не прибавилось']           = 2 === count( (array) glob( WPPA_Team_Files_Export::local_dir( $export_team ) . '/*.pdf' ) );
+
+// Фильтр возвращает прежнее поведение: копия удаляется вместе с файлом.
+$export_delete_copy = static function () {
+	return true;
+};
+
+add_filter( 'wppa_team_files_remove_copy', $export_delete_copy );
+
+$export_second_copy = WPPA_Team_Files_Export::local_dir( $export_team ) . '/' . $export_record[ $export_second['key'] ];
+
+WPPA_Curator_Files::remove( $export_team, $export_second['key'], 63 );
+
+remove_filter( 'wppa_team_files_remove_copy', $export_delete_copy );
+
+$export_checks['фильтр возвращает удаление копии'] = ! is_file( $export_second_copy );
+
+// Кураторский файл: сетевой копии нет, удаление из кабинета работает как раньше.
+$export_checks['файл куратора убран']             = true === WPPA_Curator_Files::remove( $export_team, $export_curator['key'], 63 );
+$export_checks['полка снова пуста']               = 0 === WPPA_Curator_Files::count( $export_team );
 
 // Роспуск команды убирает папку.
 $export_team_dir = WPPA_Team_Files_Export::local_dir( $export_team );

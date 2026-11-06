@@ -114,7 +114,7 @@ class WPPA_Notices {
 			'curator_not'           => array( 'info', __( 'Этот пользователь не был куратором.', 'wp-personal-account' ) ),
 			'curator_invalid'       => array( 'error', __( 'Не удалось изменить статус куратора: пользователь не найден.', 'wp-personal-account' ) ),
 			'file_added'            => array( 'success', __( 'Файл прикреплён: его увидят в разделе «Файлы» наставник команды и куратор.', 'wp-personal-account' ) ),
-			'file_removed'          => array( 'success', __( 'Файл удалён.', 'wp-personal-account' ) ),
+			'file_removed'          => array( 'success', __( 'Файл убран из кабинета. Копия в сетевой папке команды, если файл туда выгружался, осталась.', 'wp-personal-account' ) ),
 			'file_missing'          => array( 'error', __( 'Файл не найден или не выбран.', 'wp-personal-account' ) ),
 			'file_type'             => array( 'error', __( 'Такой тип файла прикрепить нельзя. Разрешены документы, таблицы, презентации, архивы и изображения.', 'wp-personal-account' ) ),
 			'file_size'             => array( 'error', __( 'Файл больше допустимого размера — до 10 МБ.', 'wp-personal-account' ) ),

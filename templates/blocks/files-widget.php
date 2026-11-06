@@ -177,6 +177,9 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы от наставника', 'wp-personal-account' ); ?></h3>
 
 		<?php if ( $wppa_from_mentor ) : ?>
+			<?php if ( WPPA_Team_Files_Export::enabled() ) : ?>
+				<p class="wppa-hint"><?php esc_html_e( 'Удаление убирает файл из кабинета — копия в сетевой папке команды остаётся.', 'wp-personal-account' ); ?></p>
+			<?php endif; ?>
 			<div class="wppa-table-wrap">
 				<table class="wppa-table">
 					<thead>
@@ -209,7 +212,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 						<input type="hidden" name="wppa_back" value="files" />
 											<input type="hidden" name="curator_file_action" value="remove" />
 											<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
-											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Удалить файл?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></button>
+											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Убрать файл из кабинета? Копия в сетевой папке команды останется.', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Убрать', 'wp-personal-account' ); ?></button>
 										</form>
 									<?php else : ?>
 										<span class="wppa-hint">—</span>
