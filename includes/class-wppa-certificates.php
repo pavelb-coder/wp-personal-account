@@ -370,7 +370,7 @@ class WPPA_Certificates {
 
 		// Автоматическая выгрузка PDF в отдельную папку: имя файла — по шаблону.
 		if ( class_exists( 'WPPA_Certificate_Export' ) && WPPA_Certificate_Export::enabled() ) {
-			WPPA_Certificate_Export::export( $cert_id, $user_id, $entry );
+			self::store_file( $user_id, $cert_id, WPPA_Certificate_Export::export( $cert_id, $user_id, $entry ) );
 		}
 
 		return $entry;
@@ -478,6 +478,248 @@ class WPPA_Certificates {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Запись сертификата из меты участника.
+	 *
+	 * @param int $user_id Участник.
+	 * @param int $cert_id ID сертификата.
+	 * @return array
+	 */
+	public static function entry( $user_id, $cert_id ) {
+		$saved = get_user_meta( (int) $user_id, self::META, true );
+		$key   = 'cert-' . (int) $cert_id;
+
+		return is_array( $saved ) && isset( $saved[ $key ] ) && is_array( $saved[ $key ] ) ? (array) $saved[ $key ] : array();
+	}
+
+	/**
+	 * Данные сертификата из WP Diplom — для панели редактирования.
+	 *
+	 * @param int $cert_id ID сертификата.
+	 * @return array recipient, email, course, hours, teacher, date, number, template, revoked.
+	 */
+	public static function cert_data( $cert_id ) {
+		$cert_id = (int) $cert_id;
+
+		if ( ! $cert_id ) {
+			return array();
+		}
+
+		return array(
+			'recipient' => (string) get_post_meta( $cert_id, '_wpdc_recipient', true ),
+			'email'     => (string) get_post_meta( $cert_id, '_wpdc_email', true ),
+			'course'    => (string) get_post_meta( $cert_id, '_wpdc_course', true ),
+			'hours'     => (string) get_post_meta( $cert_id, '_wpdc_hours', true ),
+			'teacher'   => (string) get_post_meta( $cert_id, '_wpdc_teacher', true ),
+			'date'      => (string) get_post_meta( $cert_id, '_wpdc_date', true ),
+			'number'    => (string) get_post_meta( $cert_id, '_wpdc_number', true ),
+			'template'  => (int) get_post_meta( $cert_id, '_wpdc_template', true ),
+			'revoked'   => self::is_revoked( $cert_id ),
+		);
+	}
+
+	/**
+	 * Правка выданного сертификата.
+	 *
+	 * Меняет данные в WP Diplom, запись участника, затем пересобирает PDF
+	 * и обновляет файл в папке — иначе в скачанном бланке остались бы
+	 * старые данные.
+	 *
+	 * @param int   $user_id    Участник.
+	 * @param int   $cert_id    ID сертификата.
+	 * @param int   $curator_id Куратор.
+	 * @param array $args       recipient, email, course, hours, teacher, date, number, template, revoked, revoked_set.
+	 * @return true|WP_Error
+	 */
+	public static function update( $user_id, $cert_id, $curator_id = 0, $args = array() ) {
+		$curator_id = (int) ( $curator_id ? $curator_id : get_current_user_id() );
+		$user_id    = (int) $user_id;
+		$cert_id    = (int) $cert_id;
+
+		if ( ! self::available() ) {
+			return new WP_Error( 'wppa_certificate_unavailable', __( 'Правка сертификатов требует активного плагина WP Diplom.', 'wp-personal-account' ) );
+		}
+
+		if ( ! WPPA_Teams::is_curator( $curator_id ) ) {
+			return new WP_Error( 'wppa_certificate_forbidden', __( 'Сертификаты правит куратор.', 'wp-personal-account' ) );
+		}
+
+		$saved = get_user_meta( $user_id, self::META, true );
+
+		if ( ! $user_id || ! is_array( $saved ) || ! isset( $saved[ 'cert-' . $cert_id ] ) ) {
+			return new WP_Error( 'wppa_certificate_missing', __( 'Сертификат или участник не найден.', 'wp-personal-account' ) );
+		}
+
+		$args    = is_array( $args ) ? $args : array();
+		$current = self::cert_data( $cert_id );
+		$current = array_merge(
+			array(
+				'recipient' => '',
+				'email'     => '',
+				'course'    => '',
+				'hours'     => '',
+				'teacher'   => '',
+				'date'      => '',
+				'number'    => '',
+				'template'  => 0,
+				'revoked'   => false,
+			),
+			$current
+		);
+
+		$recipient = isset( $args['recipient'] ) ? sanitize_text_field( (string) $args['recipient'] ) : $current['recipient'];
+
+		if ( '' === trim( $recipient ) ) {
+			$recipient = $current['recipient'];
+		}
+
+		$date = isset( $args['date'] ) ? sanitize_text_field( (string) $args['date'] ) : $current['date'];
+
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			$date = '' !== $current['date'] ? $current['date'] : date_i18n( 'Y-m-d' );
+		}
+
+		$number = isset( $args['number'] ) ? sanitize_text_field( (string) $args['number'] ) : $current['number'];
+
+		if ( '' === trim( $number ) ) {
+			$number = $current['number'];
+		}
+
+		$fields = array(
+			'_wpdc_recipient' => $recipient,
+			'_wpdc_email'     => isset( $args['email'] ) ? sanitize_email( (string) $args['email'] ) : $current['email'],
+			'_wpdc_course'    => isset( $args['course'] ) ? sanitize_text_field( (string) $args['course'] ) : $current['course'],
+			'_wpdc_hours'     => isset( $args['hours'] ) ? sanitize_text_field( (string) $args['hours'] ) : $current['hours'],
+			'_wpdc_teacher'   => isset( $args['teacher'] ) ? sanitize_text_field( (string) $args['teacher'] ) : $current['teacher'],
+			'_wpdc_date'      => $date,
+			'_wpdc_number'    => $number,
+		);
+
+		$template = isset( $args['template'] ) ? absint( $args['template'] ) : (int) $current['template'];
+
+		// Галочка «отозван» в форме: снятая галочка не приходит в POST,
+		// поэтому форма присылает ещё и признак «поле было».
+		$revoked = ( isset( $args['revoked_set'] ) || isset( $args['revoked'] ) )
+			? ( empty( $args['revoked'] ) ? 0 : 1 )
+			: ( $current['revoked'] ? 1 : 0 );
+
+		$fields['_wpdc_template'] = $template;
+		$fields['_wpdc_revoked']  = $revoked;
+
+		foreach ( $fields as $meta_key => $meta_value ) {
+			update_post_meta( $cert_id, $meta_key, $meta_value );
+		}
+
+		// Заголовок записи WP Diplom — это имя получателя.
+		if ( $recipient !== $current['recipient'] && function_exists( 'wp_update_post' ) ) {
+			wp_update_post(
+				array(
+					'ID'         => $cert_id,
+					'post_title' => $recipient,
+				)
+			);
+		}
+
+		$saved[ 'cert-' . $cert_id ]['course'] = (string) $fields['_wpdc_course'];
+		$saved[ 'cert-' . $cert_id ]['number'] = (string) $fields['_wpdc_number'];
+		$saved[ 'cert-' . $cert_id ]['edited']    = time();
+		$saved[ 'cert-' . $cert_id ]['edited_by'] = $curator_id;
+
+		update_user_meta( $user_id, self::META, $saved );
+
+		/**
+		 * Действие после правки сертификата.
+		 *
+		 * @param int   $cert_id ID сертификата.
+		 * @param int   $user_id Участник.
+		 * @param array $fields  Сохранённые мета-поля.
+		 */
+		do_action( 'wppa_certificate_updated', $cert_id, $user_id, $fields );
+
+		self::rebuild( $cert_id, $user_id );
+
+		return true;
+	}
+
+	/**
+	 * Пересобрать PDF сертификата и обновить файл в папке.
+	 *
+	 * @param int $cert_id ID сертификата.
+	 * @param int $user_id Участник (0 — только PDF, без выгрузки).
+	 * @return array ok, message, file.
+	 */
+	public static function rebuild( $cert_id, $user_id = 0 ) {
+		$cert_id = (int) $cert_id;
+		$user_id = (int) $user_id;
+
+		if ( ! self::available() ) {
+			return array(
+				'ok'      => false,
+				'message' => __( 'Для пересборки нужен активный плагин WP Diplom.', 'wp-personal-account' ),
+				'file'    => '',
+			);
+		}
+
+		$path = WPDC_Certificate::pdf( $cert_id, true );
+
+		if ( is_wp_error( $path ) ) {
+			return array(
+				'ok'      => false,
+				'message' => $path->get_error_message(),
+				'file'    => '',
+			);
+		}
+
+		$entry = $user_id ? self::entry( $user_id, $cert_id ) : array();
+
+		if ( ! $entry || ! class_exists( 'WPPA_Certificate_Export' ) ) {
+			return array(
+				'ok'      => true,
+				'message' => '',
+				'file'    => (string) $path,
+			);
+		}
+
+		$result = WPPA_Certificate_Export::export( $cert_id, $user_id, $entry, true );
+
+		self::store_file( $user_id, $cert_id, $result );
+
+		return $result;
+	}
+
+	/**
+	 * Запомнить файл выгрузки в записи сертификата и убрать прежний,
+	 * если имя изменилось.
+	 *
+	 * @param int   $user_id Участник.
+	 * @param int   $cert_id ID сертификата.
+	 * @param array $result  Итог выгрузки: ok, file.
+	 * @return void
+	 */
+	public static function store_file( $user_id, $cert_id, $result ) {
+		$saved = get_user_meta( (int) $user_id, self::META, true );
+		$key   = 'cert-' . (int) $cert_id;
+
+		if ( ! is_array( $saved ) || ! isset( $saved[ $key ] ) ) {
+			return;
+		}
+
+		$new = ! empty( $result['ok'] ) && ! empty( $result['file'] ) ? (string) $result['file'] : '';
+		$old = isset( $saved[ $key ]['file'] ) ? (string) $saved[ $key ]['file'] : '';
+
+		if ( '' !== $new ) {
+			$saved[ $key ]['file'] = $new;
+		} elseif ( isset( $saved[ $key ]['file'] ) ) {
+			unset( $saved[ $key ]['file'] );
+		}
+
+		update_user_meta( (int) $user_id, self::META, $saved );
+
+		if ( '' !== $old && $old !== $new && is_file( $old ) ) {
+			@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink -- Свой файл выгрузки.
+		}
 	}
 
 	/**
@@ -646,14 +888,21 @@ class WPPA_Certificates {
 		check_admin_referer( 'wppa_certificate', 'wppa_nonce' );
 
 		$curator_id = get_current_user_id();
-		$back       = WPPA_Plugin::tab_url( 'participants' );
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
 		$sub    = isset( $_POST['certificate_action'] ) ? sanitize_key( wp_unslash( $_POST['certificate_action'] ) ) : '';
 		$user   = isset( $_POST['participant_id'] ) ? absint( wp_unslash( $_POST['participant_id'] ) ) : 0;
 		$team   = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 		$cert   = isset( $_POST['certificate_id'] ) ? absint( wp_unslash( $_POST['certificate_id'] ) ) : 0;
+		$tab    = isset( $_POST['certificate_back'] ) ? sanitize_key( wp_unslash( $_POST['certificate_back'] ) ) : '';
+		$fields = isset( $_POST['certificate_fields'] ) && is_array( $_POST['certificate_fields'] ) ? wp_unslash( $_POST['certificate_fields'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Поля чистит self::update().
 		// phpcs:enable
+
+		if ( ! in_array( $tab, array( 'participants', 'certificates' ), true ) ) {
+			$tab = 'participants';
+		}
+
+		$back = WPPA_Plugin::tab_url( $tab );
 
 		if ( $team ) {
 			$back = add_query_arg( 'wppa_team', $team, $back );
@@ -669,6 +918,22 @@ class WPPA_Certificates {
 
 		if ( 'remove' === $sub ) {
 			WPPA_Notices::redirect( self::remove( $user, $cert, $curator_id ) ? 'certificate_removed' : 'certificate_missing', $back );
+		}
+
+		if ( 'update' === $sub ) {
+			$result = self::update( $user, $cert, $curator_id, $fields );
+
+			if ( is_wp_error( $result ) ) {
+				WPPA_Notices::redirect( 'wppa_certificate_missing' === $result->get_error_code() ? 'certificate_missing' : 'certificate_update_failed', $back );
+			}
+
+			WPPA_Notices::redirect( 'certificate_updated', $back );
+		}
+
+		if ( 'rebuild' === $sub ) {
+			$rebuilt = self::rebuild( $cert, $user );
+
+			WPPA_Notices::redirect( ! empty( $rebuilt['ok'] ) ? 'certificate_rebuilt' : 'certificate_rebuild_failed', $back );
 		}
 
 		if ( 'export_all' === $sub ) {

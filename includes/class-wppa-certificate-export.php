@@ -209,12 +209,13 @@ class WPPA_Certificate_Export {
 	/**
 	 * Сохранить PDF сертификата в папку.
 	 *
-	 * @param int   $cert_id ID сертификата.
-	 * @param int   $user_id Участник.
-	 * @param array $entry   Запись сертификата.
+	 * @param int   $cert_id   ID сертификата.
+	 * @param int   $user_id   Участник.
+	 * @param array $entry     Запись сертификата.
+	 * @param bool  $overwrite Перезаписать файл с тем же именем (после правки).
 	 * @return array ok, message, file.
 	 */
-	public static function export( $cert_id, $user_id, $entry = array() ) {
+	public static function export( $cert_id, $user_id, $entry = array(), $overwrite = false ) {
 		$cert_id = (int) $cert_id;
 		$user_id = (int) $user_id;
 		$name    = self::file_name( $user_id, $entry );
@@ -265,7 +266,10 @@ class WPPA_Certificate_Export {
 				return $fail( sprintf( /* translators: %s: папка */ __( 'Папки %s нет и создать её не удалось.', 'wp-personal-account' ), $dir ) );
 			}
 
-			$name = self::unique_name( $dir, $name, $entry );
+			if ( ! $overwrite ) {
+				$name = self::unique_name( $dir, $name, $entry );
+			}
+
 			$full = rtrim( $dir, '/\\' ) . DIRECTORY_SEPARATOR . $name;
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents

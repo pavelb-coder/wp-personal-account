@@ -1515,3 +1515,74 @@
 	gap: 8px;
 	margin: 10px 0 0;
 }
+
+/* Панель редактирования сертификатов у куратора. */
+.wppa-certificates__admin {
+	margin-top: 22px;
+	padding-top: 16px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-certificates__admin .wppa-subtitle {
+	margin-top: 0;
+}
+
+.wppa-certificates__editor {
+	margin: 12px 0 0;
+	border: 1px solid var(--wppa-border);
+	border-radius: var(--wppa-radius);
+	background: var(--wppa-surface);
+}
+
+.wppa-certificates__summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--wppa-text);
+}
+
+.wppa-certificates__summary .wppa-hint {
+	font-weight: 400;
+}
+
+.wppa-certificates__summary-edit {
+	margin-left: auto;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--wppa-accent);
+}
+
+.wppa-certificates__edit {
+	padding: 0 14px 14px;
+}
+
+.wppa-certificates__fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.wppa-certificates__field--check {
+	grid-column: 1 / -1;
+}
+
+.wppa-certificates__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 0 14px 14px;
+	border-top: 1px solid var(--wppa-border);
+	padding-top: 12px;
+}
+
+@media (max-width: 640px) {
+	.wppa-certificates__fields {
+		grid-template-columns: 1fr;
+	}
+}

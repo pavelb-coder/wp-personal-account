@@ -4707,13 +4707,32 @@ if ( ! class_exists( 'WPDC_Certificate' ) ) {
 		public static function create( $args = array() ) {
 			$id                   = 7000 + count( self::$created ) + 1;
 			self::$created[ $id ] = $args;
+
+			$GLOBALS['wppa_test']['posts'][ $id ] = (object) array(
+				'ID'          => $id,
+				'post_title'  => (string) ( $args['recipient'] ?? '' ),
+				'post_type'   => 'wpdc_certificate',
+				'post_status' => 'publish',
+				'post_author' => 1,
+			);
+
 			update_post_meta( $id, '_wpdc_number', 'КРТ-2026-' . sprintf( '%03d', $id - 7000 ) );
 			update_post_meta( $id, '_wpdc_code', 'c' . $id . 'x9f2' );
+			update_post_meta( $id, '_wpdc_recipient', (string) ( $args['recipient'] ?? '' ) );
+			update_post_meta( $id, '_wpdc_course', (string) ( $args['course'] ?? '' ) );
+			update_post_meta( $id, '_wpdc_hours', (string) ( $args['hours'] ?? '' ) );
+			update_post_meta( $id, '_wpdc_teacher', (string) ( $args['teacher'] ?? '' ) );
+			update_post_meta( $id, '_wpdc_email', (string) ( $args['email'] ?? '' ) );
+			update_post_meta( $id, '_wpdc_date', '2026-02-01' );
+			update_post_meta( $id, '_wpdc_template', (int) ( $args['template_id'] ?? 0 ) );
+			update_post_meta( $id, '_wpdc_revoked', 0 );
+
 			return $id;
 		}
 
 		/** Путь к PDF. */
-		public static function pdf( $id ) {
+		public static function pdf( $id, $force = false ) {
+			$GLOBALS['wppa_test']['wpdc_pdf_force'][] = (bool) $force;
 			$dir = sys_get_temp_dir() . '/wppa-cert-test';
 			if ( ! is_dir( $dir ) ) {
 				mkdir( $dir, 0777, true );
@@ -5524,6 +5543,208 @@ $GLOBALS['wppa_test']['current_user'] = 0;
 
 foreach ( $ce_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificate-export: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Панель редактирования сертификатов у куратора.
+$cx_checks = array();
+
+$GLOBALS['wppa_test']['users'][971] = array( 'Правкин Иван', 'edit971@example.com', 'first_name' => 'Иван', 'last_name' => 'Правкин' );
+update_user_meta( 971, '_wppa_patronymic', 'Сергеевич' );
+$GLOBALS['wppa_test']['users'][972] = array( 'Чужой Пётр', 'edit972@example.com', 'first_name' => 'Пётр', 'last_name' => 'Чужой' );
+$GLOBALS['wppa_test']['users'][973] = array( 'Куратор Безсертификатов', 'edit973@example.com', 'first_name' => 'Куратор', 'last_name' => 'Безсертификатов' );
+
+$cx_settings_backup = (array) get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		$cx_settings_backup,
+		array(
+			'certificate_export'     => 1,
+			'certificate_export_dir' => WPPA_Certificate_Export::DEFAULT_FOLDER,
+			'certificate_filename'   => '{recipient_name}',
+		)
+	)
+);
+
+$cx_team = WPPA_Teams::create( 'Команда правки', 971 );
+WPPA_Teams::add_member( $cx_team, 972 );
+
+WPPA_Teams::set_curator( 12, true );
+WPPA_Teams::set_curator( 973, true );
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cx_dir = WPPA_Certificate_Export::upload_dir() . DIRECTORY_SEPARATOR . WPPA_Certificate_Export::DEFAULT_FOLDER;
+
+if ( is_dir( $cx_dir ) ) {
+	foreach ( (array) glob( $cx_dir . '/*' ) as $cx_old_file ) {
+		@unlink( $cx_old_file );
+	}
+}
+
+$cx_entry = WPPA_Certificates::issue( 971, 12 );
+$cx_id    = (int) $cx_entry['id'];
+
+$cx_checks['сертификат выдан для правки']    = $cx_id > 0;
+$cx_checks['данные сертификата читаются']    = 'Правкин Иван Сергеевич' === WPPA_Certificates::cert_data( $cx_id )['recipient'];
+$cx_checks['в данных есть программа']        = 'Команда правки' === WPPA_Certificates::cert_data( $cx_id )['course'];
+$cx_checks['пустой id — пустые данные']      = array() === WPPA_Certificates::cert_data( 0 );
+$cx_checks['запись сертификата читается']    = (int) WPPA_Certificates::entry( 971, $cx_id )['id'] === $cx_id;
+$cx_checks['чужой записи нет']               = array() === WPPA_Certificates::entry( 972, $cx_id );
+
+// Права.
+WPPA_Teams::set_curator( 12, false );
+$cx_checks['не-куратор не правит']           = 'wppa_certificate_forbidden' === WPPA_Certificates::update( 971, $cx_id, 972, array( 'course' => 'Взлом' ) )->get_error_code();
+WPPA_Teams::set_curator( 12, true );
+
+$cx_checks['чужой сертификат не правят']     = 'wppa_certificate_missing' === WPPA_Certificates::update( 972, $cx_id, 12, array( 'course' => 'Взлом' ) )->get_error_code();
+$cx_checks['несуществующий не правят']       = 'wppa_certificate_missing' === WPPA_Certificates::update( 971, 99999, 12, array() )->get_error_code();
+$cx_checks['правка курса не случилась']      = 'Команда правки' === WPPA_Certificates::cert_data( $cx_id )['course'];
+
+// Правка всех полей.
+$cx_saved = WPPA_Certificates::update(
+	971,
+	$cx_id,
+	12,
+	array(
+		'recipient'   => 'Правкин Иван (правка)',
+		'email'       => 'new971@example.com',
+		'course'      => 'Новая программа',
+		'hours'       => '72',
+		'teacher'     => 'Куратор Правкин',
+		'date'        => '2026-03-15',
+		'number'      => 'КРТ-2026-777',
+		'template'    => 802,
+		'revoked'     => '1',
+		'revoked_set' => '1',
+	)
+);
+
+$cx_data = WPPA_Certificates::cert_data( $cx_id );
+
+$cx_checks['правка сохранена']              = true === $cx_saved;
+$cx_checks['получатель сохранён']           = 'Правкин Иван (правка)' === $cx_data['recipient'];
+$cx_checks['программа сохранена']           = 'Новая программа' === $cx_data['course'];
+$cx_checks['часы сохранены']                = '72' === $cx_data['hours'];
+$cx_checks['преподаватель сохранён']        = 'Куратор Правкин' === $cx_data['teacher'];
+$cx_checks['дата сохранена']                = '2026-03-15' === $cx_data['date'];
+$cx_checks['номер сохранён']               = 'КРТ-2026-777' === $cx_data['number'];
+$cx_checks['бланк сохранён']                = 802 === $cx_data['template'];
+$cx_checks['почта сохранена']               = 'new971@example.com' === $cx_data['email'];
+$cx_checks['отзыв из формы работает']       = true === $cx_data['revoked'];
+$cx_checks['заголовок записи обновлён']     = 'Правкин Иван (правка)' === get_post( $cx_id )->post_title;
+
+$cx_list = WPPA_Certificates::for_user( 971 );
+
+$cx_checks['список видит новую программу']  = 'Новая программа' === $cx_list[ 'cert-' . $cx_id ]['course'];
+$cx_checks['список видит новый номер']      = 'КРТ-2026-777' === $cx_list[ 'cert-' . $cx_id ]['number'];
+$cx_checks['список видит отзыв']            = true === $cx_list[ 'cert-' . $cx_id ]['revoked'];
+$cx_checks['файл запомнен в записи']        = '' !== (string) WPPA_Certificates::entry( 971, $cx_id )['file'];
+
+// Пустые и кривые значения не затирают данные.
+WPPA_Certificates::update(
+	971,
+	$cx_id,
+	12,
+	array(
+		'recipient' => '   ',
+		'date'      => 'не дата',
+		'number'    => '',
+		'revoked'   => '',
+	)
+);
+
+$cx_after = WPPA_Certificates::cert_data( $cx_id );
+
+$cx_checks['пустой получатель — прежний']   = 'Правкин Иван (правка)' === $cx_after['recipient'];
+$cx_checks['кривая дата — прежняя']         = '2026-03-15' === $cx_after['date'];
+$cx_checks['пустой номер — прежний']        = 'КРТ-2026-777' === $cx_after['number'];
+$cx_checks['галочка снята — отзыв снят']    = false === $cx_after['revoked'];
+
+// Пересборка PDF.
+$GLOBALS['wppa_test']['wpdc_pdf_force'] = array();
+$cx_rebuild                             = WPPA_Certificates::rebuild( $cx_id, 971 );
+$cx_force                               = (array) $GLOBALS['wppa_test']['wpdc_pdf_force'];
+
+$cx_checks['пересборка прошла']             = ! empty( $cx_rebuild['ok'] );
+$cx_checks['пересборка форсит PDF']         = array( true ) === array_slice( $cx_force, 0, 1 );
+$cx_checks['пересборка пишет файл в папку'] = '' !== (string) $cx_rebuild['file'];
+
+$cx_checks['файл не размножился']           = 1 === count( (array) glob( $cx_dir . '/*.pdf' ) );
+
+// Смена ФИО: старый файл убирается, новый появляется.
+$cx_old_path                                = (string) WPPA_Certificates::entry( 971, $cx_id )['file'];
+$GLOBALS['wppa_test']['users'][971]['last_name'] = 'Правкин-Новый';
+WPPA_Certificates::rebuild( $cx_id, 971 );
+$cx_new_path = (string) WPPA_Certificates::entry( 971, $cx_id )['file'];
+$cx_files    = array_values( (array) glob( $cx_dir . '/*.pdf' ) );
+
+$cx_checks['новое имя файла — с новой фамилией'] = false !== strpos( $cx_new_path, 'Правкин-Новый' );
+$cx_checks['файл один']                          = 1 === count( $cx_files );
+$cx_checks['старый файл удалён']                 = $cx_old_path !== $cx_new_path && ! file_exists( $cx_old_path );
+
+// Ссылка скачивания обновилась вместе с номером.
+$cx_checks['в списке есть ссылка PDF']           = false !== strpos( WPPA_Certificates::for_user( 971 )[ 'cert-' . $cx_id ]['url'], 'action=wppa_certificate_download' );
+
+// Панель в блоке: куратору — есть, остальным — нет.
+$cx_block = array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
+
+$cx_curator_html = WPPA_Builder::render_block( $cx_block, array( 'user' => get_userdata( 12 ) ) );
+$cx_member_html  = WPPA_Builder::render_block( $cx_block, array( 'user' => get_userdata( 971 ) ) );
+
+$cx_checks['куратор видит панель']              = false !== strpos( $cx_curator_html, 'Редактирование сертификатов' );
+$cx_checks['в панели есть кнопка сохранения']   = false !== strpos( $cx_curator_html, 'value="update"' );
+$cx_checks['в панели есть поле получателя']     = false !== strpos( $cx_curator_html, 'certificate_fields[recipient]' );
+$cx_checks['в панели есть поле программы']      = false !== strpos( $cx_curator_html, 'certificate_fields[course]' );
+$cx_checks['в панели есть поле даты']           = false !== strpos( $cx_curator_html, 'certificate_fields[date]' );
+$cx_checks['в панели есть выбор бланка']        = false !== strpos( $cx_curator_html, 'certificate_fields[template]' );
+$cx_checks['в панели есть галочка отзыва']      = false !== strpos( $cx_curator_html, 'certificate_fields[revoked]' );
+$cx_checks['в панели есть пересборка PDF']      = false !== strpos( $cx_curator_html, 'value="rebuild"' );
+$cx_checks['в панели есть удаление']            = false !== strpos( $cx_curator_html, 'value="remove"' );
+$cx_checks['в панели есть nonce']               = false !== strpos( $cx_curator_html, 'wppa_nonce' );
+$cx_checks['панель возвращает на свою вкладку'] = false !== strpos( $cx_curator_html, 'certificate_back" value="certificates"' );
+$cx_checks['у участника панели нет']            = false === strpos( $cx_member_html, 'Редактирование сертификатов' );
+
+// Сертификатов в системе нет — куратор видит панель с подсказкой.
+WPPA_Certificates::remove( 971, $cx_id, 12 );
+
+$cx_empty_html = WPPA_Builder::render_block( $cx_block, array( 'user' => get_userdata( 973 ) ) );
+
+$cx_checks['пустая панель остаётся у куратора']  = false !== strpos( $cx_empty_html, 'Редактирование сертификатов' );
+$cx_checks['куратору без сертификатов — подсказка'] = false !== strpos( $cx_empty_html, 'Выданных сертификатов пока нет' );
+
+// Уведомления о правке.
+$cx_notices = WPPA_Notices::registry();
+
+$cx_checks['уведомления о правке есть'] = isset(
+	$cx_notices['certificate_updated'],
+	$cx_notices['certificate_update_failed'],
+	$cx_notices['certificate_rebuilt'],
+	$cx_notices['certificate_rebuild_failed']
+);
+
+// Уборка.
+foreach ( (array) glob( $cx_dir . '/*' ) as $cx_clean ) {
+	@unlink( $cx_clean );
+}
+
+delete_user_meta( 971, '_wppa_patronymic' );
+WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 971 ) );
+WPPA_Teams::set_curator( 12, false );
+WPPA_Teams::set_curator( 973, false );
+
+update_option( 'wppa_settings', $cx_settings_backup );
+delete_option( WPPA_Certificate_Export::LOG_OPTION );
+
+$GLOBALS['wppa_test']['current_user'] = 0;
+unset( $GLOBALS['wppa_test']['wpdc_pdf_force'] );
+
+foreach ( $cx_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificate-edit: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

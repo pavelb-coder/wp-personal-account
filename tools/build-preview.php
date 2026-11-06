@@ -267,6 +267,19 @@ update_user_meta(
 	)
 );
 
+// Данные сертификата 551 в WP Diplom — для панели редактирования у куратора.
+$GLOBALS['wppa_test']['posts'][551] = (object) array( 'ID' => 551, 'post_title' => 'Иван Петров', 'post_type' => 'wpdc_certificate', 'post_status' => 'publish', 'post_author' => 12 );
+
+update_post_meta( 551, '_wpdc_recipient', 'Петров Иван Сергеевич' );
+update_post_meta( 551, '_wpdc_email', 'ivan@example.com' );
+update_post_meta( 551, '_wpdc_course', 'Студия «Вектор»' );
+update_post_meta( 551, '_wpdc_hours', '36' );
+update_post_meta( 551, '_wpdc_teacher', 'Куратор Ольга Иванова' );
+update_post_meta( 551, '_wpdc_date', '2026-10-30' );
+update_post_meta( 551, '_wpdc_number', 'WPD-2026-0014' );
+update_post_meta( 551, '_wpdc_template', 601 );
+update_post_meta( 551, '_wpdc_revoked', 0 );
+
 // Куратор: главная страница с очередью рассылки участникам второго этапа.
 WPPA_Mailing::save(
 	array(
@@ -469,6 +482,25 @@ $sections .= demo_section(
 	)
 );
 
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$sections .= demo_section(
+	'Куратор: правка сертификатов',
+	'Вкладка «Сертификаты» глазами куратора: выданные сертификаты участников и панель редактирования — получатель, e-mail, программа, часы, преподаватель, дата, номер, бланк и отзыв. После сохранения PDF пересобирается, а файл в папке обновляется под новым именем',
+	WPPA_Template::get(
+		'account',
+		array(
+			'user'        => new WP_User( 12 ),
+			'tabs'        => WPPA_Template::tabs(),
+			'current_tab' => 'certificates',
+		)
+	)
+);
+
+WPPA_Teams::set_curator( 12, false );
 $GLOBALS['wppa_test']['current_user'] = 12;
 
 $sections .= demo_section(
