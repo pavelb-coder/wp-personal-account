@@ -507,7 +507,16 @@ foreach ( WPPA_Theme::presets() as $preset_id => $preset ) {
 	$palette_css .= '.palette-' . $preset_id . ' .wppa{' . implode( ';', $palette_decl ) . "}\n";
 
 	$palette_cards .= '<div class="palette-' . $preset_id . '"><p class="demo-label">' . htmlspecialchars( $preset['label'] ) . '</p>'
-		. WPPA_Template::get( 'login', array( 'title' => 'Вход в кабинет' ) ) . '</div>';
+		. WPPA_Template::get( 'login', array( 'title' => 'Вход в кабинет' ) )
+		. '<div class="wppa" style="margin-top:14px">'
+		. '<p style="margin:0 0 8px">'
+		. '<span class="wppa-badge wppa-badge--ok">Готово</span> '
+		. '<span class="wppa-badge wppa-badge--warn">Ожидает</span> '
+		. '<span class="wppa-badge wppa-badge--curator">Куратор</span>'
+		. '</p>'
+		. '<div class="wppa-notice wppa-notice--error"><p>Ошибка: файл больше 10 МБ.</p></div>'
+		. '<div class="wppa-notice wppa-notice--success"><p>Файлы прикреплены.</p></div>'
+		. '</div></div>';
 }
 
 $sections .= demo_section(

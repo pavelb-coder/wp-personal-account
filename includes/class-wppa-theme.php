@@ -80,6 +80,64 @@ class WPPA_Theme {
 				'default' => '#e2e8f0',
 				'hint'    => __( 'Границы полей, карточек и таблиц.', 'wp-personal-account' ),
 			),
+			'color_surface_alt'     => array(
+				'label'   => __( 'Подложки и наведение', 'wp-personal-account' ),
+				'default' => '#f1f5f9',
+				'hint'    => __( 'Строки таблиц при наведении, мягкие плашки, шапки списков.', 'wp-personal-account' ),
+			),
+			'color_success'         => array(
+				'label'   => __( 'Успех (текст и рамка)', 'wp-personal-account' ),
+				'default' => '#047857',
+				'hint'    => __( 'Уведомления об успехе, статусы «готово», значки ролей.', 'wp-personal-account' ),
+			),
+			'color_warning'         => array(
+				'label'   => __( 'Предупреждение', 'wp-personal-account' ),
+				'default' => '#b45309',
+				'hint'    => __( 'Предупреждения, статусы «ожидает», подсказки об ошибках.', 'wp-personal-account' ),
+			),
+			'color_danger'          => array(
+				'label'   => __( 'Ошибка и удаление', 'wp-personal-account' ),
+				'default' => '#b91c1c',
+				'hint'    => __( 'Текст ошибок, кнопки удаления, статусы «отменено».', 'wp-personal-account' ),
+			),
+			'color_info'            => array(
+				'label'   => __( 'Информация', 'wp-personal-account' ),
+				'default' => '#0284c7',
+				'hint'    => __( 'Информационные уведомления и пояснения.', 'wp-personal-account' ),
+			),
+		);
+	}
+
+	/**
+	 * Группы цветов для формы настроек.
+	 *
+	 * @return array
+	 */
+	public static function groups() {
+		return array(
+			'core'   => array(
+				'label' => __( 'Основные цвета', 'wp-personal-account' ),
+				'keys'  => array(
+					'accent_color',
+					'accent_hover_color',
+					'accent_contrast_color',
+					'color_bg',
+					'color_surface',
+					'color_surface_alt',
+					'color_text',
+					'color_muted',
+					'color_border',
+				),
+			),
+			'status' => array(
+				'label' => __( 'Уведомления и статусы', 'wp-personal-account' ),
+				'keys'  => array(
+					'color_success',
+					'color_warning',
+					'color_danger',
+					'color_info',
+				),
+			),
 		);
 	}
 
@@ -111,45 +169,65 @@ class WPPA_Theme {
 			'default' => array(
 				'label'  => __( 'Синяя', 'wp-personal-account' ),
 				'colors' => array(
-					'accent_color' => '#2563eb',
-					'color_bg'     => '#f8fafc',
-					'color_surface' => '#ffffff',
-					'color_text'   => '#0f172a',
-					'color_muted'  => '#64748b',
-					'color_border' => '#e2e8f0',
+					'accent_color'    => '#2563eb',
+					'color_bg'        => '#f8fafc',
+					'color_surface'   => '#ffffff',
+					'color_surface_alt' => '#f1f5f9',
+					'color_text'      => '#0f172a',
+					'color_muted'     => '#64748b',
+					'color_border'    => '#e2e8f0',
+					'color_success'   => '#047857',
+					'color_warning'   => '#b45309',
+					'color_danger'    => '#b91c1c',
+					'color_info'      => '#0284c7',
 				),
 			),
 			'forest'  => array(
 				'label'  => __( 'Зелёная', 'wp-personal-account' ),
 				'colors' => array(
-					'accent_color' => '#15803d',
-					'color_bg'     => '#f4f9f4',
-					'color_surface' => '#ffffff',
-					'color_text'   => '#10241a',
-					'color_muted'  => '#5b7263',
-					'color_border' => '#d9e6dc',
+					'accent_color'    => '#15803d',
+					'color_bg'        => '#f4f9f4',
+					'color_surface'   => '#ffffff',
+					'color_surface_alt' => '#eaf2ec',
+					'color_text'      => '#10241a',
+					'color_muted'     => '#5b7263',
+					'color_border'    => '#d9e6dc',
+					'color_success'   => '#166534',
+					'color_warning'   => '#a16207',
+					'color_danger'    => '#b91c1c',
+					'color_info'      => '#0e7490',
 				),
 			),
 			'violet'  => array(
 				'label'  => __( 'Фиолетовая', 'wp-personal-account' ),
 				'colors' => array(
-					'accent_color' => '#7c3aed',
-					'color_bg'     => '#f7f5fd',
-					'color_surface' => '#ffffff',
-					'color_text'   => '#1b1330',
-					'color_muted'  => '#6b6580',
-					'color_border' => '#e4dff2',
+					'accent_color'    => '#7c3aed',
+					'color_bg'        => '#f7f5fd',
+					'color_surface'   => '#ffffff',
+					'color_surface_alt' => '#efeaf9',
+					'color_text'      => '#1b1330',
+					'color_muted'     => '#6b6580',
+					'color_border'    => '#e4dff2',
+					'color_success'   => '#047857',
+					'color_warning'   => '#b45309',
+					'color_danger'    => '#b91c1c',
+					'color_info'      => '#6d28d9',
 				),
 			),
 			'dark'    => array(
 				'label'  => __( 'Тёмная', 'wp-personal-account' ),
 				'colors' => array(
-					'accent_color' => '#60a5fa',
-					'color_bg'     => '#0f172a',
-					'color_surface' => '#1e293b',
-					'color_text'   => '#e2e8f0',
-					'color_muted'  => '#94a3b8',
-					'color_border' => '#334155',
+					'accent_color'    => '#60a5fa',
+					'color_bg'        => '#0f172a',
+					'color_surface'   => '#1e293b',
+					'color_surface_alt' => '#273449',
+					'color_text'      => '#e2e8f0',
+					'color_muted'     => '#94a3b8',
+					'color_border'    => '#334155',
+					'color_success'   => '#34d399',
+					'color_warning'   => '#fbbf24',
+					'color_danger'    => '#f87171',
+					'color_info'      => '#38bdf8',
 				),
 			),
 		);
@@ -347,7 +425,12 @@ class WPPA_Theme {
 			'--wppa-surface'         => self::hex( isset( $theme['color_surface'] ) ? $theme['color_surface'] : '', $base['color_surface'] ),
 			'--wppa-text'            => self::hex( isset( $theme['color_text'] ) ? $theme['color_text'] : '', $base['color_text'] ),
 			'--wppa-muted'           => self::hex( isset( $theme['color_muted'] ) ? $theme['color_muted'] : '', $base['color_muted'] ),
+			'--wppa-surface-alt'     => self::hex( isset( $theme['color_surface_alt'] ) ? $theme['color_surface_alt'] : '', $base['color_surface_alt'] ),
 			'--wppa-border'          => self::hex( isset( $theme['color_border'] ) ? $theme['color_border'] : '', $base['color_border'] ),
+			'--wppa-success'         => self::hex( isset( $theme['color_success'] ) ? $theme['color_success'] : '', $base['color_success'] ),
+			'--wppa-warning'         => self::hex( isset( $theme['color_warning'] ) ? $theme['color_warning'] : '', $base['color_warning'] ),
+			'--wppa-danger'          => self::hex( isset( $theme['color_danger'] ) ? $theme['color_danger'] : '', $base['color_danger'] ),
+			'--wppa-info'            => self::hex( isset( $theme['color_info'] ) ? $theme['color_info'] : '', $base['color_info'] ),
 			'--wppa-radius'          => self::clamp_radius( isset( $theme['radius'] ) ? $theme['radius'] : $base['radius'] ) . 'px',
 		);
 	}

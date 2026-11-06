@@ -1116,6 +1116,8 @@ class WPPA_Settings {
 				?>
 				<style>
 					.wppa-theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; }
+					.wppa-theme-group { margin: 14px 0 8px; font-size: 13px; }
+					.wppa-theme-group:first-of-type { margin-top: 0; }
 					.wppa-theme-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 					.wppa-theme-field input[type="color"] { width: 46px; height: 32px; padding: 2px; border-radius: 6px; }
 					.wppa-theme-field code { background: #f0f0f1; padding: 2px 6px; border-radius: 4px; }
@@ -1150,47 +1152,57 @@ class WPPA_Settings {
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Цвета', 'wp-personal-account' ); ?></th>
 						<td>
-							<div class="wppa-theme-grid">
-								<?php foreach ( WPPA_Theme::colors() as $wppa_key => $wppa_color ) : ?>
-									<?php
-									$wppa_value      = (string) $wppa_theme[ $wppa_key ];
-									$wppa_is_optional = '' === (string) $wppa_defaults[ $wppa_key ];
-									$wppa_var        = '--wppa-' . str_replace( array( 'accent_color', 'accent_hover_color', 'accent_contrast_color', 'color_' ), array( 'accent', 'accent-hover', 'accent-contrast', '' ), $wppa_key );
-									$wppa_fallback   = isset( $wppa_vars[ $wppa_var ] ) ? $wppa_vars[ $wppa_var ] : '';
-									$wppa_field_id   = 'wppa-theme-' . $wppa_key;
-									?>
-									<div>
-										<label for="<?php echo esc_attr( $wppa_field_id ); ?>"><strong><?php echo esc_html( $wppa_color['label'] ); ?></strong></label>
-										<div class="wppa-theme-field">
-											<?php if ( $wppa_is_optional ) : ?>
-												<input
-													type="text"
-													class="regular-text code wppa-theme-input"
-													id="<?php echo esc_attr( $wppa_field_id ); ?>"
-													name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
-													value="<?php echo esc_attr( $wppa_value ); ?>"
-													placeholder="<?php echo esc_attr( $wppa_fallback ); ?>"
-													data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
-													data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
-													style="width:130px"
-												/>
-											<?php else : ?>
-												<input
-													type="color"
-													class="wppa-theme-input"
-													id="<?php echo esc_attr( $wppa_field_id ); ?>"
-													name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
-													value="<?php echo esc_attr( $wppa_value ); ?>"
-													data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
-													data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
-												/>
-											<?php endif; ?>
-											<code><?php echo esc_html( $wppa_var ); ?></code>
+							<?php foreach ( WPPA_Theme::groups() as $wppa_group ) : ?>
+								<p class="wppa-theme-group"><strong><?php echo esc_html( $wppa_group['label'] ); ?></strong></p>
+								<div class="wppa-theme-grid">
+									<?php foreach ( $wppa_group['keys'] as $wppa_key ) : ?>
+										<?php
+										$wppa_colors = WPPA_Theme::colors();
+
+										if ( ! isset( $wppa_colors[ $wppa_key ] ) ) {
+											continue;
+										}
+
+										$wppa_color      = $wppa_colors[ $wppa_key ];
+										$wppa_value      = (string) $wppa_theme[ $wppa_key ];
+										$wppa_is_optional = '' === (string) $wppa_defaults[ $wppa_key ];
+										$wppa_var        = '--wppa-' . str_replace( array( 'accent_color', 'accent_hover_color', 'accent_contrast_color', 'color_' ), array( 'accent', 'accent-hover', 'accent-contrast', '' ), $wppa_key );
+										$wppa_fallback   = isset( $wppa_vars[ $wppa_var ] ) ? $wppa_vars[ $wppa_var ] : '';
+										$wppa_field_id   = 'wppa-theme-' . $wppa_key;
+										?>
+										<div>
+											<label for="<?php echo esc_attr( $wppa_field_id ); ?>"><strong><?php echo esc_html( $wppa_color['label'] ); ?></strong></label>
+											<div class="wppa-theme-field">
+												<?php if ( $wppa_is_optional ) : ?>
+													<input
+														type="text"
+														class="regular-text code wppa-theme-input"
+														id="<?php echo esc_attr( $wppa_field_id ); ?>"
+														name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
+														value="<?php echo esc_attr( $wppa_value ); ?>"
+														placeholder="<?php echo esc_attr( $wppa_fallback ); ?>"
+														data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
+														data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
+														style="width:130px"
+													/>
+												<?php else : ?>
+													<input
+														type="color"
+														class="wppa-theme-input"
+														id="<?php echo esc_attr( $wppa_field_id ); ?>"
+														name="wppa_settings[<?php echo esc_attr( $wppa_key ); ?>]"
+														value="<?php echo esc_attr( $wppa_value ); ?>"
+														data-wppa-var="<?php echo esc_attr( $wppa_var ); ?>"
+														data-wppa-fallback="<?php echo esc_attr( $wppa_fallback ); ?>"
+													/>
+												<?php endif; ?>
+												<code><?php echo esc_html( $wppa_var ); ?></code>
+											</div>
+											<span class="wppa-theme-hint"><?php echo esc_html( $wppa_color['hint'] ); ?></span>
 										</div>
-										<span class="wppa-theme-hint"><?php echo esc_html( $wppa_color['hint'] ); ?></span>
-									</div>
-								<?php endforeach; ?>
-							</div>
+									<?php endforeach; ?>
+								</div>
+							<?php endforeach; ?>
 						</td>
 					</tr>
 					<tr>

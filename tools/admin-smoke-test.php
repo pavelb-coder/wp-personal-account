@@ -157,6 +157,13 @@ $theme_admin_checks['настройки: четыре готовых набор�
 $theme_admin_checks['настройки: свой CSS']                 = false !== strpos( $settings_html, 'name="wppa_settings[custom_css]"' );
 $theme_admin_checks['настройки: галочка сброса']           = false !== strpos( $settings_html, 'name="wppa_settings[theme_reset]"' );
 $theme_admin_checks['настройки: подсказка о переменных']   = false !== strpos( $settings_html, '--wppa-surface' );
+$theme_admin_checks['настройки: группа «Уведомления и статусы»'] = false !== strpos( $settings_html, 'Уведомления и статусы' );
+$theme_admin_checks['настройки: поле цвета успеха']           = false !== strpos( $settings_html, 'name="wppa_settings[color_success]"' );
+$theme_admin_checks['настройки: поле цвета ошибки']           = false !== strpos( $settings_html, 'name="wppa_settings[color_danger]"' );
+$theme_admin_checks['настройки: поле цвета предупреждения']   = false !== strpos( $settings_html, 'name="wppa_settings[color_warning]"' );
+$theme_admin_checks['настройки: поле цвета информации']       = false !== strpos( $settings_html, 'name="wppa_settings[color_info]"' );
+$theme_admin_checks['настройки: поле подложек']               = false !== strpos( $settings_html, 'name="wppa_settings[color_surface_alt]"' );
+$theme_admin_checks['настройки: тринадцать цветовых полей']   = 13 === substr_count( $settings_html, 'wppa-theme-input' );
 
 foreach ( $theme_admin_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme settings: ' . $check_name . "\n";

@@ -9,11 +9,30 @@
 	--wppa-accent-contrast: #ffffff;
 	--wppa-bg: #f8fafc;
 	--wppa-surface: #ffffff;
+	--wppa-surface-alt: #f1f5f9;
 	--wppa-border: #e2e8f0;
 	--wppa-text: #0f172a;
 	--wppa-muted: #64748b;
+	--wppa-success: #047857;
+	--wppa-warning: #b45309;
+	--wppa-danger: #b91c1c;
+	--wppa-info: #0284c7;
 	--wppa-radius: 14px;
-	--wppa-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .05);
+
+	/* Производные: подложки и рамки статусов считаются от основных цветов,
+	   поэтому работают и в светлой, и в тёмной палитре. */
+	--wppa-accent-soft: color-mix(in srgb, var(--wppa-accent) 10%, var(--wppa-surface));
+	--wppa-accent-line: color-mix(in srgb, var(--wppa-accent) 30%, var(--wppa-surface));
+	--wppa-success-soft: color-mix(in srgb, var(--wppa-success) 12%, var(--wppa-surface));
+	--wppa-success-line: color-mix(in srgb, var(--wppa-success) 32%, var(--wppa-surface));
+	--wppa-warning-soft: color-mix(in srgb, var(--wppa-warning) 12%, var(--wppa-surface));
+	--wppa-warning-line: color-mix(in srgb, var(--wppa-warning) 34%, var(--wppa-surface));
+	--wppa-danger-soft: color-mix(in srgb, var(--wppa-danger) 10%, var(--wppa-surface));
+	--wppa-danger-line: color-mix(in srgb, var(--wppa-danger) 30%, var(--wppa-surface));
+	--wppa-info-soft: color-mix(in srgb, var(--wppa-info) 10%, var(--wppa-surface));
+	--wppa-info-line: color-mix(in srgb, var(--wppa-info) 30%, var(--wppa-surface));
+	--wppa-shadow: 0 1px 2px color-mix(in srgb, var(--wppa-text) 8%, transparent),
+		0 8px 24px color-mix(in srgb, var(--wppa-text) 6%, transparent);
 
 	max-width: 960px;
 	margin: 0 auto;
@@ -32,6 +51,70 @@
 
 .wppa a {
 	color: var(--wppa-accent);
+}
+
+/* Тексты: цвет задаётся явно. Иначе стили темы (h2, p, td, label…) перебивают
+   наследование от .wppa, и настройка цвета текста не срабатывает. */
+.wppa h1,
+.wppa h2,
+.wppa h3,
+.wppa h4,
+.wppa h5,
+.wppa h6,
+.wppa .wppa-title,
+.wppa .wppa-subtitle,
+.wppa .wppa-section-title {
+	color: var(--wppa-text);
+}
+
+.wppa p,
+.wppa li,
+.wppa dt,
+.wppa dd,
+.wppa td,
+.wppa th,
+.wppa label,
+.wppa legend,
+.wppa summary,
+.wppa figcaption {
+	color: inherit;
+}
+
+.wppa blockquote,
+.wppa small,
+.wppa .wppa-hint,
+.wppa .wppa-field__hint,
+.wppa .description {
+	color: var(--wppa-muted);
+}
+
+.wppa input,
+.wppa textarea,
+.wppa select,
+.wppa output {
+	color: var(--wppa-text);
+}
+
+.wppa input::placeholder,
+.wppa textarea::placeholder {
+	color: var(--wppa-muted);
+	opacity: 1;
+}
+
+.wppa table {
+	color: var(--wppa-text);
+}
+
+.wppa .wppa-notice--success {
+	color: var(--wppa-success);
+}
+
+.wppa .wppa-notice--error {
+	color: var(--wppa-danger);
+}
+
+.wppa .wppa-notice--info {
+	color: var(--wppa-info);
 }
 
 .wppa-header {
@@ -107,14 +190,14 @@
 
 .wppa-nav__link:hover,
 .wppa-nav__link:focus-visible {
-	background: #e8eef8;
+	background: var(--wppa-surface-alt);
 	color: var(--wppa-text) !important;
 }
 
 .wppa-nav__link.is-active {
 	background: var(--wppa-accent);
 	color: var(--wppa-accent-contrast) !important;
-	box-shadow: 0 2px 8px rgba(37, 99, 235, .25);
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--wppa-accent) 25%, transparent);
 }
 
 .wppa-body > .wppa-title:first-child {
@@ -253,7 +336,7 @@
 	padding: 10px 12px;
 	font: inherit;
 	color: var(--wppa-text);
-	background: #fff;
+	background: var(--wppa-surface);
 	border: 1px solid var(--wppa-border);
 	border-radius: 10px;
 	transition: border-color .15s ease, box-shadow .15s ease;
@@ -264,7 +347,7 @@
 .wppa-field textarea:focus {
 	outline: none;
 	border-color: var(--wppa-accent);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--wppa-accent) 15%, transparent);
 }
 
 .wppa-field input[readonly] {
@@ -400,7 +483,7 @@
 }
 
 .wppa-button--ghost {
-	background: #fff;
+	background: var(--wppa-surface);
 	border-color: var(--wppa-border);
 	color: var(--wppa-text) !important;
 }
@@ -427,18 +510,18 @@
 }
 
 .wppa-notice--success {
-	border-left-color: #16a34a;
-	background: #f0fdf4;
+	border-left-color: var(--wppa-success);
+	background: var(--wppa-success-soft);
 }
 
 .wppa-notice--error {
-	border-left-color: #dc2626;
-	background: #fef2f2;
+	border-left-color: var(--wppa-danger);
+	background: var(--wppa-danger-soft);
 }
 
 .wppa-notice--info {
-	border-left-color: #0284c7;
-	background: #f0f9ff;
+	border-left-color: var(--wppa-info);
+	background: var(--wppa-info-soft);
 }
 
 /* Таблицы */
@@ -482,7 +565,7 @@
 .wppa-table tfoot td {
 	border-top: 1px solid var(--wppa-border);
 	border-bottom: 0;
-	background: #fbfdff;
+	background: var(--wppa-surface-alt);
 }
 
 .wppa-status {
@@ -497,24 +580,24 @@
 
 .wppa-status--completed,
 .wppa-status--processing {
-	background: #ecfdf5;
-	border-color: #bbf7d0;
-	color: #15803d;
+	background: var(--wppa-success-soft);
+	border-color: var(--wppa-success-line);
+	color: var(--wppa-success);
 }
 
 .wppa-status--pending,
 .wppa-status--on-hold {
-	background: #fffbeb;
-	border-color: #fde68a;
-	color: #b45309;
+	background: var(--wppa-warning-soft);
+	border-color: var(--wppa-warning-line);
+	color: var(--wppa-warning);
 }
 
 .wppa-status--cancelled,
 .wppa-status--failed,
 .wppa-status--refunded {
-	background: #fef2f2;
-	border-color: #fecaca;
-	color: #b91c1c;
+	background: var(--wppa-danger-soft);
+	border-color: var(--wppa-danger-line);
+	color: var(--wppa-danger);
 }
 
 .wppa-link {
@@ -708,43 +791,43 @@
 }
 
 .wppa-badge--owner {
-	background: #eef2ff;
-	border-color: #c7d2fe;
-	color: #3730a3;
+	background: var(--wppa-accent-soft);
+	border-color: var(--wppa-accent-line);
+	color: var(--wppa-accent);
 }
 
 .wppa-badge--mentor {
-	background: #ecfdf5;
-	border-color: #a7f3d0;
-	color: #047857;
+	background: var(--wppa-success-soft);
+	border-color: var(--wppa-success-line);
+	color: var(--wppa-success);
 }
 
 .wppa-badge--curator {
-	background: #f5f3ff;
-	border-color: #ddd6fe;
-	color: #6d28d9;
+	background: var(--wppa-accent-soft);
+	border-color: var(--wppa-accent-line);
+	color: var(--wppa-accent);
 }
 
 .wppa-curator__current td {
-	background: #faf5ff;
+	background: var(--wppa-accent-soft);
 }
 
 .wppa-badge--ok {
-	background: #ecfdf5;
-	border-color: #a7f3d0;
-	color: #047857;
+	background: var(--wppa-success-soft);
+	border-color: var(--wppa-success-line);
+	color: var(--wppa-success);
 }
 
 .wppa-badge--warn {
-	background: #fffbeb;
-	border-color: #fde68a;
-	color: #b45309;
+	background: var(--wppa-warning-soft);
+	border-color: var(--wppa-warning-line);
+	color: var(--wppa-warning);
 }
 
 .wppa-badge--stage2 {
-	background: #eef2ff;
-	border-color: #c7d2fe;
-	color: #4338ca;
+	background: var(--wppa-accent-soft);
+	border-color: var(--wppa-accent-line);
+	color: var(--wppa-accent);
 	font-weight: 600;
 	text-transform: none;
 	letter-spacing: 0;
@@ -823,7 +906,7 @@
 }
 
 .wppa-actions form:last-child .wppa-link-button {
-	color: #b91c1c;
+	color: var(--wppa-danger);
 }
 
 .wppa-curator-files .wppa-table {
@@ -833,9 +916,9 @@
 .wppa-curator-files .wppa-field input[type="file"] {
 	width: 100%;
 	padding: 10px 12px;
-	border: 1px solid #cbd5e1;
+	border: 1px solid var(--wppa-border);
 	border-radius: 10px;
-	background: #fff;
+	background: var(--wppa-surface);
 	font: inherit;
 	box-sizing: border-box;
 }
@@ -843,7 +926,7 @@
 .wppa-curator-files .wppa-field input[type="file"]:focus {
 	outline: none;
 	border-color: var(--wppa-accent, #2563eb);
-	box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--wppa-accent) 15%, transparent);
 }
 
 .wppa-copy {
@@ -875,21 +958,21 @@
 }
 
 .wppa-button--danger {
-	background: #fee2e2;
-	border-color: #fecaca;
-	color: #b91c1c !important;
+	background: var(--wppa-danger-soft);
+	border-color: var(--wppa-danger-line);
+	color: var(--wppa-danger) !important;
 }
 
 .wppa-button--danger:hover {
-	background: #fecaca;
+	background: var(--wppa-danger-line);
 }
 
 .wppa-card--danger {
-	border-color: #fecaca;
+	border-color: var(--wppa-danger-line);
 }
 
 .wppa-card--danger .wppa-subtitle {
-	color: #b91c1c;
+	color: var(--wppa-danger);
 }
 
 /* Виджет входа и регистрации */
@@ -1016,15 +1099,15 @@
 }
 
 .wppa-block--card {
-	background: #fff;
+	background: var(--wppa-surface);
 	border: 1px solid var(--wppa-border, #e5e7eb);
 	border-radius: var(--wppa-radius, 14px);
 	padding: 24px;
-	box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+	box-shadow: 0 10px 30px color-mix(in srgb, var(--wppa-text) 8%, transparent);
 }
 
 .wppa-block--bordered {
-	background: #fff;
+	background: var(--wppa-surface);
 	border: 1px solid var(--wppa-border, #e5e7eb);
 	border-radius: var(--wppa-radius, 14px);
 	padding: 20px;
@@ -1100,7 +1183,7 @@
 	list-style: none;
 	border: 1px solid var(--wppa-border, #e5e7eb);
 	border-radius: 10px;
-	background: #f8fafc;
+	background: var(--wppa-bg);
 	font-size: .85em;
 	line-height: 1.5;
 }
@@ -1125,7 +1208,7 @@
 }
 
 .wppa-password-rules__item.is-ok {
-	color: #047857;
+	color: var(--wppa-success);
 }
 
 .wppa-password-rules__item.is-ok .wppa-password-rules__mark::before {
@@ -1133,7 +1216,7 @@
 }
 
 .wppa-password-rules__item.is-ok .wppa-password-rules__mark {
-	color: #059669;
+	color: var(--wppa-success);
 	font-size: 0;
 }
 
@@ -1142,11 +1225,11 @@
 }
 
 .wppa-password-rules__item.is-bad {
-	color: #b91c1c;
+	color: var(--wppa-danger);
 }
 
 .wppa-password-rules__item.is-bad .wppa-password-rules__mark {
-	color: #dc2626;
+	color: var(--wppa-danger);
 }
 
 /* Кнопка со ссылкой и таймер */
@@ -1193,17 +1276,17 @@
 	min-width: 7.5em;
 	padding: 2px 8px;
 	border-radius: 8px;
-	background: #f1f5f9;
+	background: var(--wppa-surface-alt);
 	border: 1px solid var(--wppa-border, #e5e7eb);
 	font-variant-numeric: tabular-nums;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	color: #0f172a;
+	color: var(--wppa-text);
 }
 
 .wppa-countdown.is-done {
-	background: #ecfdf5;
-	border-color: #a7f3d0;
-	color: #047857;
+	background: var(--wppa-success-soft);
+	border-color: var(--wppa-success-line);
+	color: var(--wppa-success);
 }
 
 /* Регистрация по таймеру */
@@ -1293,13 +1376,13 @@
 }
 
 .wppa-scores__status--ok {
-	background: #dcfce7;
-	color: #166534;
+	background: var(--wppa-success-soft);
+	color: var(--wppa-success);
 }
 
 .wppa-scores__status--muted {
-	background: #f1f5f9;
-	color: #475569;
+	background: var(--wppa-surface-alt);
+	color: var(--wppa-muted);
 }
 
 @media (max-width: 600px) {

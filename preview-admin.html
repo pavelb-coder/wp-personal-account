@@ -1848,7 +1848,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 01:32							</td>
+								06.11.2026 01:43							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -1887,7 +1887,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">ivan@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:22</td>
+										<td>06.11.2026 01:33</td>
 										<td>
 											отправлено										</td>
 									</tr>
@@ -1897,7 +1897,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">maria@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 01:32</td>
+										<td>06.11.2026 01:43</td>
 										<td>
 											ждёт отправки										</td>
 									</tr>
@@ -1940,11 +1940,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<table class="widefat striped">
 					<tbody>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:22</td>
+								<td class="wppa-admin__muted">06.11.2026 01:33</td>
 								<td>Отправлено писем: 1.</td>
 							</tr>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 01:22</td>
+								<td class="wppa-admin__muted">06.11.2026 01:33</td>
 								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
 							</tr>
 											</tbody>
@@ -3033,7 +3033,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:27.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 01:38.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3169,6 +3169,8 @@ EOF</code></p>
 					Цвета кабинета хранятся в CSS-переменных (--wppa-accent, --wppa-bg, --wppa-surface, --wppa-text, --wppa-muted, --wppa-border, --wppa-radius) и применяются к шорткодам, виджету и блоку Gutenberg сразу после сохранения. Значения по умолчанию можно вернуть одной галочкой ниже.				</p>
 								<style>
 					.wppa-theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; }
+					.wppa-theme-group { margin: 14px 0 8px; font-size: 13px; }
+					.wppa-theme-group:first-of-type { margin-top: 0; }
 					.wppa-theme-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 					.wppa-theme-field input[type="color"] { width: 46px; height: 32px; padding: 2px; border-radius: 6px; }
 					.wppa-theme-field code { background: #f0f0f1; padding: 2px 6px; border-radius: 4px; }
@@ -3192,22 +3194,22 @@ EOF</code></p>
 																	<button
 										type="button"
 										class="button"
-										data-wppa-preset="{&quot;accent_color&quot;:&quot;#2563eb&quot;,&quot;color_bg&quot;:&quot;#f8fafc&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#0f172a&quot;,&quot;color_muted&quot;:&quot;#64748b&quot;,&quot;color_border&quot;:&quot;#e2e8f0&quot;}"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#2563eb&quot;,&quot;color_bg&quot;:&quot;#f8fafc&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_surface_alt&quot;:&quot;#f1f5f9&quot;,&quot;color_text&quot;:&quot;#0f172a&quot;,&quot;color_muted&quot;:&quot;#64748b&quot;,&quot;color_border&quot;:&quot;#e2e8f0&quot;,&quot;color_success&quot;:&quot;#047857&quot;,&quot;color_warning&quot;:&quot;#b45309&quot;,&quot;color_danger&quot;:&quot;#b91c1c&quot;,&quot;color_info&quot;:&quot;#0284c7&quot;}"
 									>Синяя</button>
 																	<button
 										type="button"
 										class="button"
-										data-wppa-preset="{&quot;accent_color&quot;:&quot;#15803d&quot;,&quot;color_bg&quot;:&quot;#f4f9f4&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#10241a&quot;,&quot;color_muted&quot;:&quot;#5b7263&quot;,&quot;color_border&quot;:&quot;#d9e6dc&quot;}"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#15803d&quot;,&quot;color_bg&quot;:&quot;#f4f9f4&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_surface_alt&quot;:&quot;#eaf2ec&quot;,&quot;color_text&quot;:&quot;#10241a&quot;,&quot;color_muted&quot;:&quot;#5b7263&quot;,&quot;color_border&quot;:&quot;#d9e6dc&quot;,&quot;color_success&quot;:&quot;#166534&quot;,&quot;color_warning&quot;:&quot;#a16207&quot;,&quot;color_danger&quot;:&quot;#b91c1c&quot;,&quot;color_info&quot;:&quot;#0e7490&quot;}"
 									>Зелёная</button>
 																	<button
 										type="button"
 										class="button"
-										data-wppa-preset="{&quot;accent_color&quot;:&quot;#7c3aed&quot;,&quot;color_bg&quot;:&quot;#f7f5fd&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_text&quot;:&quot;#1b1330&quot;,&quot;color_muted&quot;:&quot;#6b6580&quot;,&quot;color_border&quot;:&quot;#e4dff2&quot;}"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#7c3aed&quot;,&quot;color_bg&quot;:&quot;#f7f5fd&quot;,&quot;color_surface&quot;:&quot;#ffffff&quot;,&quot;color_surface_alt&quot;:&quot;#efeaf9&quot;,&quot;color_text&quot;:&quot;#1b1330&quot;,&quot;color_muted&quot;:&quot;#6b6580&quot;,&quot;color_border&quot;:&quot;#e4dff2&quot;,&quot;color_success&quot;:&quot;#047857&quot;,&quot;color_warning&quot;:&quot;#b45309&quot;,&quot;color_danger&quot;:&quot;#b91c1c&quot;,&quot;color_info&quot;:&quot;#6d28d9&quot;}"
 									>Фиолетовая</button>
 																	<button
 										type="button"
 										class="button"
-										data-wppa-preset="{&quot;accent_color&quot;:&quot;#60a5fa&quot;,&quot;color_bg&quot;:&quot;#0f172a&quot;,&quot;color_surface&quot;:&quot;#1e293b&quot;,&quot;color_text&quot;:&quot;#e2e8f0&quot;,&quot;color_muted&quot;:&quot;#94a3b8&quot;,&quot;color_border&quot;:&quot;#334155&quot;}"
+										data-wppa-preset="{&quot;accent_color&quot;:&quot;#60a5fa&quot;,&quot;color_bg&quot;:&quot;#0f172a&quot;,&quot;color_surface&quot;:&quot;#1e293b&quot;,&quot;color_surface_alt&quot;:&quot;#273449&quot;,&quot;color_text&quot;:&quot;#e2e8f0&quot;,&quot;color_muted&quot;:&quot;#94a3b8&quot;,&quot;color_border&quot;:&quot;#334155&quot;,&quot;color_success&quot;:&quot;#34d399&quot;,&quot;color_warning&quot;:&quot;#fbbf24&quot;,&quot;color_danger&quot;:&quot;#f87171&quot;,&quot;color_info&quot;:&quot;#38bdf8&quot;}"
 									>Тёмная</button>
 															</div>
 							<span class="wppa-theme-hint">Набор подставляет цвета в поля ниже — сохраните настройки, чтобы применить.</span>
@@ -3216,141 +3218,225 @@ EOF</code></p>
 					<tr>
 						<th scope="row">Цвета</th>
 						<td>
-							<div class="wppa-theme-grid">
-																										<div>
-										<label for="wppa-theme-accent_color"><strong>Акцентный цвет</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-accent_color"
-													name="wppa_settings[accent_color]"
-													value="#2563eb"
-													data-wppa-var="--wppa-accent"
-													data-wppa-fallback="#2563eb"
-												/>
-																						<code>--wppa-accent</code>
+															<p class="wppa-theme-group"><strong>Основные цвета</strong></p>
+								<div class="wppa-theme-grid">
+																													<div>
+											<label for="wppa-theme-accent_color"><strong>Акцентный цвет</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-accent_color"
+														name="wppa_settings[accent_color]"
+														value="#2563eb"
+														data-wppa-var="--wppa-accent"
+														data-wppa-fallback="#2563eb"
+													/>
+																								<code>--wppa-accent</code>
+											</div>
+											<span class="wppa-theme-hint">Кнопки, ссылки, активная вкладка.</span>
 										</div>
-										<span class="wppa-theme-hint">Кнопки, ссылки, активная вкладка.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-accent_hover_color"><strong>Акцент при наведении</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="text"
-													class="regular-text code wppa-theme-input"
-													id="wppa-theme-accent_hover_color"
-													name="wppa_settings[accent_hover_color]"
-													value=""
-													placeholder="#2157cf"
-													data-wppa-var="--wppa-accent-hover"
-													data-wppa-fallback="#2157cf"
-													style="width:130px"
-												/>
-																						<code>--wppa-accent-hover</code>
+																													<div>
+											<label for="wppa-theme-accent_hover_color"><strong>Акцент при наведении</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="text"
+														class="regular-text code wppa-theme-input"
+														id="wppa-theme-accent_hover_color"
+														name="wppa_settings[accent_hover_color]"
+														value=""
+														placeholder="#2157cf"
+														data-wppa-var="--wppa-accent-hover"
+														data-wppa-fallback="#2157cf"
+														style="width:130px"
+													/>
+																								<code>--wppa-accent-hover</code>
+											</div>
+											<span class="wppa-theme-hint">Пусто — затемнение акцентного цвета на 12%.</span>
 										</div>
-										<span class="wppa-theme-hint">Пусто — затемнение акцентного цвета на 12%.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-accent_contrast_color"><strong>Текст на акцентном фоне</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="text"
-													class="regular-text code wppa-theme-input"
-													id="wppa-theme-accent_contrast_color"
-													name="wppa_settings[accent_contrast_color]"
-													value=""
-													placeholder="#ffffff"
-													data-wppa-var="--wppa-accent-contrast"
-													data-wppa-fallback="#ffffff"
-													style="width:130px"
-												/>
-																						<code>--wppa-accent-contrast</code>
+																													<div>
+											<label for="wppa-theme-accent_contrast_color"><strong>Текст на акцентном фоне</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="text"
+														class="regular-text code wppa-theme-input"
+														id="wppa-theme-accent_contrast_color"
+														name="wppa_settings[accent_contrast_color]"
+														value=""
+														placeholder="#ffffff"
+														data-wppa-var="--wppa-accent-contrast"
+														data-wppa-fallback="#ffffff"
+														style="width:130px"
+													/>
+																								<code>--wppa-accent-contrast</code>
+											</div>
+											<span class="wppa-theme-hint">Пусто — подбирается автоматически: белый или тёмный.</span>
 										</div>
-										<span class="wppa-theme-hint">Пусто — подбирается автоматически: белый или тёмный.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-color_bg"><strong>Фон страницы</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-color_bg"
-													name="wppa_settings[color_bg]"
-													value="#f8fafc"
-													data-wppa-var="--wppa-bg"
-													data-wppa-fallback="#f8fafc"
-												/>
-																						<code>--wppa-bg</code>
+																													<div>
+											<label for="wppa-theme-color_bg"><strong>Фон страницы</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_bg"
+														name="wppa_settings[color_bg]"
+														value="#f8fafc"
+														data-wppa-var="--wppa-bg"
+														data-wppa-fallback="#f8fafc"
+													/>
+																								<code>--wppa-bg</code>
+											</div>
+											<span class="wppa-theme-hint">Пустая область вокруг карточек кабинета.</span>
 										</div>
-										<span class="wppa-theme-hint">Пустая область вокруг карточек кабинета.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-color_surface"><strong>Фон карточек</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-color_surface"
-													name="wppa_settings[color_surface]"
-													value="#ffffff"
-													data-wppa-var="--wppa-surface"
-													data-wppa-fallback="#ffffff"
-												/>
-																						<code>--wppa-surface</code>
+																													<div>
+											<label for="wppa-theme-color_surface"><strong>Фон карточек</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_surface"
+														name="wppa_settings[color_surface]"
+														value="#ffffff"
+														data-wppa-var="--wppa-surface"
+														data-wppa-fallback="#ffffff"
+													/>
+																								<code>--wppa-surface</code>
+											</div>
+											<span class="wppa-theme-hint">Карточки, полки файлов, таблицы.</span>
 										</div>
-										<span class="wppa-theme-hint">Карточки, полки файлов, таблицы.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-color_text"><strong>Основной текст</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-color_text"
-													name="wppa_settings[color_text]"
-													value="#0f172a"
-													data-wppa-var="--wppa-text"
-													data-wppa-fallback="#0f172a"
-												/>
-																						<code>--wppa-text</code>
+																													<div>
+											<label for="wppa-theme-color_surface_alt"><strong>Подложки и наведение</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_surface_alt"
+														name="wppa_settings[color_surface_alt]"
+														value="#f1f5f9"
+														data-wppa-var="--wppa-surface_alt"
+														data-wppa-fallback=""
+													/>
+																								<code>--wppa-surface_alt</code>
+											</div>
+											<span class="wppa-theme-hint">Строки таблиц при наведении, мягкие плашки, шапки списков.</span>
 										</div>
-										<span class="wppa-theme-hint">Заголовки, значения полей, подписи кнопок.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-color_muted"><strong>Второстепенный текст</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-color_muted"
-													name="wppa_settings[color_muted]"
-													value="#64748b"
-													data-wppa-var="--wppa-muted"
-													data-wppa-fallback="#64748b"
-												/>
-																						<code>--wppa-muted</code>
+																													<div>
+											<label for="wppa-theme-color_text"><strong>Основной текст</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_text"
+														name="wppa_settings[color_text]"
+														value="#0f172a"
+														data-wppa-var="--wppa-text"
+														data-wppa-fallback="#0f172a"
+													/>
+																								<code>--wppa-text</code>
+											</div>
+											<span class="wppa-theme-hint">Заголовки, значения полей, подписи кнопок.</span>
 										</div>
-										<span class="wppa-theme-hint">Подсказки, описания, неактивные вкладки.</span>
-									</div>
-																										<div>
-										<label for="wppa-theme-color_border"><strong>Рамки и разделители</strong></label>
-										<div class="wppa-theme-field">
-																							<input
-													type="color"
-													class="wppa-theme-input"
-													id="wppa-theme-color_border"
-													name="wppa_settings[color_border]"
-													value="#e2e8f0"
-													data-wppa-var="--wppa-border"
-													data-wppa-fallback="#e2e8f0"
-												/>
-																						<code>--wppa-border</code>
+																													<div>
+											<label for="wppa-theme-color_muted"><strong>Второстепенный текст</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_muted"
+														name="wppa_settings[color_muted]"
+														value="#64748b"
+														data-wppa-var="--wppa-muted"
+														data-wppa-fallback="#64748b"
+													/>
+																								<code>--wppa-muted</code>
+											</div>
+											<span class="wppa-theme-hint">Подсказки, описания, неактивные вкладки.</span>
 										</div>
-										<span class="wppa-theme-hint">Границы полей, карточек и таблиц.</span>
-									</div>
-															</div>
-						</td>
+																													<div>
+											<label for="wppa-theme-color_border"><strong>Рамки и разделители</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_border"
+														name="wppa_settings[color_border]"
+														value="#e2e8f0"
+														data-wppa-var="--wppa-border"
+														data-wppa-fallback="#e2e8f0"
+													/>
+																								<code>--wppa-border</code>
+											</div>
+											<span class="wppa-theme-hint">Границы полей, карточек и таблиц.</span>
+										</div>
+																	</div>
+															<p class="wppa-theme-group"><strong>Уведомления и статусы</strong></p>
+								<div class="wppa-theme-grid">
+																													<div>
+											<label for="wppa-theme-color_success"><strong>Успех (текст и рамка)</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_success"
+														name="wppa_settings[color_success]"
+														value="#047857"
+														data-wppa-var="--wppa-success"
+														data-wppa-fallback="#047857"
+													/>
+																								<code>--wppa-success</code>
+											</div>
+											<span class="wppa-theme-hint">Уведомления об успехе, статусы «готово», значки ролей.</span>
+										</div>
+																													<div>
+											<label for="wppa-theme-color_warning"><strong>Предупреждение</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_warning"
+														name="wppa_settings[color_warning]"
+														value="#b45309"
+														data-wppa-var="--wppa-warning"
+														data-wppa-fallback="#b45309"
+													/>
+																								<code>--wppa-warning</code>
+											</div>
+											<span class="wppa-theme-hint">Предупреждения, статусы «ожидает», подсказки об ошибках.</span>
+										</div>
+																													<div>
+											<label for="wppa-theme-color_danger"><strong>Ошибка и удаление</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_danger"
+														name="wppa_settings[color_danger]"
+														value="#b91c1c"
+														data-wppa-var="--wppa-danger"
+														data-wppa-fallback="#b91c1c"
+													/>
+																								<code>--wppa-danger</code>
+											</div>
+											<span class="wppa-theme-hint">Текст ошибок, кнопки удаления, статусы «отменено».</span>
+										</div>
+																													<div>
+											<label for="wppa-theme-color_info"><strong>Информация</strong></label>
+											<div class="wppa-theme-field">
+																									<input
+														type="color"
+														class="wppa-theme-input"
+														id="wppa-theme-color_info"
+														name="wppa_settings[color_info]"
+														value="#0284c7"
+														data-wppa-var="--wppa-info"
+														data-wppa-fallback="#0284c7"
+													/>
+																								<code>--wppa-info</code>
+											</div>
+											<span class="wppa-theme-hint">Информационные уведомления и пояснения.</span>
+										</div>
+																	</div>
+													</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="wppa-theme-radius">Скругление карточек</label></th>
@@ -3374,7 +3460,7 @@ EOF</code></p>
 					<tr>
 						<th scope="row">Предпросмотр</th>
 						<td>
-							<div class="wppa-theme-preview" id="wppa-theme-preview" style="--wppa-accent:#2563eb;--wppa-accent-hover:#2157cf;--wppa-accent-contrast:#ffffff;--wppa-bg:#f8fafc;--wppa-surface:#ffffff;--wppa-text:#0f172a;--wppa-muted:#64748b;--wppa-border:#e2e8f0;--wppa-radius:14px;">
+							<div class="wppa-theme-preview" id="wppa-theme-preview" style="--wppa-accent:#2563eb;--wppa-accent-hover:#2157cf;--wppa-accent-contrast:#ffffff;--wppa-bg:#f8fafc;--wppa-surface:#ffffff;--wppa-text:#0f172a;--wppa-muted:#64748b;--wppa-surface-alt:#f1f5f9;--wppa-border:#e2e8f0;--wppa-success:#047857;--wppa-warning:#b45309;--wppa-danger:#b91c1c;--wppa-info:#0284c7;--wppa-radius:14px;">
 								<div class="wppa-theme-preview__card">
 									<p class="wppa-theme-preview__title">Моя команда</p>
 									<p class="wppa-theme-preview__muted">Так выглядят подсказки и второстепенный текст.</p>
@@ -3567,10 +3653,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 06.11.2026 09:22 (Раз в день).							</p>
+									Следующая выгрузка: 06.11.2026 09:33 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:27				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 01:38				</p>
 			
 			
 			
@@ -3607,7 +3693,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>06.11.2026 01:22</td>
+								<td>06.11.2026 01:33</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3616,7 +3702,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:22</td>
+								<td>06.11.2026 01:33</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3625,7 +3711,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 01:22</td>
+								<td>06.11.2026 01:33</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

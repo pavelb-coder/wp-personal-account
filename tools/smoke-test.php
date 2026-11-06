@@ -3047,6 +3047,79 @@ update_option( 'wppa_settings', $theme_backup );
 
 $theme_checks['оформление по умолчанию — снова да'] = true === WPPA_Theme::is_default();
 
+// Цвета статусов и подложек (3.35.0): текст весь на переменных.
+$theme_colors = WPPA_Theme::colors();
+$theme_groups = WPPA_Theme::groups();
+$theme_group_keys = array();
+
+foreach ( $theme_groups as $theme_group ) {
+	$theme_group_keys = array_merge( $theme_group_keys, $theme_group['keys'] );
+}
+
+$theme_checks['цветов: тринадцать']              = 13 === count( $theme_colors );
+$theme_checks['группы покрывают все цвета']      = array() === array_diff( array_keys( $theme_colors ), $theme_group_keys );
+$theme_checks['группы: основных nine']           = 9 === count( $theme_groups['core']['keys'] );
+$theme_checks['группы: статусы']                 = 4 === count( $theme_groups['status']['keys'] );
+
+$theme_default_vars = WPPA_Theme::vars();
+$theme_checks['переменные статусов']             = '#047857' === $theme_default_vars['--wppa-success']
+	&& '#b45309' === $theme_default_vars['--wppa-warning']
+	&& '#b91c1c' === $theme_default_vars['--wppa-danger']
+	&& '#0284c7' === $theme_default_vars['--wppa-info'];
+$theme_checks['переменная подложек']             = '#f1f5f9' === $theme_default_vars['--wppa-surface-alt'];
+$theme_checks['css по умолчанию со статусами']   = false !== strpos( WPPA_Theme::css(), '--wppa-danger:#b91c1c' );
+
+$theme_status_saved = WPPA_Settings::sanitize(
+	array_merge(
+		(array) $theme_backup,
+		array(
+			'color_success' => '#16a34a',
+			'color_danger'  => 'мусор',
+			'color_info'    => '#0ea5e9',
+		)
+	)
+);
+$theme_checks['сохранение: цвет успеха']         = '#16a34a' === $theme_status_saved['color_success'];
+$theme_checks['сохранение: мусорная ошибка → умолчание'] = '#b91c1c' === $theme_status_saved['color_danger'];
+$theme_checks['сохранение: цвет информации']     = '#0ea5e9' === $theme_status_saved['color_info'];
+
+// Файл стилей: ни одного жёсткого цвета текста и все переменные объявлены.
+$theme_css_file = (string) file_get_contents( WPPA_PATH . 'assets/css/account.css' );
+
+preg_match_all( '/^\s*color:\s*([^;]+);/m', $theme_css_file, $theme_color_decls );
+$theme_literal_colors = array();
+
+foreach ( $theme_color_decls[1] as $theme_decl ) {
+	$theme_decl = trim( $theme_decl );
+
+	if ( 0 === strpos( $theme_decl, 'var(' ) ) {
+		continue;
+	}
+
+	if ( in_array( $theme_decl, array( 'inherit', 'transparent', 'currentColor' ), true ) ) {
+		continue;
+	}
+
+	$theme_literal_colors[] = $theme_decl;
+}
+
+$theme_checks['стили: цвет текста только переменными'] = array() === $theme_literal_colors;
+
+preg_match_all( '/var\((--wppa-[a-z0-9-]+)/', $theme_css_file, $theme_used );
+preg_match_all( '/^\s*(--wppa-[a-z0-9-]+):/m', $theme_css_file, $theme_declared );
+
+$theme_checks['стили: все переменные объявлены'] = array() === array_diff(
+	array_unique( $theme_used[1] ),
+	array_unique( $theme_declared[1] )
+);
+$theme_checks['стили: заголовки перекрывают тему'] = false !== strpos( $theme_css_file, '.wppa h1' )
+	&& false !== strpos( $theme_css_file, 'color: inherit' );
+$theme_checks['стили: подсказки второстепенным']   = false !== strpos( $theme_css_file, '.wppa .wppa-hint,' )
+	|| false !== strpos( $theme_css_file, '.wppa-hint,' );
+$theme_checks['стили: плейсхолдеры видны']        = false !== strpos( $theme_css_file, '.wppa input::placeholder' );
+$theme_checks['стили: уведомления цветные']       = false !== strpos( $theme_css_file, '.wppa .wppa-notice--error' )
+	&& false !== strpos( $theme_css_file, '.wppa .wppa-notice--success' );
+
 foreach ( $theme_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'theme: ' . $check_name . "\n";
 	if ( ! $ok ) {
