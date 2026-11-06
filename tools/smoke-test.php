@@ -25,6 +25,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-participants.php';
+require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -4560,7 +4561,7 @@ update_option(
 	'wppa_settings',
 	array_merge(
 		(array) get_option( 'wppa_settings', array() ),
-		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'mailing', 'security' ) )
+		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ) )
 	)
 );
 
@@ -4678,6 +4679,304 @@ $wpdb->data = $pw_db_backup;
 
 foreach ( $pw_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'participants-block: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Сертификаты: интеграция с WP Diplom.
+$cr_checks = array();
+
+$cr_checks['без WP Diplom раздел недоступен'] = ! WPPA_Certificates::available();
+$cr_checks['без WP Diplom шаблонов нет']      = array() === WPPA_Certificates::templates();
+$cr_checks['без WP Diplom выдача не идёт']    = is_wp_error( WPPA_Certificates::issue( 911, 12 ) );
+
+// Заглушки плагина WP Diplom.
+if ( ! class_exists( 'WPDC_Certificate' ) ) {
+	/**
+	 * Заглушка WPDC_Certificate.
+	 */
+	class WPDC_Certificate {
+
+		/** Созданные сертификаты. */
+		public static $created = array();
+
+		/** Выдать сертификат. */
+		public static function create( $args = array() ) {
+			$id                   = 7000 + count( self::$created ) + 1;
+			self::$created[ $id ] = $args;
+			update_post_meta( $id, '_wpdc_number', 'КРТ-2026-' . sprintf( '%03d', $id - 7000 ) );
+			update_post_meta( $id, '_wpdc_code', 'c' . $id . 'x9f2' );
+			return $id;
+		}
+
+		/** Путь к PDF. */
+		public static function pdf( $id ) {
+			$dir = sys_get_temp_dir() . '/wppa-cert-test';
+			if ( ! is_dir( $dir ) ) {
+				mkdir( $dir, 0777, true );
+			}
+			$path = $dir . '/cert-' . (int) $id . '.pdf';
+			file_put_contents( $path, "%PDF-1.4\nwppa\n" );
+			return $path;
+		}
+	}
+}
+
+if ( ! class_exists( 'WPDC_Email' ) ) {
+	/**
+	 * Заглушка WPDC_Email.
+	 */
+	class WPDC_Email {
+
+		/** Отправленные сертификаты. */
+		public static $sent = array();
+
+		/** Отправить письмо. */
+		public static function send( $id ) {
+			self::$sent[] = (int) $id;
+			return true;
+		}
+	}
+}
+
+$cr_checks['с WP Diplom раздел доступен'] = WPPA_Certificates::available();
+
+// Бланки: записи типа wpdc_template.
+$GLOBALS['wppa_test']['posts'][801] = (object) array( 'ID' => 801, 'post_title' => 'Бланк «Основной»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 1 );
+$GLOBALS['wppa_test']['posts'][802] = (object) array( 'ID' => 802, 'post_title' => 'Бланк «Олимпиада»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 1 );
+
+$cr_checks['бланки видны в настройках'] = array( 801 => 'Бланк «Основной»', 802 => 'Бланк «Олимпиада»' ) === WPPA_Certificates::templates();
+
+// Команда: капитан с высоким баллом, участник с низким, наставник.
+$GLOBALS['wppa_test']['users'][911] = array( 'Капитан Сертификатов', 'cap911@example.com', 'first_name' => 'Капитан', 'last_name' => 'Сертификатов' );
+$GLOBALS['wppa_test']['users'][912] = array( 'Участник Низкий', 'low912@example.com', 'first_name' => 'Участник', 'last_name' => 'Низкий' );
+$GLOBALS['wppa_test']['users'][913] = array( 'Наставник Сертификатов', 'ment913@example.com', 'first_name' => 'Наставник', 'last_name' => 'Сертификатов' );
+
+$cr_team = WPPA_Teams::create( 'Команда сертификатов', 911 );
+
+if ( ! is_wp_error( $cr_team ) ) {
+	WPPA_Teams::add_member( $cr_team, 912 );
+	WPPA_Teams::add_member( $cr_team, 913 );
+	WPPA_Teams::set_role( $cr_team, 913, 'mentor' );
+}
+
+$cr_settings_backup = (array) get_option( 'wppa_settings', array() );
+$cr_db_backup       = isset( $wpdb->data ) ? $wpdb->data : array();
+
+$wpdb->data = array(
+	'var'      => $wpdb->prefix . 'olympiad_attempts',
+	'attempts' => array(
+		(object) array( 'user_id' => 911, 'score' => 9, 'max_score' => 10, 'percentage' => '90.00', 'status' => 'completed' ),
+		(object) array( 'user_id' => 912, 'score' => 3, 'max_score' => 10, 'percentage' => '30.00', 'status' => 'completed' ),
+	),
+);
+
+$cr_active = static function () {
+	return true;
+};
+
+add_filter( 'wppa_olympiad_active', $cr_active );
+
+WPPA_Olympiad::flush();
+WPPA_Participants::set_min_percent( 60 );
+
+WPPA_Teams::set_curator( 12, true );
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cr_checks['куратор видит сертификаты участника']   = true === WPPA_Certificates::can_view( 911, 12 );
+$cr_checks['участник видит свои сертификаты']       = true === WPPA_Certificates::can_view( 911, 911 );
+$GLOBALS['wppa_test']['can_manage'] = false;
+$cr_checks['чужой сертификат не виден участнику']   = false === WPPA_Certificates::can_view( 911, 912 );
+$cr_checks['администратор видит любой сертификат']  = true === WPPA_Certificates::can_view( 911, 12 );
+$GLOBALS['wppa_test']['can_manage']                 = false;
+$cr_checks['куратор видит любой сертификат']        = true === WPPA_Certificates::can_view( 911, 12 );
+unset( $GLOBALS['wppa_test']['can_manage'] );
+
+// Выдача.
+$cr_entry = WPPA_Certificates::issue( 911, 12 );
+
+$cr_checks['сертификат выдан']                = is_array( $cr_entry ) && ! empty( $cr_entry['id'] );
+$cr_checks['номер из WP Diplom в записи']     = is_array( $cr_entry ) && 'КРТ-2026-001' === $cr_entry['number'];
+$cr_checks['код проверки в записи']           = is_array( $cr_entry ) && 'c7001x9f2' === $cr_entry['code'];
+$cr_checks['программа — название команды']    = is_array( $cr_entry ) && 'Команда сертификатов' === $cr_entry['course'];
+$cr_checks['у участника один сертификат']     = 1 === WPPA_Certificates::count( 911 );
+
+$cr_args = WPDC_Certificate::$created[ (int) $cr_entry['id'] ];
+$cr_checks['получатель — имя и фамилия']      = 'Капитан Сертификатов' === $cr_args['recipient'];
+$cr_checks['email участника передан']         = 'cap911@example.com' === $cr_args['email'];
+$cr_checks['подпись — имя куратора']          = isset( $cr_args['teacher'] ) && '' !== $cr_args['teacher'];
+$cr_checks['в custom есть команда']           = 'Команда сертификатов' === $cr_args['custom']['team'];
+$cr_checks['в custom есть процент']           = '90' === $cr_args['custom']['percent'];
+$cr_checks['в custom есть баллы']             = '9/10' === $cr_args['custom']['score'];
+
+// Ссылка на скачивание.
+$cr_link = WPPA_Certificates::download_url( 911, (int) $cr_entry['id'] );
+$cr_checks['ссылка ведёт в admin-post']       = false !== strpos( $cr_link, 'admin-post.php' ) && false !== strpos( $cr_link, 'action=wppa_certificate_download' );
+$cr_checks['ссылка подписана nonce']          = false !== strpos( $cr_link, '_wpnonce=' );
+
+$cr_list = WPPA_Certificates::for_user( 911 );
+$cr_checks['в списке сертификат с url']       = isset( $cr_list[ 'cert-' . (int) $cr_entry['id'] ] )
+	&& false !== strpos( $cr_list[ 'cert-' . (int) $cr_entry['id'] ]['url'], 'admin-post.php' );
+
+// Кому нельзя.
+$cr_checks['наставнику не выдают']            = 'wppa_certificate_missing' === WPPA_Certificates::issue( 913, 12 )->get_error_code();
+$cr_checks['не-куратор не выдаёт']            = 'wppa_certificate_forbidden' === WPPA_Certificates::issue( 912, 911 )->get_error_code();
+$cr_checks['вне команды не выдают']           = 'wppa_certificate_missing' === WPPA_Certificates::issue( 999, 12 )->get_error_code();
+$cr_checks['после отказов сертификат один']   = 1 === WPPA_Certificates::count( 911 );
+
+// Бланк и письмо из настроек.
+update_option( 'wppa_settings', array_merge( $cr_settings_backup, array( 'certificate_template' => 802, 'certificate_email' => 0 ) ) );
+
+WPPA_Certificates::issue( 912, 12 );
+
+$cr_low_args = WPDC_Certificate::$created[ 7002 ];
+$cr_checks['бланк берётся из настроек']       = 802 === $cr_low_args['template_id'];
+$cr_template_filter = static function () {
+	return 801;
+};
+add_filter( 'wppa_certificate_template', $cr_template_filter );
+$cr_checks['фильтр бланка работает']          = 801 === WPPA_Certificates::template_id();
+remove_filter( 'wppa_certificate_template', $cr_template_filter );
+$cr_checks['фильтр снят — снова настройка']   = 802 === WPPA_Certificates::template_id();
+$cr_checks['письмо по умолчанию не шлётся']   = array() === WPDC_Email::$sent;
+$cr_checks['без письма отметки нет']          = false === WPPA_Certificates::for_user( 912 )['cert-7002']['sent'];
+
+update_option( 'wppa_settings', array_merge( $cr_settings_backup, array( 'certificate_template' => 0, 'certificate_email' => 1 ) ) );
+
+WPPA_Certificates::issue( 912, 12 );
+
+$cr_checks['письмо отправлено при выдаче']    = array( 7003 ) === WPDC_Email::$sent;
+$cr_checks['отметка об отправке сохранена']   = true === WPPA_Certificates::for_user( 912 )['cert-7003']['sent'];
+$cr_checks['два сертификата у участника']     = 2 === WPPA_Certificates::count( 912 );
+$cr_checks['в списке оба сертификата']       = array( 'cert-7002', 'cert-7003' ) === array_keys( WPPA_Certificates::for_user( 912 ) );
+
+// Массовая выдача по порогу.
+WPPA_Teams::dissolve( $cr_team );
+WPPA_Teams::create( 'Команда сертификатов', 911 );
+$cr_team = WPPA_Teams::team_id( 911 );
+WPPA_Teams::add_member( $cr_team, 912 );
+WPPA_Teams::add_member( $cr_team, 913 );
+WPPA_Teams::set_role( $cr_team, 913, 'mentor' );
+
+delete_user_meta( 911, WPPA_Certificates::META );
+delete_user_meta( 912, WPPA_Certificates::META );
+
+$cr_batch = WPPA_Certificates::issue_team_above_threshold( $cr_team, 12 );
+
+$cr_checks['по порогу выдан одному']          = 1 === count( $cr_batch['issued'] ) && isset( $cr_batch['issued'][911] );
+$cr_checks['ниже порога пропущен']            = in_array( 912, $cr_batch['skipped'], true );
+$cr_checks['наставнику в пакете нет места']   = ! isset( $cr_batch['issued'][913] ) && 0 === WPPA_Certificates::count( 913 );
+$cr_checks['в команде есть сертификаты']      = true === WPPA_Certificates::team_has( $cr_team );
+$cr_checks['пакет не-куратору запрещён']      = array( 'wppa_certificate_forbidden' ) === WPPA_Certificates::issue_team_above_threshold( $cr_team, 912 )['errors'];
+
+// Вкладка и блок.
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		$cr_settings_backup,
+		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ) )
+	)
+);
+
+$cr_tabs_curator = WPPA_Template::tabs();
+
+$GLOBALS['wppa_test']['current_user'] = 911;
+$cr_tabs_owner                        = WPPA_Template::tabs();
+
+$GLOBALS['wppa_test']['current_user'] = 912;
+$cr_tabs_plain                        = WPPA_Template::tabs();
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cr_checks['вкладка в списке всех вкладок'] = 'Сертификаты' === WPPA_Template::all_tabs()['certificates'];
+$cr_checks['вкладка включена по умолчанию'] = in_array( 'certificates', (array) WPPA_Plugin::defaults()['enabled_tabs'], true );
+$cr_checks['куратор видит вкладку']         = isset( $cr_tabs_curator['certificates'] );
+$cr_checks['участник с сертификатом видит'] = isset( $cr_tabs_owner['certificates'] );
+$cr_checks['участник без сертификатов — нет'] = ! isset( $cr_tabs_plain['certificates'] );
+
+$cr_blocks = WPPA_Builder::blocks();
+$cr_layout = WPPA_Builder::defaults();
+
+$cr_checks['блок в конструкторе']     = isset( $cr_blocks['certificates-widget'] ) && in_array( 'certificates', (array) $cr_blocks['certificates-widget']['tabs'], true );
+$cr_checks['блок по умолчанию на вкладке'] = in_array( 'certificates-widget', array_map( static function ( $item ) { return (string) $item['id']; }, (array) $cr_layout['certificates'] ), true );
+
+$cr_widget_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 911 ) )
+);
+
+$cr_checks['блок показывает номер']        = false !== strpos( $cr_widget_html, 'КРТ-2026-' );
+$cr_checks['блок показывает код']          = false !== strpos( $cr_widget_html, 'c700' );
+$cr_checks['блок даёт скачать PDF']        = false !== strpos( $cr_widget_html, 'admin-post.php' ) && false !== strpos( $cr_widget_html, 'action=wppa_certificate_download' );
+
+$cr_tab_html = WPPA_Template::get( 'tab-certificates', array( 'user' => get_userdata( 911 ), 'tabs' => WPPA_Template::all_tabs() ) );
+
+$cr_checks['вкладка отрисована']           = false !== strpos( $cr_tab_html, 'wppa-certificates' );
+$cr_checks['на вкладке есть сертификат']   = false !== strpos( $cr_tab_html, 'КРТ-2026-' );
+
+// Куратор в блоке «Участники и баллы»: выдача и удаление.
+$cr_panel_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$cr_checks['у куратора кнопка выдачи']     = false !== strpos( $cr_panel_html, 'certificate_action=issue' ) || false !== strpos( $cr_panel_html, 'value="issue"' );
+$cr_checks['у куратора массовая выдача']   = false !== strpos( $cr_panel_html, 'value="issue_threshold"' );
+$cr_checks['у куратора ссылка скачивания'] = false !== strpos( $cr_panel_html, 'action=wppa_certificate_download' );
+
+// Удаление из кабинета.
+$cr_current = array_key_first( WPPA_Certificates::for_user( 911 ) );
+$cr_cert_id = (int) substr( (string) $cr_current, 5 );
+
+WPPA_Teams::set_curator( 12, false );
+$cr_checks['не-куратор не удаляет']        = false === WPPA_Certificates::remove( 911, $cr_cert_id, 912 );
+WPPA_Teams::set_curator( 12, true );
+
+$cr_checks['сертификат остался']           = 1 === WPPA_Certificates::count( 911 );
+$cr_checks['куратор удаляет']              = true === WPPA_Certificates::remove( 911, $cr_cert_id, 12 );
+$cr_checks['после удаления пусто']         = 0 === WPPA_Certificates::count( 911 );
+$cr_checks['повторное удаление — false']   = false === WPPA_Certificates::remove( 911, $cr_cert_id, 12 );
+$cr_checks['сам сертификат в WP Diplom цел'] = isset( WPDC_Certificate::$created[ $cr_cert_id ] );
+
+// Настройки: значения по умолчанию и сохранение.
+$cr_defaults = WPPA_Plugin::defaults();
+$cr_checks['настройка бланка по умолчанию — 0'] = 0 === (int) $cr_defaults['certificate_template'];
+$cr_checks['настройка письма по умолчанию — 0'] = 0 === (int) $cr_defaults['certificate_email'];
+
+$cr_saved = WPPA_Settings::sanitize( array( 'certificate_template' => '802', 'certificate_email' => '1' ) );
+$cr_checks['бланк сохраняется числом']          = 802 === (int) $cr_saved['certificate_template'];
+$cr_checks['письмо сохраняется флагом']         = 1 === (int) $cr_saved['certificate_email'];
+$cr_checks['пустой бланк — 0']                  = 0 === (int) WPPA_Settings::sanitize( array( 'certificate_template' => '' ) )['certificate_template'];
+
+// Уведомления.
+$cr_notices = WPPA_Notices::registry();
+$cr_checks['уведомления о сертификатах'] = isset(
+	$cr_notices['certificate_issued'],
+	$cr_notices['certificate_issued_many'],
+	$cr_notices['certificate_nobody'],
+	$cr_notices['certificate_removed'],
+	$cr_notices['certificate_missing'],
+	$cr_notices['certificate_forbidden'],
+	$cr_notices['certificate_unavailable'],
+	$cr_notices['certificate_failed']
+);
+
+remove_filter( 'wppa_olympiad_active', $cr_active );
+
+WPPA_Olympiad::flush();
+WPPA_Teams::dissolve( $cr_team );
+WPPA_Teams::set_curator( 12, false );
+
+update_option( 'wppa_settings', $cr_settings_backup );
+$wpdb->data = $cr_db_backup;
+
+foreach ( $cr_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificates: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

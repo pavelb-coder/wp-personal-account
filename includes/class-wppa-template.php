@@ -26,6 +26,7 @@ class WPPA_Template {
 			'team'         => __( 'Команда', 'wp-personal-account' ),
 			'files'        => __( 'Файлы', 'wp-personal-account' ),
 			'participants' => __( 'Участники', 'wp-personal-account' ),
+			'certificates' => __( 'Сертификаты', 'wp-personal-account' ),
 			'mailing'      => __( 'Рассылка', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
 		);
@@ -56,6 +57,20 @@ class WPPA_Template {
 		foreach ( array( 'participants', 'mailing' ) as $wppa_tab_slug ) {
 			if ( isset( $tabs[ $wppa_tab_slug ] ) && ! WPPA_Teams::is_curator() ) {
 				unset( $tabs[ $wppa_tab_slug ] );
+			}
+		}
+
+		// «Сертификаты» — только тем, у кого они есть (и куратору, который их выдаёт).
+		if ( isset( $tabs['certificates'] ) ) {
+			$wppa_cert_user = get_current_user_id();
+			$wppa_cert_lib  = class_exists( 'WPPA_Certificates' );
+			$wppa_cert_show = $wppa_cert_lib && (
+				WPPA_Certificates::count( $wppa_cert_user ) > 0
+				|| ( WPPA_Certificates::available() && WPPA_Teams::is_curator( $wppa_cert_user ) )
+			);
+
+			if ( ! $wppa_cert_show ) {
+				unset( $tabs['certificates'] );
 			}
 		}
 

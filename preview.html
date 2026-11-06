@@ -1453,6 +1453,50 @@
 	white-space: nowrap;
 }
 
+.wppa-participants__certs {
+	min-width: 150px;
+}
+
+.wppa-participants__cert {
+	margin: 0 0 6px;
+}
+
+.wppa-participants__cert-remove,
+.wppa-participants__cert-issue {
+	display: inline-block;
+	margin: 0;
+}
+
+.wppa-participants__certificates {
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-participants__certificates .wppa-subtitle {
+	margin-top: 0;
+}
+
+.wppa-certificates__table td code {
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--wppa-surface-alt);
+	color: var(--wppa-text);
+}
+
+.wppa-participants__cert-issue,
+.wppa-participants__issue-all {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.wppa-participants__issue-all {
+	margin-top: 10px;
+}
+
 body {
 	margin: 0;
 	padding: 32px 20px 64px;
@@ -1526,6 +1570,11 @@ body {
 				href="https://example.com/?wppa_tab=participants"
 							>
 				Участники			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=certificates"
+							>
+				Сертификаты			</a>
 					<a
 				class="wppa-nav__link"
 				href="https://example.com/?wppa_tab=mailing"
@@ -1760,7 +1809,7 @@ body {
 			<p class="wppa-field">
 				<label for="wppa-invite-link">Ссылка-приглашение</label>
 				<span class="wppa-copy">
-					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=t1oj7kffzxqh4d7swfxqhbybjudknb5r" readonly />
+					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=90dxipny67hscl1gfgpkrkaycenxnrts" readonly />
 					<button type="button" class="wppa-button wppa-button--ghost" data-wppa-copy="wppa-invite-link">Копировать</button>
 				</span>
 				<span class="wppa-hint">Действует 7 дней. Перегенерируйте, если ссылка попала не туда.</span>
@@ -1938,7 +1987,7 @@ body {
 			<p class="wppa-field">
 				<label for="wppa-invite-link">Ссылка-приглашение</label>
 				<span class="wppa-copy">
-					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=t1oj7kffzxqh4d7swfxqhbybjudknb5r" readonly />
+					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=90dxipny67hscl1gfgpkrkaycenxnrts" readonly />
 					<button type="button" class="wppa-button wppa-button--ghost" data-wppa-copy="wppa-invite-link">Копировать</button>
 				</span>
 				<span class="wppa-hint">Действует 7 дней. Перегенерируйте, если ссылка попала не туда.</span>
@@ -2115,7 +2164,7 @@ body {
 			<p class="wppa-field">
 				<label for="wppa-invite-link">Ссылка-приглашение</label>
 				<span class="wppa-copy">
-					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=t1oj7kffzxqh4d7swfxqhbybjudknb5r" readonly />
+					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=90dxipny67hscl1gfgpkrkaycenxnrts" readonly />
 					<button type="button" class="wppa-button wppa-button--ghost" data-wppa-copy="wppa-invite-link">Копировать</button>
 				</span>
 				<span class="wppa-hint">Действует 7 дней. Перегенерируйте, если ссылка попала не туда.</span>
@@ -2340,7 +2389,7 @@ body {
 						<tbody>
 															<tr>
 									<td data-label="Файл">
-										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">
+										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">
 											Положение об олимпиаде.pdf										</a>
 									</td>
 									<td data-label="От кого">
@@ -2353,14 +2402,14 @@ body {
 											<input type="hidden" name="wppa_nonce" value="nonce" />											<input type="hidden" name="team_id" value="101" />
 											<input type="hidden" name="wppa_action" value="curator_file" />
 											<input type="hidden" name="curator_file_action" value="remove" />
-											<input type="hidden" name="file_key" value="scfnjiuoh6ipx1gk" />
+											<input type="hidden" name="file_key" value="rji7hzl4pcl6inqr" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 										</form>
 									</td>
 								</tr>
 															<tr>
 									<td data-label="Файл">
-										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">
+										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">
 											Критерии оценивания.docx										</a>
 									</td>
 									<td data-label="От кого">
@@ -2373,14 +2422,14 @@ body {
 											<input type="hidden" name="wppa_nonce" value="nonce" />											<input type="hidden" name="team_id" value="101" />
 											<input type="hidden" name="wppa_action" value="curator_file" />
 											<input type="hidden" name="curator_file_action" value="remove" />
-											<input type="hidden" name="file_key" value="ywjo37af87lnfrq2" />
+											<input type="hidden" name="file_key" value="0eavyl2fh3b73gnz" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 										</form>
 									</td>
 								</tr>
 															<tr>
 									<td data-label="Файл">
-										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=nbwyz0fertrh11nm&amp;_wpnonce=nonce-d0748ec85d">
+										<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=f0ha21jak80i662u&amp;_wpnonce=nonce-2308a26df6">
 											Список команды.pdf										</a>
 									</td>
 									<td data-label="От кого">
@@ -2393,7 +2442,7 @@ body {
 											<input type="hidden" name="wppa_nonce" value="nonce" />											<input type="hidden" name="team_id" value="101" />
 											<input type="hidden" name="wppa_action" value="curator_file" />
 											<input type="hidden" name="curator_file_action" value="remove" />
-											<input type="hidden" name="file_key" value="nbwyz0fertrh11nm" />
+											<input type="hidden" name="file_key" value="f0ha21jak80i662u" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 										</form>
 									</td>
@@ -2479,7 +2528,7 @@ body {
 					<tbody>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">
 										Положение об олимпиаде.pdf									</a>
 								</td>
 								<td data-label="Размер">240 B</td>
@@ -2491,14 +2540,14 @@ body {
 												<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
 												<input type="hidden" name="curator_file_action" value="remove" />
-												<input type="hidden" name="file_key" value="scfnjiuoh6ipx1gk" />
+												<input type="hidden" name="file_key" value="rji7hzl4pcl6inqr" />
 												<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 											</form>
 																			</td>
 															</tr>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">
 										Критерии оценивания.docx									</a>
 								</td>
 								<td data-label="Размер">96 B</td>
@@ -2510,7 +2559,7 @@ body {
 												<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
 												<input type="hidden" name="curator_file_action" value="remove" />
-												<input type="hidden" name="file_key" value="ywjo37af87lnfrq2" />
+												<input type="hidden" name="file_key" value="0eavyl2fh3b73gnz" />
 												<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 											</form>
 																			</td>
@@ -2536,7 +2585,7 @@ body {
 					<tbody>
 																				<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=nbwyz0fertrh11nm&amp;_wpnonce=nonce-d0748ec85d">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=f0ha21jak80i662u&amp;_wpnonce=nonce-2308a26df6">
 										Список команды.pdf									</a>
 								</td>
 								<td data-label="Размер">128 B</td>
@@ -2548,7 +2597,7 @@ body {
 											<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
 											<input type="hidden" name="curator_file_action" value="remove" />
-											<input type="hidden" name="file_key" value="nbwyz0fertrh11nm" />
+											<input type="hidden" name="file_key" value="f0ha21jak80i662u" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 										</form>
 																	</td>
@@ -2605,7 +2654,7 @@ body {
 					<tbody>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">
 										Положение об олимпиаде.pdf									</a>
 								</td>
 								<td data-label="Размер">240 B</td>
@@ -2614,7 +2663,7 @@ body {
 															</tr>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">
 										Критерии оценивания.docx									</a>
 								</td>
 								<td data-label="Размер">96 B</td>
@@ -2763,12 +2812,12 @@ body {
 
 			<ul class="wppa-list wppa-team-files__list">
 									<li>
-						<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">Положение об олимпиаде.pdf</a>
+						<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">Положение об олимпиаде.pdf</a>
 						<span class="wppa-hint">
 							240 B															· 06.11.2026													</span>
 					</li>
 									<li>
-						<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">Критерии оценивания.docx</a>
+						<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">Критерии оценивания.docx</a>
 						<span class="wppa-hint">
 							96 B															· 06.11.2026													</span>
 					</li>
@@ -2784,7 +2833,7 @@ body {
 			<p class="wppa-field">
 				<label for="wppa-invite-link">Ссылка-приглашение</label>
 				<span class="wppa-copy">
-					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=t1oj7kffzxqh4d7swfxqhbybjudknb5r" readonly />
+					<input type="text" id="wppa-invite-link" value="https://example.com/?wppa_tab=team&amp;wppa_team_join=90dxipny67hscl1gfgpkrkaycenxnrts" readonly />
 					<button type="button" class="wppa-button wppa-button--ghost" data-wppa-copy="wppa-invite-link">Копировать</button>
 				</span>
 				<span class="wppa-hint">Действует 7 дней. Перегенерируйте, если ссылка попала не туда.</span>
@@ -2868,7 +2917,7 @@ body {
 					<tbody>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">
 										Положение об олимпиаде.pdf									</a>
 								</td>
 								<td data-label="Размер">240 B</td>
@@ -2880,7 +2929,7 @@ body {
 															</tr>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">
 										Критерии оценивания.docx									</a>
 								</td>
 								<td data-label="Размер">96 B</td>
@@ -2911,7 +2960,7 @@ body {
 					<tbody>
 																				<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=nbwyz0fertrh11nm&amp;_wpnonce=nonce-d0748ec85d">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=f0ha21jak80i662u&amp;_wpnonce=nonce-2308a26df6">
 										Список команды.pdf									</a>
 								</td>
 								<td data-label="Размер">128 B</td>
@@ -2923,7 +2972,7 @@ body {
 											<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
 											<input type="hidden" name="curator_file_action" value="remove" />
-											<input type="hidden" name="file_key" value="nbwyz0fertrh11nm" />
+											<input type="hidden" name="file_key" value="f0ha21jak80i662u" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="Удалить файл?">Удалить</button>
 										</form>
 																	</td>
@@ -2978,7 +3027,7 @@ body {
 					<tbody>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=scfnjiuoh6ipx1gk&amp;_wpnonce=nonce-60ed4bd722">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=rji7hzl4pcl6inqr&amp;_wpnonce=nonce-ac849402b2">
 										Положение об олимпиаде.pdf									</a>
 								</td>
 								<td data-label="Размер">240 B</td>
@@ -2990,7 +3039,7 @@ body {
 															</tr>
 													<tr>
 								<td data-label="Файл">
-									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=ywjo37af87lnfrq2&amp;_wpnonce=nonce-8a8d719ae5">
+									<a href="https://example.com/wp-admin/admin-post.php?action=wppa_curator_file&amp;team=101&amp;file=0eavyl2fh3b73gnz&amp;_wpnonce=nonce-51f489c8bc">
 										Критерии оценивания.docx									</a>
 								</td>
 								<td data-label="Размер">96 B</td>
@@ -3014,7 +3063,7 @@ body {
 			<li>Отправлено: 1</li>
 			<li>Осталось: 2</li>
 									<li>
-				Следующее письмо: 06.11.2026 14:09			</li>
+				Следующее письмо: 06.11.2026 14:34			</li>
 		</ul>
 
 		
@@ -3039,7 +3088,7 @@ body {
 			<li>Отправлено: 1</li>
 			<li>Осталось: 2</li>
 									<li>
-				Следующее письмо: 06.11.2026 14:09			</li>
+				Следующее письмо: 06.11.2026 14:34			</li>
 		</ul>
 
 		
@@ -3189,7 +3238,7 @@ body {
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 14:09							</td>
+								06.11.2026 14:34							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -3215,10 +3264,10 @@ body {
 
 					<ul class="wppa-log">
 									<li class="wppa-log__item">
-						<span class="wppa-hint">06.11.2026 13:59</span>
+						<span class="wppa-hint">06.11.2026 14:24</span>
 						Отправлено писем: 1.					</li>
 									<li class="wppa-log__item">
-						<span class="wppa-hint">06.11.2026 13:59</span>
+						<span class="wppa-hint">06.11.2026 14:24</span>
 						Рассылка запущена: 3 писем, шаг 10 мин.					</li>
 							</ul>
 
@@ -3322,7 +3371,7 @@ body {
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 14:09							</td>
+								06.11.2026 14:34							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -3348,10 +3397,10 @@ body {
 
 					<ul class="wppa-log">
 									<li class="wppa-log__item">
-						<span class="wppa-hint">06.11.2026 13:59</span>
+						<span class="wppa-hint">06.11.2026 14:24</span>
 						Отправлено писем: 1.					</li>
 									<li class="wppa-log__item">
-						<span class="wppa-hint">06.11.2026 13:59</span>
+						<span class="wppa-hint">06.11.2026 14:24</span>
 						Рассылка запущена: 3 писем, шаг 10 мин.					</li>
 							</ul>
 
@@ -3406,6 +3455,7 @@ body {
 						<th scope="col">Тесты</th>
 						<th scope="col">Баллы</th>
 						<th scope="col">Процент</th>
+						<th scope="col">Сертификат</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -3426,6 +3476,28 @@ body {
 																										<span class="wppa-badge wppa-badge--ok">
 										80 %									</span>
 																								</td>
+							<td data-label="Сертификат" class="wppa-participants__certs">
+																																				<div class="wppa-participants__cert">
+											<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_certificate_download&amp;user=7&amp;cert=551&amp;_wpnonce=nonce-c497d12adb">
+												WPD-2026-0014											</a>
+											<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-remove">
+												<input type="hidden" name="wppa_nonce" value="nonce" />												<input type="hidden" name="wppa_action" value="certificate" />
+												<input type="hidden" name="certificate_action" value="remove" />
+												<input type="hidden" name="participant_id" value="7" />
+												<input type="hidden" name="team_id" value="101" />
+												<input type="hidden" name="certificate_id" value="551" />
+												<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm">Убрать</button>
+											</form>
+										</div>
+																		<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-issue">
+										<input type="hidden" name="wppa_nonce" value="nonce" />										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="certificate_action" value="issue" />
+										<input type="hidden" name="participant_id" value="7" />
+										<input type="hidden" name="team_id" value="101" />
+										<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+											Ещё										</button>
+									</form>
+															</td>
 						</tr>
 																	<tr>
 							<td data-label="Участник">
@@ -3447,10 +3519,41 @@ body {
 																			<br /><span class="wppa-participants__below">
 											ниже порога 60%										</span>
 																								</td>
+							<td data-label="Сертификат" class="wppa-participants__certs">
+																																			<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-issue">
+										<input type="hidden" name="wppa_nonce" value="nonce" />										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="certificate_action" value="issue" />
+										<input type="hidden" name="participant_id" value="9" />
+										<input type="hidden" name="team_id" value="101" />
+										<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+											Выдать										</button>
+									</form>
+															</td>
 						</tr>
 									</tbody>
 			</table>
 		</div>
+
+		<section class="wppa-participants__certificates">
+			<h3 class="wppa-subtitle">Сертификаты участников</h3>
+
+							<p class="wppa-hint">
+					Сертификат получает участник с процентом не ниже порога (60%). Номер, код проверки и PDF присваивает WP Diplom; письмо с PDF уходит, если включена отправка в настройках.				</p>
+
+				<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__issue-all">
+					<input type="hidden" name="wppa_nonce" value="nonce" />					<input type="hidden" name="wppa_action" value="certificate" />
+					<input type="hidden" name="certificate_action" value="issue_threshold" />
+
+											<label class="wppa-participants__label" for="wppa-cert-team">Команда</label>
+						<select id="wppa-cert-team" name="team_id">
+															<option value="101">
+									Студия «Вектор»								</option>
+													</select>
+					
+					<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+						Выдать всем, кто выше порога					</button>
+				</form>
+					</section>
 
 	</section>
 </section><section class="demo-block"><div class="demo-block__head"><h2>Куратор: вкладка «Участники»</h2><p>Отдельная вкладка в кабинете куратора: навигация без «Обзора» и «Профиля», а внутри — блок «Участники и баллы» с баллами, процентами и порогом</p></div><div class="wppa">
@@ -3489,6 +3592,11 @@ body {
 				href="https://example.com/?wppa_tab=participants"
 				aria-current="page"			>
 				Участники			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=certificates"
+							>
+				Сертификаты			</a>
 					<a
 				class="wppa-nav__link"
 				href="https://example.com/?wppa_tab=mailing"
@@ -3543,6 +3651,7 @@ body {
 						<th scope="col">Тесты</th>
 						<th scope="col">Баллы</th>
 						<th scope="col">Процент</th>
+						<th scope="col">Сертификат</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -3563,6 +3672,28 @@ body {
 																										<span class="wppa-badge wppa-badge--ok">
 										80 %									</span>
 																								</td>
+							<td data-label="Сертификат" class="wppa-participants__certs">
+																																				<div class="wppa-participants__cert">
+											<a class="wppa-link" href="https://example.com/wp-admin/admin-post.php?action=wppa_certificate_download&amp;user=7&amp;cert=551&amp;_wpnonce=nonce-c497d12adb">
+												WPD-2026-0014											</a>
+											<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-remove">
+												<input type="hidden" name="wppa_nonce" value="nonce" />												<input type="hidden" name="wppa_action" value="certificate" />
+												<input type="hidden" name="certificate_action" value="remove" />
+												<input type="hidden" name="participant_id" value="7" />
+												<input type="hidden" name="team_id" value="101" />
+												<input type="hidden" name="certificate_id" value="551" />
+												<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm">Убрать</button>
+											</form>
+										</div>
+																		<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-issue">
+										<input type="hidden" name="wppa_nonce" value="nonce" />										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="certificate_action" value="issue" />
+										<input type="hidden" name="participant_id" value="7" />
+										<input type="hidden" name="team_id" value="101" />
+										<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+											Ещё										</button>
+									</form>
+															</td>
 						</tr>
 																	<tr>
 							<td data-label="Участник">
@@ -3584,6 +3715,128 @@ body {
 																			<br /><span class="wppa-participants__below">
 											ниже порога 60%										</span>
 																								</td>
+							<td data-label="Сертификат" class="wppa-participants__certs">
+																																			<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__cert-issue">
+										<input type="hidden" name="wppa_nonce" value="nonce" />										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="certificate_action" value="issue" />
+										<input type="hidden" name="participant_id" value="9" />
+										<input type="hidden" name="team_id" value="101" />
+										<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+											Выдать										</button>
+									</form>
+															</td>
+						</tr>
+									</tbody>
+			</table>
+		</div>
+
+		<section class="wppa-participants__certificates">
+			<h3 class="wppa-subtitle">Сертификаты участников</h3>
+
+							<p class="wppa-hint">
+					Сертификат получает участник с процентом не ниже порога (60%). Номер, код проверки и PDF присваивает WP Diplom; письмо с PDF уходит, если включена отправка в настройках.				</p>
+
+				<form method="post" action="https://example.com/?wppa_tab=participants" class="wppa-participants__issue-all">
+					<input type="hidden" name="wppa_nonce" value="nonce" />					<input type="hidden" name="wppa_action" value="certificate" />
+					<input type="hidden" name="certificate_action" value="issue_threshold" />
+
+											<label class="wppa-participants__label" for="wppa-cert-team">Команда</label>
+						<select id="wppa-cert-team" name="team_id">
+															<option value="101">
+									Студия «Вектор»								</option>
+													</select>
+					
+					<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+						Выдать всем, кто выше порога					</button>
+				</form>
+					</section>
+
+	</section>
+	</div>
+</div>
+</section><section class="demo-block"><div class="demo-block__head"><h2>Участник: вкладка «Сертификаты»</h2><p>Вкладка видна только тем, кому сертификат уже выдан, и куратору. Внутри — номер, код проверки, программа, дата выдачи и кнопка «Скачать»: PDF готовит плагин WP Diplom</p></div><div class="wppa">
+
+			<h1 class="wppa-title wppa-page-title">
+			Личный кабинет		</h1>
+		
+	<header class="wppa-header">
+		<div class="wppa-header__user">
+			<div class="wppa-avatar" aria-hidden="true">
+				<img class="avatar" width="56" height="56" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NiIgaGVpZ2h0PSI1NiI+PHJlY3Qgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iMjgiIGZpbGw9IiNkYmVhZmUiLz48Y2lyY2xlIGN4PSIyOCIgY3k9IjIyIiByPSI5IiBmaWxsPSIjMjU2M2ViIi8+PHBhdGggZD0iTTggNTJjNC0xMSAxMy0xNiAyMC0xNnMxNiA1IDIwIDE2eiIgZmlsbD0iIzI1NjNlYiIvPjwvc3ZnPg==" alt="" />			</div>
+			<div>
+				<p class="wppa-header__name">Иван Петров</p>
+									<p class="wppa-header__email">ivan@example.com</p>
+							</div>
+		</div>
+
+		<a class="wppa-button wppa-button--ghost" href="https://example.com/logout">
+			Выйти		</a>
+	</header>
+
+	
+	<nav class="wppa-nav" aria-label="Разделы личного кабинета">
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=dashboard"
+							>
+				Обзор			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=profile"
+							>
+				Профиль			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=team"
+							>
+				Команда			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=files"
+							>
+				Файлы			</a>
+					<a
+				class="wppa-nav__link is-active"
+				href="https://example.com/?wppa_tab=certificates"
+				aria-current="page"			>
+				Сертификаты			</a>
+					<a
+				class="wppa-nav__link"
+				href="https://example.com/?wppa_tab=security"
+							>
+				Безопасность			</a>
+			</nav>
+
+	<div class="wppa-body">
+		
+<section class="wppa-card wppa-certificates">
+	<h2 class="wppa-title">
+		Мои сертификаты	</h2>
+
+	
+		<div class="wppa-table-wrap">
+			<table class="wppa-table wppa-certificates__table">
+				<thead>
+					<tr>
+						<th scope="col">Номер</th>
+						<th scope="col">Программа</th>
+						<th scope="col">Выдан</th>
+						<th scope="col">PDF</th>
+					</tr>
+				</thead>
+				<tbody>
+											<tr>
+							<td data-label="Номер">
+								<strong>WPD-2026-0014</strong>
+																	<br /><span class="wppa-hint">код проверки: <code>A7F2K9D4Q1L0</code></span>
+															</td>
+							<td data-label="Программа">Студия «Вектор»</td>
+							<td data-label="Выдан">30.10.2026</td>
+							<td data-label="PDF">
+								<a class="wppa-button wppa-button--primary wppa-button--sm" href="https://example.com/wp-admin/admin-post.php?action=wppa_certificate_download&amp;user=7&amp;cert=551&amp;_wpnonce=nonce-c497d12adb">
+									Скачать								</a>
+																	<br /><span class="wppa-hint">отправлен на e-mail</span>
+															</td>
 						</tr>
 									</tbody>
 			</table>
@@ -4188,7 +4441,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Откроется 06.11.2026 15:59.		</p>
+			Откроется 06.11.2026 16:24.		</p>
 	
 	
 			<p class="wppa-link-block__timer">
@@ -4196,9 +4449,9 @@ body {
 				До открытия:			</span>
 			<span
 				class="wppa-countdown"
-				data-wppa-countdown="1793980740"
+				data-wppa-countdown="1793982240"
 				data-wppa-countdown-mode="open"
-				data-wppa-reload="1"			>01:59:30</span>
+				data-wppa-reload="1"			>01:59:46</span>
 		</p>
 	
 	</section>
@@ -4213,7 +4466,7 @@ body {
 		>Перейти к трансляции</span>
 	
 			<p class="wppa-hint wppa-hint--block wppa-link-block__message">
-			Срок доступа истёк 06.11.2026 12:59.		</p>
+			Срок доступа истёк 06.11.2026 13:24.		</p>
 	
 			<p class="wppa-link-block__note">
 			Ссылка работала до окончания приёма работ.		</p>
@@ -4224,11 +4477,11 @@ body {
 	<h2 class="wppa-title">Регистрация</h2>
 
 	<div class="wppa-notice wppa-notice--info" role="status">
-	Форма регистрации откроется 06.11.2026 15:59.</div>
+	Форма регистрации откроется 06.11.2026 16:24.</div>
 
 			<p class="wppa-countdown-row">
 			<span class="wppa-countdown-row__label">До открытия:</span>
-			<span class="wppa-countdown" data-wppa-countdown="1793980740" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:30</span>		</p>
+			<span class="wppa-countdown" data-wppa-countdown="1793982240" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:46</span>		</p>
 	
 	<p class="wppa-hint">Регистрация ограничена по времени: форма появится здесь автоматически, когда откроется.</p>
 </div>
@@ -4267,7 +4520,7 @@ body {
 					Регистрация				</span>
 					</div>
 					<p class="wppa-hint wppa-hint--block">
-				Регистрация откроется 06.11.2026 15:59.									<span class="wppa-countdown" data-wppa-countdown="1793980740" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:30</span>							</p>
+				Регистрация откроется 06.11.2026 16:24.									<span class="wppa-countdown" data-wppa-countdown="1793982240" data-wppa-countdown-mode="open" data-wppa-reload="1">01:59:46</span>							</p>
 			</div>
 <div style="margin-top:18px"></div></div></div></section><section class="demo-block"><div class="demo-block__head"><h2>Восстановление пароля</h2><p>Свои формы вместо служебной страницы WordPress: заявка по логину или email и установка нового пароля по ссылке из письма</p></div><div class="demo-two"><div><div class="wppa-form-wrap">
 	<h2 class="wppa-title">Восстановление пароля</h2>

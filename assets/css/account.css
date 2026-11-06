@@ -1445,3 +1445,47 @@
 .wppa-participants__table td:last-child {
 	white-space: nowrap;
 }
+
+.wppa-participants__certs {
+	min-width: 150px;
+}
+
+.wppa-participants__cert {
+	margin: 0 0 6px;
+}
+
+.wppa-participants__cert-remove,
+.wppa-participants__cert-issue {
+	display: inline-block;
+	margin: 0;
+}
+
+.wppa-participants__certificates {
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-participants__certificates .wppa-subtitle {
+	margin-top: 0;
+}
+
+.wppa-certificates__table td code {
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--wppa-surface-alt);
+	color: var(--wppa-text);
+}
+
+.wppa-participants__cert-issue,
+.wppa-participants__issue-all {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.wppa-participants__issue-all {
+	margin-top: 10px;
+}

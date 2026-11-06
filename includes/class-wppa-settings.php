@@ -347,6 +347,10 @@ class WPPA_Settings {
 
 		$out['password_rules'] = $rules_out;
 
+		// Сертификаты: бланк WP Diplom и отправка письмом.
+		$out['certificate_template'] = isset( $input['certificate_template'] ) ? absint( $input['certificate_template'] ) : 0;
+		$out['certificate_email']    = empty( $input['certificate_email'] ) ? 0 : 1;
+
 		// Кнопка со ссылкой.
 		$link_saved = isset( $input['link_button'] ) && is_array( $input['link_button'] ) ? $input['link_button'] : array();
 
@@ -783,6 +787,45 @@ class WPPA_Settings {
 						<td>
 							<input type="number" min="1" max="100" id="wppa-min-team" name="wppa_settings[min_team_members]" value="<?php echo esc_attr( (int) $s['min_team_members'] ); ?>" />
 							<p class="description"><?php esc_html_e( 'Сколько человек должно быть в команде, чтобы она считалась набранной. Не может быть больше максимума. Команды ниже минимума получают отметку «недобор» в кабинете и в админке.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Сертификаты', 'wp-personal-account' ); ?></h2>
+				<?php
+				$wppa_cert_ready     = class_exists( 'WPPA_Certificates' ) && WPPA_Certificates::available();
+				$wppa_cert_templates = $wppa_cert_ready ? WPPA_Certificates::templates() : array();
+				$wppa_cert_current   = (int) WPPA_Plugin::setting( WPPA_Certificates::TEMPLATE_KEY, 0 );
+				?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-cert-template"><?php esc_html_e( 'Бланк', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<?php if ( ! $wppa_cert_ready ) : ?>
+								<p class="description">
+									<?php esc_html_e( 'Сертификаты выдаёт плагин WP Diplom — сейчас он не активен. Активируйте его, и здесь появится выбор бланка, а у куратора во вкладке «Участники» — кнопки «Выдать сертификат».', 'wp-personal-account' ); ?>
+								</p>
+							<?php else : ?>
+								<select id="wppa-cert-template" name="wppa_settings[certificate_template]">
+									<option value="0"><?php esc_html_e( 'Бланк WP Diplom по умолчанию', 'wp-personal-account' ); ?></option>
+									<?php foreach ( $wppa_cert_templates as $wppa_cert_id => $wppa_cert_title ) : ?>
+										<option value="<?php echo esc_attr( (string) (int) $wppa_cert_id ); ?>" <?php selected( $wppa_cert_current, (int) $wppa_cert_id ); ?>>
+											<?php echo esc_html( $wppa_cert_title ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description"><?php esc_html_e( 'Бланки создаются в разделе «Сертификаты → Бланки» плагина WP Diplom: формат, фон, поля и тексты. Номер и код проверки присваиваются при выдаче.', 'wp-personal-account' ); ?></p>
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Письмо', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[certificate_email]" value="1" <?php checked( 1, (int) WPPA_Plugin::setting( WPPA_Certificates::EMAIL_KEY, 0 ) ); ?> />
+								<?php esc_html_e( 'Отправлять сертификат участнику письмом сразу при выдаче', 'wp-personal-account' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'Письмо с PDF отправляет WP Diplom на email из аккаунта участника. Без галочки сертификат просто появляется в кабинете.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 				</table>

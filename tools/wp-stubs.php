@@ -402,6 +402,20 @@ function get_userdata( $id ) {
 		$user->display_name = $registry[ (int) $id ][0];
 	}
 
+	if ( isset( $registry[ (int) $id ]['email'] ) ) {
+		$user->user_email = (string) $registry[ (int) $id ]['email'];
+	} elseif ( isset( $registry[ (int) $id ][1] ) ) {
+		$user->user_email = (string) $registry[ (int) $id ][1];
+	}
+
+	if ( isset( $registry[ (int) $id ]['first_name'] ) ) {
+		$user->first_name = (string) $registry[ (int) $id ]['first_name'];
+	}
+
+	if ( isset( $registry[ (int) $id ]['last_name'] ) ) {
+		$user->last_name = (string) $registry[ (int) $id ]['last_name'];
+	}
+
 	return $user;
 }
 

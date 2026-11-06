@@ -1307,6 +1307,63 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						+ HTML-блок					</button>
 				</p>
 			</section>
+								<section class="wppa-admin__panel wppa-builder" data-tab="certificates">
+				<h2>Сертификаты</h2>
+
+				<div class="wppa-builder__list" data-wppa-list>
+																	<div class="wppa-builder__row" data-wppa-row>
+							<span class="wppa-builder__handle" aria-hidden="true">☰</span>
+
+							<div class="wppa-builder__main">
+								<div class="wppa-builder__head">
+									<label class="wppa-builder__toggle">
+										<input type="checkbox" name="wppa_layout[certificates][0][enabled]" value="1"  checked="checked" />
+										<strong>Мои сертификаты</strong>
+									</label>
+
+																	</div>
+
+																	<p class="wppa-admin__muted wppa-builder__desc">Сертификаты участника: номер, программа, дата и скачивание PDF</p>
+								
+								<div class="wppa-builder__fields">
+									<input
+										type="text"
+										name="wppa_layout[certificates][0][title]"
+										value=""
+										placeholder="Заголовок блока (необязательно)"
+										class="regular-text"
+									/>
+
+									<select name="wppa_layout[certificates][0][audience]">
+										<option value="all"  selected="selected">Все пользователи</option>
+										<option value="admins" >Только администраторы</option>
+									</select>
+								</div>
+
+															</div>
+
+							<input type="hidden" name="wppa_layout[certificates][0][type]" value="block" />
+							<input type="hidden" name="wppa_layout[certificates][0][id]" value="certificates-widget" />
+
+							<span class="wppa-builder__actions">
+								<button type="button" class="button button-small" data-wppa-move="up" aria-label="Выше">↑</button>
+								<button type="button" class="button button-small" data-wppa-move="down" aria-label="Ниже">↓</button>
+								<button type="button" class="button button-small" data-wppa-remove>Убрать</button>
+							</span>
+						</div>
+									</div>
+
+				<p class="wppa-builder__add">
+					<button
+						type="button"
+						class="button"
+						data-wppa-add-custom
+						data-tab="certificates"
+						data-index="1"
+					>
+						+ HTML-блок					</button>
+				</p>
+			</section>
 								<section class="wppa-admin__panel wppa-builder" data-tab="mailing">
 				<h2>Рассылка</h2>
 
@@ -1905,7 +1962,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 						<tr>
 							<td>Следующее письмо</td>
 							<td>
-								06.11.2026 14:09							</td>
+								06.11.2026 14:34							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -1944,7 +2001,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">ivan@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 13:59</td>
+										<td>06.11.2026 14:24</td>
 										<td>
 											отправлено										</td>
 									</tr>
@@ -1954,7 +2011,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 											<span class="wppa-admin__muted">maria@example.com</span>
 										</td>
 										<td>Студия «Вектор»</td>
-										<td>06.11.2026 14:09</td>
+										<td>06.11.2026 14:34</td>
 										<td>
 											ждёт отправки										</td>
 									</tr>
@@ -1997,11 +2054,11 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<table class="widefat striped">
 					<tbody>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 13:59</td>
+								<td class="wppa-admin__muted">06.11.2026 14:24</td>
 								<td>Отправлено писем: 1.</td>
 							</tr>
 													<tr>
-								<td class="wppa-admin__muted">06.11.2026 13:59</td>
+								<td class="wppa-admin__muted">06.11.2026 14:24</td>
 								<td>Рассылка запущена: 2 писем, шаг 10 мин.</td>
 							</tr>
 											</tbody>
@@ -2253,6 +2310,9 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 															<label style="display:block;margin-bottom:6px;">
 									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="participants"  />
 									Участники								</label>
+															<label style="display:block;margin-bottom:6px;">
+									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="certificates"  />
+									Сертификаты								</label>
 															<label style="display:block;margin-bottom:6px;">
 									<input type="checkbox" name="wppa_settings[enabled_tabs][]" value="mailing"  />
 									Рассылка								</label>
@@ -2954,6 +3014,32 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 					</tr>
 				</table>
 
+				<h2>Сертификаты</h2>
+								<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="wppa-cert-template">Бланк</label></th>
+						<td>
+															<select id="wppa-cert-template" name="wppa_settings[certificate_template]">
+									<option value="0">Бланк WP Diplom по умолчанию</option>
+																			<option value="601"  selected="selected">
+											Бланк «Олимпиада»										</option>
+																			<option value="602" >
+											Бланк «Основной»										</option>
+																	</select>
+								<p class="description">Бланки создаются в разделе «Сертификаты → Бланки» плагина WP Diplom: формат, фон, поля и тексты. Номер и код проверки присваиваются при выдаче.</p>
+													</td>
+					</tr>
+					<tr>
+						<th scope="row">Письмо</th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[certificate_email]" value="1"  checked="checked" />
+								Отправлять сертификат участнику письмом сразу при выдаче							</label>
+							<p class="description">Письмо с PDF отправляет WP Diplom на email из аккаунта участника. Без галочки сертификат просто появляется в кабинете.</p>
+						</td>
+					</tr>
+				</table>
+
 				<h2>Кнопка со ссылкой</h2>
 								<table class="form-table" role="presentation">
 					<tr>
@@ -3093,7 +3179,7 @@ code { background: #f6f7f7; padding: 2px 5px; border-radius: 3px; font-size: 12p
 							<p class="description">
 								Регистрация, сохранение профиля, смена email, состав и настройки команд. Изменения подряд объединяются в одну выгрузку: новый файл не пишется на каждое сохранение. Работает вместе с расписанием и не отменяет его.							</p>
 																						<p class="description">
-									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 14:04.								</p>
+									Ожидает выгрузки: 3 изменений, ближайшая — 06.11.2026 14:29.								</p>
 													</td>
 					</tr>
 					<tr>
@@ -3822,10 +3908,10 @@ EOF</code></p>
 				</p>
 			
 			<p>
-									Следующая выгрузка: 06.11.2026 21:59 (Раз в день).							</p>
+									Следующая выгрузка: 06.11.2026 22:24 (Раз в день).							</p>
 
 							<p class="wppa-admin__muted">
-					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 14:04				</p>
+					Выгрузка по изменениям: Через 5 минут; ожидает 3 изменений, ближайшая выгрузка 06.11.2026 14:29				</p>
 			
 			
 			
@@ -3862,7 +3948,7 @@ EOF</code></p>
 					</thead>
 					<tbody>
 													<tr>
-								<td>06.11.2026 13:59</td>
+								<td>06.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>
@@ -3871,7 +3957,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 13:59</td>
+								<td>06.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--warn">
 										ошибка									</span>
@@ -3880,7 +3966,7 @@ EOF</code></p>
 								<td><code>/mnt/share/wppa/wppa-accounts-2026-11-02.csv</code></td>
 							</tr>
 													<tr>
-								<td>06.11.2026 13:59</td>
+								<td>06.11.2026 14:24</td>
 								<td>
 									<span class="wppa-badge wppa-badge--ok">
 										записан									</span>

@@ -32,6 +32,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-participants.php';
+require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -193,6 +194,30 @@ delete_option( WPPA_Export_Folder::PENDING_OPTION );
 WPPA_Export_Folder::note_change( 'регистрация пользователя #14' );
 WPPA_Export_Folder::note_change( 'поле _wppa_team_id у пользователя #9' );
 WPPA_Export_Folder::note_change( 'профиль пользователя #11' );
+
+// Заглушка WP Diplom, чтобы показать выбор бланка в настройках.
+if ( ! class_exists( 'WPDC_Certificate' ) ) {
+	/**
+	 * Заглушка WPDC_Certificate для превью админки.
+	 */
+	class WPDC_Certificate {
+
+		/** Выдать сертификат. */
+		public static function create( $args = array() ) {
+			return 9001;
+		}
+
+		/** Путь к PDF. */
+		public static function pdf( $id ) {
+			return '';
+		}
+	}
+}
+
+$GLOBALS['wppa_test']['posts'][601] = (object) array( 'ID' => 601, 'post_title' => 'Бланк «Олимпиада»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 12 );
+$GLOBALS['wppa_test']['posts'][602] = (object) array( 'ID' => 602, 'post_title' => 'Бланк «Основной»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 12 );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_template' => 601, 'certificate_email' => 1 ) ) );
 
 $sections .= demo_page( 'Настройки', 'Параметры кабинета, регистрации, команд, паролей и сетевой папки с логином и паролем', static function () { WPPA_Settings::render_page(); } );
 

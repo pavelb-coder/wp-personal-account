@@ -130,6 +130,11 @@ class WPPA_Builder {
 				'tabs'  => array( 'files' ),
 				'desc'  => __( 'Документы куратора для наставника команды', 'wp-personal-account' ),
 			),
+			'certificates-widget' => array(
+				'label' => __( 'Мои сертификаты', 'wp-personal-account' ),
+				'tabs'  => array( 'certificates' ),
+				'desc'  => __( 'Сертификаты участника: номер, программа, дата и скачивание PDF', 'wp-personal-account' ),
+			),
 			'participants-widget' => array(
 				'label'        => __( 'Участники и баллы', 'wp-personal-account' ),
 				'tabs'         => array( 'participants', 'files' ),

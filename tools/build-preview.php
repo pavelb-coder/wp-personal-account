@@ -26,6 +26,7 @@ require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-participants.php';
+require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -334,6 +335,52 @@ add_filter( 'wppa_olympiad_active', $wppa_preview_active );
 
 WPPA_Olympiad::flush();
 
+// Демонстрация сертификатов: заглушка плагина WP Diplom и выданный сертификат.
+if ( ! class_exists( 'WPDC_Certificate' ) ) {
+	/**
+	 * Заглушка WPDC_Certificate для превью.
+	 */
+	class WPDC_Certificate {
+
+		/** Выдать сертификат. */
+		public static function create( $args = array() ) {
+			return 9001;
+		}
+
+		/** Путь к PDF. */
+		public static function pdf( $id ) {
+			return '';
+		}
+	}
+}
+
+$GLOBALS['wppa_test']['posts'][601] = (object) array( 'ID' => 601, 'post_title' => 'Бланк «Олимпиада»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 12 );
+$GLOBALS['wppa_test']['posts'][602] = (object) array( 'ID' => 602, 'post_title' => 'Бланк «Основной»', 'post_type' => 'wpdc_template', 'post_status' => 'publish', 'post_author' => 12 );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array( 'certificate_template' => 601, 'participant_min_percent' => 60 )
+	)
+);
+
+update_user_meta(
+	7,
+	WPPA_Certificates::META,
+	array(
+		'cert-551' => array(
+			'id'     => 551,
+			'number' => 'WPD-2026-0014',
+			'code'   => 'A7F2K9D4Q1L0',
+			'course' => 'Студия «Вектор»',
+			'time'   => (int) strtotime( '2026-10-30 12:00:00' ),
+			'by'     => 12,
+			'sent'   => true,
+		),
+	)
+);
+
 $sections .= demo_section(
 	'Куратор: участники и баллы',
 	'Список участников команд без наставников: баллы и процент за тесты и порог минимального процента. У Петра 30 % — ниже порога 60 %, поэтому процент помечен предупреждением и подписью «ниже порога 60%»',
@@ -372,6 +419,23 @@ $sections .= demo_section(
 
 WPPA_Teams::set_curator( 12, false );
 
+// Участник: вкладка «Сертификаты».
+$GLOBALS['wppa_test']['current_user'] = 7;
+
+$sections .= demo_section(
+	'Участник: вкладка «Сертификаты»',
+	'Вкладка видна только тем, кому сертификат уже выдан, и куратору. Внутри — номер, код проверки, программа, дата выдачи и кнопка «Скачать»: PDF готовит плагин WP Diplom',
+	WPPA_Template::get(
+		'account',
+		array(
+			'user'        => new WP_User( 7 ),
+			'tabs'        => WPPA_Template::tabs(),
+			'current_tab' => 'certificates',
+		)
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
 
 $sections .= demo_section(
 	'Безопасность',

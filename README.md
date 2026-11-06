@@ -1,10 +1,10 @@
 # WP Personal Account
 
-**Версия: 3.42.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
+**Версия: 3.43.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
 
 Плагин личного кабинета для WordPress: профиль, пароль, смена email, команды пользователей, вход и регистрация — на шорткодах, без зависимостей и сборки.
 
-**Что нового в 3.42.0:** у куратора появилась отдельная вкладка **«Участники»** — блок «Участники и баллы» со списком участников команд без наставников, их баллами и процентом за тесты и настройкой минимального процента правильных ответов. Полная история — в [CHANGELOG.md](CHANGELOG.md).
+**Что нового в 3.43.0:** сертификаты участников — интеграция с плагином [WP Diplom](https://github.com/pavelb-coder/wp-diplom). Куратор выдаёт сертификат участнику или всем, кто выше порога, участник видит вкладку **«Сертификаты»** и скачивает PDF; без WP Diplom кабинет работает как раньше. Полная история — в [CHANGELOG.md](CHANGELOG.md).
 
 ## Что внутри
 
@@ -110,7 +110,7 @@ WPPA_Fields::types();                  // доступные типы своих
 
 ### Вкладки кабинета
 
-Вкладки: **Обзор** (дата регистрации, команда, кнопка со ссылкой — без email и личных данных), **Профиль**, **Команда**, **Файлы** (куратору всегда; наставнику — когда есть файлы куратора или отметка второго этапа), **Участники** (только куратору — отдельный раздел с баллами и порогом процента), **Рассылка** (только куратору), **Безопасность** (пароль, смена email с подтверждением, выход).
+Вкладки: **Обзор** (дата регистрации, команда, кнопка со ссылкой — без email и личных данных), **Профиль**, **Команда**, **Файлы** (куратору всегда; наставнику — когда есть файлы куратора или отметка второго этапа), **Участники** (только куратору — отдельный раздел с баллами и порогом процента), **Сертификаты** (тем, кому сертификат выдан, и куратору — когда активен WP Diplom), **Рассылка** (только куратору), **Безопасность** (пароль, смена email с подтверждением, выход).
 
 **У куратора вкладок «Обзор» и «Профиль» нет** — он работает с командами, участниками и рассылкой, поэтому видит «Команда», «Файлы», «Участники», «Рассылка» и «Безопасность» (`WPPA_Template::tabs()` убирает лишние вкладки для `WPPA_Teams::is_curator()` и оставляет «Участники» и «Рассылка» только ему; вкладка по умолчанию берётся первая доступная).
 
@@ -366,6 +366,22 @@ API: `WPPA_Mailing::recipients()`, `settings()`/`save()`, `start()`, `cancel()`,
 * **Как это видно**: под формой подпись «Порог N%: ниже него — X из Y участников» (`count_below()`), у строки с низким процентом значок `wppa-badge--warn` и подпись «ниже порога N%», у остальных — `wppa-badge--ok`. Процент выводит `percent_label()`: «75 %» без лишнего нуля, «72,5 %» с десятыми.
 * **Коды уведомлений**: `participant_threshold_saved`, `participant_threshold_forbidden`.
 
+### Сертификаты (интеграция с WP Diplom)
+
+Сертификаты выдаёт плагин [WP Diplom](https://github.com/pavelb-coder/wp-diplom) — он делает номер, код проверки и PDF. Кабинет только показывает выданное и отдаёт файл. **WP Diplom не обязателен**: пока его класс `WPDC_Certificate` не объявлен, вкладки «Сертификаты» нет, а в списке участников вместо кнопок стоит подпись «нужен WP Diplom».
+
+* **Куда**: вкладка **«Сертификаты»** (`certificates` в `WPPA_Template::all_tabs()`, шаблон `templates/tab-certificates.php`) и блок `certificates-widget` («Мои сертификаты») в «Конструкторе». Класс — `WPPA_Certificates`, шаблон блока — `templates/blocks/certificates-widget.php`.
+* **Кому видна вкладка**: тем, у кого есть хотя бы один сертификат, и куратору — но только когда WP Diplom активен (`WPPA_Certificates::available()`).
+* **Выдача**: в блоке «Участники и баллы» у куратора в строке участника — кнопка «Выдать» (или «Ещё» для повторной выдачи) и «Убрать» у уже выданного; под таблицей — секция «Сертификаты участников» с кнопкой «Выдать всем, кто выше порога» и выбором команды (если команда не открыта через `?wppa_team=ID`).
+* **Массовая выдача**: `issue_team_above_threshold()` берёт строки `WPPA_Participants::rows()`, баллы `scores()` и выдаёт сертификат только тем, у кого `below_threshold()` ложно. Наставники в список не попадают, участники без результатов тестов пропускаются. Порог — тот же `participant_min_percent`.
+* **Что попадает в сертификат**: получатель — имя и фамилия участника (`WPPA_Teams::full_name()`), email — из аккаунта, программа — название команды, подпись — имя куратора; процент и баллы уходят в `custom` как `percent` и `score` (плейсхолдеры `{custom_percent}`, `{custom_score}` в бланке WP Diplom). Всё переопределяется фильтром `wppa_certificate_args`.
+* **Настройки**: «Настройки → Сертификаты» — `certificate_template` (ID бланка `wpdc_template`, 0 — бланк WP Diplom по умолчанию, фильтр `wppa_certificate_template`) и `certificate_email` (отправлять письмо с PDF сразу при выдаче, `WPDC_Email::send()`, фильтр `wppa_certificate_send_email`).
+* **Что хранится**: мета участника `_wppa_certificates` — `cert-<ID> => { id, number, code, course, time, by, sent }`; список сортируется по дате выдачи, сначала новые.
+* **Скачивание**: `admin-post.php?action=wppa_certificate_download&user=…&cert=…` с nonce `wppa_certificate_{user}_{cert}` (`WPPA_Certificates::download_url()`). Доступ — участнику и куратору (`can_view()`), PDF берётся из `WPDC_Certificate::pdf()`.
+* **«Убрать»** убирает сертификат только из кабинета — в WP Diplom запись и PDF остаются.
+* **Формы**: `wppa_action=certificate` + `certificate_action=issue|issue_threshold|remove`, nonce `wppa_certificate` (поле `wppa_nonce`), обработчик — `WPPA_Certificates::handle_request()`.
+* **Коды уведомлений**: `certificate_issued`, `certificate_issued_many`, `certificate_nobody`, `certificate_removed`, `certificate_missing`, `certificate_forbidden`, `certificate_unavailable`, `certificate_failed`.
+
 ## Установка
 
 ```bash
@@ -402,11 +418,15 @@ includes/
   class-wppa-builder.php     конструктор: блоки, раскладка, рендер вкладок
   class-wppa-widget.php      виджет «Вход и регистрация» + общий рендер форм
   class-wppa-blocks.php      блоки Gutenberg: auth, login, register (рендер, регистрация, оформление)
+  class-wppa-participants.php участники и баллы: список без наставников, проценты, порог
+  class-wppa-certificates.php сертификаты: выдача через WP Diplom, список участника, скачивание PDF
   class-wppa-shortcodes.php  регистрация шорткодов
 templates/                   разметка кабинета (переопределяется в теме)
-templates/blocks/            блоки конструктора (8 штук + custom)
+templates/blocks/            блоки конструктора (12 шаблонов)
 templates/auth-widget.php    компактный блок входа/регистрации (виджет)
 templates/tab-team.php       вкладка «Команда»
+templates/tab-participants.php  вкладка «Участники» (куратор)
+templates/tab-certificates.php  вкладка «Сертификаты»
 templates/admin/             разметка админ-панели (dashboard, builder, accounts, teams, tools)
 assets/css/account.css       стили кабинета на CSS-переменных
 assets/css/admin.css         стили админ-панели
@@ -874,9 +894,9 @@ add_filter( 'wppa_password_rules', function ( $rules ) {
 
 | Место | Строка |
 | --- | --- |
-| `wp-personal-account.php` | `* Version: 3.42.0` |
-| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.42.0' )` |
-| `readme.txt` | `Stable tag: 3.42.0` |
+| `wp-personal-account.php` | `* Version: 3.43.0` |
+| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.43.0' )` |
+| `readme.txt` | `Stable tag: 3.43.0` |
 
 Правила инкремента:
 

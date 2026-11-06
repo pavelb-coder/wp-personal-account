@@ -69,6 +69,7 @@ class WPPA_Plugin {
 		WPPA_Teams::init();
 		WPPA_Curator_Files::init();
 		WPPA_Participants::init();
+		WPPA_Certificates::init();
 		WPPA_Team_Files_Export::init();
 		WPPA_Mailing::init();
 		WPPA_Mailing_Files::init();
@@ -143,8 +144,10 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'mailing', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ),
 			'participant_min_percent' => 60,
+			'certificate_template'    => 0,
+			'certificate_email'       => 0,
 			'registration_enabled' => 1,
 			'hide_admin_bar'       => 1,
 			'registration_start'   => '',
@@ -573,6 +576,9 @@ class WPPA_Plugin {
 				break;
 			case 'participant_threshold':
 				WPPA_Participants::handle_threshold();
+				break;
+			case 'certificate':
+				WPPA_Certificates::handle_request();
 				break;
 			case 'mailing':
 				WPPA_Mailing::handle_request();

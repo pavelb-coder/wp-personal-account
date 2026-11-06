@@ -25,6 +25,17 @@ $wppa_scores = WPPA_Participants::scores( $wppa_rows );
 $wppa_threshold = WPPA_Participants::min_percent();
 $wppa_below     = WPPA_Participants::count_below( $wppa_rows, $wppa_scores );
 
+$wppa_certs_ready = class_exists( 'WPPA_Certificates' ) && WPPA_Certificates::available();
+
+// Команды для массовой выдачи: только те, что попали в список.
+$wppa_team_ids = array();
+
+foreach ( $wppa_rows as $wppa_row_item ) {
+	if ( ! in_array( (int) $wppa_row_item['team'], $wppa_team_ids, true ) ) {
+		$wppa_team_ids[] = (int) $wppa_row_item['team'];
+	}
+}
+
 $wppa_single_team = WPPA_Teams::viewing_team_id( $wppa_viewer->ID );
 $wppa_block_url   = WPPA_Plugin::tab_url( 'files' );
 
@@ -97,6 +108,7 @@ if ( $wppa_single_team ) {
 						<th scope="col"><?php esc_html_e( 'Тесты', 'wp-personal-account' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Баллы', 'wp-personal-account' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Процент', 'wp-personal-account' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Сертификат', 'wp-personal-account' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -157,11 +169,87 @@ if ( $wppa_single_team ) {
 									<span class="wppa-hint">—</span>
 								<?php endif; ?>
 							</td>
+							<td data-label="<?php esc_attr_e( 'Сертификат', 'wp-personal-account' ); ?>" class="wppa-participants__certs">
+								<?php if ( ! $wppa_certs_ready ) : ?>
+									<span class="wppa-hint"><?php esc_html_e( 'нужен WP Diplom', 'wp-personal-account' ); ?></span>
+								<?php else : ?>
+									<?php $wppa_user_certs = WPPA_Certificates::for_user( $wppa_participant_id ); ?>
+									<?php foreach ( $wppa_user_certs as $wppa_cert ) : ?>
+										<div class="wppa-participants__cert">
+											<a class="wppa-link" href="<?php echo esc_url( $wppa_cert['url'] ); ?>">
+												<?php echo esc_html( '' !== $wppa_cert['number'] ? $wppa_cert['number'] : __( 'PDF', 'wp-personal-account' ) ); ?>
+											</a>
+											<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__cert-remove">
+												<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
+												<input type="hidden" name="wppa_action" value="certificate" />
+												<input type="hidden" name="certificate_action" value="remove" />
+												<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_participant_id ); ?>" />
+												<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['team'] ); ?>" />
+												<input type="hidden" name="certificate_id" value="<?php echo esc_attr( (string) $wppa_cert['id'] ); ?>" />
+												<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm"><?php esc_html_e( 'Убрать', 'wp-personal-account' ); ?></button>
+											</form>
+										</div>
+									<?php endforeach; ?>
+									<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__cert-issue">
+										<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
+										<input type="hidden" name="wppa_action" value="certificate" />
+										<input type="hidden" name="certificate_action" value="issue" />
+										<input type="hidden" name="participant_id" value="<?php echo esc_attr( (string) $wppa_participant_id ); ?>" />
+										<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_row['team'] ); ?>" />
+										<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+											<?php echo $wppa_user_certs ? esc_html__( 'Ещё', 'wp-personal-account' ) : esc_html__( 'Выдать', 'wp-personal-account' ); ?>
+										</button>
+									</form>
+								<?php endif; ?>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
 		</div>
+
+		<section class="wppa-participants__certificates">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Сертификаты участников', 'wp-personal-account' ); ?></h3>
+
+			<?php if ( ! $wppa_certs_ready ) : ?>
+				<p class="wppa-hint">
+					<?php esc_html_e( 'Черновики и бланки сертификатов делает плагин WP Diplom. Установите и активируйте его — здесь появятся кнопки «Выдать сертификат», а участник увидит вкладку «Сертификаты».', 'wp-personal-account' ); ?>
+				</p>
+			<?php else : ?>
+				<p class="wppa-hint">
+					<?php
+					printf(
+						/* translators: %d: минимальный процент правильных ответов */
+						esc_html__( 'Сертификат получает участник с процентом не ниже порога (%d%%). Номер, код проверки и PDF присваивает WP Diplom; письмо с PDF уходит, если включена отправка в настройках.', 'wp-personal-account' ),
+						(int) $wppa_threshold
+					);
+					?>
+				</p>
+
+				<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__issue-all">
+					<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
+					<input type="hidden" name="wppa_action" value="certificate" />
+					<input type="hidden" name="certificate_action" value="issue_threshold" />
+
+					<?php if ( $wppa_single_team ) : ?>
+						<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_single_team ); ?>" />
+					<?php else : ?>
+						<label class="wppa-participants__label" for="wppa-cert-team"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></label>
+						<select id="wppa-cert-team" name="team_id">
+							<?php foreach ( $wppa_team_ids as $wppa_team_option ) : ?>
+								<option value="<?php echo esc_attr( (string) (int) $wppa_team_option ); ?>">
+									<?php echo esc_html( (string) get_the_title( (int) $wppa_team_option ) ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					<?php endif; ?>
+
+					<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+						<?php esc_html_e( 'Выдать всем, кто выше порога', 'wp-personal-account' ); ?>
+					</button>
+				</form>
+			<?php endif; ?>
+		</section>
 
 	<?php endif; ?>
 </section>
