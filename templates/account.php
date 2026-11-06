@@ -45,10 +45,15 @@ defined( 'ABSPATH' ) || exit;
 	<?php WPPA_Notices::render(); ?>
 
 	<nav class="wppa-nav" aria-label="<?php esc_attr_e( 'Разделы личного кабинета', 'wp-personal-account' ); ?>">
-		<?php foreach ( $tabs as $slug => $label ) : ?>
+		<?php
+		foreach ( $tabs as $slug => $label ) :
+			// У куратора «Сертификаты» ведут в плагин WP Diplom — там выдача и правка.
+			$wppa_link = WPPA_Template::tab_link( $slug );
+			?>
 			<a
-				class="wppa-nav__link<?php echo $slug === $current_tab ? ' is-active' : ''; ?>"
-				href="<?php echo esc_url( WPPA_Plugin::tab_url( $slug ) ); ?>"
+				class="wppa-nav__link<?php echo $slug === $current_tab ? ' is-active' : ''; ?><?php echo ! empty( $wppa_link['external'] ) ? ' wppa-nav__link--external' : ''; ?>"
+				href="<?php echo esc_url( $wppa_link['url'] ); ?>"
+				<?php echo ! empty( $wppa_link['external'] ) ? 'target="' . esc_attr( $wppa_link['target'] ) . '" rel="noopener' . ( '_blank' === $wppa_link['target'] ? ' noreferrer' : '' ) . '"' : ''; ?>
 				<?php echo $slug === $current_tab ? 'aria-current="page"' : ''; ?>
 			>
 				<?php echo esc_html( $label ); ?>

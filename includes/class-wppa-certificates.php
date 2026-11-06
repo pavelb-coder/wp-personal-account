@@ -773,6 +773,40 @@ class WPPA_Certificates {
 	}
 
 	/**
+	 * Адрес раздела сертификатов в плагине WP Diplom: список записей
+	 * `wpdc_certificate`.
+	 *
+	 * @return string
+	 */
+	public static function admin_url() {
+		$url = admin_url( 'edit.php?post_type=wpdc_certificate' );
+
+		/**
+		 * Фильтр адреса сертификатов в WP Diplom.
+		 *
+		 * @param string $url Адрес экрана сертификатов.
+		 */
+		return (string) apply_filters( 'wppa_certificates_admin_url', $url );
+	}
+
+	/**
+	 * Ссылка куратора в плагин WP Diplom: куратор выдаёт и правит сертификаты
+	 * там, поэтому вкладка «Сертификаты» ведёт прямо в плагин.
+	 *
+	 * @param int $user_id Кто смотрит (0 — текущий пользователь).
+	 * @return string Пустая строка, если ссылка не нужна.
+	 */
+	public static function curator_admin_link( $user_id = 0 ) {
+		$user_id = (int) ( $user_id ? $user_id : get_current_user_id() );
+
+		if ( ! self::available() || ! WPPA_Teams::is_curator( $user_id ) ) {
+			return '';
+		}
+
+		return self::admin_url();
+	}
+
+	/**
 	 * Ссылка на скачивание PDF сертификата.
 	 *
 	 * @param int $user_id Участник.

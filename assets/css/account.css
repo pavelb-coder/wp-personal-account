@@ -194,6 +194,22 @@
 	color: var(--wppa-text) !important;
 }
 
+/* Вкладка ведёт в плагин WP Diplom: помечаем стрелкой. */
+.wppa-nav__link--external::after {
+	content: "↗";
+	margin-left: 4px;
+	font-size: .9em;
+	opacity: .7;
+}
+
+.wppa-certificates__plugin {
+	margin-bottom: 18px;
+}
+
+.wppa-certificates__plugin .wppa-title {
+	margin-top: 0;
+}
+
 .wppa-nav__link.is-active {
 	background: var(--wppa-accent);
 	color: var(--wppa-accent-contrast) !important;

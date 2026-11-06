@@ -4969,6 +4969,84 @@ $cr_checks['куратор видит вкладку']         = isset( $cr_tabs
 $cr_checks['участник с сертификатом видит'] = isset( $cr_tabs_owner['certificates'] );
 $cr_checks['участник без сертификатов — нет'] = ! isset( $cr_tabs_plain['certificates'] );
 
+// У куратора вкладка «Сертификаты» ведёт в плагин WP Diplom.
+$cr_checks['адрес сертификатов в плагине']    = false !== strpos( WPPA_Certificates::admin_url(), 'edit.php?post_type=wpdc_certificate' );
+$cr_checks['ссылка куратора в плагин']        = WPPA_Certificates::admin_url() === WPPA_Certificates::curator_admin_link( 12 );
+$cr_checks['участнику ссылки в плагин нет']   = '' === WPPA_Certificates::curator_admin_link( 911 );
+$cr_checks['наставнику ссылки в плагин нет']  = '' === WPPA_Certificates::curator_admin_link( 913 );
+
+$cr_link_curator = WPPA_Template::tab_link( 'certificates' );
+$cr_link_other   = WPPA_Template::tab_link( 'participants' );
+
+$GLOBALS['wppa_test']['current_user'] = 911;
+$cr_link_member                       = WPPA_Template::tab_link( 'certificates' );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cr_checks['вкладка куратора — внешняя']      = ! empty( $cr_link_curator['external'] ) && '_blank' === $cr_link_curator['target'];
+$cr_checks['ведёт на экран сертификатов']     = false !== strpos( $cr_link_curator['url'], 'post_type=wpdc_certificate' );
+$cr_checks['у участника вкладка своя']        = empty( $cr_link_member['external'] ) && false !== strpos( $cr_link_member['url'], 'wppa_tab=certificates' );
+$cr_checks['другие вкладки не внешние']       = empty( $cr_link_other['external'] );
+
+$cr_admin_filter = static function () {
+	return 'https://example.com/wp-admin/edit.php?post_type=wpdc_certificate&ref=cabinet';
+};
+
+add_filter( 'wppa_certificates_admin_url', $cr_admin_filter );
+
+$cr_checks['фильтр адреса плагина работает']  = 'https://example.com/wp-admin/edit.php?post_type=wpdc_certificate&ref=cabinet' === WPPA_Certificates::admin_url();
+
+remove_filter( 'wppa_certificates_admin_url', $cr_admin_filter );
+
+$cr_nav_curator = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => get_userdata( 12 ),
+		'tabs'        => WPPA_Template::tabs(),
+		'current_tab' => 'team',
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 911;
+
+$cr_nav_member = WPPA_Template::get(
+	'account',
+	array(
+		'user'        => get_userdata( 911 ),
+		'tabs'        => WPPA_Template::tabs(),
+		'current_tab' => 'dashboard',
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cr_checks['в навигации куратора ссылка в плагин'] = false !== strpos( $cr_nav_curator, 'post_type=wpdc_certificate' );
+$cr_checks['ссылка открывается в новой вкладке']   = false !== strpos( $cr_nav_curator, 'target="_blank"' ) && false !== strpos( $cr_nav_curator, 'rel="noopener' );
+$cr_checks['вкладка помечена внешней']             = false !== strpos( $cr_nav_curator, 'wppa-nav__link--external' );
+$cr_checks['у участника ссылки в плагин нет']      = false === strpos( $cr_nav_member, 'post_type=wpdc_certificate' );
+
+$cr_tab_curator_html = WPPA_Template::get(
+	'tab-certificates',
+	array(
+		'user' => get_userdata( 12 ),
+		'tabs' => WPPA_Template::all_tabs(),
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 911;
+
+$cr_tab_member_html = WPPA_Template::get(
+	'tab-certificates',
+	array(
+		'user' => get_userdata( 911 ),
+		'tabs' => WPPA_Template::all_tabs(),
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$cr_checks['у куратора на вкладке кнопка в плагин'] = false !== strpos( $cr_tab_curator_html, 'Открыть WP Diplom' );
+$cr_checks['у участника такой кнопки нет']          = false === strpos( $cr_tab_member_html, 'Открыть WP Diplom' );
+
 $cr_blocks = WPPA_Builder::blocks();
 $cr_layout = WPPA_Builder::defaults();
 

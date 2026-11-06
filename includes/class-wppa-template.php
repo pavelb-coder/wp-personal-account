@@ -106,6 +106,41 @@ class WPPA_Template {
 	}
 
 	/**
+	 * Ссылка вкладки: у куратора «Сертификаты» ведёт в плагин WP Diplom.
+	 *
+	 * @param string $slug Вкладка.
+	 * @return array url, external, target.
+	 */
+	public static function tab_link( $slug ) {
+		$slug = (string) $slug;
+		$link = array(
+			'url'      => WPPA_Plugin::tab_url( $slug ),
+			'external' => false,
+			'target'   => '',
+		);
+
+		if ( 'certificates' === $slug && class_exists( 'WPPA_Certificates' ) ) {
+			$admin = WPPA_Certificates::curator_admin_link();
+
+			if ( '' !== $admin ) {
+				$link = array(
+					'url'      => $admin,
+					'external' => true,
+					'target'   => '_blank',
+				);
+			}
+		}
+
+		/**
+		 * Фильтр ссылки вкладки кабинета.
+		 *
+		 * @param array  $link url, external, target.
+		 * @param string $slug Вкладка.
+		 */
+		return (array) apply_filters( 'wppa_tab_link', $link, $slug );
+	}
+
+	/**
 	 * Путь к шаблону с учётом переопределения в теме.
 	 *
 	 * @param string $name Имя шаблона без расширения.
