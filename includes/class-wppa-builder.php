@@ -211,7 +211,7 @@ class WPPA_Builder {
 
 		foreach ( array_keys( WPPA_Template::all_tabs() ) as $tab ) {
 			if ( is_array( $saved ) && array_key_exists( $tab, $saved ) ) {
-				$out[ $tab ] = (array) $saved[ $tab ];
+				$out[ $tab ] = self::known_items( (array) $saved[ $tab ] );
 				continue;
 			}
 
@@ -220,6 +220,74 @@ class WPPA_Builder {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Оставить только блоки, которые есть в плагине (и свои HTML-блоки).
+	 *
+	 * В сохранённой раскладке могут остаться записи блоков, которых больше нет:
+	 * например, после откатa версии. Такой блок не рендерится и даёт пустую
+	 * вкладку с сообщением «выключены все блоки».
+	 *
+	 * @param array $items Элементы раскладки.
+	 * @return array
+	 */
+	public static function known_items( $items ) {
+		$registry = self::blocks();
+		$out      = array();
+
+		foreach ( (array) $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$type = isset( $item['type'] ) ? (string) $item['type'] : 'block';
+			$id   = isset( $item['id'] ) ? (string) $item['id'] : '';
+
+			if ( 'custom' === $type || isset( $registry[ $id ] ) ) {
+				$out[] = $item;
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Вычистить из сохранённой раскладки блоки, которых больше нет в плагине.
+	 *
+	 * Если вкладка опустела именно из-за удалённого блока, возвращаем ей набор
+	 * по умолчанию — иначе вкладка осталась бы пустой без всякой причины.
+	 *
+	 * @return int Сколько записей вычищено.
+	 */
+	public static function drop_unknown() {
+		$saved = get_option( self::OPTION, null );
+
+		if ( ! is_array( $saved ) ) {
+			return 0;
+		}
+
+		$defaults = self::defaults();
+		$removed  = 0;
+
+		foreach ( $saved as $tab => $items ) {
+			$items = (array) $items;
+			$kept  = self::known_items( $items );
+
+			$removed += count( $items ) - count( $kept );
+
+			if ( array() === $kept && array() !== $items && isset( $defaults[ $tab ] ) ) {
+				$kept = $defaults[ $tab ];
+			}
+
+			$saved[ $tab ] = $kept;
+		}
+
+		if ( $removed > 0 ) {
+			update_option( self::OPTION, $saved );
+		}
+
+		return $removed;
 	}
 
 	/**
@@ -410,11 +478,15 @@ class WPPA_Builder {
 		}
 
 		if ( 0 === $shown && current_user_can( 'manage_options' ) ) {
+			$text = $items
+				? __( 'В этой вкладке выключены все блоки. Включите их в разделе «Конструктор».', 'wp-personal-account' )
+				: __( 'В этой вкладке нет ни одного блока. Добавьте их в разделе «Конструктор».', 'wp-personal-account' );
+
 			WPPA_Template::render(
 				'notice',
 				array(
 					'type' => 'info',
-					'text' => __( 'В этой вкладке выключены все блоки. Включите их в разделе «Конструктор».', 'wp-personal-account' ),
+					'text' => $text,
 				)
 			);
 		}

@@ -624,6 +624,14 @@ class WPPA_Plugin {
 		// Блок «Быстрые действия» удалён в 2.15.1 — вычищаем его из раскладок.
 		WPPA_Builder::drop_block( 'quick-actions' );
 
+		// Функции 3.37.0–3.40.0 откачены: блок «Участники и баллы» и его флаг
+		// больше не нужны — чистим раскладку, чтобы вкладка «Файлы» не осталась пустой.
+		if ( ! get_option( 'wppa_layout_cleaned' ) ) {
+			WPPA_Builder::drop_unknown();
+			delete_option( 'wppa_participants_seeded' );
+			update_option( 'wppa_layout_cleaned', 1 );
+		}
+
 		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.
 		if ( ! get_option( 'wppa_link_button_seeded' ) ) {
 			WPPA_Builder::seed_block( 'link-button', 'dashboard' );

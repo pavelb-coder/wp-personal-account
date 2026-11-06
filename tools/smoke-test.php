@@ -4346,6 +4346,128 @@ foreach ( $drop_checks as $check_name => $ok ) {
 	}
 }
 
+// ---- Раскладка после отката: чужие блоки не ломают вкладку (3.36.1) ----
+$lay_checks = array();
+$lay_backup = get_option( WPPA_Builder::OPTION, null );
+
+$lay_dead = array(
+	'type'     => 'block',
+	'id'       => 'participants-widget',
+	'enabled'  => 1,
+	'title'    => '',
+	'audience' => 'all',
+	'html'     => '',
+);
+
+update_option(
+	WPPA_Builder::OPTION,
+	array(
+		'files'     => array( $lay_dead ),
+		'dashboard' => array(
+			array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+			$lay_dead,
+			array( 'type' => 'custom', 'id' => 'custom-0', 'enabled' => 1, 'title' => 'Памятка', 'audience' => 'all', 'html' => '<p>Свой блок</p>' ),
+		),
+		'security'  => array(
+			array( 'type' => 'block', 'id' => 'password-form', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
+
+$lay_layout = WPPA_Builder::layout();
+
+$lay_files_ids = array_map(
+	static function ( $item ) {
+		return (string) $item['id'];
+	},
+	(array) $lay_layout['files']
+);
+
+$lay_checks['чужой блок не попадает в раскладку'] = ! in_array( 'participants-widget', $lay_files_ids, true );
+$lay_checks['свой блок остаётся']                 = 2 === count( $lay_layout['dashboard'] )
+	&& 'custom-0' === (string) $lay_layout['dashboard'][1]['id'];
+
+// Чистка раскладки: чужие записи убираются, опустевшая вкладка получает набор по умолчанию.
+$lay_removed = WPPA_Builder::drop_unknown();
+$lay_after   = get_option( WPPA_Builder::OPTION, array() );
+
+$lay_files_after = array_map(
+	static function ( $item ) {
+		return (string) $item['id'];
+	},
+	(array) $lay_after['files']
+);
+
+$lay_checks['чистка: две записи удалены']       = 2 === $lay_removed;
+$lay_checks['чистка: вкладка «Файлы» восстановлена'] = in_array( 'files-widget', $lay_files_after, true );
+$lay_checks['чистка: свой блок на месте']       = 2 === count( (array) $lay_after['dashboard'] );
+$lay_checks['чистка: выключенный блок остался'] = 'password-form' === (string) $lay_after['security'][0]['id'];
+
+// Сообщение админу: «нет блоков» и «все выключены» — разные тексты.
+update_option( WPPA_Builder::OPTION, array( 'files' => array() ) );
+
+$GLOBALS['wppa_test']['can_manage'] = true;
+
+ob_start();
+WPPA_Builder::render_tab( 'files' );
+$lay_empty_html = (string) ob_get_clean();
+
+$lay_checks['пустая вкладка: «нет ни одного блока»'] = false !== strpos( $lay_empty_html, 'нет ни одного блока' );
+
+update_option(
+	WPPA_Builder::OPTION,
+	array(
+		'files' => array(
+			array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 0, 'title' => '', 'audience' => 'all', 'html' => '' ),
+		),
+	)
+);
+
+ob_start();
+WPPA_Builder::render_tab( 'files' );
+$lay_off_html = (string) ob_get_clean();
+
+$lay_checks['выключенная вкладка: «выключены все блоки»'] = false !== strpos( $lay_off_html, 'выключены все блоки' );
+
+unset( $GLOBALS['wppa_test']['can_manage'] );
+
+// Обновление версии чистит следы откаченных функций.
+update_option( WPPA_Builder::OPTION, array( 'files' => array( $lay_dead ) ) );
+update_option( 'wppa_participants_seeded', 1 );
+delete_option( 'wppa_layout_cleaned' );
+
+$lay_settings_backup = get_option( 'wppa_settings', array() );
+
+WPPA_Plugin::maybe_upgrade();
+
+$lay_checks['обновление: флаг чистки поставлен'] = 1 === (int) get_option( 'wppa_layout_cleaned', 0 );
+$lay_checks['обновление: след 3.37 убран']       = false === get_option( 'wppa_participants_seeded', false );
+$lay_checks['обновление: раскладка починена']    = in_array(
+	'files-widget',
+	array_map(
+		static function ( $item ) {
+			return isset( $item['id'] ) ? (string) $item['id'] : '';
+		},
+		(array) ( get_option( WPPA_Builder::OPTION, array() )['files'] ?? array() )
+	),
+	true
+);
+
+update_option( 'wppa_settings', $lay_settings_backup );
+
+if ( null === $lay_backup ) {
+	delete_option( WPPA_Builder::OPTION );
+} else {
+	update_option( WPPA_Builder::OPTION, $lay_backup );
+}
+
+foreach ( $lay_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'layout: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";
