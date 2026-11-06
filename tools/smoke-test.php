@@ -2410,6 +2410,8 @@ $export_mentor_html = WPPA_Builder::render_block(
 $export_checks['наставнику видно: копия остаётся'] = false !== strpos( $export_mentor_html, 'копия в сетевой папке команды остаётся' );
 $export_checks['у наставника кнопка «Убрать»']     = false !== strpos( $export_mentor_html, 'Убрать' );
 $export_checks['у наставника нет «Удалить»']       = false === strpos( $export_mentor_html, '>Удалить<' );
+$export_checks['подтверждение без слов о копии']   = false === strpos( $export_mentor_html, 'Копия в сетевой папке' );
+$export_checks['подтверждение короткое']           = false !== strpos( $export_mentor_html, 'Убрать файл из кабинета?' );
 
 $export_notices = WPPA_Notices::registry();
 

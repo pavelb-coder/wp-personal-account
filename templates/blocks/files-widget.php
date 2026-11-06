@@ -212,7 +212,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 						<input type="hidden" name="wppa_back" value="files" />
 											<input type="hidden" name="curator_file_action" value="remove" />
 											<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
-											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Убрать файл из кабинета? Копия в сетевой папке команды останется.', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Убрать', 'wp-personal-account' ); ?></button>
+											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Убрать файл из кабинета?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Убрать', 'wp-personal-account' ); ?></button>
 										</form>
 									<?php else : ?>
 										<span class="wppa-hint">—</span>

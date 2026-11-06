@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.52.0
+Stable tag: 3.53.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.53.0 =
+* Подтверждение при уборке файла наставника больше не пишет про сетевую папку: просто «Убрать файл из кабинета?».
 
 = 3.52.0 =
 * Исправлено: удаление файла наставника в кабинете больше не удаляет его копию из сетевой папки команды — папка работает как архив.

@@ -1,10 +1,10 @@
 # WP Personal Account
 
-**Версия: 3.52.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
+**Версия: 3.53.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
 
 Плагин личного кабинета для WordPress: профиль, пароль, смена email, команды пользователей, вход и регистрация — на шорткодах, без зависимостей и сборки.
 
-**Что нового в 3.52.0:** удаление файла наставника в кабинете больше не стирает его копию из сетевой папки команды — папка работает как архив, копия удаляется только фильтром `wppa_team_files_remove_copy`. Полная история — в [CHANGELOG.md](CHANGELOG.md).
+**Что нового в 3.53.0:** подтверждение уборки файла наставника стало коротким — «Убрать файл из кабинета?», без упоминания сетевой папки (копия там остаётся и об этом говорит подсказка над полкой). Полная история — в [CHANGELOG.md](CHANGELOG.md).
 
 ## Что внутри
 
@@ -917,9 +917,9 @@ add_filter( 'wppa_password_rules', function ( $rules ) {
 
 | Место | Строка |
 | --- | --- |
-| `wp-personal-account.php` | `* Version: 3.52.0` |
-| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.52.0' )` |
-| `readme.txt` | `Stable tag: 3.52.0` |
+| `wp-personal-account.php` | `* Version: 3.53.0` |
+| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.53.0' )` |
+| `readme.txt` | `Stable tag: 3.53.0` |
 
 Правила инкремента:
 
