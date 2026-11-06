@@ -26,6 +26,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-participants.php';
 require $base . 'includes/class-wppa-certificates.php';
+require $base . 'includes/class-wppa-certificate-export.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -5369,6 +5370,160 @@ update_option( 'wppa_settings', $cf_settings_backup );
 
 foreach ( $cf_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificates-mail: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// Выгрузка выданных сертификатов в папку.
+$ce_checks = array();
+
+$GLOBALS['wppa_test']['users'][961] = array( 'Экспортов Иван', 'exp961@example.com', 'first_name' => 'Иван', 'last_name' => 'Экспортов' );
+update_user_meta( 961, '_wppa_patronymic', 'Петрович' );
+
+$ce_settings_backup = (array) get_option( 'wppa_settings', array() );
+$ce_defaults        = WPPA_Plugin::defaults();
+
+$ce_checks['выгрузка включена по умолчанию']     = 1 === (int) $ce_defaults['certificate_export'];
+$ce_checks['подпапка по умолчанию']              = 'Сертификаты' === $ce_defaults['certificate_export_dir'];
+$ce_checks['имя файла по умолчанию']             = '{recipient_name}' === $ce_defaults['certificate_filename'];
+$ce_checks['подстановки имени файла']            = in_array( '{recipient_name}', WPPA_Certificate_Export::placeholder_list(), true );
+
+$ce_team = WPPA_Teams::create( 'Команда выгрузки', 961 );
+
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$ce_dir = WPPA_Certificate_Export::upload_dir() . DIRECTORY_SEPARATOR . WPPA_Certificate_Export::DEFAULT_FOLDER;
+
+// Старые файлы не мешают проверке.
+if ( is_dir( $ce_dir ) ) {
+	foreach ( (array) glob( $ce_dir . '/*' ) as $ce_old ) {
+		@unlink( $ce_old );
+	}
+}
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		$ce_settings_backup,
+		array(
+			'certificate_export'     => 1,
+			'certificate_export_dir' => WPPA_Certificate_Export::DEFAULT_FOLDER,
+			'certificate_filename'   => '{recipient_name}',
+		)
+	)
+);
+
+$ce_checks['выгрузка читает настройку']          = true === WPPA_Certificate_Export::enabled();
+$ce_checks['папка — uploads при пустой сетевой'] = false === WPPA_Certificate_Export::uses_network_folder();
+$ce_checks['путь папки содержит подпапку']       = false !== strpos( WPPA_Certificate_Export::folder_path(), 'Сертификаты' );
+
+// Имя файла: фамилия, имя, отчество.
+$ce_entry = WPPA_Certificates::issue( 961, 12 );
+
+$ce_checks['сертификат выдан для выгрузки']      = is_array( $ce_entry ) && ! empty( $ce_entry['id'] );
+$ce_checks['имя файла — ФИО без расширения']     = 'Экспортов Иван Петрович.pdf' === WPPA_Certificate_Export::file_name( 961, $ce_entry );
+
+$ce_file = $ce_dir . DIRECTORY_SEPARATOR . 'Экспортов Иван Петрович.pdf';
+
+$ce_checks['файл появился сам при выдаче']       = file_exists( $ce_file );
+$ce_checks['файл не пустой']                     = file_exists( $ce_file ) && filesize( $ce_file ) > 0;
+$ce_checks['итог последней выгрузки']            = true === WPPA_Certificate_Export::last()['ok'];
+
+// Шаблон с номером и подстановки.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_filename' => '{number} {recipient_name} ({team})' ) ) );
+
+$ce_named = WPPA_Certificate_Export::file_name( 961, $ce_entry );
+
+$ce_checks['номер в имени файла']                = false !== strpos( $ce_named, (string) $ce_entry['number'] );
+$ce_checks['команда в имени файла']              = false !== strpos( $ce_named, 'Команда выгрузки' );
+$ce_checks['расширение одно']                    = '.pdf' === substr( $ce_named, -4 ) && false === strpos( $ce_named, '.pdf.' );
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_filename' => '{recipient_name}' ) ) );
+
+// Повторная выдача тому же человеку: имя не перетирается.
+$ce_second = WPPA_Certificates::issue( 961, 12 );
+$ce_files  = (array) glob( $ce_dir . '/*.pdf' );
+
+$ce_checks['два файла на одного человека']       = 2 <= count( $ce_files );
+$ce_checks['номер попал во второй файл']         = count(
+	array_filter(
+		$ce_files,
+		static function ( $path ) use ( $ce_second ) {
+			return false !== strpos( basename( $path ), (string) $ce_second['number'] );
+		}
+	)
+) > 0;
+
+// Выключенная выгрузка ничего не пишет.
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_export' => 0 ) ) );
+
+$ce_before = count( (array) glob( $ce_dir . '/*.pdf' ) );
+WPPA_Certificates::issue( 961, 12 );
+$ce_after = count( (array) glob( $ce_dir . '/*.pdf' ) );
+
+$ce_checks['без галочки файлов не прибавилось']  = $ce_before === $ce_after;
+$ce_checks['enabled() видит выключенное']        = false === WPPA_Certificate_Export::enabled();
+
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_export' => 1 ) ) );
+
+// Ручная выгрузка всех сертификатов.
+$ce_batch = WPPA_Certificate_Export::export_all();
+
+$ce_checks['выгрузка всех считает файлы']        = $ce_batch['count'] >= 3;
+
+// Настройки: подпапка и шаблон имени.
+$ce_sanitized = WPPA_Settings::sanitize(
+	array(
+		'certificate_export'     => '1',
+		'certificate_export_dir' => '/Мои/Сертификаты/',
+		'certificate_filename'   => '{recipient_name}',
+	)
+);
+
+$ce_checks['подпапка очищается от слэшей']       = 'Мои/Сертификаты' === $ce_sanitized['certificate_export_dir'];
+$ce_checks['пустая подпапка — по умолчанию']     = 'Сертификаты' === WPPA_Settings::sanitize( array( 'certificate_export_dir' => '' ) )['certificate_export_dir'];
+$ce_checks['пустой шаблон — по умолчанию']       = '{recipient_name}' === WPPA_Settings::sanitize( array( 'certificate_filename' => '' ) )['certificate_filename'];
+$ce_checks['флаг выгрузки сохраняется']          = 1 === (int) $ce_sanitized['certificate_export'];
+
+// Фильтры и уведомления.
+$ce_filter = static function () {
+	return '{number}';
+};
+add_filter( 'wppa_certificate_export_filename', $ce_filter );
+$ce_filtered_name = WPPA_Certificate_Export::file_name( 961, $ce_entry );
+$ce_checks['фильтр имени файла работает']        = (string) $ce_entry['number'] . '.pdf' === $ce_filtered_name;
+remove_filter( 'wppa_certificate_export_filename', $ce_filter );
+
+$ce_notices = WPPA_Notices::registry();
+$ce_checks['уведомления о выгрузке']             = isset( $ce_notices['certificate_exported'], $ce_notices['certificate_export_nobody'], $ce_notices['certificate_export_failed'] );
+
+// Кнопка выгрузки у куратора.
+$ce_curator_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$ce_checks['у куратора кнопка выгрузки']         = false !== strpos( $ce_curator_html, 'value="export_all"' )
+	&& false !== strpos( $ce_curator_html, 'Выгрузить PDF в папку' );
+
+// Уборка.
+foreach ( (array) glob( $ce_dir . '/*' ) as $ce_clean ) {
+	@unlink( $ce_clean );
+}
+
+delete_user_meta( 961, '_wppa_patronymic' );
+WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 961 ) );
+WPPA_Teams::set_curator( 12, false );
+
+update_option( 'wppa_settings', $ce_settings_backup );
+delete_option( WPPA_Certificate_Export::LOG_OPTION );
+
+$GLOBALS['wppa_test']['current_user'] = 0;
+
+foreach ( $ce_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificate-export: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

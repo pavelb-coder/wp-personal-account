@@ -680,6 +680,19 @@ if ( ! function_exists( 'selected' ) ) {
 	function selected( $a, $b = true, $echo = true ) { $r = (string) $a === (string) $b ? ' selected="selected"' : ''; if ( $echo ) { echo $r; } return $r; }
 }
 
+function wp_upload_dir( $time = null ) {
+	$base = sys_get_temp_dir() . '/wppa-uploads';
+
+	return array(
+		'path'    => $base . '/2026/11',
+		'url'     => 'https://example.com/wp-content/uploads/2026/11',
+		'subdir'  => '/2026/11',
+		'basedir' => $base,
+		'baseurl' => 'https://example.com/wp-content/uploads',
+		'error'   => false,
+	);
+}
+
 function wp_mkdir_p( $target ) {
 	return is_dir( $target ) || mkdir( $target, 0777, true );
 }

@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.49.0
+Stable tag: 3.50.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.50.0 =
+* Выданные сертификаты автоматически выгружаются в отдельную папку PDF-файлами с именем «Фамилия Имя Отчество» (шаблон {recipient_name}); подстановки {number}, {team}, {date}, {email}.
+* Папка — «Сертификаты» внутри сетевой папки из настроек, а без неё — uploads/wppa-certificates. Подпапка и шаблон имени меняются в настройках.
+* У куратора есть кнопка «Выгрузить PDF в папку» для разовой выгрузки всего выданного.
 
 = 3.49.0 =
 * Вкладка «Сертификаты» у участника и наставника видна только когда есть сертификаты (у наставника — и сертификаты участников его команды). Нет сертификатов — нет ни вкладки, ни блока.

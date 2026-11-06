@@ -1,10 +1,10 @@
 # WP Personal Account
 
-**Версия: 3.49.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
+**Версия: 3.50.0** · WordPress 6.0+ · PHP 7.4+ · GPL-2.0-or-later · текстовый домен `wp-personal-account`
 
 Плагин личного кабинета для WordPress: профиль, пароль, смена email, команды пользователей, вход и регистрация — на шорткодах, без зависимостей и сборки.
 
-**Что нового в 3.49.0:** вкладка и блок «Сертификаты» у участника и наставника появляются только когда сертификаты есть — пустой карточки с подсказкой больше нет; куратор видит вкладку всегда. Полная история — в [CHANGELOG.md](CHANGELOG.md).
+**Что нового в 3.50.0:** выданные сертификаты автоматически выгружаются в отдельную папку PDF-файлами с именем «Фамилия Имя Отчество» (шаблон `{recipient_name}`), а у куратора появилась кнопка «Выгрузить PDF в папку». Полная история — в [CHANGELOG.md](CHANGELOG.md).
 
 ## Что внутри
 
@@ -396,6 +396,7 @@ API: `WPPA_Mailing::recipients()`, `settings()`/`save()`, `start()`, `cancel()`,
 * **Проверка подлинности в кабинете не показывается**: участник видит только номер, программу, дату и «Скачать». Код проверки и ссылка на страницу проверки остаются в данных записи (`code`, `verify`) и доступны разработчику: `WPPA_Certificates::verify_url()` строит ссылку через `WPDC_Certificate::verify_url()` (бланк берётся из `_wpdc_template`), а без этого метода — `/certificate/{код}/`; фильтр `wppa_certificate_verify_url` (ссылка, код, ID сертификата) позволяет отдать свою. Чтобы показать их в кабинете, достаточно переопределить шаблон `templates/blocks/certificates-widget.php` в теме.
 * **Отзыв**: `is_revoked()` читает `_wpdc_revoked` при каждом показе. Отозванный сертификат помечен значком «отозван», кнопка «Скачать» заменена пояснением, а `handle_download()` отвечает отказом — прямая ссылка тоже не работает. У куратора в списке участников пометка дублируется.
 * **«Убрать»** убирает сертификат только из кабинета — в WP Diplom запись и PDF остаются.
+* **Выгрузка PDF в отдельную папку**: каждый выданный сертификат автоматически сохраняется файлом с читаемым именем (`WPPA_Certificate_Export`). Папка — подпапка `certificate_export_dir` (по умолчанию «Сертификаты») внутри папки из настроек «Сетевая папка», а если она не задана — `uploads/wppa-certificates/Сертификаты`. Имя файла — шаблон `certificate_filename`, по умолчанию `{recipient_name}` (Фамилия Имя Отчество), есть подстановки `{number}`, `{team}`, `{date}`, `{email}`. Расширение `.pdf` добавляется само, при совпадении имени к файлу добавляется номер сертификата. Выгрузку включает галочка «Сохранять PDF каждого выданного сертификата в отдельную папку» (`certificate_export`, по умолчанию включена); фильтры — `wppa_certificate_export_enabled`, `wppa_certificate_export_folder`, `wppa_certificate_export_filename`. У куратора во вкладке «Участники» есть кнопка «Выгрузить PDF в папку» (`certificate_action=export_all`) для разовой выгрузки всего выданного.
 * **Формы**: `wppa_action=certificate` + `certificate_action=issue|issue_threshold|remove`, nonce `wppa_certificate` (поле `wppa_nonce`), обработчик — `WPPA_Certificates::handle_request()`.
 * **Коды уведомлений**: `certificate_issued`, `certificate_issued_many`, `certificate_nobody`, `certificate_removed`, `certificate_missing`, `certificate_forbidden`, `certificate_unavailable`, `certificate_failed`.
 
@@ -437,6 +438,7 @@ includes/
   class-wppa-blocks.php      блоки Gutenberg: auth, login, register (рендер, регистрация, оформление)
   class-wppa-participants.php участники и баллы: список без наставников, проценты, порог
   class-wppa-certificates.php сертификаты: выдача через WP Diplom, список участника, скачивание PDF
+  class-wppa-certificate-export.php выгрузка PDF сертификатов в папку с именем «Фамилия Имя Отчество»
   class-wppa-mailing.php     рассылки: шаблон, очередь, журнал (второй этап)
   class-wppa-mailing-files.php рассылка о прикреплённых файлах
   class-wppa-mailing-certificates.php рассылка о сертификатах
@@ -914,9 +916,9 @@ add_filter( 'wppa_password_rules', function ( $rules ) {
 
 | Место | Строка |
 | --- | --- |
-| `wp-personal-account.php` | `* Version: 3.49.0` |
-| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.49.0' )` |
-| `readme.txt` | `Stable tag: 3.49.0` |
+| `wp-personal-account.php` | `* Version: 3.50.0` |
+| `wp-personal-account.php` | `define( 'WPPA_VERSION', '3.50.0' )` |
+| `readme.txt` | `Stable tag: 3.50.0` |
 
 Правила инкремента:
 

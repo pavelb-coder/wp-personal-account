@@ -251,6 +251,25 @@ if ( $wppa_single_team ) {
 						<?php esc_html_e( 'Выдать всем, кто выше порога', 'wp-personal-account' ); ?>
 					</button>
 				</form>
+
+				<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'participants' ) ); ?>" class="wppa-participants__export">
+					<?php wp_nonce_field( 'wppa_certificate', 'wppa_nonce' ); ?>
+					<input type="hidden" name="wppa_action" value="certificate" />
+					<input type="hidden" name="certificate_action" value="export_all" />
+					<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_single_team ); ?>" />
+					<button type="submit" class="wppa-button wppa-button--ghost wppa-button--sm">
+						<?php esc_html_e( 'Выгрузить PDF в папку', 'wp-personal-account' ); ?>
+					</button>
+					<span class="wppa-hint">
+						<?php
+						printf(
+							/* translators: %s: путь к папке */
+							esc_html__( 'Файлы сохраняются в %s.', 'wp-personal-account' ),
+							'<code>' . esc_html( WPPA_Certificate_Export::display_path() ) . '</code>'
+						);
+						?>
+					</span>
+				</form>
 			<?php endif; ?>
 		</section>
 

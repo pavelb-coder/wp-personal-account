@@ -368,6 +368,11 @@ class WPPA_Certificates {
 
 		update_user_meta( $user_id, self::META, $saved );
 
+		// Автоматическая выгрузка PDF в отдельную папку: имя файла — по шаблону.
+		if ( class_exists( 'WPPA_Certificate_Export' ) && WPPA_Certificate_Export::enabled() ) {
+			WPPA_Certificate_Export::export( $cert_id, $user_id, $entry );
+		}
+
 		return $entry;
 	}
 
@@ -664,6 +669,16 @@ class WPPA_Certificates {
 
 		if ( 'remove' === $sub ) {
 			WPPA_Notices::redirect( self::remove( $user, $cert, $curator_id ) ? 'certificate_removed' : 'certificate_missing', $back );
+		}
+
+		if ( 'export_all' === $sub ) {
+			if ( ! class_exists( 'WPPA_Certificate_Export' ) ) {
+				WPPA_Notices::redirect( 'certificate_export_failed', $back );
+			}
+
+			$batch = WPPA_Certificate_Export::export_all();
+
+			WPPA_Notices::redirect( $batch['count'] > 0 ? 'certificate_exported' : 'certificate_export_nobody', $back );
 		}
 
 		if ( 'issue_threshold' === $sub ) {

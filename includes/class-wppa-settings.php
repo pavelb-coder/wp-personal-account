@@ -351,6 +351,16 @@ class WPPA_Settings {
 		$out['certificate_template'] = isset( $input['certificate_template'] ) ? absint( $input['certificate_template'] ) : 0;
 		$out['certificate_email']    = empty( $input['certificate_email'] ) ? 0 : 1;
 
+		// Выгрузка PDF в папку: флаг, подпапка и шаблон имени файла.
+		$out['certificate_export'] = empty( $input['certificate_export'] ) ? 0 : 1;
+
+		$folder = isset( $input['certificate_export_dir'] ) ? sanitize_text_field( wp_unslash( $input['certificate_export_dir'] ) ) : '';
+		$folder = trim( str_replace( array( '\\', '..' ), array( '/', '' ), $folder ), '/ ' );
+		$out['certificate_export_dir'] = '' === $folder ? WPPA_Certificate_Export::DEFAULT_FOLDER : $folder;
+
+		$pattern = isset( $input['certificate_filename'] ) ? sanitize_text_field( wp_unslash( $input['certificate_filename'] ) ) : '';
+		$out['certificate_filename'] = '' === trim( $pattern ) ? WPPA_Certificate_Export::DEFAULT_TEMPLATE : $pattern;
+
 		// Кнопка со ссылкой.
 		$link_saved = isset( $input['link_button'] ) && is_array( $input['link_button'] ) ? $input['link_button'] : array();
 
@@ -826,6 +836,44 @@ class WPPA_Settings {
 								<?php esc_html_e( 'Отправлять сертификат участнику письмом сразу при выдаче', 'wp-personal-account' ); ?>
 							</label>
 							<p class="description"><?php esc_html_e( 'Письмо с PDF отправляет WP Diplom на email из аккаунта участника. Без галочки сертификат просто появляется в кабинете.', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Выгрузка в папку', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[certificate_export]" value="1" <?php checked( 1, (int) WPPA_Plugin::setting( WPPA_Certificate_Export::SETTING, 1 ) ); ?> />
+								<?php esc_html_e( 'Сохранять PDF каждого выданного сертификата в отдельную папку', 'wp-personal-account' ); ?>
+							</label>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: путь к папке */
+									esc_html__( 'Файлы ложатся в папку %s. Если сетевая папка не задана в настройках ниже, используется папка uploads сайта.', 'wp-personal-account' ),
+									'<code>' . esc_html( WPPA_Certificate_Export::display_path() ) . '</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-cert-export-dir"><?php esc_html_e( 'Подпапка', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" id="wppa-cert-export-dir" name="wppa_settings[certificate_export_dir]" value="<?php echo esc_attr( (string) WPPA_Plugin::setting( WPPA_Certificate_Export::FOLDER_KEY, WPPA_Certificate_Export::DEFAULT_FOLDER ) ); ?>" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Имя папки внутри сетевой папки или внутри uploads. Пустое значение вернёт «Сертификаты».', 'wp-personal-account' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-cert-filename"><?php esc_html_e( 'Имя файла', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="text" id="wppa-cert-filename" name="wppa_settings[certificate_filename]" value="<?php echo esc_attr( (string) WPPA_Plugin::setting( WPPA_Certificate_Export::TEMPLATE_KEY, WPPA_Certificate_Export::DEFAULT_TEMPLATE ) ); ?>" class="regular-text" />
+							<p class="description">
+								<?php esc_html_e( 'Подстановки:', 'wp-personal-account' ); ?>
+								<?php foreach ( WPPA_Certificate_Export::placeholder_list() as $wppa_cert_placeholder ) : ?>
+									<code><?php echo esc_html( $wppa_cert_placeholder ); ?></code>
+								<?php endforeach; ?>
+								<?php esc_html_e( '— по умолчанию файл называется «Фамилия Имя Отчество». Расширение .pdf добавляется само; если файл с таким именем уже есть, к нему добавляется номер сертификата.', 'wp-personal-account' ); ?>
+							</p>
 						</td>
 					</tr>
 				</table>

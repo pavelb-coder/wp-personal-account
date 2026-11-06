@@ -1507,3 +1507,11 @@
 .wppa-certificates__team .wppa-subtitle {
 	margin-top: 0;
 }
+
+.wppa-participants__export {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 10px 0 0;
+}

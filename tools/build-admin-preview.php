@@ -33,6 +33,7 @@ require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
 require $base . 'includes/class-wppa-participants.php';
 require $base . 'includes/class-wppa-certificates.php';
+require $base . 'includes/class-wppa-certificate-export.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
