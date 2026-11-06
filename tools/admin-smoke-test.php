@@ -890,7 +890,7 @@ if ( $stage_admin_team && ! is_wp_error( $stage_admin_team ) ) {
 	$olympiad_checks['админка: отметка второго этапа'] = false;
 }
 
-$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'mailing', 'security' ) === array_keys( WPPA_Template::all_tabs() );
+$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'participants', 'mailing', 'security' ) === array_keys( WPPA_Template::all_tabs() );
 
 // 5. Раскладка со старым ключом olympiad не ломает рендер.
 update_option(

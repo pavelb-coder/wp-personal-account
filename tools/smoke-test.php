@@ -4443,16 +4443,26 @@ WPPA_Plugin::maybe_upgrade();
 
 $lay_checks['обновление: флаг чистки поставлен'] = 1 === (int) get_option( 'wppa_layout_cleaned', 0 );
 $lay_checks['обновление: след 3.37 убран']       = false === get_option( 'wppa_participants_seeded', false );
+$lay_after_layout = (array) get_option( WPPA_Builder::OPTION, array() );
+
 $lay_files_ids_after = array_map(
 	static function ( $item ) {
 		return isset( $item['id'] ) ? (string) $item['id'] : '';
 	},
-	(array) ( get_option( WPPA_Builder::OPTION, array() )['files'] ?? array() )
+	(array) ( $lay_after_layout['files'] ?? array() )
 );
 
-$lay_checks['обновление: раскладка починена']       = in_array( 'files-widget', $lay_files_ids_after, true );
-$lay_checks['обновление: блок участников добавлен'] = in_array( 'participants-widget', $lay_files_ids_after, true )
-	&& 1 === (int) get_option( 'wppa_participants_block_seeded', 0 );
+$lay_parts_ids_after = array_map(
+	static function ( $item ) {
+		return isset( $item['id'] ) ? (string) $item['id'] : '';
+	},
+	(array) ( $lay_after_layout['participants'] ?? array() )
+);
+
+$lay_checks['обновление: раскладка починена']          = in_array( 'files-widget', $lay_files_ids_after, true );
+$lay_checks['обновление: блок участников на своей вкладке'] = in_array( 'participants-widget', $lay_parts_ids_after, true )
+	&& ! in_array( 'participants-widget', $lay_files_ids_after, true )
+	&& 1 === (int) get_option( 'wppa_participants_tab', 0 );
 
 update_option( 'wppa_settings', $lay_settings_backup );
 
@@ -4530,7 +4540,43 @@ $pw_files_ids = array_map(
 	(array) $pw_layout['files']
 );
 
-$pw_checks['блок по умолчанию на «Файлах»'] = in_array( 'participants-widget', $pw_files_ids, true );
+$pw_checks['блок на «Файлах» больше не стоит'] = ! in_array( 'participants-widget', $pw_files_ids, true );
+
+$pw_parts_ids = array_map(
+	static function ( $item ) {
+		return (string) $item['id'];
+	},
+	(array) $pw_layout['participants']
+);
+
+$pw_checks['блок по умолчанию на «Участниках»'] = in_array( 'participants-widget', $pw_parts_ids, true );
+$pw_checks['блок доступен и на «Файлах»']       = in_array( 'files', (array) $pw_blocks['participants-widget']['tabs'], true );
+
+// Вкладка «Участники»: есть у куратора, нет у остальных.
+$pw_checks['вкладка в списке всех вкладок'] = 'Участники' === WPPA_Template::all_tabs()['participants'];
+$pw_checks['вкладка включена по умолчанию'] = in_array( 'participants', (array) WPPA_Plugin::defaults()['enabled_tabs'], true );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'mailing', 'security' ) )
+	)
+);
+
+WPPA_Teams::set_curator( 12, true );
+$GLOBALS['wppa_test']['current_user'] = 12;
+$pw_tabs_curator                      = WPPA_Template::tabs();
+
+WPPA_Teams::set_curator( 12, false );
+$GLOBALS['wppa_test']['current_user'] = 902;
+$pw_tabs_member                       = WPPA_Template::tabs();
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+WPPA_Teams::set_curator( 12, true );
+
+$pw_checks['куратор видит вкладку']       = isset( $pw_tabs_curator['participants'] );
+$pw_checks['участник вкладку не видит']   = ! isset( $pw_tabs_member['participants'] );
 
 // Список: только участники, без наставников.
 $pw_rows = WPPA_Participants::rows( 12 );
@@ -4549,6 +4595,10 @@ $pw_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 12 ) )
 );
 
+$pw_tab_html = WPPA_Template::get( 'tab-participants', array( 'user' => get_userdata( 12 ), 'tabs' => WPPA_Template::all_tabs() ) );
+
+$pw_checks['вкладка выводит блок']         = false !== strpos( $pw_tab_html, 'Участники и баллы' )
+	&& false !== strpos( $pw_tab_html, 'Капитан Баллов' );
 $pw_checks['блок: заголовок']              = false !== strpos( $pw_html, 'Участники и баллы' );
 $pw_checks['блок: форма порога']           = false !== strpos( $pw_html, 'name="min_percent"' )
 	&& false !== strpos( $pw_html, 'value="participant_threshold"' )

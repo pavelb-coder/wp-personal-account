@@ -143,7 +143,7 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'mailing', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'mailing', 'security' ),
 			'participant_min_percent' => 60,
 			'registration_enabled' => 1,
 			'hide_admin_bar'       => 1,
@@ -637,10 +637,12 @@ class WPPA_Plugin {
 			update_option( 'wppa_layout_cleaned', 1 );
 		}
 
-		// Блок «Участники и баллы»: один раз добавляем куратору на вкладку «Файлы».
-		if ( ! get_option( 'wppa_participants_block_seeded' ) ) {
-			WPPA_Builder::seed_block( 'participants-widget', 'files' );
-			update_option( 'wppa_participants_block_seeded', 1 );
+		// «Участники и баллы» — отдельная вкладка: блок переезжает с «Файлов» один раз.
+		if ( ! get_option( 'wppa_participants_tab' ) ) {
+			WPPA_Builder::drop_block( 'participants-widget' );
+			WPPA_Builder::seed_block( 'participants-widget', 'participants' );
+			delete_option( 'wppa_participants_block_seeded' );
+			update_option( 'wppa_participants_tab', 1 );
 		}
 
 		// Кнопка со ссылкой: добавляем в «Обзор» один раз для существующих установок.

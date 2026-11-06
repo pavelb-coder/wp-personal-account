@@ -345,6 +345,31 @@ $sections .= demo_section(
 
 remove_filter( 'wppa_olympiad_active', $wppa_preview_active );
 
+// Раздел «Участники и баллы» вынесен отдельной вкладкой куратора.
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+// В демо выше настройки вкладок сужались — возвращаем полный набор.
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array( 'enabled_tabs' => array_keys( WPPA_Template::all_tabs() ) )
+	)
+);
+
+$sections .= demo_section(
+	'Куратор: вкладка «Участники»',
+	'Отдельная вкладка в кабинете куратора: навигация без «Обзора» и «Профиля», а внутри — блок «Участники и баллы» с баллами, процентами и порогом',
+	WPPA_Template::get(
+		'account',
+		array(
+			'user'        => new WP_User( 12 ),
+			'tabs'        => WPPA_Template::tabs(),
+			'current_tab' => 'participants',
+		)
+	)
+);
+
 WPPA_Teams::set_curator( 12, false );
 
 

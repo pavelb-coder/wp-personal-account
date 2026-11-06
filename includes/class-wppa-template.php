@@ -21,11 +21,12 @@ class WPPA_Template {
 	 */
 	public static function all_tabs() {
 		return array(
-			'dashboard' => __( 'Обзор', 'wp-personal-account' ),
-			'profile'   => __( 'Профиль', 'wp-personal-account' ),
-			'team'      => __( 'Команда', 'wp-personal-account' ),
-			'files'     => __( 'Файлы', 'wp-personal-account' ),
-			'mailing'   => __( 'Рассылка', 'wp-personal-account' ),
+			'dashboard'    => __( 'Обзор', 'wp-personal-account' ),
+			'profile'      => __( 'Профиль', 'wp-personal-account' ),
+			'team'         => __( 'Команда', 'wp-personal-account' ),
+			'files'        => __( 'Файлы', 'wp-personal-account' ),
+			'participants' => __( 'Участники', 'wp-personal-account' ),
+			'mailing'      => __( 'Рассылка', 'wp-personal-account' ),
 			'security'  => __( 'Безопасность', 'wp-personal-account' ),
 		);
 	}
@@ -51,9 +52,11 @@ class WPPA_Template {
 			unset( $tabs['files'] );
 		}
 
-		// «Рассылка участникам второго этапа» — только куратору.
-		if ( isset( $tabs['mailing'] ) && ! WPPA_Teams::is_curator() ) {
-			unset( $tabs['mailing'] );
+		// «Участники и баллы» и «Рассылка» — только куратору.
+		foreach ( array( 'participants', 'mailing' ) as $wppa_tab_slug ) {
+			if ( isset( $tabs[ $wppa_tab_slug ] ) && ! WPPA_Teams::is_curator() ) {
+				unset( $tabs[ $wppa_tab_slug ] );
+			}
 		}
 
 		// Куратор работает с командами и файлами: «Обзор» и «Профиль» ему не нужны.
