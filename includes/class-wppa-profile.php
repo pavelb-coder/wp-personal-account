@@ -52,7 +52,10 @@ class WPPA_Profile {
 		}
 
 		if ( '' === $display_name ) {
-			$display_name = trim( $first_name . ' ' . $last_name );
+			$display_name = trim(
+				$last_name . ' ' . $first_name . ' ' .
+				( isset( $fields['patronymic'] ) ? (string) $fields['patronymic'] : '' )
+			);
 		}
 
 		if ( '' === $display_name ) {

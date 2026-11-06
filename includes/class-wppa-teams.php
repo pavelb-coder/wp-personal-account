@@ -528,7 +528,10 @@ class WPPA_Teams {
 	}
 
 	/**
-	 * Имя и фамилия пользователя, а если их нет — отображаемое имя.
+	 * Имя пользователя в порядке «Фамилия Имя Отчество», а если их нет — отображаемое имя.
+	 *
+	 * Пустые части пропускаются: без фамилии останется «Имя Отчество», без
+	 * отчества — «Фамилия Имя».
 	 *
 	 * @param WP_User|int $user Пользователь или его ID.
 	 * @return string
@@ -540,9 +543,35 @@ class WPPA_Teams {
 			return '';
 		}
 
-		$name = trim( (string) $user->first_name . ' ' . (string) $user->last_name );
+		$parts = array(
+			trim( (string) $user->last_name ),
+			trim( (string) $user->first_name ),
+			trim( (string) get_user_meta( (int) $user->ID, '_wppa_patronymic', true ) ),
+		);
 
-		return '' !== $name ? $name : (string) $user->display_name;
+		$name = trim(
+			implode(
+				' ',
+				array_filter(
+					$parts,
+					static function ( $part ) {
+						return '' !== $part;
+					}
+				)
+			)
+		);
+
+		if ( '' === $name ) {
+			$name = (string) $user->display_name;
+		}
+
+		/**
+		 * Фильтр имени пользователя для вывода.
+		 *
+		 * @param string  $name Имя в порядке «Фамилия Имя Отчество».
+		 * @param WP_User $user Пользователь.
+		 */
+		return (string) apply_filters( 'wppa_full_name', $name, $user );
 	}
 
 	/**

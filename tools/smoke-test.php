@@ -353,7 +353,7 @@ $fields_checks  = array(
 	'реестр полей содержит телефон'      => isset( $fields_schema['phone'] ),
 	'по умолчанию телефон включён'       => WPPA_Fields::is_enabled( 'phone' ),
 	'имя обязательно по умолчанию'       => WPPA_Fields::is_required( 'first_name' ),
-	'отчество по умолчанию скрыто'       => ! WPPA_Fields::is_enabled( 'patronymic' ),
+	'отчество включено по умолчанию'     => WPPA_Fields::is_enabled( 'patronymic' ),
 );
 
 // Санитизация.
@@ -442,7 +442,7 @@ $fields_checks['форма регистрации: имя из реестра'] 
 $fields_checks['форма регистрации: телефон']            = false !== strpos( $register_html, 'name="wppa_fields[phone]"' );
 $fields_checks['форма регистрации: организация']        = false !== strpos( $register_html, 'name="wppa_fields[company]"' );
 $fields_checks['форма регистрации: обязательность']     = false !== strpos( $register_html, 'required' );
-$fields_checks['форма регистрации: без отчества']       = false === strpos( $register_html, 'wppa_fields[patronymic]' );
+$fields_checks['форма регистрации: отчество']           = false !== strpos( $register_html, 'wppa_fields[patronymic]' );
 
 // Профиль: нативные «Имя»/«Фамилия» не дублируются, мета-поля выводятся.
 ob_start();
@@ -4599,13 +4599,13 @@ $pw_html = WPPA_Builder::render_block(
 $pw_tab_html = WPPA_Template::get( 'tab-participants', array( 'user' => get_userdata( 12 ), 'tabs' => WPPA_Template::all_tabs() ) );
 
 $pw_checks['вкладка выводит блок']         = false !== strpos( $pw_tab_html, 'Участники и баллы' )
-	&& false !== strpos( $pw_tab_html, 'Капитан Баллов' );
+	&& false !== strpos( $pw_tab_html, 'Баллов Капитан' );
 $pw_checks['блок: заголовок']              = false !== strpos( $pw_html, 'Участники и баллы' );
 $pw_checks['блок: форма порога']           = false !== strpos( $pw_html, 'name="min_percent"' )
 	&& false !== strpos( $pw_html, 'value="participant_threshold"' )
 	&& false !== strpos( $pw_html, 'value="60"' );
 $pw_checks['блок: сводка по порогу']       = false !== strpos( $pw_html, 'ниже него — 1 из 2 участников' );
-$pw_checks['блок: капитан в таблице']      = false !== strpos( $pw_html, 'Капитан Баллов' );
+$pw_checks['блок: капитан в таблице']      = false !== strpos( $pw_html, 'Баллов Капитан' );
 $pw_checks['блок: баллы и процент']        = false !== strpos( $pw_html, '8 / 10' )
 	&& false !== strpos( $pw_html, '80 %' )
 	&& false !== strpos( $pw_html, '20 %' );
@@ -4804,7 +4804,7 @@ $cr_checks['программа — название команды']    = is_arr
 $cr_checks['у участника один сертификат']     = 1 === WPPA_Certificates::count( 911 );
 
 $cr_args = WPDC_Certificate::$created[ (int) $cr_entry['id'] ];
-$cr_checks['получатель — имя и фамилия']      = 'Капитан Сертификатов' === $cr_args['recipient'];
+$cr_checks['получатель — фамилия имя отчество'] = 'Сертификатов Капитан' === $cr_args['recipient'];
 $cr_checks['email участника передан']         = 'cap911@example.com' === $cr_args['email'];
 $cr_checks['подпись — имя куратора']          = isset( $cr_args['teacher'] ) && '' !== $cr_args['teacher'];
 $cr_checks['в custom есть команда']           = 'Команда сертификатов' === $cr_args['custom']['team'];
@@ -5022,6 +5022,113 @@ $wpdb->data = $cr_db_backup;
 
 foreach ( $cr_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'certificates: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+
+// Порядок имени: «Фамилия Имя Отчество».
+$nm_checks = array();
+
+$GLOBALS['wppa_test']['users'][950] = array( 'Сидоров Пётр', 'petr950@example.com', 'first_name' => 'Пётр', 'last_name' => 'Сидоров' );
+update_user_meta( 950, '_wppa_patronymic', 'Сергеевич' );
+
+$nm_checks['полное имя: фамилия, имя, отчество'] = 'Сидоров Пётр Сергеевич' === WPPA_Teams::full_name( 950 );
+
+delete_user_meta( 950, '_wppa_patronymic' );
+$nm_checks['без отчества: фамилия и имя']         = 'Сидоров Пётр' === WPPA_Teams::full_name( 950 );
+
+$GLOBALS['wppa_test']['users'][951] = array( 'Только Имя', 'only951@example.com', 'first_name' => 'Имя', 'last_name' => '' );
+$nm_checks['без фамилии остаётся имя']           = 'Имя' === WPPA_Teams::full_name( 951 );
+
+$GLOBALS['wppa_test']['users'][952] = array( 'Только отображаемое', 'bare952@example.com', 'first_name' => '', 'last_name' => '' );
+$nm_checks['совсем пусто — display_name']         = 'Только отображаемое' === WPPA_Teams::full_name( 952 );
+
+$nm_filter = static function ( $name, $user ) {
+	return 'фильтр: ' . $name;
+};
+add_filter( 'wppa_full_name', $nm_filter, 10, 2 );
+$nm_checks['фильтр имени работает']                = 'фильтр: Сидоров Пётр' === WPPA_Teams::full_name( 950 );
+remove_filter( 'wppa_full_name', $nm_filter, 10 );
+
+$nm_checks['несуществующий пользователь — не падает'] = is_string( WPPA_Teams::full_name( 0 ) );
+
+// Приветствие выводит имя в новом порядке.
+update_user_meta( 950, '_wppa_patronymic', 'Сергеевич' );
+
+$nm_greeting = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'greeting', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 950 ) )
+);
+
+$nm_checks['приветствие: новое имя']               = false !== strpos( $nm_greeting, 'Сидоров Пётр Сергеевич' );
+$nm_checks['приветствие: старого порядка нет']     = false === strpos( $nm_greeting, 'Пётр Сидоров' );
+
+// Поля анкеты: фамилия раньше имени.
+$nm_layout = WPPA_Fields::default_layout();
+$nm_checks['поля: фамилия раньше имени']           = (int) $nm_layout['last_name'][1] < (int) $nm_layout['first_name'][1];
+
+$nm_form = WPPA_Template::get( 'tab-profile', array( 'user' => get_userdata( 950 ), 'tabs' => WPPA_Template::tabs() ) );
+$nm_checks['форма профиля: фамилия раньше имени']  = false !== strpos( $nm_form, 'Фамилия' )
+	&& strpos( $nm_form, 'Фамилия' ) < strpos( $nm_form, '>Имя<' );
+
+// Выгрузка: колонка «Фамилия» раньше «Имя».
+$nm_labels = array();
+
+foreach ( WPPA_Export::columns() as $nm_column ) {
+	$nm_labels[] = (string) $nm_column['label'];
+}
+
+$nm_checks['выгрузка: фамилия раньше имени']       = array_search( 'Фамилия', $nm_labels, true ) < array_search( 'Имя', $nm_labels, true );
+
+// Регистрация: отображаемое имя собирается в новом порядке.
+$GLOBALS['wppa_test']['inserted_user'] = array();
+
+$_POST = array(
+	'wppa_action'      => 'register',
+	'wppa_nonce'       => wp_create_nonce( 'wppa_register' ),
+	'email'            => 'new950@example.com',
+	'password'         => 'Str0ng-Passw0rd-2026!',
+	'password_confirm' => 'Str0ng-Passw0rd-2026!',
+	'consent'          => '1',
+	'wppa_fields'      => array(
+		'last_name'  => 'Сидоров',
+		'first_name' => 'Пётр',
+		'patronymic' => 'Сергеевич',
+	),
+);
+
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+
+$nm_redirect = '';
+
+try {
+	WPPA_Auth::handle_register();
+} catch ( RuntimeException $e ) {
+	$nm_redirect = substr( $e->getMessage(), strlen( 'redirect:' ) );
+}
+
+$nm_checks['регистрация: без ошибок валидации'] = false === strpos( $nm_redirect, 'field_required' );
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST = array();
+
+$nm_created = isset( $GLOBALS['wppa_test']['inserted_user'] ) ? (array) $GLOBALS['wppa_test']['inserted_user'] : array();
+
+
+
+$nm_checks['регистрация: display_name в новом порядке'] = isset( $nm_created['display_name'] ) && 'Сидоров Пётр Сергеевич' === $nm_created['display_name'];
+$nm_checks['регистрация: поля на месте']                = isset( $nm_created['last_name'], $nm_created['first_name'], $nm_created['user_email'] );
+
+foreach ( array( 950, 951, 952 ) as $nm_clean_id ) {
+	delete_user_meta( $nm_clean_id, '_wppa_patronymic' );
+}
+
+unset( $GLOBALS['wppa_test']['inserted_user'] );
+
+foreach ( $nm_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'name-order: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

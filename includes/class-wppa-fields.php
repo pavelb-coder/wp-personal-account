@@ -60,8 +60,8 @@ class WPPA_Fields {
 	 */
 	public static function default_layout() {
 		return array(
-			'first_name' => array( 'main', 10 ),
-			'last_name'  => array( 'main', 20 ),
+			'last_name'  => array( 'main', 10 ),
+			'first_name' => array( 'main', 20 ),
 			'patronymic' => array( 'main', 30 ),
 			'birthdate'  => array( 'main', 40 ),
 			'phone'      => array( 'contacts', 10 ),
@@ -204,10 +204,11 @@ class WPPA_Fields {
 				'profile_native'  => 1,
 			),
 			'patronymic' => array(
-				'label'        => __( 'Отчество', 'wp-personal-account' ),
-				'type'         => 'text',
-				'autocomplete' => 'additional-name',
-				'meta'         => '_wppa_patronymic',
+				'label'           => __( 'Отчество', 'wp-personal-account' ),
+				'type'            => 'text',
+				'autocomplete'    => 'additional-name',
+				'meta'            => '_wppa_patronymic',
+				'enabled_default' => 1,
 			),
 			'phone'      => array(
 				'label'        => __( 'Телефон', 'wp-personal-account' ),

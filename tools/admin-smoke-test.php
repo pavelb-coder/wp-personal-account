@@ -235,7 +235,7 @@ $export_keys = array_column( WPPA_Export::columns(), 'key' );
 $profile_columns = array_filter( $export_keys, static function ( $key ) { return in_array( $key, array( 'first_name', 'last_name' ), true ); } );
 $status_columns  = array_column( array_filter( WPPA_Export::columns(), static function ( $column ) { return 'status' === $column['group']; } ), 'key' );
 
-$export_checks['группа «Профиль»: имя и фамилия']     = array( 'first_name', 'last_name' ) === array_values( $profile_columns );
+$export_checks['группа «Профиль»: фамилия и имя']     = array( 'last_name', 'first_name' ) === array_values( $profile_columns );
 $export_checks['группа «Статусы»: одна колонка']      = array( 'team_complete' ) === array_values( $status_columns );
 $export_checks['нет колонки «Отображаемое имя»']      = ! in_array( 'display_name', $export_keys, true );
 $export_checks['нет колонки «О себе»']                = ! in_array( 'description', $export_keys, true );

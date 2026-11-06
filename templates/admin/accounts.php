@@ -101,7 +101,7 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 							}
 							?>
 							<?php if ( $wppa_user->last_name ) : ?>
-								<span class="wppa-admin__field"><?php echo esc_html( $wppa_user->first_name . ' ' . $wppa_user->last_name ); ?></span>
+								<span class="wppa-admin__field"><?php echo esc_html( WPPA_Teams::full_name( $wppa_user ) ); ?></span>
 							<?php endif; ?>
 							<?php echo wp_kses_post( implode( '<br />', $wppa_personals ) ); ?>
 						</td>

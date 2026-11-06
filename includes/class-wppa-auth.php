@@ -120,10 +120,11 @@ class WPPA_Auth {
 			$fields[ $field_id ] = WPPA_Fields::sanitize_value( $field_id, $field_value );
 		}
 
-		// Имя: собираем из «Имя» + «Фамилия», иначе — прежнее поле display_name.
+		// Имя: собираем в порядке «Фамилия Имя Отчество», иначе — прежнее поле display_name.
 		$name = trim(
+			( isset( $fields['last_name'] ) ? $fields['last_name'] : '' ) . ' ' .
 			( isset( $fields['first_name'] ) ? $fields['first_name'] : '' ) . ' ' .
-			( isset( $fields['last_name'] ) ? $fields['last_name'] : '' )
+			( isset( $fields['patronymic'] ) ? $fields['patronymic'] : '' )
 		);
 
 		if ( '' === $name && isset( $_POST['display_name'] ) ) {

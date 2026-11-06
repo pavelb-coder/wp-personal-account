@@ -19,13 +19,13 @@ defined( 'ABSPATH' ) || exit;
 
 	<div class="wppa-row">
 		<p class="wppa-field">
-			<label for="wppa-first-name"><?php esc_html_e( 'Имя', 'wp-personal-account' ); ?></label>
-			<input type="text" id="wppa-first-name" name="first_name" value="<?php echo esc_attr( $user->first_name ); ?>" autocomplete="given-name" />
+			<label for="wppa-last-name"><?php esc_html_e( 'Фамилия', 'wp-personal-account' ); ?></label>
+			<input type="text" id="wppa-last-name" name="last_name" value="<?php echo esc_attr( $user->last_name ); ?>" autocomplete="family-name" />
 		</p>
 
 		<p class="wppa-field">
-			<label for="wppa-last-name"><?php esc_html_e( 'Фамилия', 'wp-personal-account' ); ?></label>
-			<input type="text" id="wppa-last-name" name="last_name" value="<?php echo esc_attr( $user->last_name ); ?>" autocomplete="family-name" />
+			<label for="wppa-first-name"><?php esc_html_e( 'Имя', 'wp-personal-account' ); ?></label>
+			<input type="text" id="wppa-first-name" name="first_name" value="<?php echo esc_attr( $user->first_name ); ?>" autocomplete="given-name" />
 		</p>
 	</div>
 

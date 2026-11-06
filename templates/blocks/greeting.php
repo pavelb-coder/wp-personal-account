@@ -16,7 +16,7 @@ $wppa_heading = isset( $block_title ) && '' !== $block_title ? $block_title : __
 	printf(
 		/* translators: %s: имя пользователя */
 		esc_html( $wppa_heading ),
-		esc_html( $user->display_name )
+		esc_html( WPPA_Teams::full_name( $user ) )
 	);
 	?>
 </h2>

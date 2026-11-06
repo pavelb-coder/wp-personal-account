@@ -215,7 +215,10 @@ function wp_generate_password( $l = 12, $s = true, $e = true ) {
 	return $out;
 }
 function wp_update_user( $a ) { return (int) $a['ID']; }
-function wp_insert_user( $a ) { return 99; }
+function wp_insert_user( $a ) {
+	$GLOBALS['wppa_test']['inserted_user'] = $a;
+	return 99;
+}
 function wp_mail( $to, $s, $m, $headers = array(), $attachments = array() ) {
 	if ( ! empty( $GLOBALS['wppa_test']['mail_fail'] ) ) {
 		return false;
