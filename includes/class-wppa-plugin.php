@@ -183,6 +183,7 @@ class WPPA_Plugin {
 			'link_button'          => array(),
 			'export_folder'        => array(),
 			'file_export'          => 1,
+			'participant_min_percent' => 60,
 			'smb'                  => array(),
 			'delete_data_on_uninstall' => 0,
 		);
@@ -572,6 +573,9 @@ class WPPA_Plugin {
 				break;
 			case 'participant_file':
 				WPPA_Participant_Files::handle_request();
+				break;
+			case 'participant_threshold':
+				WPPA_Participant_Files::handle_threshold();
 				break;
 			case 'mailing':
 				WPPA_Mailing::handle_request();

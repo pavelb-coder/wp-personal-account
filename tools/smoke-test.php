@@ -3403,6 +3403,152 @@ foreach ( $parts_checks as $check_name => $ok ) {
 	}
 }
 
+// ---- Порог процента и рассылка документов всей команде (3.38.0) ----
+$thr_checks = array();
+$thr_backup = get_option( 'wppa_settings', array() );
+
+WPPA_Teams::set_curator( 12, true );
+
+$thr_team = WPPA_Teams::create( 'Команда порога', 501 );
+WPPA_Teams::add_member( $thr_team, 502 );
+WPPA_Teams::add_member( $thr_team, 503 );
+WPPA_Teams::set_role( $thr_team, 503, 'mentor' );
+
+$GLOBALS['wppa_test']['users'][501] = array( 'Анна Порогова', 'anna@example.com', 'first_name' => 'Анна', 'last_name' => 'Порогова' );
+$GLOBALS['wppa_test']['users'][502] = array( 'Борис Слабый', 'boris@example.com', 'first_name' => 'Борис', 'last_name' => 'Слабый' );
+$GLOBALS['wppa_test']['users'][503] = array( 'Наставник Умный', 'mentor2@example.com', 'first_name' => 'Наставник', 'last_name' => 'Умный' );
+
+// Баллы: у 501 — 80 %, у 502 — 20 %.
+$thr_db_backup = isset( $wpdb->data ) ? $wpdb->data : array();
+
+$wpdb->data = array(
+	'var'      => $wpdb->prefix . 'olympiad_attempts',
+	'attempts' => array(
+		(object) array( 'user_id' => 501, 'score' => 8, 'max_score' => 10, 'tests' => 1, 'pending' => 0 ),
+		(object) array( 'user_id' => 502, 'score' => 2, 'max_score' => 10, 'tests' => 1, 'pending' => 0 ),
+	),
+);
+
+WPPA_Olympiad::flush();
+
+$thr_checks['порог по умолчанию — 60']        = 60 === WPPA_Participant_Files::min_percent();
+$thr_checks['ниже порога: 20 %']              = true === WPPA_Participant_Files::below_threshold( 20 );
+$thr_checks['не ниже порога: 80 %']           = false === WPPA_Participant_Files::below_threshold( 80 );
+
+$thr_checks['сохранение порога']              = 75 === WPPA_Participant_Files::set_min_percent( 75 ) && 75 === WPPA_Participant_Files::min_percent();
+$thr_checks['порог сверху ограничен']         = 100 === WPPA_Participant_Files::set_min_percent( 250 );
+$thr_checks['порог снизу ограничен']          = 0 === WPPA_Participant_Files::set_min_percent( -5 );
+
+WPPA_Participant_Files::set_min_percent( 60 );
+
+// Форма порога в блоке куратора.
+$thr_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$thr_checks['блок: поле порога']              = false !== strpos( $thr_html, 'name="min_percent"' )
+	&& false !== strpos( $thr_html, 'value="participant_threshold"' );
+$thr_checks['блок: строка о пороге']          = false !== strpos( $thr_html, 'Порог 60%' );
+$thr_checks['блок: пометка «ниже порога»']    = false !== strpos( $thr_html, 'ниже порога 60%' );
+$thr_checks['блок: рассылка всей команде']    = false !== strpos( $thr_html, 'value="upload_all"' )
+	&& false !== strpos( $thr_html, 'Отправить всем' );
+
+// Рассылка документов всем участникам команды.
+$thr_allow = static function () {
+	return true;
+};
+add_filter( 'wppa_skip_upload_check', $thr_allow );
+
+$thr_dir = sys_get_temp_dir() . '/wppa-files-test';
+wp_mkdir_p( $thr_dir );
+
+$thr_one = wppa_test_file( 'batch-one.pdf', str_repeat( 'b', 40 ) );
+$thr_two = wppa_test_file( 'batch-two.txt', str_repeat( 'c', 40 ) );
+
+$thr_batch = WPPA_Participant_Files::upload_all(
+	$thr_team,
+	array(
+		'name'     => array( 'batch-one.pdf', 'batch-two.txt' ),
+		'tmp_name' => array( $thr_one, $thr_two ),
+		'error'    => array( UPLOAD_ERR_OK, UPLOAD_ERR_OK ),
+		'size'     => array( 40, 40 ),
+	),
+	12
+);
+
+$thr_checks['рассылка: два участника получили'] = 2 === $thr_batch['count_people'];
+$thr_checks['рассылка: четыре файла']           = 4 === $thr_batch['count_added'];
+$thr_checks['рассылка: у первого два файла']    = 2 === WPPA_Participant_Files::count( 501 );
+$thr_checks['рассылка: у второго два файла']    = 2 === WPPA_Participant_Files::count( 502 );
+$thr_checks['рассылка: наставнику не отправлено'] = 0 === WPPA_Participant_Files::count( 503 );
+
+$thr_checks['рассылка: копии независимы']       = array() === array_intersect_key(
+	WPPA_Participant_Files::files( 501 ),
+	WPPA_Participant_Files::files( 502 )
+);
+
+$thr_denied = WPPA_Participant_Files::upload_all( $thr_team, array( 'name' => array( 'x.pdf' ), 'tmp_name' => array( $thr_one ), 'error' => array( UPLOAD_ERR_OK ), 'size' => array( 40 ) ), 502 );
+$thr_checks['рассылка: участнику нельзя']      = in_array( 'wppa_participant_forbidden', $thr_denied['errors'], true );
+
+// Обработчик формы порога: код уведомления и сохранённое значение.
+$thr_request = function ( $user_id, $value ) use ( $thr_team ) {
+	$_POST = array(
+		'wppa_action' => 'participant_threshold',
+		'min_percent' => (string) $value,
+		'team_id'     => (int) $thr_team,
+		'wppa_nonce'  => wp_create_nonce( 'wppa_participant_threshold' ),
+	);
+	$_FILES = array();
+
+	$GLOBALS['wppa_test']['catch_redirect'] = true;
+	$GLOBALS['wppa_test']['current_user']   = (int) $user_id;
+
+	try {
+		WPPA_Participant_Files::handle_threshold();
+	} catch ( RuntimeException $e ) {
+		$GLOBALS['wppa_test']['catch_redirect'] = false;
+		$_POST = array();
+
+		return substr( $e->getMessage(), strlen( 'redirect:' ) );
+	}
+
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	$_POST = array();
+
+	return '';
+};
+
+$thr_saved_url = $thr_request( 12, 45 );
+$thr_checks['обработчик: порог сохранён']      = false !== strpos( $thr_saved_url, 'wppa_notice=participant_threshold_saved' )
+	&& 45 === WPPA_Participant_Files::min_percent();
+$thr_checks['обработчик: возврат в раздел файлов'] = false !== strpos( $thr_saved_url, 'wppa_team=' . (int) $thr_team );
+
+$thr_deny_url = $thr_request( 502, 10 );
+$thr_checks['обработчик: участнику порог нельзя'] = false !== strpos( $thr_deny_url, 'wppa_notice=participant_file_forbidden' )
+	&& 45 === WPPA_Participant_Files::min_percent();
+
+remove_filter( 'wppa_skip_upload_check', $thr_allow );
+
+$thr_notices = WPPA_Notices::registry();
+$thr_checks['уведомления о пороге и рассылке'] = isset( $thr_notices['participant_threshold_saved'], $thr_notices['participant_files_sent_all'], $thr_notices['participant_files_sent_partial'] );
+
+WPPA_Participant_Files::clear( 501 );
+WPPA_Participant_Files::clear( 502 );
+WPPA_Teams::dissolve( $thr_team );
+WPPA_Teams::set_curator( 12, false );
+
+$wpdb->data = $thr_db_backup;
+update_option( 'wppa_settings', $thr_backup );
+WPPA_Olympiad::flush();
+
+foreach ( $thr_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'threshold: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Разделы и свои поля персональных данных (3.8.0).
 $sections_checks = array();
 $settings_backup = get_option( 'wppa_settings', array() );

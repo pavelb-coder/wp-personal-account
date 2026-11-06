@@ -1449,3 +1449,42 @@
 .wppa-participants__table th {
 	vertical-align: top;
 }
+
+.wppa-participants__threshold {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 0 0 14px;
+	padding: 12px 14px;
+	border: 1px solid var(--wppa-border);
+	border-radius: calc(var(--wppa-radius, 14px) / 2);
+	background: var(--wppa-bg);
+}
+
+.wppa-participants__percent {
+	width: 84px;
+	padding: 6px 8px;
+	border: 1px solid var(--wppa-border);
+	border-radius: 8px;
+	background: var(--wppa-surface);
+	color: var(--wppa-text);
+	font: inherit;
+}
+
+.wppa-participants__below {
+	display: inline-block;
+	margin-top: 4px;
+	font-size: .8em;
+	color: var(--wppa-warning);
+}
+
+.wppa-participants__batch {
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--wppa-border);
+}
+
+.wppa-participants__batch .wppa-subtitle {
+	margin-top: 0;
+}

@@ -39,6 +39,23 @@ foreach ( $wppa_team_ids as $wppa_team_id ) {
 $wppa_scores = WPPA_Olympiad::is_active()
 	? WPPA_Olympiad::summary_map( array_keys( $wppa_participants ) )
 	: array();
+
+$wppa_min_percent = WPPA_Participant_Files::min_percent();
+$wppa_below       = 0;
+
+foreach ( $wppa_participants as $wppa_participant_id => $wppa_participant_row ) {
+	if ( isset( $wppa_scores[ $wppa_participant_id ] ) && WPPA_Participant_Files::below_threshold( $wppa_scores[ $wppa_participant_id ]['percentage'] ) ) {
+		++$wppa_below;
+	}
+}
+
+// Куда вернуть куратора после отправки и какую команду отправляем по умолчанию.
+$wppa_block_team  = $wppa_single_team ? $wppa_single_team : ( $wppa_team_ids ? (int) $wppa_team_ids[0] : 0 );
+$wppa_block_url   = WPPA_Plugin::tab_url( 'files' );
+
+if ( $wppa_single_team ) {
+	$wppa_block_url = add_query_arg( 'wppa_team', (int) $wppa_single_team, $wppa_block_url );
+}
 ?>
 
 <section class="wppa-card wppa-participants">
@@ -48,6 +65,42 @@ $wppa_scores = WPPA_Olympiad::is_active()
 	<p class="wppa-hint">
 		<?php esc_html_e( 'Участники команд без наставников: баллы и процент за тесты, документы конкретному участнику. Участник увидит свой файл в разделе «Файлы».', 'wp-personal-account' ); ?>
 	</p>
+
+	<?php if ( $wppa_scores ) : ?>
+		<form method="post" action="<?php echo esc_url( $wppa_block_url ); ?>" class="wppa-participants__threshold">
+			<?php wp_nonce_field( 'wppa_participant_threshold', 'wppa_nonce' ); ?>
+			<input type="hidden" name="wppa_action" value="participant_threshold" />
+			<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_block_team ); ?>" />
+			<label class="wppa-participants__label" for="wppa-participant-threshold">
+				<?php esc_html_e( 'Минимальный процент правильных ответов', 'wp-personal-account' ); ?>
+			</label>
+			<input
+				type="number"
+				min="0"
+				max="100"
+				step="1"
+				id="wppa-participant-threshold"
+				name="min_percent"
+				value="<?php echo esc_attr( (string) $wppa_min_percent ); ?>"
+				class="wppa-participants__percent"
+			/>
+			<span aria-hidden="true">%</span>
+			<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+				<?php esc_html_e( 'Сохранить', 'wp-personal-account' ); ?>
+			</button>
+			<span class="wppa-hint">
+				<?php
+				printf(
+					/* translators: 1: порог в процентах, 2: сколько участников ниже порога, 3: всего участников */
+					esc_html__( 'Порог %1$d%%: ниже него — %2$d из %3$d участников.', 'wp-personal-account' ),
+					(int) $wppa_min_percent,
+					(int) $wppa_below,
+					(int) count( $wppa_participants )
+				);
+				?>
+			</span>
+		</form>
+	<?php endif; ?>
 
 	<?php if ( ! $wppa_participants ) : ?>
 		<p class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Участников пока нет: команды ещё не собраны.', 'wp-personal-account' ); ?></p>
@@ -109,9 +162,21 @@ $wppa_scores = WPPA_Olympiad::is_active()
 							</td>
 							<td>
 								<?php if ( $wppa_score ) : ?>
-									<span class="wppa-badge <?php echo $wppa_pct >= 60 ? 'wppa-badge--ok' : ( $wppa_pct > 0 ? 'wppa-badge--warn' : '' ); ?>">
+									<?php $wppa_below_row = WPPA_Participant_Files::below_threshold( $wppa_pct ); ?>
+									<span class="wppa-badge <?php echo $wppa_below_row ? 'wppa-badge--warn' : 'wppa-badge--ok'; ?>">
 										<?php echo esc_html( number_format_i18n( $wppa_pct, $wppa_decimals ) . ' %' ); ?>
 									</span>
+									<?php if ( $wppa_below_row ) : ?>
+										<br /><span class="wppa-participants__below">
+											<?php
+											printf(
+												/* translators: %d: минимальный процент */
+												esc_html__( 'ниже порога %d%%', 'wp-personal-account' ),
+												(int) $wppa_min_percent
+											);
+											?>
+										</span>
+									<?php endif; ?>
 								<?php else : ?>
 									<span class="wppa-hint">—</span>
 								<?php endif; ?>
@@ -164,5 +229,37 @@ $wppa_scores = WPPA_Olympiad::is_active()
 				</tbody>
 			</table>
 		</div>
+		<section class="wppa-participants__batch">
+			<h3 class="wppa-subtitle"><?php esc_html_e( 'Документы всем участникам команды', 'wp-personal-account' ); ?></h3>
+			<p class="wppa-hint"><?php esc_html_e( 'Файлы получат все участники команды без наставников: каждый — свою копию в разделе «Файлы».', 'wp-personal-account' ); ?></p>
+
+			<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( $wppa_block_url ); ?>" class="wppa-participants__upload">
+				<?php wp_nonce_field( 'wppa_participant_file', 'wppa_nonce' ); ?>
+				<input type="hidden" name="wppa_action" value="participant_file" />
+				<input type="hidden" name="participant_file_action" value="upload_all" />
+
+				<?php if ( $wppa_single_team ) : ?>
+					<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_single_team ); ?>" />
+				<?php elseif ( $wppa_team_ids ) : ?>
+					<label class="wppa-participants__label" for="wppa-participants-batch-team"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></label>
+					<select id="wppa-participants-batch-team" name="team_id">
+						<?php foreach ( $wppa_team_ids as $wppa_team_option ) : ?>
+							<?php $wppa_team_post = get_post( (int) $wppa_team_option ); ?>
+							<?php if ( ! $wppa_team_post ) : ?>
+								<?php continue; ?>
+							<?php endif; ?>
+							<option value="<?php echo esc_attr( (string) (int) $wppa_team_option ); ?>"><?php echo esc_html( $wppa_team_post->post_title ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				<?php endif; ?>
+
+				<label class="wppa-participants__label" for="wppa-participants-batch-files"><?php esc_html_e( 'Файлы', 'wp-personal-account' ); ?></label>
+				<input type="file" id="wppa-participants-batch-files" name="participant_files[]" multiple />
+
+				<button type="submit" class="wppa-button wppa-button--primary wppa-button--sm">
+					<?php esc_html_e( 'Отправить всем', 'wp-personal-account' ); ?>
+				</button>
+			</form>
+		</section>
 	<?php endif; ?>
 </section>

@@ -37,6 +37,61 @@ class WPPA_Participant_Files {
 	const MAX_FILES = 20;
 
 	/**
+	 * Ключ настройки «минимальный процент правильных ответов».
+	 */
+	const MIN_PERCENT_KEY = 'participant_min_percent';
+
+	/**
+	 * Порог по умолчанию, %.
+	 */
+	const MIN_PERCENT_DEFAULT = 60;
+
+	/**
+	 * Минимальный процент правильных ответов, который задал куратор.
+	 *
+	 * @return int 0–100.
+	 */
+	public static function min_percent() {
+		$value = (int) WPPA_Plugin::setting( self::MIN_PERCENT_KEY, self::MIN_PERCENT_DEFAULT );
+
+		/**
+		 * Фильтр минимального процента правильных ответов.
+		 *
+		 * @param int $value Процент.
+		 */
+		$value = (int) apply_filters( 'wppa_participant_min_percent', $value );
+
+		return (int) min( 100, max( 0, $value ) );
+	}
+
+	/**
+	 * Сохранить порог процента.
+	 *
+	 * @param int $value Процент 0–100.
+	 * @return int Что сохранилось.
+	 */
+	public static function set_min_percent( $value ) {
+		$value = (int) min( 100, max( 0, (int) $value ) );
+
+		$settings = (array) get_option( 'wppa_settings', array() );
+		$settings[ self::MIN_PERCENT_KEY ] = $value;
+
+		update_option( 'wppa_settings', $settings );
+
+		return $value;
+	}
+
+	/**
+	 * Ниже порога ли участник по проценту.
+	 *
+	 * @param float $percentage Процент правильных ответов.
+	 * @return bool
+	 */
+	public static function below_threshold( $percentage ) {
+		return (float) $percentage < self::min_percent();
+	}
+
+	/**
 	 * Максимальный размер файла — как у файлов команды.
 	 *
 	 * @return int
@@ -395,6 +450,126 @@ class WPPA_Participant_Files {
 	}
 
 	/**
+	 * Разослать документы всем участникам команды разом.
+	 *
+	 * Каждый участник получает свою копию: файлы не разделяются между людьми,
+	 * поэтому временный файл копируется для каждого получателя отдельно.
+	 *
+	 * @param int   $team_id    Команда.
+	 * @param array $files      $_FILES-элемент или список файлов.
+	 * @param int   $curator_id Кто отправляет.
+	 * @return array participants, added, errors, count_added, count_failed, count_people.
+	 */
+	public static function upload_all( $team_id, $files, $curator_id = 0 ) {
+		$team_id    = (int) $team_id;
+		$curator_id = $curator_id ? (int) $curator_id : get_current_user_id();
+		$list       = WPPA_Curator_Files::normalize_files( $files );
+		$people     = array();
+		$added      = 0;
+		$errors     = array();
+		$sent_to    = 0;
+
+		if ( ! self::can_manage( $curator_id ) ) {
+			return array(
+				'participants' => array(),
+				'added'        => 0,
+				'errors'       => array( 'wppa_participant_forbidden' ),
+				'count_added'  => 0,
+				'count_failed' => count( $list ) ? count( $list ) : 1,
+				'count_people' => 0,
+			);
+		}
+
+		foreach ( WPPA_Teams::participants( $team_id ) as $member ) {
+			$people[] = (int) $member->ID;
+		}
+
+		foreach ( $people as $participant_id ) {
+			$took_any = false;
+
+			foreach ( $list as $file ) {
+				$source = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+
+				if ( '' === $source || ! is_file( $source ) ) {
+					$errors[] = 'wppa_file_missing';
+					continue;
+				}
+
+				// Копия для каждого участника: store() переносит файл.
+				$copy = tempnam( sys_get_temp_dir(), 'wppa-part' );
+
+				if ( ! $copy || ! @copy( $source, $copy ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					$errors[] = 'wppa_file_copy';
+					continue;
+				}
+
+				$result = self::store( $participant_id, $copy, (string) $file['name'], $curator_id );
+
+				if ( is_wp_error( $result ) ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+					@unlink( $copy );
+					$errors[] = $result->get_error_code();
+					continue;
+				}
+
+				++$added;
+				$took_any = true;
+			}
+
+			if ( $took_any ) {
+				++$sent_to;
+			}
+		}
+
+		// Исходные загруженные файлы больше не нужны.
+		foreach ( $list as $file ) {
+			$source = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+			if ( '' !== $source && is_file( $source ) ) {
+				@unlink( $source );
+			}
+		}
+
+		return array(
+			'participants' => $people,
+			'added'        => $added,
+			'errors'       => $errors,
+			'count_added'  => $added,
+			'count_failed' => count( $errors ),
+			'count_people' => $sent_to,
+		);
+	}
+
+	/**
+	 * Обработка формы «минимальный процент правильных ответов».
+	 *
+	 * @return void
+	 */
+	public static function handle_threshold() {
+		check_admin_referer( 'wppa_participant_threshold', 'wppa_nonce' );
+
+		$back = WPPA_Plugin::tab_url( 'files' );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
+		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+		$value   = isset( $_POST['min_percent'] ) ? absint( wp_unslash( $_POST['min_percent'] ) ) : self::MIN_PERCENT_DEFAULT;
+		// phpcs:enable
+
+		if ( $team_id ) {
+			$back = add_query_arg( 'wppa_team', $team_id, $back );
+		}
+
+		if ( ! self::can_manage() ) {
+			WPPA_Notices::redirect( 'participant_file_forbidden', $back );
+		}
+
+		self::set_min_percent( $value );
+
+		WPPA_Notices::redirect( 'participant_threshold_saved', $back );
+	}
+
+	/**
 	 * Удалить документ участника.
 	 *
 	 * @param int    $user_id Участник.
@@ -475,7 +650,8 @@ class WPPA_Participant_Files {
 			WPPA_Notices::redirect( 'participant_file_forbidden', $back );
 		}
 
-		if ( ! self::is_participant( $participant_id ) ) {
+		// Массовая отправка адресована команде, а не одному участнику.
+		if ( 'upload_all' !== $sub && ! self::is_participant( $participant_id ) ) {
 			WPPA_Notices::redirect( 'participant_missing', $back );
 		}
 
@@ -484,6 +660,25 @@ class WPPA_Participant_Files {
 			$key = isset( $_POST['file_key'] ) ? sanitize_text_field( wp_unslash( $_POST['file_key'] ) ) : '';
 
 			WPPA_Notices::redirect( self::remove( $participant_id, $key, $curator_id ) ? 'participant_file_removed' : 'file_missing', $back );
+		}
+
+		// Разом всем участникам команды.
+		if ( 'upload_all' === $sub ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- проверяется в upload().
+			$files = isset( $_FILES['participant_files'] ) ? $_FILES['participant_files'] : array();
+
+			$batch = self::upload_all( $team_id ? $team_id : (int) WPPA_Teams::team_id( $participant_id ), $files, $curator_id );
+
+			if ( 0 === $batch['count_added'] ) {
+				$code = ! empty( $batch['errors'] ) ? WPPA_Curator_Files::notice_code( (string) $batch['errors'][0] ) : 'file_empty';
+				WPPA_Notices::redirect( $code, $back );
+			}
+
+			if ( $batch['count_failed'] > 0 ) {
+				WPPA_Notices::redirect( 'participant_files_sent_partial', $back );
+			}
+
+			WPPA_Notices::redirect( 'participant_files_sent_all', $back );
 		}
 
 		if ( 'upload' !== $sub ) {
