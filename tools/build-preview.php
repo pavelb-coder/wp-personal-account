@@ -25,7 +25,6 @@ require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
 require $base . 'includes/class-wppa-smb.php';
 require $base . 'includes/class-wppa-curator-files.php';
-require $base . 'includes/class-wppa-participant-files.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
@@ -112,12 +111,11 @@ if ( $wpdb instanceof WPPA_Test_WPDB ) {
 	WPPA_Olympiad::flush();
 }
 
-$sections = demo_section(
+$sections  = demo_section(
 	'Кабинет целиком (активна вкладка «Обзор»)',
 	'Шапка с аватаром и кнопкой выхода, навигация по вкладкам, контент активной вкладки',
 	WPPA_Template::get( 'account', array( 'user' => $user, 'tabs' => $tabs, 'current_tab' => 'dashboard' ) )
 );
-
 
 $sections .= demo_section(
 	'Профиль',
@@ -311,58 +309,6 @@ $sections .= demo_section(
 		)
 	)
 );
-
-// Блок куратора «Участники и баллы»: участники без наставников, баллы, документы.
-// Попытки привязываем к людям: у капитана (7) — 80 %, у участника (9) — 40 % (ниже порога 60 %).
-global $wpdb;
-
-if ( $wpdb instanceof WPPA_Test_WPDB ) {
-	$wpdb->data = array(
-		'var'      => $wpdb->prefix . 'olympiad_attempts',
-		'attempts' => array(
-			(object) array( 'id' => 1, 'user_id' => 7, 'quiz_id' => 10, 'score' => 4, 'max_score' => 5, 'percentage' => '80.00', 'status' => 'completed', 'submitted_at' => '2026-10-28 13:51:04', 'title' => 'Математика' ),
-			(object) array( 'id' => 2, 'user_id' => 7, 'quiz_id' => 11, 'score' => 4, 'max_score' => 5, 'percentage' => '80.00', 'status' => 'needs_review', 'submitted_at' => '2026-10-29 10:00:00', 'title' => 'Физика' ),
-			(object) array( 'id' => 3, 'user_id' => 9, 'quiz_id' => 13, 'score' => 2, 'max_score' => 5, 'percentage' => '40.00', 'status' => 'completed', 'submitted_at' => '2026-10-30 09:00:00', 'title' => 'Химия' ),
-		),
-	);
-}
-
-$wppa_preview_active = static function () {
-	return true;
-};
-
-add_filter( 'wppa_olympiad_active', $wppa_preview_active );
-
-WPPA_Olympiad::flush();
-
-$sections .= demo_section(
-	'Куратор: участники и баллы',
-	'Список участников команд без наставников: баллы и процент за тесты, порог процента (у Петра 40 % — ниже порога), адресные документы конкретному участнику и сразу всей команде',
-	WPPA_Builder::render_block(
-		array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
-		array( 'user' => $curator_user )
-	)
-);
-
-remove_filter( 'wppa_olympiad_active', $wppa_preview_active );
-
-// Адресный документ участнику: из-за него у участника появляется вкладка «Файлы»,
-// а команда попадает в рассылку о прикреплённых файлах.
-$wppa_demo_letter = sys_get_temp_dir() . '/wppa-demo-letter.pdf';
-
-file_put_contents( $wppa_demo_letter, str_repeat( 'w', 240 ) );
-
-WPPA_Participant_Files::store( 9, $wppa_demo_letter, 'памятка-участнику.pdf', 12 );
-
-$GLOBALS['wppa_test']['current_user'] = 9;
-
-$sections .= demo_section(
-	'Участник: документы от куратора',
-	'У Петра нет файлов от куратора на команду — только адресный документ. Из-за него у участника появилась вкладка «Файлы» и карточка «Документы для вас», а команда попала в список получателей рассылки о прикреплённых файлах',
-	WPPA_Template::get( 'tab-files', array( 'user' => get_userdata( 9 ), 'tabs' => WPPA_Template::tabs() ) )
-);
-
-$GLOBALS['wppa_test']['current_user'] = 12;
 
 WPPA_Teams::set_curator( 12, false );
 

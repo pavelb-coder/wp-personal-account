@@ -230,13 +230,7 @@ class WPPA_Curator_Files {
 			return self::has_curator_files( $team_id ) || WPPA_Teams::is_stage2( $team_id );
 		}
 
-		// У участника и капитана могут быть ещё и адресные документы от куратора:
-		// они лежат отдельно от файлов команды, но вкладку «Файлы» тоже открывают.
-		if ( self::has_curator_files( $team_id ) ) {
-			return true;
-		}
-
-		return class_exists( 'WPPA_Participant_Files' ) && WPPA_Participant_Files::count( $user_id ) > 0;
+		return self::has_curator_files( $team_id );
 	}
 
 	/**

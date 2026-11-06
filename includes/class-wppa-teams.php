@@ -961,11 +961,6 @@ class WPPA_Teams {
 			return 'dissolved';
 		}
 
-		// Адресные документы живут вместе с участием в команде.
-		if ( class_exists( 'WPPA_Participant_Files' ) ) {
-			WPPA_Participant_Files::clear( $user_id );
-		}
-
 		delete_user_meta( $user_id, self::META_TEAM );
 		delete_user_meta( $user_id, self::META_ROLE );
 
@@ -984,11 +979,6 @@ class WPPA_Teams {
 			return false;
 		}
 
-		// Адресные документы остаются только пока участник в команде.
-		if ( class_exists( 'WPPA_Participant_Files' ) ) {
-			WPPA_Participant_Files::clear( $user_id );
-		}
-
 		delete_user_meta( $user_id, self::META_TEAM );
 		delete_user_meta( $user_id, self::META_ROLE );
 
@@ -1005,13 +995,6 @@ class WPPA_Teams {
 		// Файлы куратора живут вместе с командой: распустили — удалили.
 		if ( class_exists( 'WPPA_Curator_Files' ) ) {
 			WPPA_Curator_Files::clear( $team_id );
-		}
-
-		// Адресные документы участников уходят вместе с командой.
-		if ( class_exists( 'WPPA_Participant_Files' ) ) {
-			foreach ( self::members( $team_id ) as $wppa_member ) {
-				WPPA_Participant_Files::clear( $wppa_member->ID );
-			}
 		}
 
 		foreach ( self::members( $team_id ) as $member ) {
@@ -1033,10 +1016,6 @@ class WPPA_Teams {
 
 		if ( $team_id && self::is_owner( $user_id ) ) {
 			self::dissolve( $team_id );
-		}
-
-		if ( class_exists( 'WPPA_Participant_Files' ) ) {
-			WPPA_Participant_Files::clear( $user_id );
 		}
 	}
 

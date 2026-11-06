@@ -36,10 +36,6 @@ if ( '' === $wppa_direction ) {
 }
 $wppa_team_name       = $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '';
 
-// Адресные документы: куратор прикрепляет файл конкретному участнику.
-// Считаем до ветвлений: из-за них участник не должен видеть «файлы недоступны».
-$wppa_my_documents = WPPA_Participant_Files::files( $user->ID );
-
 // Две встречные полки: что прислал куратор и что прислал наставник.
 $wppa_from_curator = array();
 $wppa_from_mentor  = array();
@@ -101,9 +97,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 
 <?php elseif ( ! $wppa_can_view ) : ?>
 
-	<?php if ( ! $wppa_my_documents ) : ?>
-		<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Файлы этой команды вам недоступны.', 'wp-personal-account' ); ?></div>
-	<?php endif; ?>
+	<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Файлы этой команды вам недоступны.', 'wp-personal-account' ); ?></div>
 
 <?php else : ?>
 
@@ -274,34 +268,4 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 		</p>
 	<?php endif; ?>
 
-<?php endif; ?>
-
-<?php if ( $wppa_my_documents ) : ?>
-	<section class="wppa-card wppa-my-documents">
-		<h3 class="wppa-subtitle"><?php esc_html_e( 'Документы для вас', 'wp-personal-account' ); ?></h3>
-		<p class="wppa-hint"><?php esc_html_e( 'Адресные документы от куратора: их видите только вы и куратор.', 'wp-personal-account' ); ?></p>
-
-		<div class="wppa-table-wrap">
-			<table class="wppa-table">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Файл', 'wp-personal-account' ); ?></th>
-						<th><?php esc_html_e( 'Размер', 'wp-personal-account' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( $wppa_my_documents as $wppa_doc_key => $wppa_doc ) : ?>
-						<tr>
-							<td>
-								<a class="wppa-link" href="<?php echo esc_url( WPPA_Participant_Files::download_url( $user->ID, $wppa_doc_key ) ); ?>">
-									<?php echo esc_html( $wppa_doc['name'] ); ?>
-								</a>
-							</td>
-							<td><?php echo esc_html( WPPA_Participant_Files::size_label( $wppa_doc['size'] ) ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-		</div>
-	</section>
 <?php endif; ?>
