@@ -361,7 +361,7 @@ $fields_checks['дата рождения только в формате Y-m-d']
 $fields_checks['обязательное имя проверяется'] = 'field_required' === WPPA_Fields::validate( array( 'first_name' => '' ), 'register' );
 $fields_checks['короткий телефон отклоняется'] = 'phone_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'phone' => '+7 12' ), 'register' );
 $fields_checks['корректный телефон принимается'] = '' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'phone' => '+7 913 555-21-08' ), 'register' );
-// Включаем дату рождения и сайт, чтобы проверить их валидацию.
+// Включаем дату рождения, чтобы проверить её валидацию.
 $fields_backup = get_option( 'wppa_settings', array() );
 update_option(
 	'wppa_settings',
@@ -371,15 +371,55 @@ update_option(
 			'fields' => array(
 				'first_name' => array( 'enabled' => 1, 'required' => 1 ),
 				'birthdate'  => array( 'enabled' => 1, 'required' => 0 ),
-				'website'    => array( 'enabled' => 1, 'required' => 0 ),
 			),
 		)
 	)
 );
 
 $fields_checks['будущая дата рождения отклоняется'] = 'birthdate_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'birthdate' => gmdate( 'Y-m-d', time() + 86400 * 5 ) ), 'register' );
-$fields_checks['сайт без протокола отклоняется']    = 'website_invalid' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'website' => 'example.com' ), 'register' );
-$fields_checks['корректный сайт принимается']       = '' === WPPA_Fields::validate( array( 'first_name' => 'Иван', 'website' => 'https://example.com' ), 'register' );
+// Поля «Сайт», «Telegram» и «О себе» из плагина убраны (3.32.1).
+$fields_registry = WPPA_Fields::registry();
+
+$fields_checks['нет поля «Сайт»']      = ! isset( $fields_registry['website'] );
+$fields_checks['нет поля «Telegram»']  = ! isset( $fields_registry['telegram'] );
+$fields_checks['нет поля «О себе»']    = ! isset( $fields_registry['about'] );
+$fields_checks['нет в схеме']          = ! isset( WPPA_Fields::schema()['website'] ) && ! isset( WPPA_Fields::schema()['telegram'] ) && ! isset( WPPA_Fields::schema()['about'] );
+
+// Форма профиля тоже без «О себе», и сохранение профиля её не трогает.
+$fields_prev_user                     = $GLOBALS['wppa_test']['current_user'];
+$GLOBALS['wppa_test']['current_user'] = 21;
+
+$fields_profile_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'profile-form', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 21 ) )
+);
+
+$fields_checks['форма профиля без «О себе»'] = '' !== trim( $fields_profile_html ) && false === strpos( $fields_profile_html, 'name="description"' );
+
+$fields_previous_description = (string) get_userdata( 21 )->description;
+
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$_POST                                  = array(
+	'wppa_action'  => 'profile',
+	'wppa_nonce'   => wp_create_nonce( 'wppa_profile' ),
+	'first_name'   => 'Иван',
+	'last_name'    => 'Петров',
+	'display_name' => 'Иван Петров',
+	'description'  => 'Новый текст о себе',
+);
+
+try {
+	WPPA_Profile::handle_update();
+} catch ( RuntimeException $e ) {
+	// редирект после сохранения
+}
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST                                  = array();
+
+$fields_checks['сохранение профиля не пишет «О себе»'] = $fields_previous_description === (string) get_userdata( 21 )->description;
+
+$GLOBALS['wppa_test']['current_user'] = $fields_prev_user;
 
 update_option( 'wppa_settings', $fields_backup );
 
@@ -2760,7 +2800,8 @@ $settings_backup = get_option( 'wppa_settings', array() );
 $default_sections = WPPA_Fields::sections();
 $main_schema      = WPPA_Fields::schema();
 
-$sections_checks['разделы по умолчанию: 4']        = 4 === count( $default_sections );
+$sections_checks['разделы по умолчанию: 3']        = 3 === count( $default_sections );
+$sections_checks['раздела «О себе» больше нет']    = ! isset( $default_sections['about'] ) && in_array( 'about', WPPA_Fields::retired_sections(), true );
 $sections_checks['первый раздел — основной']       = 'main' === array_key_first( $default_sections );
 $sections_checks['телефон лежит в «Контактах»']    = 'contacts' === $main_schema['phone']['section'];
 $sections_checks['о компании — раздел «Работа»']   = 'work' === $main_schema['company']['section'];
@@ -2836,7 +2877,7 @@ $sections_checks['подпись встроенного поля правитс�
 $sections_checks['новый раздел создан']              = isset( $after_section['study'] ) && 'Учёба' === $after_section['study']['label'];
 $sections_checks['раздел удалён по галочке']         = ! isset( $after_section['work'] );
 $sections_checks['поле перенесено в новый раздел']   = 'study' === $after_first['city']['section'];
-$sections_checks['порядок разделов соблюдён']        = array( 'main', 'contacts', 'study', 'about' ) === array_slice( array_keys( $after_section ), 0, 4 );
+$sections_checks['порядок разделов соблюдён']        = array( 'main', 'contacts', 'study' ) === array_slice( array_keys( $after_section ), 0, 3 );
 
 $grouped = WPPA_Fields::grouped( 'register' );
 

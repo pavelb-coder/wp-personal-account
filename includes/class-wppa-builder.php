@@ -118,7 +118,7 @@ class WPPA_Builder {
 			'profile-form'    => array(
 				'label' => __( 'Форма профиля', 'wp-personal-account' ),
 				'tabs'  => array( 'profile' ),
-				'desc'  => __( 'Имя, фамилия, отображаемое имя, «о себе»', 'wp-personal-account' ),
+				'desc'  => __( 'Имя, фамилия, отображаемое имя и персональные данные', 'wp-personal-account' ),
 			),
 			'team-widget'     => array(
 				'label' => __( 'Команда', 'wp-personal-account' ),

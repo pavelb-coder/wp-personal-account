@@ -34,11 +34,6 @@ defined( 'ABSPATH' ) || exit;
 		<input type="text" id="wppa-display-name" name="display_name" value="<?php echo esc_attr( $user->display_name ); ?>" required />
 	</p>
 
-	<p class="wppa-field">
-		<label for="wppa-description"><?php esc_html_e( 'О себе', 'wp-personal-account' ); ?></label>
-		<textarea id="wppa-description" name="description" rows="4"><?php echo esc_textarea( $user->description ); ?></textarea>
-	</p>
-
 	<?php WPPA_Fields::render( 'profile', $user->ID ); ?>
 
 	<p class="wppa-field">

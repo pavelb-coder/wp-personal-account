@@ -41,11 +41,16 @@ class WPPA_Fields {
 				'label' => __( 'Работа', 'wp-personal-account' ),
 				'order' => 30,
 			),
-			'about'    => array(
-				'label' => __( 'О себе', 'wp-personal-account' ),
-				'order' => 40,
-			),
 		);
+	}
+
+	/**
+	 * Разделы, которые были раньше и удалены: их сохранённые настройки игнорируем.
+	 *
+	 * @return array
+	 */
+	public static function retired_sections() {
+		return array( 'about' );
 	}
 
 	/**
@@ -61,11 +66,9 @@ class WPPA_Fields {
 			'birthdate'  => array( 'main', 40 ),
 			'phone'      => array( 'contacts', 10 ),
 			'city'       => array( 'contacts', 20 ),
-			'telegram'   => array( 'contacts', 30 ),
-			'website'    => array( 'contacts', 40 ),
+
 			'company'    => array( 'work', 10 ),
 			'position'   => array( 'work', 20 ),
-			'about'      => array( 'about', 10 ),
 		);
 	}
 
@@ -130,6 +133,11 @@ class WPPA_Fields {
 			$id = (string) $id;
 
 			if ( isset( $out[ $id ] ) || ! is_array( $conf ) || ! preg_match( '/^[a-z0-9_]+$/', $id ) ) {
+				continue;
+			}
+
+			// Раздел, который мы убрали из плагина: сохранённые настройки не воскрешаем.
+			if ( in_array( $id, self::retired_sections(), true ) ) {
 				continue;
 			}
 
@@ -236,27 +244,6 @@ class WPPA_Fields {
 				'autocomplete'    => 'organization-title',
 				'meta'            => '_wppa_position',
 				'enabled_default' => 1,
-			),
-			'website'    => array(
-				'label'        => __( 'Сайт', 'wp-personal-account' ),
-				'type'         => 'url',
-				'autocomplete' => 'url',
-				'meta'         => '_wppa_website',
-				'placeholder'  => 'https://example.com',
-			),
-			'telegram'   => array(
-				'label'       => __( 'Telegram', 'wp-personal-account' ),
-				'type'        => 'text',
-				'meta'        => '_wppa_telegram',
-				'placeholder' => '@username',
-			),
-			'about'      => array(
-				'label'           => __( 'О себе', 'wp-personal-account' ),
-				'type'            => 'textarea',
-				'user'            => 'description',
-				'rows'            => 4,
-				'enabled_default' => 1,
-				'profile_native'  => 1,
 			),
 		);
 

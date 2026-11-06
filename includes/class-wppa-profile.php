@@ -37,7 +37,6 @@ class WPPA_Profile {
 		$first_name   = isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : '';
 		$last_name    = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : '';
 		$display_name = isset( $_POST['display_name'] ) ? sanitize_text_field( wp_unslash( $_POST['display_name'] ) ) : '';
-		$description  = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
 
 		// Дополнительные персональные данные (кроме нативных полей формы профиля).
 		$fields = array();
@@ -66,7 +65,6 @@ class WPPA_Profile {
 				'first_name'   => $first_name,
 				'last_name'    => $last_name,
 				'display_name' => $display_name,
-				'description'  => $description,
 			)
 		);
 
