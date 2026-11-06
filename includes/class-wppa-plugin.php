@@ -73,6 +73,7 @@ class WPPA_Plugin {
 		WPPA_Team_Files_Export::init();
 		WPPA_Mailing::init();
 		WPPA_Mailing_Files::init();
+		WPPA_Mailing_Certificates::init();
 		WPPA_Builder::init();
 		add_action( 'widgets_init', array( 'WPPA_Auth_Widget', 'register' ) );
 		WPPA_Blocks::init();
@@ -148,7 +149,6 @@ class WPPA_Plugin {
 			'participant_min_percent' => 60,
 			'certificate_template'    => 0,
 			'certificate_email'       => 0,
-			'certificate_notify'      => 1,
 			'registration_enabled' => 1,
 			'hide_admin_bar'       => 1,
 			'registration_start'   => '',

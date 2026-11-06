@@ -42,12 +42,12 @@ $wppa_dash_team    = $wppa_dash_stage2 ? WPPA_Teams::get( $wppa_dash_team_id ) :
 <?php endif; ?>
 <?php
 
-// Куратору — состояние рассылок и кнопки отмены: второй этап и прикреплённые файлы.
+// Куратору — состояние рассылок и кнопки отмены: второй этап, файлы и сертификаты.
 $wppa_mail_admin = current_user_can( 'manage_options' );
 $wppa_mailings   = array();
 
 if ( WPPA_Teams::is_curator( $user->ID ) ) {
-	foreach ( array( 'stage2', 'files' ) as $wppa_mail_kind ) {
+	foreach ( array( 'stage2', 'files', 'certificates' ) as $wppa_mail_kind ) {
 		$wppa_mail_class = WPPA_Mailing::class_of( $wppa_mail_kind );
 		$wppa_mail_state = $wppa_mail_class::stats();
 
@@ -67,9 +67,12 @@ if ( WPPA_Teams::is_curator( $user->ID ) ) {
 	<?php
 	$wppa_mail_stats = $wppa_mail['stats'];
 	$wppa_mail_next  = $wppa_mail['next'];
-	$wppa_mail_title = 'files' === $wppa_mail_kind
-		? __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' )
-		: __( 'Рассылка участникам второго этапа', 'wp-personal-account' );
+	$wppa_mail_titles = array(
+		'stage2'       => __( 'Рассылка участникам второго этапа', 'wp-personal-account' ),
+		'files'        => __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' ),
+		'certificates' => __( 'Рассылка о сертификатах', 'wp-personal-account' ),
+	);
+	$wppa_mail_title = isset( $wppa_mail_titles[ $wppa_mail_kind ] ) ? $wppa_mail_titles[ $wppa_mail_kind ] : $wppa_mail_titles['stage2'];
 	?>
 	<div class="wppa-card wppa-card--mailing">
 		<h3 class="wppa-subtitle"><?php echo esc_html( $wppa_mail_title ); ?></h3>

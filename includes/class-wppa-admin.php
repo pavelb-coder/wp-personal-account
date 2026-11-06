@@ -438,7 +438,7 @@ class WPPA_Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только выбор раздела.
 		$kind = isset( $source[ $key ] ) ? sanitize_key( wp_unslash( $source[ $key ] ) ) : WPPA_Mailing::kind();
 
-		return in_array( $kind, array( 'stage2', 'files' ), true ) ? $kind : WPPA_Mailing::kind();
+		return in_array( $kind, array( 'stage2', 'files', 'certificates' ), true ) ? $kind : WPPA_Mailing::kind();
 	}
 
 	/**

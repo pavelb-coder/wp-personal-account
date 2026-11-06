@@ -57,8 +57,6 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 								<?php endif; ?>
 								<?php if ( $wppa_cert['sent'] ) : ?>
 									<br /><span class="wppa-hint"><?php esc_html_e( 'отправлен на e-mail', 'wp-personal-account' ); ?></span>
-								<?php elseif ( $wppa_cert['notified'] ) : ?>
-									<br /><span class="wppa-hint"><?php esc_html_e( 'уведомление отправлено', 'wp-personal-account' ); ?></span>
 								<?php endif; ?>
 							</td>
 						</tr>

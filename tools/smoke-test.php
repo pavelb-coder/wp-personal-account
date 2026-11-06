@@ -29,6 +29,7 @@ require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
+require $base . 'includes/class-wppa-mailing-certificates.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -5169,70 +5170,96 @@ update_option(
 	)
 );
 
-// Уведомление включено по умолчанию.
-$cf_defaults = WPPA_Plugin::defaults();
-$cf_checks['уведомление включено по умолчанию'] = 1 === (int) $cf_defaults['certificate_notify'];
-$cf_checks['notify() читает настройку']         = true === WPPA_Certificates::notify();
-
-$cf_saved = WPPA_Settings::sanitize( array( 'certificate_notify' => '1' ) );
-$cf_checks['настройка сохраняется']             = 1 === (int) $cf_saved['certificate_notify'];
-$cf_checks['снятая галочка — 0']                = 0 === (int) WPPA_Settings::sanitize( array() )['certificate_notify'];
-
-// Письмо уходит участнику.
+// Выдача сертификата письма не отправляет — для писем есть рассылка.
 $GLOBALS['wppa_test']['mail'] = array();
 
 $cf_entry = WPPA_Certificates::issue( 921, 12 );
 
-$cf_mail = $GLOBALS['wppa_test']['mail'];
-$cf_last = $cf_mail ? $cf_mail[ count( $cf_mail ) - 1 ] : array();
+$cf_checks['при выдаче письма нет']              = array() === $GLOBALS['wppa_test']['mail'];
+$cf_checks['сертификат выдан']                   = is_array( $cf_entry ) && ! empty( $cf_entry['id'] );
+$cf_checks['настройки уведомления больше нет']   = ! array_key_exists( 'certificate_notify', WPPA_Plugin::defaults() );
+$cf_checks['в записи нет отметки уведомления']   = ! array_key_exists( 'notified', WPPA_Certificates::for_user( 921 )[ 'cert-' . (int) $cf_entry['id'] ] );
 
-$cf_checks['уведомление отправлено']            = is_array( $cf_entry ) && ! empty( $cf_entry['notified'] );
-$cf_checks['письмо ушло участнику']             = isset( $cf_last['to'] ) && 'first921@example.com' === $cf_last['to'];
-$cf_checks['в теме номер сертификата']           = isset( $cf_last['subject'] ) && false !== strpos( $cf_last['subject'], (string) $cf_entry['number'] );
-$cf_checks['в письме номер и программа']         = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], (string) $cf_entry['number'] )
-	&& false !== strpos( $cf_last['message'], 'Команда наставника' );
-$cf_checks['в письме ссылка на кабинет']         = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], 'wppa_tab=certificates' );
-$cf_checks['в письме обращение по имени']        = isset( $cf_last['message'] ) && false !== strpos( $cf_last['message'], 'Участник Первый' );
-$cf_checks['отметка об уведомлении в записи']    = true === WPPA_Certificates::for_user( 921 )[ 'cert-' . (int) $cf_entry['id'] ]['notified'];
+// Рассылка о сертификатах: свой код, шаблон, очередь и метка.
+$cf_checks['рассылка: свой код']                 = 'certificates' === WPPA_Mailing_Certificates::kind()
+	&& 'WPPA_Mailing_Certificates' === WPPA_Mailing::class_of( 'certificates' );
+$cf_checks['рассылка: свой крон']                = WPPA_Mailing::CRON_HOOK !== WPPA_Mailing_Certificates::CRON_HOOK
+	&& WPPA_Mailing_Files::CRON_HOOK !== WPPA_Mailing_Certificates::CRON_HOOK;
+$cf_checks['рассылка: своя метка письма']        = '_wppa_mailing_certificates_sent' === WPPA_Mailing_Certificates::META_SENT;
+$cf_checks['рассылка: своя очередь']             = 'wppa_mailing_certificates_run' === WPPA_Mailing_Certificates::QUEUE;
+$cf_checks['рассылка: шаблон про сертификат']    = false !== strpos( WPPA_Mailing_Certificates::settings()['subject'], '{номер}' )
+	&& false !== strpos( WPPA_Mailing_Certificates::settings()['body'], '{программа}' );
+$cf_checks['рассылка: шаблон отличается']        = WPPA_Mailing_Certificates::settings()['subject'] !== WPPA_Mailing::settings()['subject']
+	&& WPPA_Mailing_Certificates::settings()['subject'] !== WPPA_Mailing_Files::settings()['subject'];
+$cf_checks['рассылка: отметка этапа не нужна']   = false === WPPA_Mailing_Certificates::needs_stage2();
 
-// Фильтры письма.
-$cf_subject_filter = static function ( $subject ) {
-	return 'Тема: ' . $subject;
-};
-add_filter( 'wppa_certificate_email_subject', $cf_subject_filter );
-$cf_checks['фильтр темы письма']                 = 0 === strpos( WPPA_Certificates::notify_subject( $cf_entry, get_userdata( 921 ) ), 'Тема: ' );
-remove_filter( 'wppa_certificate_email_subject', $cf_subject_filter );
+$cf_checks['рассылка: подстановки сертификата']  = array( '{номер}', '{программа}', '{дата_выдачи}', '{сертификатов}' ) === array_values(
+	array_intersect( array( '{номер}', '{программа}', '{дата_выдачи}', '{сертификатов}' ), WPPA_Mailing_Certificates::placeholder_list() )
+);
 
-$cf_body_filter = static function ( $body ) {
-	return $body . "\nПодпись";
-};
-add_filter( 'wppa_certificate_email_body', $cf_body_filter );
-$cf_checks['фильтр текста письма']               = false !== strpos( WPPA_Certificates::notify_body( $cf_entry, get_userdata( 921 ), 'https://example.com' ), 'Подпись' );
-remove_filter( 'wppa_certificate_email_body', $cf_body_filter );
+// Получатели: только те, у кого есть сертификат, без наставников.
+$cf_recipients = WPPA_Mailing_Certificates::recipients();
+$cf_recipients_users = array_map(
+	static function ( $row ) {
+		return (int) $row['user_id'];
+	},
+	$cf_recipients
+);
 
-// Письмо с PDF от WP Diplom: отдельное уведомление не шлётся.
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_email' => 1, 'certificate_notify' => 1 ) ) );
+$cf_checks['рассылка: участник с сертификатом в списке'] = in_array( 921, $cf_recipients_users, true );
+$cf_checks['рассылка: наставника в списке нет']          = ! in_array( 923, $cf_recipients_users, true );
+$cf_checks['рассылка: команда без сертификатов мимо']   = ! in_array( 931, $cf_recipients_users, true );
 
-$GLOBALS['wppa_test']['mail'] = array();
-WPDC_Email::$sent             = array();
+$cf_row = array();
 
-$cf_pdf_entry = WPPA_Certificates::issue( 921, 12 );
+foreach ( $cf_recipients as $cf_candidate ) {
+	if ( 921 === (int) $cf_candidate['user_id'] ) {
+		$cf_row = $cf_candidate;
+	}
+}
 
-$cf_checks['письмо с PDF от WP Diplom ушло']     = is_array( $cf_pdf_entry ) && ! empty( $cf_pdf_entry['sent'] );
-$cf_checks['второго письма нет']                 = array() === $GLOBALS['wppa_test']['mail'];
-$cf_checks['отметки уведомления нет']            = false === $cf_pdf_entry['notified'];
+$cf_checks['рассылка: номер в получателе']       = isset( $cf_row['number'] ) && (string) $cf_entry['number'] === $cf_row['number'];
+$cf_checks['рассылка: программа в получателе']   = isset( $cf_row['course'] ) && 'Команда наставника' === $cf_row['course'];
+$cf_checks['рассылка: дата выдачи есть']         = ! empty( $cf_row['issued'] );
 
-// Уведомление выключено.
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_email' => 0, 'certificate_notify' => 0 ) ) );
+// Подстановка значений в письмо.
+$cf_rendered = WPPA_Mailing_Certificates::render( '№{номер} — {программа}, {дата_выдачи}, {имя}, {команда}', $cf_row );
 
-$GLOBALS['wppa_test']['mail'] = array();
+$cf_checks['рассылка: номер подставлен']         = false !== strpos( $cf_rendered, (string) $cf_entry['number'] );
+$cf_checks['рассылка: программа подставлена']    = false !== strpos( $cf_rendered, 'Команда наставника' );
+$cf_checks['рассылка: имя подставлено']          = false !== strpos( $cf_rendered, 'Первый' );
+$cf_checks['рассылка: плейсхолдеры не остались'] = false === strpos( $cf_rendered, '{' );
 
-$cf_off_entry = WPPA_Certificates::issue( 921, 12 );
+// Сохранение шаблона и очередь.
+$cf_saved_mail = WPPA_Mailing_Certificates::save(
+	array(
+		'subject' => 'Сертификат «{программа}»',
+		'body'    => 'Здравствуйте, {имя}! Ваш сертификат №{номер}.',
+	)
+);
 
-$cf_checks['без галочки письма нет']             = array() === $GLOBALS['wppa_test']['mail'] && false === $cf_off_entry['notified'];
-$cf_checks['notify() видит выключенное']         = false === WPPA_Certificates::notify();
+$cf_checks['рассылка: шаблон сохраняется']       = 'Сертификат «{программа}»' === WPPA_Mailing_Certificates::settings()['subject'];
+$cf_checks['рассылка: шаблон отдельный от других'] = WPPA_Mailing::settings()['subject'] !== WPPA_Mailing_Certificates::settings()['subject'];
 
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'certificate_notify' => 1 ) ) );
+WPPA_Mailing_Certificates::start();
+
+$cf_checks['рассылка: очередь поставлена']        = WPPA_Mailing_Certificates::stats()['total'] > 0;
+$cf_checks['рассылка: чужие очереди пусты']       = 0 === (int) WPPA_Mailing::stats()['total'];
+
+$cf_sent = WPPA_Mailing_Certificates::send_all();
+
+$cf_checks['рассылка: письма отправлены']         = $cf_sent > 0;
+$cf_checks['рассылка: письмо с номером']          = false !== strpos( (string) $GLOBALS['wppa_test']['mail'][0]['message'], (string) $cf_entry['number'] );
+$cf_checks['рассылка: отметка «уже отправлено»']  = (int) get_user_meta( 921, WPPA_Mailing_Certificates::META_SENT, true ) > 0;
+
+// Куратор видит очередь этой рассылки на «Обзоре».
+$cf_dashboard = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 12 ), 'tabs' => WPPA_Template::all_tabs() ) );
+
+$cf_checks['обзор: карточка рассылки сертификатов'] = false !== strpos( $cf_dashboard, 'Рассылка о сертификатах' );
+
+WPPA_Mailing_Certificates::cancel();
+
+$cf_checks['рассылка: отмена очищает очередь']     = 0 === (int) WPPA_Mailing_Certificates::stats()['total'];
 
 // Наставник видит сертификаты участников своей команды.
 WPPA_Certificates::issue( 931, 12 );

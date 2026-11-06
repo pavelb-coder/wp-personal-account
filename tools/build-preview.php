@@ -30,6 +30,7 @@ require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
+require $base . 'includes/class-wppa-mailing-certificates.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-link-button.php';
@@ -248,6 +249,23 @@ $sections .= demo_section(
 
 WPPA_Teams::set_stage2( $demo_team, true, 12 );
 
+// Сертификат Ивана — для демонстрации рассылки о сертификатах.
+update_user_meta(
+	7,
+	WPPA_Certificates::META,
+	array(
+		'cert-551' => array(
+			'id'     => 551,
+			'number' => 'WPD-2026-0014',
+			'code'   => 'A7F2K9D4Q1L0',
+			'course' => 'Студия «Вектор»',
+			'time'   => (int) strtotime( '2026-10-30 12:00:00' ),
+			'by'     => 12,
+			'sent'   => true,
+		),
+	)
+);
+
 // Куратор: главная страница с очередью рассылки участникам второго этапа.
 WPPA_Mailing::save(
 	array(
@@ -272,9 +290,21 @@ WPPA_Mailing_Files::save(
 WPPA_Mailing_Files::start();
 WPPA_Mailing_Files::process_due();
 
+// Третья рассылка — о сертификатах: получатели только те, кому сертификат выдан.
+WPPA_Mailing_Certificates::save(
+	array(
+		'subject'  => 'Ваш сертификат №{номер}',
+		'body'     => "Здравствуйте, {имя}!\n\nВам выдан сертификат №{номер} по программе «{программа}», дата выдачи — {дата_выдачи}.\n\nСкачать сертификат в PDF можно в личном кабинете, во вкладке «Сертификаты».\n\n— {сайт}",
+		'interval' => 10,
+		'batch'    => 2,
+	)
+);
+WPPA_Mailing_Certificates::start();
+WPPA_Mailing_Certificates::process_due();
+
 $sections .= demo_section(
 	'Куратор: главная страница и рассылки',
-	'Куратор видит состояние очередей обеих рассылок — «второй этап» и «прикреплённые файлы»: сколько отправлено, сколько осталось, когда следующее письмо, и ссылку на раздел «Рассылка»',
+	'Куратор видит состояние очередей всех рассылок — «второй этап», «прикреплённые файлы» и «сертификаты»: сколько отправлено, сколько осталось, когда следующее письмо, и ссылку на раздел «Рассылка»',
 	WPPA_Template::get( 'tab-dashboard', array( 'user' => $curator_user, 'tabs' => $tabs ) )
 );
 
@@ -283,12 +313,13 @@ $GLOBALS['wppa_test']['current_user'] = 12;
 
 $sections .= demo_section(
 	'Куратор: раздел «Рассылка»',
-	'Отдельная вкладка у куратора: тема и текст письма с подстановками, предпросмотр, интервал и порция писем, постановка в очередь, досрочная отправка остатка, отмена рассылки и журнал',
+	'Отдельная вкладка у куратора: три рассылки — второй этап, прикреплённые файлы и сертификаты. У каждой свой шаблон с подстановками, предпросмотр, интервал и порция писем, постановка в очередь, досрочная отправка остатка, отмена и журнал',
 	WPPA_Template::get( 'tab-mailing', array( 'user' => $curator_user, 'tabs' => WPPA_Template::tabs() ) )
 );
 
 WPPA_Mailing::cancel();
 WPPA_Mailing_Files::cancel();
+WPPA_Mailing_Certificates::cancel();
 
 // Снятие отметки: письма уходят только тем командам, у которых отметка осталась.
 $wppa_notice_registry = WPPA_Notices::registry();
@@ -362,22 +393,6 @@ update_option(
 	array_merge(
 		(array) get_option( 'wppa_settings', array() ),
 		array( 'certificate_template' => 601, 'participant_min_percent' => 60 )
-	)
-);
-
-update_user_meta(
-	7,
-	WPPA_Certificates::META,
-	array(
-		'cert-551' => array(
-			'id'     => 551,
-			'number' => 'WPD-2026-0014',
-			'code'   => 'A7F2K9D4Q1L0',
-			'course' => 'Студия «Вектор»',
-			'time'   => (int) strtotime( '2026-10-30 12:00:00' ),
-			'by'     => 12,
-			'sent'   => true,
-		),
 	)
 );
 

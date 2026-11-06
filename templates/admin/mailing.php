@@ -23,18 +23,25 @@ $wppa_preview     = ! empty( $recipients ) ? $recipients[0] : array(
 $wppa_kind        = isset( $kind ) ? (string) $kind : 'stage2';
 $wppa_class       = isset( $mailing ) ? (string) $mailing : 'WPPA_Mailing';
 $wppa_is_files    = 'files' === $wppa_kind;
+$wppa_titles      = array(
+	'stage2'       => __( 'Рассылка участникам второго этапа', 'wp-personal-account' ),
+	'files'        => __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' ),
+	'certificates' => __( 'Рассылка о сертификатах', 'wp-personal-account' ),
+);
+$wppa_title       = isset( $wppa_titles[ $wppa_kind ] ) ? $wppa_titles[ $wppa_kind ] : $wppa_titles['stage2'];
 $wppa_subject     = $wppa_class::render( $settings['subject'], $wppa_preview, true );
 $wppa_body        = $wppa_class::render( $settings['body'], $wppa_preview );
 ?>
 <div class="wrap wppa-admin">
-	<h1 class="wp-heading-inline"><?php echo esc_html( $wppa_is_files ? __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' ) : __( 'Рассылка участникам второго этапа', 'wp-personal-account' ) ); ?></h1>
+	<h1 class="wp-heading-inline"><?php echo esc_html( $wppa_title ); ?></h1>
 	<hr class="wp-header-end" />
 
 	<nav class="nav-tab-wrapper">
 		<?php
 		$wppa_kinds = array(
-			'stage2' => __( 'Второй этап', 'wp-personal-account' ),
-			'files'  => __( 'Прикреплённые файлы', 'wp-personal-account' ),
+			'stage2'       => __( 'Второй этап', 'wp-personal-account' ),
+			'files'        => __( 'Прикреплённые файлы', 'wp-personal-account' ),
+			'certificates' => __( 'Сертификаты', 'wp-personal-account' ),
 		);
 
 		foreach ( $wppa_kinds as $wppa_kind_slug => $wppa_kind_label ) :

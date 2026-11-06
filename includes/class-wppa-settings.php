@@ -350,7 +350,6 @@ class WPPA_Settings {
 		// Сертификаты: бланк WP Diplom, письмо с PDF и уведомление об выдаче.
 		$out['certificate_template'] = isset( $input['certificate_template'] ) ? absint( $input['certificate_template'] ) : 0;
 		$out['certificate_email']    = empty( $input['certificate_email'] ) ? 0 : 1;
-		$out['certificate_notify']   = empty( $input['certificate_notify'] ) ? 0 : 1;
 
 		// Кнопка со ссылкой.
 		$link_saved = isset( $input['link_button'] ) && is_array( $input['link_button'] ) ? $input['link_button'] : array();
@@ -827,16 +826,6 @@ class WPPA_Settings {
 								<?php esc_html_e( 'Отправлять сертификат участнику письмом сразу при выдаче', 'wp-personal-account' ); ?>
 							</label>
 							<p class="description"><?php esc_html_e( 'Письмо с PDF отправляет WP Diplom на email из аккаунта участника. Без галочки сертификат просто появляется в кабинете.', 'wp-personal-account' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Уведомление', 'wp-personal-account' ); ?></th>
-						<td>
-							<label>
-								<input type="checkbox" name="wppa_settings[certificate_notify]" value="1" <?php checked( 1, (int) WPPA_Plugin::setting( WPPA_Certificates::NOTIFY_KEY, 1 ) ); ?> />
-								<?php esc_html_e( 'Уведомлять участника письмом о выданном сертификате', 'wp-personal-account' ); ?>
-							</label>
-							<p class="description"><?php esc_html_e( 'Короткое письмо без вложения: номер, программа, дата выдачи и ссылка на вкладку «Сертификаты». Если включено письмо с PDF (пункт выше) и оно ушло, отдельное уведомление не отправляется.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 				</table>

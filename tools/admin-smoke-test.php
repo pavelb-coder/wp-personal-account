@@ -36,6 +36,7 @@ require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
+require $base . 'includes/class-wppa-mailing-certificates.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-reset.php';
 require $base . 'includes/class-wppa-admin.php';
@@ -1866,6 +1867,37 @@ if ( is_wp_error( $mail_admin_team ) ) {
 
 	$mail_admin_checks['файлы: отмена']           = 'mailing_cancelled' === $mail_admin_redirect( 'cancel', array( 'mailing_kind' => 'files' ) );
 	$mail_admin_checks['файлы: очередь очищена']  = 0 === WPPA_Mailing_Files::stats()['total'];
+
+	// Третья рассылка — о сертификатах: своя вкладка, свой шаблон, своя очередь.
+	$_GET['wppa_kind'] = 'certificates';
+
+	ob_start();
+	WPPA_Admin::page_mailing();
+	$mail_admin_certs_html = ob_get_clean();
+
+	unset( $_GET['wppa_kind'] );
+
+	$mail_admin_checks['страница: вкладка сертификатов'] = false !== strpos( $mail_admin_certs_html, 'Сертификаты' );
+	$mail_admin_checks['страница: заголовок сертификатов'] = false !== strpos( $mail_admin_certs_html, 'Рассылка о сертификатах' );
+	$mail_admin_checks['страница: вид в форме (сертификаты)'] = false !== strpos( $mail_admin_certs_html, 'name="mailing_kind" value="certificates"' );
+	$mail_admin_checks['страница: шаблон сертификатов'] = false !== strpos( $mail_admin_certs_html, '{номер}' );
+
+	$mail_admin_checks['сертификаты: сохранение шаблона'] = 'mailing_saved' === $mail_admin_redirect(
+		'save',
+		array(
+			'mailing_kind' => 'certificates',
+			'subject'      => 'Сертификат: {номер}',
+			'body'         => 'Сертификат «{программа}» в кабинете',
+			'interval'     => 1,
+			'batch'        => 1,
+		)
+	);
+	$mail_admin_checks['сертификаты: тема сохранена']       = 'Сертификат: {номер}' === WPPA_Mailing_Certificates::settings()['subject'];
+	$mail_admin_checks['сертификаты: файлы не изменены']    = 'Файлы: {команда}' === WPPA_Mailing_Files::settings()['subject'];
+	$mail_admin_checks['сертификаты: второй этап цел']      = 'Этап два: {команда}' === WPPA_Mailing::settings()['subject'];
+
+	delete_option( WPPA_Mailing_Certificates::OPTION );
+	delete_option( WPPA_Mailing_Certificates::LOG );
 
 	delete_option( WPPA_Mailing_Files::OPTION );
 	delete_option( WPPA_Mailing_Files::LOG );

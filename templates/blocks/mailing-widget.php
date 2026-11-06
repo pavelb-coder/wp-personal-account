@@ -1,6 +1,6 @@
 <?php
 /**
- * Блок «Рассылка» — две рассылки куратора: второй этап и прикреплённые файлы.
+ * Блок «Рассылка» — три рассылки куратора: второй этап, прикреплённые файлы и сертификаты.
  *
  * Критерии у обеих одинаковые (команды, прошедшие второй этап: участники,
  * капитан и наставник), но шаблон, очередь и журнал — свои.
@@ -30,6 +30,11 @@ $wppa_kinds = array(
 		'title' => __( 'Рассылка о прикреплённых файлах', 'wp-personal-account' ),
 		'hint'  => __( 'Письмо о том, что куратор прикрепил для команды документы. Получатели — участники, капитан и наставник всех команд: отметка второго этапа не требуется.', 'wp-personal-account' ),
 	),
+	'certificates' => array(
+		'class' => 'WPPA_Mailing_Certificates',
+		'title' => __( 'Рассылка о сертификатах', 'wp-personal-account' ),
+		'hint'  => __( 'Письмо о выданном сертификате: номер, программа и дата выдачи подставляются из сертификата. Получатели — участники и капитаны, которым сертификат уже выдан; наставникам и командам без сертификатов письмо не уходит.', 'wp-personal-account' ),
+	),
 );
 ?>
 
@@ -47,13 +52,17 @@ $wppa_kinds = array(
 	$wppa_next        = $wppa_cls::next_run();
 	$wppa_logs        = $wppa_cls::logs();
 	$wppa_preview_row = ! empty( $wppa_recipients ) ? $wppa_recipients[0] : array(
-		'first' => __( 'Иван', 'wp-personal-account' ),
-		'last'  => __( 'Петров', 'wp-personal-account' ),
-		'name'  => __( 'Иван Петров', 'wp-personal-account' ),
-		'email' => 'ivan@example.com',
-		'role'  => __( 'Капитан', 'wp-personal-account' ),
-		'team'  => __( 'Студия «Вектор»', 'wp-personal-account' ),
-		'date'  => date_i18n( get_option( 'date_format' ) ),
+		'first'    => __( 'Иван', 'wp-personal-account' ),
+		'last'     => __( 'Петров', 'wp-personal-account' ),
+		'name'     => __( 'Иван Петров', 'wp-personal-account' ),
+		'email'    => 'ivan@example.com',
+		'role'     => __( 'Капитан', 'wp-personal-account' ),
+		'team'     => __( 'Студия «Вектор»', 'wp-personal-account' ),
+		'date'     => date_i18n( get_option( 'date_format' ) ),
+		'number'   => 'WPD-0001',
+		'course'   => __( 'Студия «Вектор»', 'wp-personal-account' ),
+		'issued'   => date_i18n( get_option( 'date_format' ) ),
+		'certs'    => 1,
 	);
 	$wppa_subject     = $wppa_cls::render( $wppa_settings['subject'], $wppa_preview_row, true );
 	$wppa_body        = $wppa_cls::render( $wppa_settings['body'], $wppa_preview_row );

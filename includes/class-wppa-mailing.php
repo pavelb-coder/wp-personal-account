@@ -122,7 +122,17 @@ class WPPA_Mailing {
 	 * @return string Имя класса.
 	 */
 	public static function class_of( $kind ) {
-		return 'files' === (string) $kind ? 'WPPA_Mailing_Files' : 'WPPA_Mailing';
+		$kind = (string) $kind;
+
+		if ( 'files' === $kind ) {
+			return 'WPPA_Mailing_Files';
+		}
+
+		if ( 'certificates' === $kind && class_exists( 'WPPA_Mailing_Certificates' ) ) {
+			return 'WPPA_Mailing_Certificates';
+		}
+
+		return 'WPPA_Mailing';
 	}
 
 	/* ---------------------------------------------------------------------

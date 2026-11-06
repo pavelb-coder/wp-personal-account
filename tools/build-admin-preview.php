@@ -36,6 +36,7 @@ require $base . 'includes/class-wppa-certificates.php';
 require $base . 'includes/class-wppa-team-files-export.php';
 require $base . 'includes/class-wppa-mailing.php';
 require $base . 'includes/class-wppa-mailing-files.php';
+require $base . 'includes/class-wppa-mailing-certificates.php';
 require $base . 'includes/class-wppa-olympiad.php';
 require $base . 'includes/class-wppa-settings.php';
 require $base . 'includes/class-wppa-theme.php';
