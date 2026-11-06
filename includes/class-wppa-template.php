@@ -60,14 +60,24 @@ class WPPA_Template {
 			}
 		}
 
-		// «Сертификаты» — только тем, у кого они есть (и куратору, который их выдаёт).
+		// «Сертификаты» — только тем, у кого они есть: участнику свои, наставнику
+		// ещё и сертификаты участников команды. Куратору вкладка нужна всегда —
+		// он их выдаёт.
 		if ( isset( $tabs['certificates'] ) ) {
 			$wppa_cert_user = get_current_user_id();
 			$wppa_cert_lib  = class_exists( 'WPPA_Certificates' );
-			$wppa_cert_show = $wppa_cert_lib && (
-				WPPA_Certificates::count( $wppa_cert_user ) > 0
-				|| ( WPPA_Certificates::available() && ( WPPA_Teams::is_curator( $wppa_cert_user ) || WPPA_Teams::is_mentor( $wppa_cert_user ) ) )
-			);
+			$wppa_cert_show = false;
+
+			if ( $wppa_cert_lib ) {
+				if ( WPPA_Certificates::available() && WPPA_Teams::is_curator( $wppa_cert_user ) ) {
+					$wppa_cert_show = true;
+				} elseif ( WPPA_Certificates::count( $wppa_cert_user ) > 0 ) {
+					$wppa_cert_show = true;
+				} elseif ( WPPA_Teams::is_mentor( $wppa_cert_user ) ) {
+					// Наставнику вкладка нужна, только пока у команды есть сертификаты.
+					$wppa_cert_show = WPPA_Certificates::team_has( (int) WPPA_Teams::team_id( $wppa_cert_user ) );
+				}
+			}
 
 			if ( ! $wppa_cert_show ) {
 				unset( $tabs['certificates'] );

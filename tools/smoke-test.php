@@ -5304,7 +5304,60 @@ $cf_curator_html = WPPA_Builder::render_block(
 $cf_checks['куратору секции наставника нет']     = false === strpos( $cf_curator_html, 'Сертификаты участников' );
 $cf_checks['куратор видит все команды']          = 2 <= count( WPPA_Certificates::team_rows( 12 ) );
 
+// Пустые сертификаты: ни вкладки, ни блока.
+$GLOBALS['wppa_test']['users'][942] = array( 'Капитан Без Сертификата', 'cap942@example.com', 'first_name' => 'Капитан', 'last_name' => 'Без' );
+$GLOBALS['wppa_test']['users'][943] = array( 'Наставник Без Сертификата', 'ment943@example.com', 'first_name' => 'Наставник', 'last_name' => 'Без' );
+
+$cf_empty_team = WPPA_Teams::create( 'Команда без сертификатов', 942 );
+
+if ( ! is_wp_error( $cf_empty_team ) ) {
+	WPPA_Teams::add_member( $cf_empty_team, 943 );
+	WPPA_Teams::set_role( $cf_empty_team, 943, 'mentor' );
+}
+
+$GLOBALS['wppa_test']['current_user'] = 943;
+$cf_checks['наставник без сертификатов — вкладки нет'] = ! isset( WPPA_Template::tabs()['certificates'] );
+
+$GLOBALS['wppa_test']['current_user'] = 942;
+$cf_checks['участник без сертификатов — вкладки нет']  = ! isset( WPPA_Template::tabs()['certificates'] );
+
+$cf_empty_mentor_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 943 ) )
+);
+
+$cf_checks['наставнику без сертификатов блок не выводится'] = '' === trim( (string) $cf_empty_mentor_html );
+
+$cf_empty_member_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'certificates-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 942 ) )
+);
+
+$cf_checks['участнику без сертификатов блок не выводится']  = '' === trim( (string) $cf_empty_member_html );
+
+// У команды появился сертификат у участника — вкладка у наставника появляется.
+WPPA_Certificates::issue( 942, 12 );
+
+$GLOBALS['wppa_test']['current_user'] = 943;
+$cf_checks['с сертификатом участника вкладка вернулась'] = isset( WPPA_Template::tabs()['certificates'] );
+
+// Куратору вкладка нужна всегда — он выдаёт сертификаты.
+$GLOBALS['wppa_test']['current_user'] = 12;
+$cf_checks['куратор видит вкладку всегда']               = isset( WPPA_Template::tabs()['certificates'] );
+
+// Убрали сертификат — у наставника вкладка снова пропала.
+$cf_empty_key  = (string) array_key_first( WPPA_Certificates::for_user( 942 ) );
+$cf_empty_id   = (int) substr( $cf_empty_key, 5 );
+
+$cf_checks['сертификат участника убран']  = WPPA_Certificates::remove( 942, $cf_empty_id, 12 );
+
+$GLOBALS['wppa_test']['current_user'] = 943;
+$cf_checks['после удаления вкладки нет']                 = ! isset( WPPA_Template::tabs()['certificates'] );
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
 // Уборка.
+WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 942 ) );
 WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 921 ) );
 WPPA_Teams::dissolve( (int) WPPA_Teams::team_id( 931 ) );
 WPPA_Teams::set_curator( 12, false );

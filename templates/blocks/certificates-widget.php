@@ -13,6 +13,16 @@ defined( 'ABSPATH' ) || exit;
 
 $wppa_cert_user     = isset( $user ) && $user instanceof WP_User ? $user : wp_get_current_user();
 $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
+
+// Наставник видит сертификаты участников своей команды; куратору хватает колонки в «Участниках».
+$wppa_team_certs = WPPA_Teams::is_mentor( $wppa_cert_user->ID ) && ! WPPA_Teams::is_curator( $wppa_cert_user->ID )
+	? WPPA_Certificates::team_rows( $wppa_cert_user->ID )
+	: array();
+
+// Ни сертификатов, ни участников с сертификатами — блока нет вовсе.
+if ( ! $wppa_certificates && ! $wppa_team_certs ) {
+	return;
+}
 ?>
 
 <section class="wppa-card wppa-certificates">
@@ -22,7 +32,7 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 
 	<?php if ( ! $wppa_certificates ) : ?>
 
-		<p class="wppa-hint"><?php esc_html_e( 'Сертификатов пока нет: их выдаёт куратор после проверки результатов.', 'wp-personal-account' ); ?></p>
+		<p class="wppa-hint"><?php esc_html_e( 'Своих сертификатов пока нет: у вас появятся здесь после выдачи.', 'wp-personal-account' ); ?></p>
 
 	<?php else : ?>
 
@@ -66,13 +76,6 @@ $wppa_certificates  = WPPA_Certificates::for_user( $wppa_cert_user->ID );
 		</div>
 
 	<?php endif; ?>
-
-	<?php
-	// Наставник видит сертификаты участников своей команды; куратору хватает колонки в «Участниках».
-	$wppa_team_certs = WPPA_Teams::is_mentor( $wppa_cert_user->ID ) && ! WPPA_Teams::is_curator( $wppa_cert_user->ID )
-		? WPPA_Certificates::team_rows( $wppa_cert_user->ID )
-		: array();
-	?>
 
 	<?php if ( $wppa_team_certs ) : ?>
 
