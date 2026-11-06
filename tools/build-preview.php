@@ -346,6 +346,24 @@ $sections .= demo_section(
 
 remove_filter( 'wppa_olympiad_active', $wppa_preview_active );
 
+// Адресный документ участнику: из-за него у участника появляется вкладка «Файлы»,
+// а команда попадает в рассылку о прикреплённых файлах.
+$wppa_demo_letter = sys_get_temp_dir() . '/wppa-demo-letter.pdf';
+
+file_put_contents( $wppa_demo_letter, str_repeat( 'w', 240 ) );
+
+WPPA_Participant_Files::store( 9, $wppa_demo_letter, 'памятка-участнику.pdf', 12 );
+
+$GLOBALS['wppa_test']['current_user'] = 9;
+
+$sections .= demo_section(
+	'Участник: документы от куратора',
+	'У Петра нет файлов от куратора на команду — только адресный документ. Из-за него у участника появилась вкладка «Файлы» и карточка «Документы для вас», а команда попала в список получателей рассылки о прикреплённых файлах',
+	WPPA_Template::get( 'tab-files', array( 'user' => get_userdata( 9 ), 'tabs' => WPPA_Template::tabs() ) )
+);
+
+$GLOBALS['wppa_test']['current_user'] = 12;
+
 WPPA_Teams::set_curator( 12, false );
 
 

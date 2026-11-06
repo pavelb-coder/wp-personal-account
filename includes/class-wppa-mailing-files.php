@@ -64,7 +64,13 @@ class WPPA_Mailing_Files extends WPPA_Mailing {
 			return false;
 		}
 
-		return WPPA_Curator_Files::has_curator_files( (int) $team_id );
+		// Команда попадает в рассылку и тогда, когда документы есть только у части
+		// участников: адресные документы куратора лежат отдельно от файлов команды.
+		if ( WPPA_Curator_Files::has_curator_files( (int) $team_id ) ) {
+			return true;
+		}
+
+		return class_exists( 'WPPA_Participant_Files' ) && WPPA_Participant_Files::team_has_files( (int) $team_id );
 	}
 
 	/**
@@ -73,7 +79,7 @@ class WPPA_Mailing_Files extends WPPA_Mailing {
 	 * @return string
 	 */
 	public static function drop_reason() {
-		return __( 'файлы команды удалены', 'wp-personal-account' );
+		return __( 'файлы команды и адресные документы удалены', 'wp-personal-account' );
 	}
 
 	/**

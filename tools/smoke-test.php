@@ -4264,7 +4264,7 @@ if ( is_wp_error( $mail_team ) ) {
 		$mail_drop_log[] = isset( $mail_log_row['text'] ) ? (string) $mail_log_row['text'] : '';
 	}
 
-	$mail_checks['файлы: причина в журнале'] = false !== strpos( implode( "\n", $mail_drop_log ), 'файлы команды удалены' );
+	$mail_checks['файлы: причина в журнале'] = false !== strpos( implode( "\n", $mail_drop_log ), 'адресные документы удалены' );
 
 	$mail_checks['файлы: команда ушла из получателей'] = 0 === count(
 		array_filter(
@@ -4624,6 +4624,89 @@ $GLOBALS['wppa_test']['mail'] = $drop_snapshot['mail'];
 
 foreach ( $drop_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'stage2-undo: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
+// ---- Адресные документы открывают вкладку «Файлы» и попадают в рассылку (3.39.0) ----
+$acc_checks = array();
+
+$GLOBALS['wppa_test']['users'][701] = array( 'Капитан Доступа', 'cap701@example.com', 'first_name' => 'Капитан', 'last_name' => 'Доступа' );
+$GLOBALS['wppa_test']['users'][702] = array( 'Участник Доступа', 'member702@example.com', 'first_name' => 'Участник', 'last_name' => 'Доступа' );
+
+$acc_team = WPPA_Teams::create( 'Команда доступа', 701 );
+
+if ( ! is_wp_error( $acc_team ) ) {
+	WPPA_Teams::add_member( $acc_team, 702 );
+}
+
+$acc_checks['команда создана'] = $acc_team && ! is_wp_error( $acc_team ) && 2 === WPPA_Teams::members_count( $acc_team );
+
+// Пока документов нет: вкладки «Файлы» у участника нет.
+$acc_checks['без документов: вкладки нет']        = false === WPPA_Curator_Files::can_use_tab( 702 );
+$acc_checks['без документов: файлов у команды нет'] = false === WPPA_Participant_Files::team_has_files( $acc_team );
+$acc_checks['без документов: команды нет в рассылке'] = false === WPPA_Mailing_Files::team_allowed( $acc_team );
+
+// Куратор прикладывает адресный документ одному участнику.
+WPPA_Teams::set_curator( 12, true );
+
+$acc_source = wppa_test_file( 'адресный-доступа.pdf', str_repeat( 'q', 40 ) );
+$acc_copy   = sys_get_temp_dir() . '/wppa-files-test/адресный-копия.pdf';
+copy( $acc_source, $acc_copy );
+
+$acc_stored = WPPA_Participant_Files::store( 702, $acc_copy, 'адресный-доступа.pdf', 12 );
+
+$acc_checks['документ приложен']                   = ! is_wp_error( $acc_stored ) && 1 === WPPA_Participant_Files::count( 702 );
+$acc_checks['участник видит вкладку «Файлы»']      = true === WPPA_Curator_Files::can_use_tab( 702 );
+$acc_checks['капитан без своих документов — нет']  = false === WPPA_Curator_Files::can_use_tab( 701 );
+$acc_checks['у команды есть адресные документы']   = true === WPPA_Participant_Files::team_has_files( $acc_team );
+$acc_checks['команда попала в рассылку о файлах']  = true === WPPA_Mailing_Files::team_allowed( $acc_team );
+
+$acc_recipients = array_map( 'intval', array_column( WPPA_Mailing_Files::recipients(), 'user_id' ) );
+
+$acc_checks['участник в списке получателей']       = in_array( 702, $acc_recipients, true );
+$acc_checks['капитан в списке получателей']        = in_array( 701, $acc_recipients, true );
+
+// Вкладки участника: «Файлы» в навигации появились.
+$acc_settings_backup = get_option( 'wppa_settings', array() );
+
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) $acc_settings_backup,
+		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'security' ) )
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 702;
+$acc_tabs = WPPA_Template::tabs();
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+update_option( 'wppa_settings', $acc_settings_backup );
+
+$acc_checks['вкладка «Файлы» в навигации'] = isset( $acc_tabs['files'] );
+
+// Карточка «Документы для вас» у участника отрисована.
+$acc_html = WPPA_Template::get( 'tab-files', array( 'user' => get_userdata( 702 ), 'tabs' => $acc_tabs ) );
+
+$acc_checks['карточка «Документы для вас»'] = false !== strpos( $acc_html, 'Документы для вас' )
+	&& false !== strpos( $acc_html, 'адресный-доступа.pdf' );
+
+// Удаление документа возвращает всё как было.
+WPPA_Participant_Files::clear( 702 );
+
+$acc_checks['после удаления: вкладки нет']        = false === WPPA_Curator_Files::can_use_tab( 702 );
+$acc_checks['после удаления: команды нет в рассылке'] = false === WPPA_Mailing_Files::team_allowed( $acc_team );
+$acc_checks['после удаления: получателей нет']    = ! in_array( 702, array_map( 'intval', array_column( WPPA_Mailing_Files::recipients(), 'user_id' ) ), true );
+
+WPPA_Teams::dissolve( $acc_team );
+WPPA_Teams::set_curator( 12, false );
+
+@unlink( $acc_copy ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink
+
+foreach ( $acc_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'access: ' . $check_name . "\n";
 	if ( ! $ok ) {
 		$fail++;
 	}

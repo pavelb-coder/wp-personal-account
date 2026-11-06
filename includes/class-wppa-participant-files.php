@@ -271,6 +271,28 @@ class WPPA_Participant_Files {
 	}
 
 	/**
+	 * Есть ли адресные документы у кого-то из участников команды.
+	 *
+	 * @param int $team_id Команда.
+	 * @return bool
+	 */
+	public static function team_has_files( $team_id ) {
+		$team_id = (int) $team_id;
+
+		if ( ! $team_id ) {
+			return false;
+		}
+
+		foreach ( WPPA_Teams::participants( $team_id ) as $member ) {
+			if ( self::count( (int) $member->ID ) > 0 ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Ссылка на скачивание.
 	 *
 	 * @param int    $user_id Участник.
