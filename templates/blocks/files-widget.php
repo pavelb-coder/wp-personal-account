@@ -36,6 +36,10 @@ if ( '' === $wppa_direction ) {
 }
 $wppa_team_name       = $wppa_team_id ? (string) get_the_title( $wppa_team_id ) : '';
 
+// Адресные документы: куратор прикрепляет файл конкретному участнику.
+// Считаем до ветвлений: из-за них участник не должен видеть «файлы недоступны».
+$wppa_my_documents = WPPA_Participant_Files::files( $user->ID );
+
 // Две встречные полки: что прислал куратор и что прислал наставник.
 $wppa_from_curator = array();
 $wppa_from_mentor  = array();
@@ -97,7 +101,9 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 
 <?php elseif ( ! $wppa_can_view ) : ?>
 
-	<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Файлы этой команды вам недоступны.', 'wp-personal-account' ); ?></div>
+	<?php if ( ! $wppa_my_documents ) : ?>
+		<div class="wppa-notice wppa-notice--info"><?php esc_html_e( 'Файлы этой команды вам недоступны.', 'wp-personal-account' ); ?></div>
+	<?php endif; ?>
 
 <?php else : ?>
 
@@ -269,11 +275,6 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 	<?php endif; ?>
 
 <?php endif; ?>
-
-<?php
-// Адресные документы: куратор прикрепляет файл конкретному участнику.
-$wppa_my_documents = WPPA_Participant_Files::files( $user->ID );
-?>
 
 <?php if ( $wppa_my_documents ) : ?>
 	<section class="wppa-card wppa-my-documents">

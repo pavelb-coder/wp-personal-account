@@ -4712,6 +4712,139 @@ foreach ( $acc_checks as $check_name => $ok ) {
 	}
 }
 
+// ---- Участник видит свои адресные документы (3.40.0) ----
+$pv_checks = array();
+
+$GLOBALS['wppa_test']['users'][801] = array( 'Капитан Просмотра', 'cap801@example.com', 'first_name' => 'Капитан', 'last_name' => 'Просмотра' );
+$GLOBALS['wppa_test']['users'][802] = array( 'Участник Просмотра', 'member802@example.com', 'first_name' => 'Участник', 'last_name' => 'Просмотра' );
+
+$pv_team = WPPA_Teams::create( 'Команда просмотра', 801 );
+
+if ( ! is_wp_error( $pv_team ) ) {
+	WPPA_Teams::add_member( $pv_team, 802 );
+}
+
+WPPA_Teams::set_curator( 12, true );
+
+$pv_allow = static function () {
+	return true;
+};
+
+add_filter( 'wppa_skip_upload_check', $pv_allow );
+
+$pv_path = wppa_test_file( 'адресный-просмотра.pdf', str_repeat( 'v', 40 ) );
+
+$_POST = array(
+	'wppa_action'             => 'participant_file',
+	'participant_file_action' => 'upload',
+	'participant_id'          => 802,
+	'wppa_nonce'              => wp_create_nonce( 'wppa_participant_file' ),
+);
+
+$_FILES = array(
+	'participant_files' => array(
+		'name'     => array( 'адресный-просмотра.pdf' ),
+		'tmp_name' => array( $pv_path ),
+		'error'    => array( UPLOAD_ERR_OK ),
+		'size'     => array( 40 ),
+	),
+);
+
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$GLOBALS['wppa_test']['current_user']   = 12;
+
+try {
+	WPPA_Participant_Files::handle_request();
+} catch ( RuntimeException $e ) {
+	$pv_checks['форма загрузки сработала'] = false !== strpos( $e->getMessage(), 'wppa_notice=participant_file_added' );
+}
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST  = array();
+$_FILES = array();
+
+$pv_checks['документ лёг участнику'] = 1 === WPPA_Participant_Files::count( 802 );
+
+// Смотрим кабинет глазами участника: вкладка «Файлы» и карточка «Документы для вас».
+update_option(
+	'wppa_settings',
+	array_merge(
+		(array) get_option( 'wppa_settings', array() ),
+		array( 'enabled_tabs' => array( 'dashboard', 'profile', 'team', 'files', 'security' ) )
+	)
+);
+
+$GLOBALS['wppa_test']['current_user'] = 802;
+$pv_tabs                              = WPPA_Template::tabs();
+$pv_files_html                        = WPPA_Template::get( 'tab-files', array( 'user' => get_userdata( 802 ), 'tabs' => $pv_tabs ) );
+$pv_account_html                      = WPPA_Template::get( 'account', array( 'user' => get_userdata( 802 ), 'tabs' => $pv_tabs, 'current_tab' => 'files' ) );
+
+$pv_checks['в навигации есть «Файлы»']           = isset( $pv_tabs['files'] );
+$pv_checks['в разделе виден документ']           = false !== strpos( $pv_files_html, 'адресный-просмотра.pdf' );
+$pv_checks['в кабинете виден документ']          = false !== strpos( $pv_account_html, 'адресный-просмотра.pdf' );
+$pv_checks['карточка «Документы для вас»']       = false !== strpos( $pv_account_html, 'Документы для вас' );
+$pv_checks['участнику не показан блок куратора'] = false === strpos( $pv_account_html, 'Участники и баллы' );
+$pv_checks['нет сообщения «недоступны»']          = false === strpos( $pv_files_html, 'Файлы этой команды вам недоступны' );
+
+// Куратор видит тот же документ в блоке «Участники и баллы».
+$GLOBALS['wppa_test']['current_user'] = 12;
+
+$pv_curator_html = WPPA_Builder::render_block(
+	array( 'type' => 'block', 'id' => 'participants-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+	array( 'user' => get_userdata( 12 ) )
+);
+
+$pv_checks['куратор видит документ участника'] = false !== strpos( $pv_curator_html, 'адресный-просмотра.pdf' );
+
+// Удалили документ — письма команды уходят из очереди рассылки о файлах.
+WPPA_Mailing_Files::start();
+
+$pv_before = 0;
+
+foreach ( (array) ( WPPA_Mailing_Files::run_state()['items'] ?? array() ) as $pv_item ) {
+	if ( (int) $pv_item['team_id'] === (int) $pv_team ) {
+		++$pv_before;
+	}
+}
+
+$pv_checks['письма в очереди до удаления'] = $pv_before > 0;
+
+$pv_key   = array_keys( WPPA_Participant_Files::files( 802 ) );
+$pv_first = $pv_key ? $pv_key[0] : '';
+
+WPPA_Participant_Files::remove( 802, $pv_first, 12 );
+
+$pv_stay = 0;
+
+foreach ( (array) ( WPPA_Mailing_Files::run_state()['items'] ?? array() ) as $pv_row ) {
+	if ( (int) $pv_row['team_id'] === (int) $pv_team ) {
+		++$pv_stay;
+	}
+}
+
+$pv_log = array();
+
+foreach ( WPPA_Mailing_Files::logs() as $pv_log_row ) {
+	$pv_log[] = isset( $pv_log_row['text'] ) ? (string) $pv_log_row['text'] : '';
+}
+
+$pv_checks['документ удалён']                  = 0 === WPPA_Participant_Files::count( 802 );
+$pv_checks['письма команды ушли из очереди']   = 0 === $pv_stay;
+$pv_checks['в журнале есть причина']           = false !== strpos( implode( "\n", $pv_log ), 'адресные документы удалены' );
+
+remove_filter( 'wppa_skip_upload_check', $pv_allow );
+
+WPPA_Mailing_Files::cancel();
+WPPA_Teams::dissolve( $pv_team );
+WPPA_Teams::set_curator( 12, false );
+
+foreach ( $pv_checks as $check_name => $ok ) {
+	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'participant-view: ' . $check_name . "\n";
+	if ( ! $ok ) {
+		$fail++;
+	}
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

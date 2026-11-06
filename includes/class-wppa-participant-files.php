@@ -623,6 +623,8 @@ class WPPA_Participant_Files {
 		unset( $files[ $key ] );
 		update_user_meta( $user_id, self::META, $files );
 
+		self::drop_mailing( $user_id );
+
 		return true;
 	}
 
@@ -645,6 +647,41 @@ class WPPA_Participant_Files {
 		}
 
 		delete_user_meta( (int) $user_id, self::META );
+
+		self::drop_mailing( (int) $user_id );
+	}
+
+	/**
+	 * Убрать письма команды из очереди рассылки о прикреплённых файлах.
+	 *
+	 * Письмо говорит «куратор прикрепил документы», поэтому оно живёт, пока у
+	 * команды есть хоть что-то: файлы от куратора или адресные документы
+	 * участникам. Не осталось ни того, ни другого — письма уходят из очереди,
+	 * а причина попадает в журнал рассылки.
+	 *
+	 * @param int $user_id Участник, у которого убрали документы.
+	 * @return void
+	 */
+	protected static function drop_mailing( $user_id ) {
+		if ( ! class_exists( 'WPPA_Mailing_Files' ) ) {
+			return;
+		}
+
+		$team_id = (int) WPPA_Teams::team_id( (int) $user_id );
+
+		if ( ! $team_id ) {
+			return;
+		}
+
+		if ( class_exists( 'WPPA_Curator_Files' ) && WPPA_Curator_Files::has_curator_files( $team_id ) ) {
+			return;
+		}
+
+		if ( self::team_has_files( $team_id ) ) {
+			return;
+		}
+
+		WPPA_Mailing_Files::drop_team( $team_id );
 	}
 
 	/**
