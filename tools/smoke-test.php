@@ -4708,6 +4708,35 @@ $pw_saved_url = $pw_request( 12, 45, $pw_team );
 $pw_checks['обработчик: порог сохранён']        = false !== strpos( $pw_saved_url, 'wppa_notice=participant_threshold_saved' )
 	&& 45 === WPPA_Participants::min_percent();
 $pw_checks['обработчик: возврат в команду']     = false !== strpos( $pw_saved_url, 'wppa_team=' . (int) $pw_team );
+$pw_checks['обработчик: возврат в «Участники»'] = false !== strpos( $pw_saved_url, 'wppa_tab=participants' );
+$pw_checks['обработчик: не в «Файлы»']          = false === strpos( $pw_saved_url, 'wppa_tab=files' );
+
+$pw_return = 'https://example.com/personal-account/?wppa_tab=participants&wppa_team=' . (int) $pw_team;
+
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$GLOBALS['wppa_test']['current_user']   = 12;
+$_POST                                  = array(
+	'wppa_action' => 'participant_threshold',
+	'min_percent' => '50',
+	'team_id'     => (int) $pw_team,
+	'wppa_return' => $pw_return,
+	'wppa_nonce'  => wp_create_nonce( 'wppa_participant_threshold' ),
+);
+
+$pw_return_url = '';
+
+try {
+	WPPA_Participants::handle_threshold();
+} catch ( RuntimeException $e ) {
+	$pw_return_url = substr( $e->getMessage(), strlen( 'redirect:' ) );
+}
+
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_POST                                  = array();
+
+$pw_checks['порог: возврат по адресу формы'] = 0 === strpos( $pw_return_url, $pw_return );
+
+WPPA_Participants::set_min_percent( 45 );
 
 $pw_deny_url = $pw_request( 902, 10, $pw_team );
 $pw_checks['обработчик: участнику нельзя']      = false !== strpos( $pw_deny_url, 'wppa_notice=participant_threshold_forbidden' )
@@ -4715,6 +4744,7 @@ $pw_checks['обработчик: участнику нельзя']      = false
 
 $pw_notices = WPPA_Notices::registry();
 $pw_checks['уведомления о пороге'] = isset( $pw_notices['participant_threshold_saved'], $pw_notices['participant_threshold_forbidden'] );
+$pw_checks['в форме порога есть адрес возврата'] = false !== strpos( $pw_html, 'name="wppa_return"' );
 
 // Настройка в опции, а не только в статике.
 $pw_checks['порог лежит в настройках'] = 45 === (int) ( get_option( 'wppa_settings', array() )['participant_min_percent'] ?? 0 );

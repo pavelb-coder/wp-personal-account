@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.55.0
+Stable tag: 3.56.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.56.0 =
+* Исправлено: после сохранения минимального процента правильных ответов кабинет возвращает во вкладку «Участники» с той же открытой командой, а не в «Файлы».
 
 = 3.55.0 =
 * Куратор может отправить файлы сразу нескольким командам второго этапа: загрузить документы один раз и отметить команды (или не отмечать — уйдут всем командам второго этапа).

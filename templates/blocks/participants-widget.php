@@ -56,6 +56,7 @@ if ( $wppa_single_team ) {
 		<?php wp_nonce_field( 'wppa_participant_threshold', 'wppa_nonce' ); ?>
 		<input type="hidden" name="wppa_action" value="participant_threshold" />
 		<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) (int) $wppa_single_team ); ?>" />
+		<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 
 		<label class="wppa-participants__label" for="wppa-participant-threshold">
 			<?php esc_html_e( 'Минимальный процент правильных ответов', 'wp-personal-account' ); ?>

@@ -166,7 +166,7 @@ class WPPA_Participants {
 	public static function handle_threshold() {
 		check_admin_referer( 'wppa_participant_threshold', 'wppa_nonce' );
 
-		$back = WPPA_Plugin::tab_url( 'files' );
+		$back = WPPA_Plugin::tab_url( 'participants' );
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce проверен выше.
 		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -176,6 +176,9 @@ class WPPA_Participants {
 		if ( $team_id ) {
 			$back = add_query_arg( 'wppa_team', $team_id, $back );
 		}
+
+		// Возвращаем туда, откуда пришла форма: та же вкладка, та же команда.
+		$back = WPPA_Plugin::posted_return( $back );
 
 		if ( ! self::can_manage() ) {
 			WPPA_Notices::redirect( 'participant_threshold_forbidden', $back );
