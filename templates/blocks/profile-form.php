@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
 			<label for="wppa-first-name"><?php esc_html_e( 'Имя', 'wp-personal-account' ); ?></label>
 			<input type="text" id="wppa-first-name" name="first_name" value="<?php echo esc_attr( $user->first_name ); ?>" autocomplete="given-name" />
 		</p>
-		<?php $wppa_profile_fields = WPPA_Fields::fields( 'profile' ); ?>
+		<?php $wppa_profile_fields = WPPA_Fields::fields( 'profile', $user->ID ); ?>
 		<?php if ( isset( $wppa_profile_fields['patronymic'] ) ) : ?>
 			<?php $wppa_patronymic = $wppa_profile_fields['patronymic']; ?>
 			<p class="wppa-field">

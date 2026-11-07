@@ -2055,6 +2055,35 @@ foreach ( $bulk_admin_checks as $check_name => $ok ) {
 	}
 }
 
+
+// Админский список: у наставника класс не показывается, у участника остаётся.
+$class_admin_settings = get_option( 'wppa_settings', array() );
+$class_admin_meta = $GLOBALS['wppa_test']['meta'];
+update_option( 'wppa_settings', array_merge( (array) $class_admin_settings, array( 'fields' => array(
+    'custom_school_field' => array( 'custom' => 1, 'type' => 'text', 'label' => 'Класс', 'enabled' => 1, 'required' => 1, 'section' => 'main' ),
+    'custom_other' => array( 'custom' => 1, 'type' => 'text', 'label' => 'Другое поле', 'enabled' => 1, 'section' => 'main' ),
+) ) ) );
+update_user_meta( 7, WPPA_Teams::META_ROLE, 'mentor' );
+update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
+update_user_meta( 7, '_wppa_custom_school_field', 'MENTOR-GRADE-MARKER' );
+update_user_meta( 8, '_wppa_custom_school_field', 'STUDENT-GRADE-MARKER' );
+update_user_meta( 7, '_wppa_custom_other', 'MENTOR-OTHER-MARKER' );
+ob_start();
+WPPA_Admin::render( 'accounts', array( 'users' => array( new WP_User( 7 ), new WP_User( 8 ) ), 'total' => 2, 'paged' => 1, 'per_page' => 25, 'search' => '', 'role' => '', 'roles' => array(), 'notice' => null ) );
+$class_admin_html = ob_get_clean();
+$class_admin_checks = array(
+    'класс наставника скрыт' => false === strpos( $class_admin_html, 'MENTOR-GRADE-MARKER' ),
+    'класс участника сохранён' => false !== strpos( $class_admin_html, 'STUDENT-GRADE-MARKER' ),
+    'прочие данные наставника сохранены' => false !== strpos( $class_admin_html, 'MENTOR-OTHER-MARKER' ),
+    'сохранённые данные не удаляются' => 'MENTOR-GRADE-MARKER' === get_user_meta( 7, '_wppa_custom_school_field', true ),
+);
+$GLOBALS['wppa_test']['meta'] = $class_admin_meta;
+update_option( 'wppa_settings', $class_admin_settings );
+foreach ( $class_admin_checks as $name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mentor class admin: ' . $name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
 $sanitize_ok = 2 === count( $clean['dashboard'] )
 	&& 'Привет' === $clean['dashboard'][0]['title']
 	&& 'all' === $clean['dashboard'][0]['audience']

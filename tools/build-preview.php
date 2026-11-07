@@ -142,6 +142,21 @@ $sections   .= demo_section(
 	WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
 );
 
+// Пример поля «Класс»: участник видит его, наставник — нет.
+$class_demo_settings = get_option( 'wppa_settings', array() );
+$class_demo_fields = isset( $class_demo_settings['fields'] ) && is_array( $class_demo_settings['fields'] ) ? $class_demo_settings['fields'] : array();
+$class_demo_fields['custom_class'] = array( 'custom' => 1, 'type' => 'text', 'label' => 'Класс', 'enabled' => 1, 'required' => 1, 'section' => 'main', 'order' => 50 );
+update_option( 'wppa_settings', array_merge( (array) $class_demo_settings, array( 'fields' => $class_demo_fields ) ) );
+update_user_meta( 9, '_wppa_custom_class', '9 А' );
+$class_demo_block = array( 'type' => 'block', 'id' => 'profile-form', 'title' => '' );
+$sections .= demo_section(
+	'Поле «Класс» в профиле',
+	'Слева — участник видит свой класс; справа — наставнику это поле не показывается. Сохранённые значения не удаляются.',
+	'<div class="demo-two"><div>' . WPPA_Builder::render_block( $class_demo_block, array( 'user' => get_userdata( 9 ), 'tabs' => $tabs ) ) . '</div><div>' . WPPA_Builder::render_block( $class_demo_block, array( 'user' => $mentor_user, 'tabs' => $tabs ) ) . '</div></div>'
+);
+delete_user_meta( 9, '_wppa_custom_class' );
+update_option( 'wppa_settings', $class_demo_settings );
+
 // Отдельный пример наставника в двух командах, не меняющий остальные демо.
 $wppa_multi_demo = WPPA_Teams::create( 'Команда «Орион»', 90 );
 if ( ! is_wp_error( $wppa_multi_demo ) && WPPA_Teams::add_mentor( $wppa_multi_demo, 8 ) ) {

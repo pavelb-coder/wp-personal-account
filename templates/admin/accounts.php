@@ -86,6 +86,9 @@ $wppa_pages = (int) ceil( $total / max( 1, $per_page ) );
 							$wppa_personals = array();
 
 							foreach ( WPPA_Fields::meta_fields() as $wppa_field_id => $wppa_field ) {
+								if ( WPPA_Fields::hidden_for_user( $wppa_user->ID, $wppa_field_id, $wppa_field ) ) {
+									continue;
+								}
 								$wppa_value = WPPA_Fields::get( $wppa_user->ID, $wppa_field_id );
 
 								if ( '' === $wppa_value ) {

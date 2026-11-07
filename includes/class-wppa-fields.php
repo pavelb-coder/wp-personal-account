@@ -369,14 +369,40 @@ class WPPA_Fields {
 	}
 
 	/**
+	 * Скрыто ли поле школьного класса у пользователя с ролью наставника.
+	 * Значение в базе не удаляется. ID собственных полей и их подписи задаёт сайт.
+	 *
+	 * @param int   $user_id ID пользователя, к которому относится поле.
+	 * @param string $id ID поля.
+	 * @param array|null $def Уже полученное определение поля.
+	 * @return bool
+	 */
+	public static function hidden_for_user( $user_id, $id, $def = null ) {
+		if ( ! $user_id || ! class_exists( 'WPPA_Teams' ) || 'mentor' !== WPPA_Teams::role( (int) $user_id ) ) {
+			return false;
+		}
+		if ( ! is_array( $def ) ) {
+			$all = self::all();
+			$def = isset( $all[ $id ] ) ? $all[ $id ] : array();
+		}
+		if ( ! $def ) {
+			return false;
+		}
+		$label = isset( $def['label'] ) ? trim( (string) $def['label'] ) : '';
+		return (bool) preg_match( '/^(?:школьный\s+)?класс(?:\s+обучения)?$/iu', $label )
+			|| in_array( (string) $id, array( 'custom_class', 'custom_klass', 'custom_school_class' ), true );
+	}
+
+	/**
 	 * Включённые поля, сгруппированные по разделам.
 	 *
 	 * @param string $context register|profile.
+	 * @param int    $user_id Пользователь профиля, если известен.
 	 * @return array id раздела => array( label, fields ).
 	 */
-	public static function grouped( $context = 'register' ) {
+	public static function grouped( $context = 'register', $user_id = 0 ) {
 		$sections = self::sections();
-		$fields   = self::fields( $context );
+		$fields   = self::fields( $context, $user_id );
 		$out      = array();
 		$known    = array_keys( $sections );
 
@@ -449,9 +475,10 @@ class WPPA_Fields {
 	 * Поля для конкретного контекста.
 	 *
 	 * @param string $context register|profile.
+	 * @param int    $user_id Пользователь профиля, если известен.
 	 * @return array
 	 */
-	public static function fields( $context = 'register' ) {
+	public static function fields( $context = 'register', $user_id = 0 ) {
 		$fields = array();
 
 		foreach ( self::schema() as $id => $def ) {
@@ -462,6 +489,10 @@ class WPPA_Fields {
 				$def['hint'] = sprintf( __( 'Минимальный возраст при регистрации: %d полных лет.', 'wp-personal-account' ), self::registration_min_age() );
 			}
 			if ( empty( $def['enabled'] ) ) {
+				continue;
+			}
+
+			if ( 'profile' === $context && self::hidden_for_user( $user_id, $id, $def ) ) {
 				continue;
 			}
 
@@ -643,10 +674,11 @@ class WPPA_Fields {
 	 *
 	 * @param array  $values  Значения (уже санитизированные).
 	 * @param string $context register|profile.
+	 * @param int    $user_id Пользователь профиля, если известен.
 	 * @return string Код ошибки или пустая строка.
 	 */
-	public static function validate( $values, $context = 'register' ) {
-		foreach ( self::fields( $context ) as $id => $def ) {
+	public static function validate( $values, $context = 'register', $user_id = 0 ) {
+		foreach ( self::fields( $context, $user_id ) as $id => $def ) {
 			$value = isset( $values[ $id ] ) ? trim( (string) $values[ $id ] ) : '';
 
 			if ( '' === $value ) {
@@ -755,7 +787,7 @@ class WPPA_Fields {
 	 * @return void
 	 */
 	public static function render( $context = 'register', $user_id = 0, $values = array(), $exclude = array() ) {
-		foreach ( self::grouped( $context ) as $section_id => $section ) {
+		foreach ( self::grouped( $context, $user_id ) as $section_id => $section ) {
 			$fields = array_diff_key( $section['fields'], array_flip( (array) $exclude ) );
 			if ( ! $fields ) {
 				continue;

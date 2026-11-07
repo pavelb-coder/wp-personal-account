@@ -6700,6 +6700,59 @@ foreach ( $mt_checks as $name => $ok ) {
     if ( ! $ok ) { $fail++; }
 }
 
+
+// Поле «Класс» у наставника скрывается без потери данных и без изменения регистрации.
+$class_settings_backup = get_option( 'wppa_settings', array() );
+$class_meta_backup = $GLOBALS['wppa_test']['meta'];
+$class_post_backup = $_POST;
+$class_login_backup = $GLOBALS['wppa_test']['logged_in'];
+$class_checks = array();
+update_option( 'wppa_settings', array_merge( (array) $class_settings_backup, array( 'fields' => array(
+    'custom_form_field_17' => array( 'custom' => 1, 'type' => 'text', 'label' => 'Класс', 'enabled' => 1, 'required' => 1, 'section' => 'main', 'order' => 45 ),
+    'custom_other_grade' => array( 'custom' => 1, 'type' => 'text', 'label' => 'Оценка', 'enabled' => 1, 'required' => 0, 'section' => 'main', 'order' => 46 ),
+) ) ) );
+update_user_meta( 7, WPPA_Teams::META_ROLE, 'mentor' );
+update_user_meta( 7, WPPA_Teams::META_TEAM, 55 );
+update_user_meta( 8, WPPA_Teams::META_ROLE, 'member' );
+update_user_meta( 7, '_wppa_custom_form_field_17', '11-М' );
+update_user_meta( 8, '_wppa_custom_form_field_17', '9-А' );
+update_user_meta( 7, '_wppa_custom_other_grade', 'отлично' );
+$class_mentor_form = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'profile-form', 'title' => '' ), array( 'user' => get_userdata( 7 ), 'tabs' => WPPA_Template::tabs() ) );
+$class_member_form = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'profile-form', 'title' => '' ), array( 'user' => get_userdata( 8 ), 'tabs' => WPPA_Template::tabs() ) );
+$class_register_form = WPPA_Template::get( 'register', array() );
+$class_checks['наставник: поле и значение не выводятся'] = false === strpos( $class_mentor_form, 'wppa_fields[custom_form_field_17]' ) && false === strpos( $class_mentor_form, '11-М' );
+$class_checks['наставник: другое поле остаётся'] = false !== strpos( $class_mentor_form, 'wppa_fields[custom_other_grade]' ) && false !== strpos( $class_mentor_form, 'отлично' );
+$class_checks['участник: поле и значение остались'] = false !== strpos( $class_member_form, 'wppa_fields[custom_form_field_17]' ) && false !== strpos( $class_member_form, '9-А' );
+$class_checks['регистрация: поле осталось обязательным'] = (bool) preg_match( '/<input[^>]+name="wppa_fields\[custom_form_field_17\]"[^>]*required/', $class_register_form );
+$class_checks['наставник: скрытое обязательное поле не блокирует сохранение'] = '' === WPPA_Fields::validate( array(), 'profile', 7 );
+$class_checks['участник: обязательность сохранена'] = 'field_required' === WPPA_Fields::validate( array(), 'profile', 8 );
+$class_checks['распознавание подписи без зависимости от регистра'] = WPPA_Fields::hidden_for_user( 7, 'custom_form_field_17', array( 'label' => '  КЛАСС  ' ) );
+$class_checks['известный ключ распознаётся при переименовании'] = WPPA_Fields::hidden_for_user( 7, 'custom_klass', array( 'label' => 'Ступень' ) );
+$class_checks['другое поле не скрыто по части слова'] = ! WPPA_Fields::hidden_for_user( 7, 'custom_other', array( 'label' => 'Классный руководитель' ) );
+$class_checks['для участника класс не скрыт'] = ! WPPA_Fields::hidden_for_user( 8, 'custom_form_field_17' );
+$GLOBALS['wppa_test']['logged_in'] = true;
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$_POST = array( 'wppa_nonce' => wp_create_nonce( 'wppa_profile' ), 'first_name' => 'Иван', 'last_name' => 'Петров', 'display_name' => 'Иван Петров', 'wppa_fields' => array( 'custom_form_field_17' => 'подмена', 'custom_other_grade' => 'хорошо' ) );
+$class_update_result = '';
+try { WPPA_Profile::handle_update(); } catch ( RuntimeException $e ) { $class_update_result = $e->getMessage(); }
+$class_checks['наставник: профиль сохраняется'] = false !== strpos( $class_update_result, 'profile_saved' );
+$class_checks['наставник: подмена скрытого поля не меняет сохранённое значение'] = '11-М' === get_user_meta( 7, '_wppa_custom_form_field_17', true );
+$class_checks['наставник: другие поля сохраняются'] = 'хорошо' === get_user_meta( 7, '_wppa_custom_other_grade', true );
+$class_export = WPPA_Export::row( get_userdata( 7 ) );
+$class_checks['сохранённое значение по-прежнему доступно в выгрузке'] = isset( $class_export['field_custom_form_field_17'] ) && '11-М' === $class_export['field_custom_form_field_17'];
+update_user_meta( 7, WPPA_Teams::META_ROLE, 'member' );
+$class_returned_form = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'profile-form', 'title' => '' ), array( 'user' => get_userdata( 7 ), 'tabs' => WPPA_Template::tabs() ) );
+$class_checks['после снятия роли значение снова доступно'] = false !== strpos( $class_returned_form, 'wppa_fields[custom_form_field_17]' ) && false !== strpos( $class_returned_form, '11-М' );
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$GLOBALS['wppa_test']['logged_in'] = $class_login_backup;
+$_POST = $class_post_backup;
+$GLOBALS['wppa_test']['meta'] = $class_meta_backup;
+update_option( 'wppa_settings', $class_settings_backup );
+foreach ( $class_checks as $name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'mentor class: ' . $name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

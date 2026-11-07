@@ -42,10 +42,13 @@ class WPPA_Profile {
 		$fields = array();
 
 		foreach ( WPPA_Fields::values_from_request( $_POST ) as $field_id => $field_value ) {
+			if ( WPPA_Fields::hidden_for_user( $user->ID, $field_id ) ) {
+				continue;
+			}
 			$fields[ $field_id ] = WPPA_Fields::sanitize_value( $field_id, $field_value );
 		}
 
-		$field_error = WPPA_Fields::validate( $fields, 'profile' );
+		$field_error = WPPA_Fields::validate( $fields, 'profile', $user->ID );
 
 		if ( '' !== $field_error ) {
 			WPPA_Notices::redirect( $field_error, $tab_url );
