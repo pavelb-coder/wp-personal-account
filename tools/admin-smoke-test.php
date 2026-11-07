@@ -1411,6 +1411,7 @@ foreach ( $link_note_checks as $check_name => $ok ) {
 $bar_settings_ok = false !== strpos( $settings_html, 'wppa_settings[hide_admin_bar]' )
 	&& false !== strpos( $settings_html, 'Скрывать панель WordPress (админ-бар) на всех страницах' )
 	&& false !== strpos( $settings_html, 'на сайте и в админке' )
+	&& false !== strpos( $settings_html, 'кроме администраторов' )
 	&& false !== strpos( $settings_html, 'кнопка открытия меню' );
 
 echo ( $bar_settings_ok ? 'OK    ' : 'FAIL  ' ) . "settings: галочка скрытия панели WordPress\n";

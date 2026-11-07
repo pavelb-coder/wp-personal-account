@@ -1102,6 +1102,8 @@ foreach ( $dashboard_checks as $check_name => $ok ) {
 // ---------- Панель WordPress на сайте и в админке ----------
 $bar_settings_snapshot = get_option( 'wppa_settings', array() );
 $bar_admin_snapshot = isset( $GLOBALS['wppa_test']['is_admin'] ) ? $GLOBALS['wppa_test']['is_admin'] : false;
+$bar_can_manage_snapshot = isset( $GLOBALS['wppa_test']['can_manage'] ) ? $GLOBALS['wppa_test']['can_manage'] : null;
+$GLOBALS['wppa_test']['can_manage'] = false;
 $bar_checks = array();
 WPPA_Plugin::init();
 $bar_checks['фильтр подключён при загрузке плагина'] = ! empty( $GLOBALS['wppa_test']['filters']['show_admin_bar'][ PHP_INT_MAX ] );
@@ -1121,6 +1123,21 @@ $bar_css = ob_get_clean();
 $bar_checks['в админке скрывается панель'] = false !== strpos( $bar_css, '#wpadminbar { display: none !important;' );
 $bar_checks['в админке убран отступ панели'] = false !== strpos( $bar_css, 'html.wp-toolbar { padding-top: 0 !important;' );
 $bar_checks['мобильная кнопка меню остаётся'] = false !== strpos( $bar_css, '#wp-admin-bar-menu-toggle' ) && false !== strpos( $bar_css, 'max-width: 782px' );
+
+// Администратор не ограничивается этим плагином, в том числе на фронтенде.
+$GLOBALS['wppa_test']['can_manage'] = true;
+$GLOBALS['wppa_test']['is_admin'] = false;
+$bar_checks['у администратора на сайте панель не скрывается'] = true === apply_filters( 'show_admin_bar', true );
+$bar_checks['у администратора сохраняется отключение WordPress'] = false === apply_filters( 'show_admin_bar', false );
+$GLOBALS['wppa_test']['admin_bar'] = null;
+WPPA_Plugin::maybe_hide_admin_bar();
+$bar_checks['старый метод не скрывает панель администратора'] = null === $GLOBALS['wppa_test']['admin_bar'];
+$GLOBALS['wppa_test']['is_admin'] = true;
+ob_start();
+WPPA_Plugin::admin_bar_styles();
+$bar_checks['в админке администратора скрывающие стили не выводятся'] = '' === ob_get_clean();
+$GLOBALS['wppa_test']['can_manage'] = false;
+
 update_option( 'wppa_settings', array_merge( (array) $bar_settings_snapshot, array( 'hide_admin_bar' => 0 ) ) );
 $bar_checks['настройка выключена: видимую панель не скрываем'] = true === apply_filters( 'show_admin_bar', true );
 $bar_checks['настройка выключена: скрытую панель не включаем'] = false === apply_filters( 'show_admin_bar', false );
@@ -1129,6 +1146,11 @@ WPPA_Plugin::admin_bar_styles();
 $bar_checks['настройка выключена: CSS админки не добавляется'] = '' === ob_get_clean();
 update_option( 'wppa_settings', $bar_settings_snapshot );
 $GLOBALS['wppa_test']['is_admin'] = $bar_admin_snapshot;
+if ( null === $bar_can_manage_snapshot ) {
+	unset( $GLOBALS['wppa_test']['can_manage'] );
+} else {
+	$GLOBALS['wppa_test']['can_manage'] = $bar_can_manage_snapshot;
+}
 remove_filter( 'show_admin_bar', array( 'WPPA_Plugin', 'filter_admin_bar' ), PHP_INT_MAX );
 foreach ( $bar_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'admin bar: ' . $check_name . "\n";

@@ -317,14 +317,23 @@ class WPPA_Plugin {
 	}
 
 	/**
-	 * При включённой настройке скрыть панель на всех публичных страницах.
+	 * Включено ли скрытие для текущего пользователя, кроме администраторов.
+	 *
+	 * @return bool
+	 */
+	private static function should_hide_admin_bar() {
+		return (bool) self::setting( 'hide_admin_bar', 1 ) && ! current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * При включённой настройке скрыть панель на публичных страницах неадминистраторам.
 	 * В wp-admin WordPress всегда возвращает true до применения этого фильтра.
 	 *
 	 * @param bool $show Исходное состояние WordPress и других плагинов.
 	 * @return bool
 	 */
 	public static function filter_admin_bar( $show ) {
-		return (bool) self::setting( 'hide_admin_bar', 1 ) ? false : $show;
+		return self::should_hide_admin_bar() ? false : $show;
 	}
 
 	/**
@@ -334,7 +343,7 @@ class WPPA_Plugin {
 	 * @return void
 	 */
 	public static function admin_bar_styles() {
-		if ( ! (bool) self::setting( 'hide_admin_bar', 1 ) ) {
+		if ( ! self::should_hide_admin_bar() ) {
 			return;
 		}
 		?>
@@ -360,7 +369,7 @@ class WPPA_Plugin {
 	 * @return void
 	 */
 	public static function maybe_hide_admin_bar() {
-		if ( ! is_admin() && (bool) self::setting( 'hide_admin_bar', 1 ) ) {
+		if ( ! is_admin() && self::should_hide_admin_bar() ) {
 			show_admin_bar( false );
 		}
 	}
