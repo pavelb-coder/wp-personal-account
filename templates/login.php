@@ -9,7 +9,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$wppa_redirect = isset( $redirect ) ? $redirect : '';
+$wppa_requested_redirect = WPPA_Plugin::requested_auth_redirect();
+$wppa_redirect = $wppa_requested_redirect ? $wppa_requested_redirect : ( isset( $redirect ) ? $redirect : '' );
 $wppa_title    = isset( $title ) && '' !== $title ? $title : __( 'Вход в личный кабинет', 'wp-personal-account' );
 $wppa_action   = WPPA_Plugin::account_url();
 $wppa_register = ! isset( $hide_register ) || ! $hide_register;
@@ -25,6 +26,10 @@ $wppa_reg_live = 'open' === $wppa_window['state'];
 		<input type="hidden" name="wppa_action" value="login" />
 		<?php if ( $wppa_redirect ) : ?>
 			<input type="hidden" name="redirect_to" value="<?php echo esc_url( $wppa_redirect ); ?>" />
+		<?php endif; ?>
+		<?php $wppa_form_url = WPPA_Plugin::requested_auth_form(); ?>
+		<?php if ( $wppa_form_url ) : ?>
+			<input type="hidden" name="wppa_form_url" value="<?php echo esc_url( $wppa_form_url ); ?>" />
 		<?php endif; ?>
 
 		<p class="wppa-field">

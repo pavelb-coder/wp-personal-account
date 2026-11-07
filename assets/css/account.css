@@ -1151,6 +1151,18 @@
 .wp-block-wppa-logout-button,
 .wp-block-wppa-register-button {
 	--wppa-button-radius: 10px;
+	--wppa-button-bg: transparent;
+	--wppa-button-text: inherit;
+	--wppa-button-border: transparent;
+	--wppa-button-hover-bg: transparent;
+	--wppa-button-hover-text: inherit;
+	--wppa-button-hover-border: transparent;
+	--wppa-button-font-size: 16px;
+	--wppa-button-font-weight: 600;
+	--wppa-button-border-width: 1px;
+	--wppa-button-padding-x: 18px;
+	--wppa-button-padding-y: 9px;
+	--wppa-button-border-style: solid;
 }
 
 .wp-block-wppa-login-button .wppa-button,
@@ -1158,6 +1170,28 @@
 .wp-block-wppa-register-button .wppa-button {
 	border-radius: var(--wppa-button-radius, 10px);
 }
+
+/* Персональные параметры трёх самостоятельных кнопок Gutenberg. */
+.wppa-button-align--left { text-align: left; }
+.wppa-button-align--center { text-align: center; }
+.wppa-button-align--right { text-align: right; }
+.has-wppa-button-bg .wppa-button:not(.wppa-button--disabled) { background-color: var(--wppa-button-bg) !important; }
+.has-wppa-button-text .wppa-button:not(.wppa-button--disabled) { color: var(--wppa-button-text) !important; }
+.has-wppa-button-border .wppa-button:not(.wppa-button--disabled) { border-color: var(--wppa-button-border) !important; }
+.has-wppa-button-hover-bg .wppa-button:not(.wppa-button--disabled):hover { background-color: var(--wppa-button-hover-bg) !important; }
+.has-wppa-button-hover-text .wppa-button:not(.wppa-button--disabled):hover { color: var(--wppa-button-hover-text) !important; }
+.has-wppa-button-hover-border .wppa-button:not(.wppa-button--disabled):hover { border-color: var(--wppa-button-hover-border) !important; }
+.has-wppa-button-font-size .wppa-button { font-size: var(--wppa-button-font-size) !important; }
+.has-wppa-button-font-weight .wppa-button { font-weight: var(--wppa-button-font-weight) !important; }
+.has-wppa-button-border-width .wppa-button { border-width: var(--wppa-button-border-width) !important; }
+.has-wppa-button-border-style .wppa-button { border-style: var(--wppa-button-border-style) !important; }
+.has-wppa-button-padding-x .wppa-button { padding-left: var(--wppa-button-padding-x) !important; padding-right: var(--wppa-button-padding-x) !important; }
+.has-wppa-button-padding-y .wppa-button { padding-top: var(--wppa-button-padding-y) !important; padding-bottom: var(--wppa-button-padding-y) !important; }
+.wppa-button-font--system .wppa-button { font-family: system-ui, sans-serif; }
+.wppa-button-font--sans-serif .wppa-button { font-family: sans-serif; }
+.wppa-button-font--serif .wppa-button { font-family: serif; }
+.wppa-button-font--monospace .wppa-button { font-family: monospace; }
+.wppa-button-font--italic .wppa-button { font-style: italic; }
 
 /* Кнопки внутри блока: размер и ширина */
 

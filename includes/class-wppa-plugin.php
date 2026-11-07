@@ -15,7 +15,7 @@ class WPPA_Plugin {
 	/**
 	 * Query-параметры плагина (регистрируются, чтобы WordPress их не выбрасывал).
 	 */
-	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login' );
+	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login', 'wppa_redirect', 'wppa_form' );
 
 	/**
 	 * Минимальная длина пароля.
@@ -450,6 +450,55 @@ class WPPA_Plugin {
 	 */
 	public static function login_url() {
 		return self::account_url( array( 'wppa_view' => 'login' ) );
+	}
+
+	/**
+	 * Проверенный адрес перехода только внутри текущего сайта.
+	 *
+	 * @param string $url Адрес или путь.
+	 * @return string Безопасный адрес либо пустая строка.
+	 */
+	public static function safe_auth_redirect( $url ) {
+		if ( ! is_string( $url ) ) {
+			return '';
+		}
+		$url = trim( $url );
+		if ( '' === $url || 0 === strpos( $url, '//' ) || preg_match( '/[\x00-\x1f\x7f\\\\]/', $url ) ) {
+			return '';
+		}
+		$parts = wp_parse_url( $url );
+		$home = wp_parse_url( home_url( '/' ) );
+		if ( ! is_array( $parts ) || ! is_array( $home ) || isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return '';
+		}
+		if ( isset( $parts['scheme'] ) && ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
+			return '';
+		}
+		if ( isset( $parts['host'] ) ) {
+			if ( empty( $home['host'] ) || strtolower( $parts['host'] ) !== strtolower( $home['host'] ) ) {
+				return '';
+			}
+			if ( isset( $parts['port'] ) && (int) $parts['port'] !== ( isset( $home['port'] ) ? (int) $home['port'] : ( 'https' === strtolower( $parts['scheme'] ?? '' ) ? 443 : 80 ) ) ) {
+				return '';
+			}
+		} elseif ( '/' !== substr( $url, 0, 1 ) ) {
+			return '';
+		}
+		return wp_validate_redirect( esc_url_raw( $url ), '' );
+	}
+
+	/** Адрес после входа или регистрации из ссылки кнопки. */
+	public static function requested_auth_redirect() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- адрес проверяется и не изменяет данные.
+		$raw = isset( $_GET['wppa_redirect'] ) && is_string( $_GET['wppa_redirect'] ) ? wp_unslash( $_GET['wppa_redirect'] ) : '';
+		return self::safe_auth_redirect( $raw );
+	}
+
+	/** Безопасная страница формы из ссылки кнопки. */
+	public static function requested_auth_form() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- адрес проверяется и не изменяет данные.
+		$raw = isset( $_GET['wppa_form'] ) && is_string( $_GET['wppa_form'] ) ? wp_unslash( $_GET['wppa_form'] ) : '';
+		return self::safe_auth_redirect( $raw );
 	}
 
 	/**

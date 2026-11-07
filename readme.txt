@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.65.0
+Stable tag: 3.66.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.66.0 =
+* Расширены настройки оформления и переходов отдельных блоков-кнопок входа, регистрации и выхода.
+* Добавлены проверяемые адреса после входа, регистрации и выхода, открытие в новой вкладке и подтверждение выхода.
 
 = 3.65.0 =
 * Админ-бар больше не скрывается плагином у администраторов.

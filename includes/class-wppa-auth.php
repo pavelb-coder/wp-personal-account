@@ -32,6 +32,14 @@ class WPPA_Auth {
 
 		$tab_url = WPPA_Plugin::tab_url( WPPA_Account::current_tab() );
 		$key     = self::client_key();
+		$form_url = isset( $_POST['wppa_form_url'] ) && is_string( $_POST['wppa_form_url'] ) ? WPPA_Plugin::safe_auth_redirect( wp_unslash( $_POST['wppa_form_url'] ) ) : '';
+		if ( $form_url ) {
+			$tab_url = add_query_arg( array( 'wppa_view' => 'login', 'wppa_form' => rawurlencode( $form_url ) ), $form_url );
+		}
+		$requested_redirect = isset( $_POST['redirect_to'] ) && is_string( $_POST['redirect_to'] ) ? WPPA_Plugin::safe_auth_redirect( wp_unslash( $_POST['redirect_to'] ) ) : '';
+		if ( $requested_redirect ) {
+			$tab_url = add_query_arg( array( 'wppa_view' => 'login', 'wppa_redirect' => rawurlencode( $requested_redirect ) ), $tab_url );
+		}
 
 		if ( self::is_locked( $key ) ) {
 			WPPA_Notices::redirect( 'login_blocked', $tab_url );
@@ -92,6 +100,14 @@ class WPPA_Auth {
 		check_admin_referer( 'wppa_register', 'wppa_nonce' );
 
 		$tab_url = WPPA_Plugin::register_url();
+		$form_url = isset( $_POST['wppa_form_url'] ) && is_string( $_POST['wppa_form_url'] ) ? WPPA_Plugin::safe_auth_redirect( wp_unslash( $_POST['wppa_form_url'] ) ) : '';
+		if ( $form_url ) {
+			$tab_url = add_query_arg( array( 'wppa_view' => 'register', 'wppa_form' => rawurlencode( $form_url ) ), $form_url );
+		}
+		$requested_redirect = isset( $_POST['redirect_to'] ) && is_string( $_POST['redirect_to'] ) ? WPPA_Plugin::safe_auth_redirect( wp_unslash( $_POST['redirect_to'] ) ) : '';
+		if ( $requested_redirect ) {
+			$tab_url = add_query_arg( 'wppa_redirect', rawurlencode( $requested_redirect ), $tab_url );
+		}
 
 		if ( ! WPPA_Plugin::registration_open() ) {
 			WPPA_Notices::redirect( 'registration_closed', $tab_url );
@@ -206,7 +222,7 @@ class WPPA_Auth {
 		wp_set_current_user( $user_id );
 		wp_set_auth_cookie( $user_id, true, is_ssl() );
 
-		WPPA_Notices::redirect( 'registration_success', WPPA_Plugin::tab_url( 'dashboard' ) );
+		WPPA_Notices::redirect( 'registration_success', $requested_redirect ? $requested_redirect : WPPA_Plugin::tab_url( 'dashboard' ) );
 	}
 
 	/**

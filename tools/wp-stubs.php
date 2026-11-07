@@ -140,7 +140,7 @@ function sanitize_text_field( $t ) { return trim( strip_tags( (string) $t ) ); }
 function sanitize_textarea_field( $t ) { return trim( strip_tags( (string) $t ) ); }
 function sanitize_key( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ); }
 function sanitize_email( $e ) { return trim( (string) $e ); }
-function sanitize_hex_color( $c ) { return preg_match( '/^#[0-9a-f]{6}$/i', (string) $c ) ? $c : null; }
+function sanitize_hex_color( $c ) { return preg_match( '/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i', (string) $c ) ? $c : null; }
 function sanitize_file_name( $n ) {
 	// Ядро сохраняет юникод в именах файлов: вырезаем только служебные символы и слэши.
 	$n = (string) $n;
@@ -197,6 +197,10 @@ function wp_roles() {
 function translate_user_role( $name ) { return $name; }
 function wp_get_current_user() { return new WP_User(); }
 function get_current_user_id() { return isset( $GLOBALS['wppa_test']['current_user'] ) ? (int) $GLOBALS['wppa_test']['current_user'] : 7; }
+function wp_signon( $credentials, $secure_cookie = false ) {
+	$GLOBALS['wppa_test']['signon_credentials'] = $credentials;
+	return ! empty( $GLOBALS['wppa_test']['signon_failure'] ) ? new WP_Error( 'invalid_login' ) : new WP_User( 7 );
+}
 function wp_set_current_user( $id ) { return new WP_User(); }
 function wp_set_auth_cookie( $id, $r = false, $s = false ) {}
 function wp_set_password( $p, $id ) {}
@@ -263,7 +267,14 @@ function wp_safe_redirect( $u ) {
 function get_bloginfo( $k ) { return 'Демо-сайт'; }
 function wp_specialchars_decode( $t, $q = null ) { return $t; }
 function is_ssl() { return true; }
-function wp_validate_redirect( $u, $d = '' ) { return $u ? $u : $d; }
+function wp_validate_redirect( $u, $d = '' ) {
+	if ( ! is_string( $u ) || '' === $u || preg_match( '/[\x00-\x1f\x7f\\\\]/', $u ) ) { return $d; }
+	$p = wp_parse_url( $u );
+	$home = wp_parse_url( home_url( '/' ) );
+	if ( ! is_array( $p ) || isset( $p['user'] ) || isset( $p['pass'] ) || ( isset( $p['scheme'] ) && ! in_array( strtolower( $p['scheme'] ), array( 'http', 'https' ), true ) ) ) { return $d; }
+	if ( isset( $p['host'] ) && strtolower( $p['host'] ) !== strtolower( $home['host'] ) ) { return $d; }
+	return $u;
+}
 function get_transient( $k ) { return 0; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function delete_transient( $k ) { return true; }
@@ -431,20 +442,31 @@ function get_permalink( $id = null ) { return 'https://example.com/personal-acco
 function home_url( $path = '/' ) { return 'https://example.com' . $path; }
 function admin_url( $p = '' ) { return 'https://example.com/wp-admin/' . $p; }
 function add_query_arg( ...$args ) {
-	// Две формы, как в ядре: add_query_arg( массив, $url ) и add_query_arg( ключ, значение, $url ).
-	if ( is_array( $args[0] ) ) {
-		$query = $args[0];
-		$url   = isset( $args[1] ) ? (string) $args[1] : '';
-	} else {
-		$query = array( $args[0] => isset( $args[1] ) ? $args[1] : '' );
-		$url   = isset( $args[2] ) ? (string) $args[2] : '';
-	}
-
-	if ( '' === $url ) {
-		return '?' . http_build_query( $query );
-	}
-
-	return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $query );
+	// WordPress кодирует существующие параметры, но новые значения ожидает уже закодированными.
+	$query = is_array( $args[0] ) ? $args[0] : array( $args[0] => isset( $args[1] ) ? $args[1] : '' );
+	$url = is_array( $args[0] ) ? ( $args[1] ?? '' ) : ( $args[2] ?? '' );
+	$fragment = '';
+	if ( false !== strpos( $url, '#' ) ) { list( $url, $fragment ) = explode( '#', $url, 2 ); $fragment = '#' . $fragment; }
+	$bits = explode( '?', $url, 2 );
+	$old = array();
+	if ( isset( $bits[1] ) ) { parse_str( $bits[1], $old ); }
+	$encode = static function ( $value ) use ( &$encode ) {
+		return is_array( $value ) ? array_map( $encode, $value ) : urlencode( (string) $value );
+	};
+	$old = array_map( $encode, $old );
+	$merged = array_merge( $old, $query );
+	$build = static function ( $items, $prefix = '' ) use ( &$build ) {
+		$pairs = array();
+		foreach ( $items as $key => $value ) {
+			$name = '' === $prefix ? $key : $prefix . '[' . $key . ']';
+			if ( false === $value || null === $value ) { continue; }
+			if ( is_array( $value ) ) { $pairs[] = $build( $value, $name ); }
+			else { $pairs[] = $name . '=' . $value; }
+		}
+		return implode( '&', $pairs );
+	};
+	$qs = $build( $merged );
+	return $bits[0] . ( '' !== $qs ? '?' . $qs : '' ) . $fragment;
 }
 function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
 function wp_logout_url( $redirect = '' ) { $GLOBALS['wppa_test']['logout_redirect'] = $redirect; return 'https://example.com/logout'; }

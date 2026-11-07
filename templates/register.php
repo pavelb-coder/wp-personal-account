@@ -31,6 +31,14 @@ if ( 'open' !== $wppa_window['state'] ) {
 	<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::account_url() ); ?>">
 		<?php wp_nonce_field( 'wppa_register', 'wppa_nonce' ); ?>
 		<input type="hidden" name="wppa_action" value="register" />
+		<?php $wppa_redirect = WPPA_Plugin::requested_auth_redirect(); ?>
+		<?php if ( $wppa_redirect ) : ?>
+			<input type="hidden" name="redirect_to" value="<?php echo esc_url( $wppa_redirect ); ?>" />
+		<?php endif; ?>
+		<?php $wppa_form_url = WPPA_Plugin::requested_auth_form(); ?>
+		<?php if ( $wppa_form_url ) : ?>
+			<input type="hidden" name="wppa_form_url" value="<?php echo esc_url( $wppa_form_url ); ?>" />
+		<?php endif; ?>
 
 		<?php WPPA_Fields::render( 'register' ); ?>
 

@@ -36,6 +36,86 @@
 		"cornerRadius": {
 			"type": "number",
 			"default": 0
+		},
+		"buttonBgColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonTextColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonBorderColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonHoverBgColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonHoverTextColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonHoverBorderColor": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonFontSize": {
+			"type": "number",
+			"default": 0
+		},
+		"buttonFontWeight": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonBorderWidth": {
+			"type": "number",
+			"default": -1
+		},
+		"buttonBorderStyle": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonPaddingX": {
+			"type": "number",
+			"default": -1
+		},
+		"buttonPaddingY": {
+			"type": "number",
+			"default": -1
+		},
+		"buttonRadius": {
+			"type": "number",
+			"default": -1
+		},
+		"buttonAlignment": {
+			"type": "string",
+			"default": ""
+		},
+		"formUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"afterUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"openNewTab": {
+			"type": "boolean",
+			"default": false
+		},
+		"confirmLogout": {
+			"type": "boolean",
+			"default": false
+		},
+		"buttonFontFamily": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonItalic": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"supports": {

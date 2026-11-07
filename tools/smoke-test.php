@@ -1438,6 +1438,90 @@ $button_checks['вход и регистрация скрыты авторизо
 $logout_button_html = WPPA_Blocks::render_logout_button( array( 'buttonText' => 'Завершить сеанс' ) );
 $button_checks['выход виден авторизованным'] = false !== strpos( $logout_button_html, 'wp-block-wppa-logout-button' ) && false !== strpos( $logout_button_html, 'Завершить сеанс' ) && false !== strpos( $logout_button_html, 'https://example.com/logout' );
 $button_checks['выход использует стандартный URL и возврат в кабинет'] = $GLOBALS['wppa_test']['logout_redirect'] === WPPA_Plugin::account_url();
+
+// Все параметры доступны независимо для каждого блока.
+$button_extra = array(
+    'buttonBgColor' => '#123456', 'buttonTextColor' => '#abcdef', 'buttonBorderColor' => '#987654',
+    'buttonHoverBgColor' => '#112233', 'buttonHoverTextColor' => '#223344', 'buttonHoverBorderColor' => '#334455',
+    'buttonFontSize' => 99, 'buttonFontWeight' => '700', 'buttonFontFamily' => 'serif', 'buttonItalic' => true,
+    'buttonBorderWidth' => 99, 'buttonBorderStyle' => 'dashed', 'buttonPaddingX' => 24, 'buttonPaddingY' => 0,
+    'buttonRadius' => 0, 'cornerRadius' => 20, 'buttonAlignment' => 'center', 'openNewTab' => true,
+);
+$GLOBALS['wppa_test']['logged_in'] = false;
+wppa_reg_window();
+$button_extra_login = WPPA_Blocks::render_login_button( $button_extra );
+$button_extra_register = WPPA_Blocks::render_register_button( $button_extra );
+$GLOBALS['wppa_test']['logged_in'] = true;
+$button_extra_logout = WPPA_Blocks::render_logout_button( array_merge( $button_extra, array( 'confirmLogout' => true, 'afterUrl' => '/goodbye/' ) ) );
+foreach ( array( 'login' => $button_extra_login, 'register' => $button_extra_register, 'logout' => $button_extra_logout ) as $button_mode => $button_custom_html ) {
+    $button_checks[ $button_mode . ': цвета обычные и при наведении' ] = false !== strpos( $button_custom_html, '--wppa-button-bg:#123456' ) && false !== strpos( $button_custom_html, '--wppa-button-text:#abcdef' ) && false !== strpos( $button_custom_html, '--wppa-button-border:#987654' ) && false !== strpos( $button_custom_html, '--wppa-button-hover-bg:#112233' ) && false !== strpos( $button_custom_html, '--wppa-button-hover-text:#223344' ) && false !== strpos( $button_custom_html, '--wppa-button-hover-border:#334455' );
+    $button_checks[ $button_mode . ': шрифт размеры и выравнивание' ] = false !== strpos( $button_custom_html, '--wppa-button-font-size:72px' ) && false !== strpos( $button_custom_html, '--wppa-button-font-weight:700' ) && false !== strpos( $button_custom_html, 'wppa-button-font--serif' ) && false !== strpos( $button_custom_html, 'wppa-button-font--italic' ) && false !== strpos( $button_custom_html, 'wppa-button-align--center' );
+    $button_checks[ $button_mode . ': рамка и нулевые параметры' ] = false !== strpos( $button_custom_html, '--wppa-button-border-width:20px' ) && false !== strpos( $button_custom_html, '--wppa-button-border-style:dashed' ) && false !== strpos( $button_custom_html, '--wppa-button-padding-x:24px' ) && false !== strpos( $button_custom_html, '--wppa-button-padding-y:0px' ) && false !== strpos( $button_custom_html, '--wppa-button-radius:0px' );
+    $button_checks[ $button_mode . ': новая вкладка безопасна' ] = false !== strpos( $button_custom_html, 'target="_blank"' ) && false !== strpos( $button_custom_html, 'rel="noopener noreferrer"' );
+}
+$button_checks['выход: назначение и подтверждение'] = '/goodbye/' === $GLOBALS['wppa_test']['logout_redirect'] && false !== strpos( $button_extra_logout, 'data-wppa-confirm-logout' ) && isset( $GLOBALS['wppa_test']['scripts']['wppa-account'] );
+$GLOBALS['wppa_test']['logged_in'] = false;
+$button_injected = WPPA_Blocks::render_login_button( array( 'buttonBgColor' => 'red;position:fixed', 'buttonBorderStyle' => 'solid;display:none', 'buttonFontWeight' => '700;color:red', 'buttonAlignment' => 'center" onclick="x', 'afterUrl' => 'javascript:alert(1)', 'formUrl' => 'https://evil.example/' ) );
+$button_checks['небезопасные значения не попадают в разметку'] = false === strpos( $button_injected, 'evil.example' ) && false === strpos( $button_injected, 'javascript:' ) && false === strpos( $button_injected, 'onclick=' ) && false === strpos( $button_injected, 'position:fixed' ) && false === strpos( $button_injected, 'display:none' );
+$button_checks['относительный адрес разрешён'] = '/dashboard/?a=1' === WPPA_Plugin::safe_auth_redirect( '/dashboard/?a=1' );
+$button_checks['адрес этого сайта разрешён'] = 'https://example.com/hello/' === WPPA_Plugin::safe_auth_redirect( 'https://example.com/hello/' );
+foreach ( array( 'https://evil.example/', '//evil.example/', 'javascript:alert(1)', 'https://example.com@evil.example/', '/\\evil.example/', 'https://example.com:444/path' ) as $button_bad_url ) {
+    $button_checks['опасный адрес запрещён: ' . $button_bad_url] = '' === WPPA_Plugin::safe_auth_redirect( $button_bad_url );
+}
+$button_link = WPPA_Blocks::render_login_button( array( 'formUrl' => '/sign-in/', 'afterUrl' => '/target/?q=one', 'openNewTab' => true ) );
+$button_checks['настраиваемый адрес формы и переход'] = false !== strpos( $button_link, '/sign-in/' ) && false !== strpos( $button_link, 'wppa_view=login' ) && false !== strpos( $button_link, 'wppa_form=' ) && false !== strpos( $button_link, 'wppa_redirect=' );
+$button_reg_link = WPPA_Blocks::render_register_button( array( 'formUrl' => '/signup/', 'afterUrl' => '/welcome/' ) );
+$button_checks['регистрация: адрес формы и переход'] = false !== strpos( $button_reg_link, '/signup/' ) && false !== strpos( $button_reg_link, 'wppa_view=register' ) && false !== strpos( $button_reg_link, 'wppa_redirect=' );
+$button_link_full = WPPA_Blocks::render_login_button( array( 'formUrl' => '/sign-in/?foo=bar&v=two', 'afterUrl' => '/target/?q=one&two=two#section' ) );
+preg_match( '/href="([^"]+)"/', $button_link_full, $button_match );
+$button_decoded_link = html_entity_decode( $button_match[1], ENT_QUOTES, 'UTF-8' );
+parse_str( (string) wp_parse_url( $button_decoded_link, PHP_URL_QUERY ), $button_query );
+$button_checks['URL с параметрами корректно кодируется'] = isset( $button_query['wppa_redirect'], $button_query['wppa_form'] ) && '/target/?q=one&two=two#section' === $button_query['wppa_redirect'] && '/sign-in/?foo=bar&v=two' === $button_query['wppa_form'] && 'two' === $button_query['v'];
+$button_get_backup = $_GET;
+$button_post_backup = $_POST;
+$_GET = $button_query;
+$button_followed_form = WPPA_Template::get( 'login', array( 'redirect' => '/older-setting/' ) );
+$button_checks['переход кнопки доходит до формы и имеет приоритет'] = false !== strpos( $button_followed_form, 'name="redirect_to" value="/target/?q=one&amp;two=two#section"' ) && false === strpos( $button_followed_form, 'value="/older-setting/"' );
+$_GET = array( 'wppa_redirect' => '/welcome/', 'wppa_form' => '/signup/' );
+$button_login_form = WPPA_Template::get( 'login', array() );
+$button_register_form = WPPA_Template::get( 'register', array() );
+$button_checks['вход и регистрация передают безопасный переход'] = false !== strpos( $button_login_form, 'name="redirect_to" value="/welcome/"' ) && false !== strpos( $button_register_form, 'name="redirect_to" value="/welcome/"' );
+$button_checks['формы сохраняют свою страницу для ошибок'] = false !== strpos( $button_login_form, 'name="wppa_form_url" value="/signup/"' ) && false !== strpos( $button_register_form, 'name="wppa_form_url" value="/signup/"' );
+$_GET = array( 'wppa_redirect' => 'https://evil.example/', 'wppa_form' => '//evil.example/' );
+$button_bad_form = WPPA_Template::get( 'register', array() );
+$button_checks['формы отвергают чужой адрес'] = false === strpos( $button_bad_form, 'name="redirect_to"' ) && false === strpos( $button_bad_form, 'name="wppa_form_url"' );
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$_GET = array();
+$_POST = array( 'log' => 'demo', 'pwd' => 'example', 'redirect_to' => '/welcome/', 'wppa_form_url' => '/sign-in/' );
+$button_login_redirect = '';
+try { WPPA_Auth::handle_login(); } catch ( RuntimeException $e ) { $button_login_redirect = $e->getMessage(); }
+$button_checks['после входа реальный редирект'] = false !== strpos( $button_login_redirect, 'redirect:/welcome/' ) && false !== strpos( $button_login_redirect, 'login_success' );
+$_POST['redirect_to'] = 'https://evil.example/';
+$button_login_bad_redirect = '';
+try { WPPA_Auth::handle_login(); } catch ( RuntimeException $e ) { $button_login_bad_redirect = $e->getMessage(); }
+$button_checks['подменённый переход после входа запрещён'] = false === strpos( $button_login_bad_redirect, 'evil.example' ) && false !== strpos( $button_login_bad_redirect, 'login_success' );
+$_POST['redirect_to'] = '/welcome/';
+$GLOBALS['wppa_test']['signon_failure'] = true;
+$button_login_error = '';
+try { WPPA_Auth::handle_login(); } catch ( RuntimeException $e ) { $button_login_error = $e->getMessage(); }
+unset( $GLOBALS['wppa_test']['signon_failure'] );
+$button_checks['ошибка входа сохраняет страницу и переход'] = false !== strpos( $button_login_error, 'redirect:/sign-in/' ) && false !== strpos( $button_login_error, 'wppa_redirect=' ) && false !== strpos( $button_login_error, 'login_failed' );
+$_POST = array( 'email' => 'button-test@example.com', 'password' => 'Str0ng-Passw0rd-2026!', 'password_confirm' => 'Str0ng-Passw0rd-2026!', 'consent' => '1', 'wppa_fields' => array( 'first_name' => 'Пётр' ), 'redirect_to' => '/welcome/', 'wppa_form_url' => '/signup/' );
+$button_reg_redirect = '';
+try { WPPA_Auth::handle_register(); } catch ( RuntimeException $e ) { $button_reg_redirect = $e->getMessage(); }
+$button_checks['после регистрации реальный редирект'] = false !== strpos( $button_reg_redirect, 'redirect:/welcome/' ) && false !== strpos( $button_reg_redirect, 'registration_success' );
+$_POST['consent'] = '';
+$button_reg_error = '';
+try { WPPA_Auth::handle_register(); } catch ( RuntimeException $e ) { $button_reg_error = $e->getMessage(); }
+$button_checks['ошибка регистрации сохраняет страницу и переход'] = false !== strpos( $button_reg_error, 'redirect:/signup/' ) && false !== strpos( $button_reg_error, 'wppa_redirect=' ) && false !== strpos( $button_reg_error, 'no_consent' );
+$_POST = array( 'email' => 'button-test@example.com', 'password' => 'Str0ng-Passw0rd-2026!', 'password_confirm' => 'Str0ng-Passw0rd-2026!', 'consent' => '1', 'wppa_fields' => array( 'first_name' => 'Пётр' ), 'redirect_to' => 'https://evil.example/' );
+$button_bad_redirect = '';
+try { WPPA_Auth::handle_register(); } catch ( RuntimeException $e ) { $button_bad_redirect = $e->getMessage(); }
+$button_checks['подменённый переход после регистрации запрещён'] = false !== strpos( $button_bad_redirect, 'registration_success' ) && false === strpos( $button_bad_redirect, 'evil.example' );
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$_GET = $button_get_backup;
+$_POST = $button_post_backup;
+
 update_option( 'wppa_settings', $button_settings_snapshot );
 update_option( 'users_can_register', $button_registration_snapshot );
 foreach ( $button_checks as $check_name => $ok ) {

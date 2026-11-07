@@ -556,14 +556,14 @@ $sections .= demo_section(
 );
 
 // Три самостоятельных блока-кнопки: гостевые и для авторизованного пользователя.
-$wppa_demo_login_button = WPPA_Blocks::render_login_button();
-$wppa_demo_register_button = WPPA_Blocks::render_register_button();
+$wppa_demo_login_button = WPPA_Blocks::render_login_button( array( 'buttonBgColor' => '#0f766e', 'buttonTextColor' => '#ffffff', 'buttonHoverBgColor' => '#115e59', 'buttonRadius' => 28, 'buttonPaddingX' => 28, 'buttonFontWeight' => '700' ) );
+$wppa_demo_register_button = WPPA_Blocks::render_register_button( array( 'buttonStyle' => 'ghost', 'buttonTextColor' => '#7c3aed', 'buttonBorderColor' => '#7c3aed', 'buttonBorderWidth' => 2, 'buttonRadius' => 6 ) );
 $GLOBALS['wppa_test']['logged_in'] = true;
-$wppa_demo_logout_button = WPPA_Blocks::render_logout_button();
+$wppa_demo_logout_button = WPPA_Blocks::render_logout_button( array( 'buttonBgColor' => '#991b1b', 'buttonTextColor' => '#ffffff', 'buttonFontFamily' => 'serif', 'confirmLogout' => true ) );
 $GLOBALS['wppa_test']['logged_in'] = false;
 $sections .= demo_section(
 	'Блоки-кнопки: вход, регистрация и выход',
-	'Для гостя показываются вход и регистрация; для авторизованного — выход. Здесь все три состояния показаны для примера.',
+	'Цвета, рамка, шрифт и скругление можно настроить отдельно. Для гостя показываются вход и регистрация; для авторизованного — выход.',
 	'<div class="demo-three"><div>' . $wppa_demo_login_button . '</div><div>' . $wppa_demo_register_button . '</div><div>' . $wppa_demo_logout_button . '</div></div>'
 );
 

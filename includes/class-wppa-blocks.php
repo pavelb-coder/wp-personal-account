@@ -141,6 +141,26 @@ class WPPA_Blocks {
 							'buttonFullWidth' => array( 'type' => 'boolean', 'default' => false ),
 							'accentColor' => array( 'type' => 'string', 'default' => '' ),
 							'cornerRadius' => array( 'type' => 'number', 'default' => 0 ),
+							'buttonBgColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonTextColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonBorderColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonHoverBgColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonHoverTextColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonHoverBorderColor' => array( 'type' => 'string', 'default' => '' ),
+							'buttonFontSize' => array( 'type' => 'number', 'default' => 0 ),
+							'buttonFontWeight' => array( 'type' => 'string', 'default' => '' ),
+							'buttonBorderWidth' => array( 'type' => 'number', 'default' => -1 ),
+							'buttonBorderStyle' => array( 'type' => 'string', 'default' => '' ),
+							'buttonPaddingX' => array( 'type' => 'number', 'default' => -1 ),
+							'buttonPaddingY' => array( 'type' => 'number', 'default' => -1 ),
+							'buttonRadius' => array( 'type' => 'number', 'default' => -1 ),
+							'buttonAlignment' => array( 'type' => 'string', 'default' => '' ),
+							'formUrl' => array( 'type' => 'string', 'default' => '' ),
+							'afterUrl' => array( 'type' => 'string', 'default' => '' ),
+							'openNewTab' => array( 'type' => 'boolean', 'default' => false ),
+							'confirmLogout' => array( 'type' => 'boolean', 'default' => false ),
+							'buttonFontFamily' => array( 'type' => 'string', 'default' => '' ),
+							'buttonItalic' => array( 'type' => 'boolean', 'default' => false ),
 						),
 					)
 				)
@@ -197,8 +217,8 @@ class WPPA_Blocks {
 			return '';
 		}
 		self::enqueue_styles();
-		if ( 'register' === $mode && WPPA_Plugin::registration_open() ) {
-			// Таймер должен работать и на страницах, где нет формы кабинета.
+		if ( ( 'register' === $mode && WPPA_Plugin::registration_open() ) || ( 'logout' === $mode && ! empty( $attributes['confirmLogout'] ) ) ) {
+			// Таймер и подтверждение выхода работают и вне кабинета.
 			wp_enqueue_script( 'wppa-account', WPPA_URL . 'assets/js/account.js', array(), WPPA_VERSION, true );
 		}
 		return self::render_button( $mode, (array) $attributes, true );
@@ -287,7 +307,19 @@ class WPPA_Blocks {
 			$text = 'register' === $mode ? __( 'Регистрация', 'wp-personal-account' ) : ( 'logout' === $mode ? __( 'Выйти', 'wp-personal-account' ) : __( 'Войти', 'wp-personal-account' ) );
 		}
 
-		$url = 'register' === $mode ? WPPA_Plugin::register_url() : ( 'logout' === $mode ? wp_logout_url( WPPA_Plugin::account_url() ) : WPPA_Plugin::login_url() );
+		$after = $standalone && ! empty( $attributes['afterUrl'] ) ? WPPA_Plugin::safe_auth_redirect( $attributes['afterUrl'] ) : '';
+		if ( 'logout' === $mode ) {
+			$url = wp_logout_url( $after ? $after : WPPA_Plugin::account_url() );
+		} else {
+			$url = 'register' === $mode ? WPPA_Plugin::register_url() : WPPA_Plugin::login_url();
+			$form_url = $standalone && ! empty( $attributes['formUrl'] ) ? WPPA_Plugin::safe_auth_redirect( $attributes['formUrl'] ) : '';
+			if ( $form_url ) {
+				$url = add_query_arg( array( 'wppa_view' => $mode, 'wppa_form' => rawurlencode( $form_url ) ), $form_url );
+			}
+			if ( $after ) {
+				$url = add_query_arg( 'wppa_redirect', rawurlencode( $after ), $url );
+			}
+		}
 		$style = isset( $attributes['buttonStyle'] ) && 'ghost' === $attributes['buttonStyle'] ? 'ghost' : 'primary';
 		$window = 'register' === $mode ? WPPA_Plugin::registration_window() : array(
 			'state'     => 'open',
@@ -333,12 +365,20 @@ class WPPA_Blocks {
 			return $out . '</div>';
 		}
 
+		$link_options = '';
+		if ( $standalone && ! empty( $attributes['openNewTab'] ) ) {
+			$link_options .= ' target="_blank" rel="noopener noreferrer"';
+		}
+		if ( $standalone && 'logout' === $mode && ! empty( $attributes['confirmLogout'] ) ) {
+			$link_options .= ' data-wppa-confirm-logout';
+		}
 		return sprintf(
-			'<div %1$s><a class="%2$s" href="%3$s">%4$s</a></div>',
+			'<div %1$s><a class="%2$s" href="%3$s"%5$s>%4$s</a></div>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$classes,
 			esc_url( $url ),
-			esc_html( $text )
+			esc_html( $text ),
+			$link_options // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- статические атрибуты.
 		);
 	}
 
@@ -381,6 +421,58 @@ class WPPA_Blocks {
 		$radius = isset( $attributes['cornerRadius'] ) ? (int) $attributes['cornerRadius'] : 0;
 		if ( $radius > 0 ) {
 			$styles[] = ( $standalone ? '--wppa-button-radius:' : '--wppa-radius:' ) . min( 40, $radius ) . 'px';
+		}
+
+		if ( $standalone ) {
+			$colors = array(
+				'buttonBgColor' => 'bg',
+				'buttonTextColor' => 'text',
+				'buttonBorderColor' => 'border',
+				'buttonHoverBgColor' => 'hover-bg',
+				'buttonHoverTextColor' => 'hover-text',
+				'buttonHoverBorderColor' => 'hover-border',
+			);
+			foreach ( $colors as $key => $suffix ) {
+				$color = isset( $attributes[ $key ] ) ? sanitize_hex_color( (string) $attributes[ $key ] ) : '';
+				if ( $color ) {
+					$classes[] = 'has-wppa-button-' . $suffix;
+					$styles[] = '--wppa-button-' . $suffix . ':' . $color;
+				}
+			}
+			$numbers = array(
+				'buttonFontSize' => array( 'font-size', 8, 72 ),
+				'buttonBorderWidth' => array( 'border-width', 0, 20 ),
+				'buttonPaddingX' => array( 'padding-x', 0, 100 ),
+				'buttonPaddingY' => array( 'padding-y', 0, 100 ),
+				'buttonRadius' => array( 'radius', 0, 100 ),
+			);
+			foreach ( $numbers as $key => $definition ) {
+				if ( isset( $attributes[ $key ] ) && is_numeric( $attributes[ $key ] ) && (int) $attributes[ $key ] >= $definition[1] ) {
+					$classes[] = 'has-wppa-button-' . $definition[0];
+					$styles[] = '--wppa-button-' . $definition[0] . ':' . min( $definition[2], (int) $attributes[ $key ] ) . 'px';
+				}
+			}
+			$weight = isset( $attributes['buttonFontWeight'] ) ? (string) $attributes['buttonFontWeight'] : '';
+			if ( in_array( $weight, array( '400', '500', '600', '700', '800', '900' ), true ) ) {
+				$classes[] = 'has-wppa-button-font-weight';
+				$styles[] = '--wppa-button-font-weight:' . $weight;
+			}
+			$family = isset( $attributes['buttonFontFamily'] ) ? (string) $attributes['buttonFontFamily'] : '';
+			if ( in_array( $family, array( 'system', 'sans-serif', 'serif', 'monospace' ), true ) ) {
+				$classes[] = 'wppa-button-font--' . $family;
+			}
+			if ( ! empty( $attributes['buttonItalic'] ) ) {
+				$classes[] = 'wppa-button-font--italic';
+			}
+			$border_style = isset( $attributes['buttonBorderStyle'] ) ? (string) $attributes['buttonBorderStyle'] : '';
+			if ( in_array( $border_style, array( 'solid', 'dashed', 'dotted', 'double', 'none' ), true ) ) {
+				$classes[] = 'has-wppa-button-border-style';
+				$styles[] = '--wppa-button-border-style:' . $border_style;
+			}
+			$alignment = isset( $attributes['buttonAlignment'] ) ? (string) $attributes['buttonAlignment'] : '';
+			if ( in_array( $alignment, array( 'left', 'center', 'right' ), true ) ) {
+				$classes[] = 'wppa-button-align--' . $alignment;
+			}
 		}
 
 		$extra = array( 'class' => implode( ' ', $classes ) );
