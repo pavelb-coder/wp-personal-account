@@ -148,6 +148,7 @@ class WPPA_Plugin {
 		return array(
 			'account_page_id'      => 0,
 			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'messages', 'participants', 'certificates', 'mailing', 'security' ),
+			'chat_email_enabled'      => 0,
 			'participant_min_percent' => 60,
 			'certificate_template'    => 0,
 			'certificate_email'       => 0,

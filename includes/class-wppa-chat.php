@@ -212,7 +212,9 @@ class WPPA_Chat {
 			'meta_input' => array( self::MENTOR_META => (int) $mentor_id ),
 		) ), true );
 		if ( is_wp_error( $id ) || ! $id ) { return 'chat_failed'; }
-		self::$last_mail_failed = ! self::notify_recipients( $mentor_id, $user_id );
+		if ( WPPA_Plugin::setting( 'chat_email_enabled', 0 ) ) {
+			self::$last_mail_failed = ! self::notify_recipients( $mentor_id, $user_id );
+		}
 		return 'chat_sent';
 	}
 

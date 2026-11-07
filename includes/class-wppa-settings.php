@@ -93,6 +93,7 @@ class WPPA_Settings {
 		$tabs                   = isset( $input['enabled_tabs'] ) && is_array( $input['enabled_tabs'] ) ? array_map( 'sanitize_key', $input['enabled_tabs'] ) : array();
 		$out['enabled_tabs']    = array_values( array_intersect( $allowed_tabs, $tabs ) );
 
+		$out['chat_email_enabled'] = empty( $input['chat_email_enabled'] ) ? 0 : 1;
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
 		// 0 отключает ограничение, отрицательные значения не превращаем в положительные.
 		$age = isset( $input['registration_min_age'] ) && is_numeric( $input['registration_min_age'] ) ? (int) $input['registration_min_age'] : 0;
@@ -549,6 +550,20 @@ class WPPA_Settings {
 									<?php echo esc_html( $label ); ?>
 								</label>
 							<?php endforeach; ?>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Сообщения', 'wp-personal-account' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Email-уведомления', 'wp-personal-account' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="wppa_settings[chat_email_enabled]" value="1" <?php checked( 1, (int) $s['chat_email_enabled'] ); ?> />
+								<?php esc_html_e( 'Отправлять уведомления о новых сообщениях наставникам и кураторам', 'wp-personal-account' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'Выключено по умолчанию. После обновления с версии 3.66.9 или более ранней письма прекращаются, пока администратор не включит эту настройку. При включении новые сообщения наставника отправляют уведомления всем кураторам, ответы куратора — наставнику. Текст переписки в письмо не включается. Настройка не влияет на сам чат и счётчики в кабинете; доставка зависит от почты WordPress или SMTP.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 				</table>

@@ -1429,6 +1429,17 @@ if ( ! $bar_sanitize_ok ) {
 	$fail++;
 }
 
+// Глобальный переключатель email чата: по умолчанию выключен, вкл/выкл сохраняются.
+$chat_email_on = WPPA_Settings::sanitize( array( 'chat_email_enabled' => '1' ) );
+$chat_email_off = WPPA_Settings::sanitize( array() );
+$chat_setting_checks = array(
+	'чекбокс показан в настройках' => false !== strpos( $settings_html, 'name="wppa_settings[chat_email_enabled]"' ),
+	'новая установка и обновление: по умолчанию выключено' => 0 === (int) WPPA_Plugin::defaults()['chat_email_enabled'] && 0 === (int) WPPA_Plugin::setting( 'chat_email_enabled' ),
+	'отмеченный чекбокс включается' => 1 === $chat_email_on['chat_email_enabled'],
+	'отсутствующий чекбокс выключается' => 0 === $chat_email_off['chat_email_enabled'],
+);
+foreach ( $chat_setting_checks as $label => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'chat email settings: ' . $label . "\n"; if ( ! $ok ) { ++$fail; } }
+
 // Редактор персональных данных: подписи, разделы, свои поля и разделы.
 $personal_ui_checks = array(
 	'настройки: таблица полей с подписью'    => false !== strpos( $settings_html, 'wppa_settings[fields][first_name][label]' ),

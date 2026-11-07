@@ -242,6 +242,7 @@ function wp_insert_user( $a ) {
 	return 99;
 }
 function wp_mail( $to, $s, $m, $headers = array(), $attachments = array() ) {
+	$GLOBALS['wppa_test']['mail_attempts'] = isset( $GLOBALS['wppa_test']['mail_attempts'] ) ? $GLOBALS['wppa_test']['mail_attempts'] + 1 : 1;
 	if ( ! empty( $GLOBALS['wppa_test']['mail_fail'] ) ) {
 		return false;
 	}

@@ -32,6 +32,18 @@ chat_assert( WPPA_Chat::can_view( 8, 8 ) && WPPA_Chat::can_view( 8, 12 ) && WPPA
 chat_assert( ! WPPA_Chat::can_view( 8, 9 ) && ! WPPA_Chat::can_view( 8, 11 ) && ! WPPA_Chat::can_view( 8, 0 ) && ! WPPA_Chat::can_view( 9000, 12 ), 'посторонние и вымышленные наставники отклоняются' );
 $nonce = wp_create_nonce( 'wppa_chat_ajax' );
 $GLOBALS['wppa_test']['mail'] = array();
+// При обновлении с версии без ключа email отключён, но чат и счётчики работают.
+chat_assert( 0 === (int) WPPA_Plugin::setting( 'chat_email_enabled' ) && ! isset( $GLOBALS['wppa_test']['options']['wppa_settings']['chat_email_enabled'] ), 'email по умолчанию выключен и для старых настроек' );
+$GLOBALS['wppa_test']['mail_attempts'] = 0; $GLOBALS['wppa_test']['mail_fail'] = true;
+$r = chat_ajax( 'ajax_send', 8, 8, $nonce, 'Без писем от наставника' );
+chat_assert( $r->payload['success'] && empty( $r->payload['data']['mail_failed'] ) && 0 === $GLOBALS['wppa_test']['mail_attempts'], 'при выключении сообщение наставника без email и ложной ошибки' );
+$items = WPPA_Chat::messages( 8, 8 )['items']; $temp = end( $items ); wp_delete_post( $temp->ID, true );
+$r = chat_ajax( 'ajax_send', 12, 8, $nonce, 'Без писем от куратора' );
+chat_assert( $r->payload['success'] && empty( $r->payload['data']['mail_failed'] ) && 0 === $GLOBALS['wppa_test']['mail_attempts'] && 1 === WPPA_Chat::mentor_unread( 8 ), 'при выключении ответ куратора и индикатор работают без email' );
+$items = WPPA_Chat::messages( 8, 12 )['items']; $temp = end( $items ); wp_delete_post( $temp->ID, true );
+unset( $GLOBALS['wppa_test']['mail_fail'] );
+$settings = get_option( 'wppa_settings' ); $settings['chat_email_enabled'] = 1; update_option( 'wppa_settings', $settings );
+
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 8, "Вопрос: \\\"цитата\\\" \\ путь\nвторая строка" ), 'сообщение наставника' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 12, 'Ответ первого куратора' ) && 'chat_sent' === WPPA_Chat::send( 8, 13, 'Ответ второго куратора' ), 'каждый куратор отвечает независимо' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 9, 9, 'секрет второго' ), 'отдельный чат другого наставника' );
@@ -138,6 +150,9 @@ $GLOBALS['wppa_test']['mail_fail'] = true;
 $r = chat_ajax( 'ajax_send', 8, 8, $nonce, 'Письмо не ушло' );
 chat_assert( $r->payload['success'] && ! empty( $r->payload['data']['mail_failed'] ) && false !== strpos( $r->payload['data']['html'], 'Письмо не ушло' ), 'при ошибке email сообщение сохранено и автор предупреждён' );
 unset( $GLOBALS['wppa_test']['mail_fail'] );
+$attempts = $GLOBALS['wppa_test']['mail_attempts']; $settings = get_option( 'wppa_settings' ); $settings['chat_email_enabled'] = 0; update_option( 'wppa_settings', $settings );
+$r = chat_ajax( 'ajax_send', 8, 8, $nonce, 'Выключено повторно' );
+chat_assert( $r->payload['success'] && empty( $r->payload['data']['mail_failed'] ) && $attempts === $GLOBALS['wppa_test']['mail_attempts'], 'после отключения новые письма не отправляются' );
 // Один человек может одновременно быть наставником и куратором.
 WPPA_Teams::set_curator( 8, true ); WPPA_Chat::mark_read( 8, 8, WPPA_Chat::messages( 8, 8 )['items'] );
 WPPA_Chat::send( 8, 12, 'Ответ пользователю с двумя ролями' );
