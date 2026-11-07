@@ -75,7 +75,9 @@ class WPPA_Template {
 					$wppa_cert_show = true;
 				} elseif ( WPPA_Teams::is_mentor( $wppa_cert_user ) ) {
 					// Наставнику вкладка нужна, только пока у команды есть сертификаты.
-					$wppa_cert_show = WPPA_Certificates::team_has( (int) WPPA_Teams::team_id( $wppa_cert_user ) );
+					foreach ( WPPA_Teams::mentor_team_ids( $wppa_cert_user ) as $wppa_mentor_team ) {
+						if ( WPPA_Certificates::team_has( $wppa_mentor_team ) ) { $wppa_cert_show = true; break; }
+					}
 				}
 			}
 

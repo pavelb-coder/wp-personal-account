@@ -11,8 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 $wppa_registered = $user->user_registered ? mysql2date( get_option( 'date_format' ), $user->user_registered ) : '—';
 $wppa_pending    = WPPA_Profile::pending_email( $user->ID );
-$wppa_team_id    = WPPA_Teams::team_id( $user->ID );
-$wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
+$wppa_team_ids = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_ids( $user->ID ) : array( WPPA_Teams::team_id( $user->ID ) );
 ?>
 <?php if ( isset( $block_title ) && '' !== $block_title ) : ?>
 	<h3 class="wppa-subtitle"><?php echo esc_html( $block_title ); ?></h3>
@@ -24,6 +23,8 @@ $wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 		<span class="wppa-card__value wppa-card__value--small"><?php echo esc_html( $wppa_registered ); ?></span>
 	</div>
 
+	<?php foreach ( $wppa_team_ids as $wppa_team_id ) : ?>
+	<?php $wppa_team = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null; ?>
 	<?php if ( $wppa_team ) : ?>
 		<div class="wppa-card wppa-card--stat">
 			<span class="wppa-card__label"><?php esc_html_e( 'Команда', 'wp-personal-account' ); ?></span>
@@ -37,10 +38,11 @@ $wppa_team       = $wppa_team_id ? WPPA_Teams::get( $wppa_team_id ) : null;
 				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Прошла во второй этап', 'wp-personal-account' ); ?></span>
 			<?php endif; ?>
 			<?php if ( isset( $tabs['team'] ) ) : ?>
-				<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
+				<a class="wppa-link" href="<?php echo esc_url( WPPA_Teams::context_url( $wppa_team_id, $user->ID ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
 			<?php endif; ?>
 		</div>
 	<?php endif; ?>
+	<?php endforeach; ?>
 </div>
 
 <?php if ( $wppa_pending ) : ?>

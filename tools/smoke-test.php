@@ -1755,7 +1755,8 @@ if ( is_wp_error( $action_team ) ) {
 			'member_id'        => 54,
 		)
 	);
-	$action_checks['куратор не назначает наставника'] = 'team_curator_denied' === $curator_mentor['code'];
+	$action_checks['куратор назначает наставника'] = 'team_mentor_added' === $curator_mentor['code'];
+	WPPA_Teams::dismiss_mentor( $action_team, 54 );
 
 	$curator_remove = $wppa_run_action(
 		52,
@@ -2205,7 +2206,7 @@ $file_checks['команда: наставник в данных']     = isset( 
 $file_checks['команда: email наставника']       = isset( $mentor_row['mentor_email'] ) && false !== strpos( (string) $mentor_row['mentor_email'], '@' );
 $file_checks['команда: имя и фамилия']          = false !== strpos( (string) $mentor_row['mentor'], (string) $mentor_user->first_name );
 $file_checks['куратор: колонка «Наставник»']    = false !== strpos( $curator_team_html, 'Наставник' );
-$file_checks['куратор: колонки «Капитан» нет']  = false === strpos( $curator_team_html, 'Капитан' );
+$file_checks['куратор: колонки «Капитан» нет']  = false === strpos( $curator_team_html, '<th>Капитан</th>' );
 $file_checks['куратор: email в таблице']        = false !== strpos( $curator_team_html, (string) $mentor_row['mentor_email'] );
 $file_checks['куратор: без счётчика участников'] = false === strpos( $curator_team_html, 'Участников' );
 $file_checks['куратор: без счётчика наставников'] = false === strpos( $curator_team_html, 'Наставников' );
@@ -6278,6 +6279,198 @@ update_option( 'wppa_settings', $pat_backup );
 $_POST = array();
 foreach ( $pat_checks as $check_name => $ok ) {
     echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'profile patronymic: ' . $check_name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
+// Один наставник для нескольких команд: роли, изоляция, приглашения и удаление.
+$mt_checks = array();
+$mt_backup_meta = $GLOBALS['wppa_test']['meta'];
+$mt_backup_settings = get_option( 'wppa_settings', array() );
+$mt_queue_backup = get_option( WPPA_Mailing::QUEUE, array() );
+$mt_log_backup = get_option( WPPA_Mailing::LOG, array() );
+$mt_cert_queue_backup = get_option( WPPA_Mailing_Certificates::QUEUE, array() );
+$mt_cert_log_backup = get_option( WPPA_Mailing_Certificates::LOG, array() );
+update_option( 'wppa_settings', array_merge( (array) $mt_backup_settings, array( 'enabled_tabs' => array_keys( WPPA_Template::all_tabs() ) ) ) );
+$mt_backup_users_by = isset( $GLOBALS['wppa_test']['users_by'] ) ? $GLOBALS['wppa_test']['users_by'] : array();
+$mt_backup_users = isset( $GLOBALS['wppa_test']['users'] ) ? $GLOBALS['wppa_test']['users'] : array();
+foreach ( range( 1301, 1308 ) as $mt_id ) { $GLOBALS['wppa_test']['users'][ $mt_id ] = array( 'Участник ' . $mt_id, 'multi' . $mt_id . '@example.com' ); }
+$mt_backup_current = $GLOBALS['wppa_test']['current_user'];
+$mt_backup_get = $_GET;
+$mt_backup_post = $_POST;
+$mt_backup_mail_fail = isset( $GLOBALS['wppa_test']['mail_fail'] ) ? $GLOBALS['wppa_test']['mail_fail'] : false;
+$GLOBALS['wppa_test']['mail_fail'] = false;
+$GLOBALS['wppa_test']['logged_in'] = true;
+$mt_a = WPPA_Teams::create( 'Мульти Альфа', 1301 );
+$mt_b = WPPA_Teams::create( 'Мульти Бета', 1302 );
+$mt_c = WPPA_Teams::create( 'Мульти чужая', 1303 );
+WPPA_Teams::add_member( $mt_a, 1304 );
+WPPA_Teams::make_mentor( $mt_a, 1304 );
+WPPA_Teams::add_member( $mt_b, 1305 );
+$mt_checks['старый наставник видит свою команду'] = array( (int) $mt_a ) === WPPA_Teams::mentor_team_ids( 1304 );
+$mt_checks['добавлен во вторую команду'] = WPPA_Teams::add_mentor( $mt_b, 1304 );
+$mt_checks['обе команды сохранены'] = array( (int) $mt_a, (int) $mt_b ) === WPPA_Teams::mentor_team_ids( 1304 );
+$mt_checks['один наставник в списке каждой команды'] = 1 === WPPA_Teams::mentors_count( $mt_a ) && 1 === WPPA_Teams::mentors_count( $mt_b );
+$mt_checks['наставник не считается участником'] = 1 === WPPA_Teams::members_count( $mt_a ) && 2 === WPPA_Teams::members_count( $mt_b );
+$mt_checks['повторное добавление отклонено'] = ! WPPA_Teams::add_mentor( $mt_b, 1304 );
+$mt_checks['участника нельзя назначить в другую команду'] = ! WPPA_Teams::add_mentor( $mt_c, 1305 );
+$mt_checks['капитана нельзя назначить в другую команду'] = ! WPPA_Teams::add_mentor( $mt_c, 1302 );
+$mt_checks['наставник не создаёт команду'] = is_wp_error( WPPA_Teams::create( 'Запрещено', 1304 ) );
+$mt_checks['наставник не вступает участником'] = is_wp_error( WPPA_Teams::add_member( $mt_c, 1304 ) );
+$mt_checks['управление обеими командами'] = WPPA_Teams::can_manage_team( $mt_a, 1304 ) && WPPA_Teams::can_manage_team( $mt_b, 1304 );
+$mt_checks['чужую команду управлять нельзя'] = ! WPPA_Teams::can_manage_team( $mt_c, 1304 );
+$mt_checks['файлы обеих команд доступны'] = WPPA_Curator_Files::can_view( $mt_a, 1304 ) && WPPA_Curator_Files::can_view( $mt_b, 1304 );
+$mt_checks['чужие файлы закрыты'] = ! WPPA_Curator_Files::can_view( $mt_c, 1304 ) && '' === WPPA_Curator_Files::direction( $mt_c, 1304 );
+$mt_checks['второй этап проверяется по команде'] = ! WPPA_Curator_Files::can_attach( $mt_b, 1304 );
+update_post_meta( $mt_b, WPPA_Teams::META_STAGE2, array( 'time' => time(), 'user' => 12 ) );
+$mt_checks['можно прикрепить после второго этапа'] = WPPA_Curator_Files::can_attach( $mt_b, 1304 ) && ! WPPA_Curator_Files::can_attach( $mt_a, 1304 );
+$mt_checks['вкладка файлов доступна при втором этапе другой команды'] = WPPA_Curator_Files::can_use_tab( 1304 );
+
+update_user_meta( 1301, WPPA_Certificates::META, array( 'cert-8301' => array( 'id' => 8301, 'time' => 1 ) ) );
+update_user_meta( 1305, WPPA_Certificates::META, array( 'cert-8305' => array( 'id' => 8305, 'time' => 1 ) ) );
+$mt_cert_rows = WPPA_Certificates::team_rows( 1304 );
+$mt_cert_teams = array_values( array_unique( array_column( $mt_cert_rows, 'team' ) ) );
+$mt_checks['список сертификатов обеих команд'] = in_array( (int) $mt_a, $mt_cert_teams, true ) && in_array( (int) $mt_b, $mt_cert_teams, true ) && ! in_array( (int) $mt_c, $mt_cert_teams, true );
+$GLOBALS['wppa_test']['current_user'] = 1304;
+$mt_checks['вкладка сертификатов видна при наличии'] = isset( WPPA_Template::tabs()['certificates'] );
+
+$mt_export = WPPA_Export::row( get_userdata( 1304 ) );
+$mt_checks['выгрузка содержит обе команды наставника'] = false !== strpos( $mt_export['team'], 'Мульти Альфа' ) && false !== strpos( $mt_export['team'], 'Мульти Бета' );
+$mt_summary_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['обзор показывает обе команды'] = false !== strpos( $mt_summary_html, 'Мульти Альфа' ) && false !== strpos( $mt_summary_html, 'Мульти Бета' );
+$mt_dashboard = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['обзор показывает второй этап другой команды'] = false !== strpos( $mt_dashboard, 'Мульти Бета' ) && false !== strpos( $mt_dashboard, 'Прошла во второй этап' );
+
+update_post_meta( $mt_a, WPPA_Teams::META_STAGE2, array( 'time' => time(), 'user' => 12 ) );
+$mt_mail_rows = array_values( array_filter( WPPA_Mailing::recipients(), static function ( $row ) { return 1304 === (int) $row['user_id']; } ) );
+$mt_mail_teams = array_column( $mt_mail_rows, 'team_id' );
+$mt_checks['очередь создаёт письмо для каждой команды наставника'] = 2 === count( $mt_mail_rows ) && in_array( $mt_a, $mt_mail_teams ) && in_array( $mt_b, $mt_mail_teams );
+$mt_row_a = array( 'user_id' => 1304, 'team_id' => $mt_a );
+$mt_row_b = array( 'user_id' => 1304, 'team_id' => $mt_b );
+WPPA_Mailing::mark_row_sent( $mt_row_a, time() );
+$mt_checks['отметка отправки отдельно по команде'] = WPPA_Mailing::row_was_sent( $mt_row_a ) && ! WPPA_Mailing::row_was_sent( $mt_row_b );
+WPPA_Mailing::mark_row_sent( $mt_row_b, time() );
+$mt_checks['вторая отметка независима'] = WPPA_Mailing::row_was_sent( $mt_row_b );
+
+$mt_queued_items = array();
+foreach ( $mt_mail_rows as $mt_mail_row ) { $mt_mail_row['status'] = 'pending'; $mt_mail_row['due'] = time(); $mt_queued_items[] = $mt_mail_row; }
+$mt_run_queue = array( 'items' => $mt_queued_items, 'batch' => 5, 'subject' => 'Команда {команда}', 'body' => 'Здравствуйте, {имя}!', 'paused' => '', 'fails' => 0 );
+$mt_mail_before = count( (array) $GLOBALS['wppa_test']['mail'] );
+update_option( WPPA_Mailing::QUEUE, $mt_run_queue );
+$mt_checks['очередь реально отправляет письма для обеих команд'] = 2 === WPPA_Mailing::process_due( true ) && 2 === count( (array) $GLOBALS['wppa_test']['mail'] ) - $mt_mail_before;
+
+$mt_checks['рассылка сертификатов не включает наставников'] = ! in_array( 1304, array_column( WPPA_Mailing_Certificates::recipients(), 'user_id' ), true );
+
+$mt_cert_run = $mt_run_queue;
+$mt_cert_run['items'] = array( $mt_queued_items[0] );
+update_option( WPPA_Mailing_Certificates::QUEUE, $mt_cert_run );
+$mt_mail_before = count( (array) $GLOBALS['wppa_test']['mail'] );
+$mt_checks['письмо о сертификате не уйдёт ставшему наставником'] = 0 === WPPA_Mailing_Certificates::process_due( true ) && $mt_mail_before === count( (array) $GLOBALS['wppa_test']['mail'] );
+
+// Старую отметку связываем с прежней основной командой даже после её удаления.
+WPPA_Teams::add_member( $mt_a, 1308 );
+WPPA_Teams::make_mentor( $mt_a, 1308 );
+update_user_meta( 1308, WPPA_Mailing::META_SENT, 1234 );
+WPPA_Teams::add_mentor( $mt_b, 1308 );
+WPPA_Teams::detach_mentor( $mt_a, 1308 );
+$mt_checks['старая отметка не подавляет письмо новой основной команде'] = ! WPPA_Mailing::row_was_sent( array( 'user_id' => 1308, 'team_id' => $mt_b ) );
+WPPA_Teams::detach_mentor( $mt_b, 1308 );
+
+$mt_checks['сертификаты участников обеих команд доступны'] = WPPA_Certificates::can_view( 1301, 1304 ) && WPPA_Certificates::can_view( 1305, 1304 );
+$GLOBALS['wppa_test']['can_manage'] = false;
+$mt_checks['чужой сертификат закрыт'] = ! WPPA_Certificates::can_view( 1303, 1304 );
+unset( $GLOBALS['wppa_test']['can_manage'] );
+$_GET = array( 'wppa_team' => $mt_b );
+$GLOBALS['wppa_test']['current_user'] = 1304;
+$mt_checks['выбор команды'] = (int) $mt_b === WPPA_Teams::active_team_id( 1304 );
+$mt_team_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['выбор показан в кабинете'] = false !== strpos( $mt_team_html, 'Мои команды' ) && false !== strpos( $mt_team_html, 'Мульти Альфа' ) && false !== strpos( $mt_team_html, 'Мульти Бета' );
+$mt_checks['формы передают выбранную команду'] = false !== strpos( $mt_team_html, 'name="team_id" value="' . (int) $mt_b . '"' );
+$mt_file_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['выбор команды в файлах'] = false !== strpos( $mt_file_html, 'Мульти Бета' ) && false !== strpos( $mt_file_html, 'Мульти Альфа' );
+$_GET = array( 'wppa_team' => $mt_c );
+$mt_checks['чужую команду выбрать нельзя'] = (int) $mt_a === WPPA_Teams::active_team_id( 1304 );
+$_POST = array( 'team_id' => $mt_c );
+$mt_checks['подмена team_id в POST отклонена'] = 0 === WPPA_Teams::request_team_id( 1304 );
+$mt_checks['чужую привязку удалить нельзя'] = ! WPPA_Teams::detach_mentor( $mt_c, 1304 );
+$GLOBALS['wppa_test']['users_by']['email']['multi-mentor@example.com'] = 1304;
+$mt_run = static function ( $id, $post ) {
+    $GLOBALS['wppa_test']['current_user'] = $id;
+    $GLOBALS['wppa_test']['catch_redirect'] = true;
+    $_GET = array(); $_POST = $post;
+    try { WPPA_Teams::handle_request(); } catch ( RuntimeException $e ) {
+        $query = array(); parse_str( (string) parse_url( substr( $e->getMessage(), 9 ), PHP_URL_QUERY ), $query );
+        $GLOBALS['wppa_test']['catch_redirect'] = false;
+        return isset( $query['wppa_notice'] ) ? $query['wppa_notice'] : '';
+    }
+    $GLOBALS['wppa_test']['catch_redirect'] = false; return '';
+};
+$mt_invite = array( 'wppa_team_action' => 'mentor_invite', 'team_id' => $mt_c, 'mentor_email' => 'multi-mentor@example.com' );
+$mt_checks['чужой человек не может пригласить'] = 'team_manager_only' === $mt_run( 1305, $mt_invite );
+$mt_checks['капитан приглашает наставника'] = 'team_invite_sent' === $mt_run( 1303, $mt_invite );
+$mt_checks['до подтверждения нет доступа'] = ! WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+$mt_checks['другой пользователь не может принять'] = 'team_invalid_token' === $mt_run( 1305, array( 'wppa_team_action' => 'mentor_accept', 'invite_team' => $mt_c ) );
+$mt_checks['наставник принимает приглашение'] = 'team_mentor_added' === $mt_run( 1304, array( 'wppa_team_action' => 'mentor_accept', 'invite_team' => $mt_c ) );
+$mt_checks['после принятия доступ к третьей'] = WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+$mt_checks['повторно принять нельзя'] = 'team_invalid_token' === $mt_run( 1304, array( 'wppa_team_action' => 'mentor_accept', 'invite_team' => $mt_c ) );
+WPPA_Teams::set_curator( 1306, true );
+$GLOBALS['wppa_test']['users_by']['email']['another-mentor@example.com'] = 1307;
+$mt_assign = array( 'wppa_team_action' => 'mentor_assign', 'team_id' => $mt_b, 'mentor_email' => 'another-mentor@example.com' );
+$mt_checks['без прав прямое назначение запрещено'] = 'team_manager_only' === $mt_run( 1303, $mt_assign );
+$mt_checks['куратор назначает по email'] = 'team_mentor_added' === $mt_run( 1306, $mt_assign ) && WPPA_Teams::is_mentor_of( $mt_b, 1307 );
+
+$GLOBALS['wppa_test']['users_by']['email']['team-member@example.com'] = 1305;
+$mt_checks['куратор назначает участника его команды'] = 'team_mentor_added' === $mt_run( 1306, array_merge( $mt_assign, array( 'mentor_email' => 'team-member@example.com' ) ) ) && WPPA_Teams::is_mentor_of( $mt_b, 1305 );
+$mt_checks['снятый бывший участник возвращается в свою команду'] = WPPA_Teams::dismiss_mentor( $mt_b, 1305 ) && 'member' === WPPA_Teams::role( 1305 ) && $mt_b === WPPA_Teams::team_id( 1305 );
+$mt_checks['куратор не переводит участника другой команды'] = 'team_mentor_candidate_invalid' === $mt_run( 1306, array_merge( $mt_assign, array( 'team_id' => $mt_c, 'mentor_email' => 'team-member@example.com' ) ) );
+
+
+$_GET = array( 'wppa_team' => $mt_b );
+$GLOBALS['wppa_test']['current_user'] = 1306;
+$mt_curator_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1306 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['куратор видит назначение и снятие наставника'] = false !== strpos( $mt_curator_html, 'value="mentor_assign"' ) && false !== strpos( $mt_curator_html, 'value="dismiss_mentor"' );
+$mt_checks['куратор не исключает участников'] = false === strpos( $mt_curator_html, 'value="remove_member"' );
+
+$GLOBALS['wppa_test']['users_by']['email']['another-mentor@example.com'] = 1307;
+$mt_second_invite = array( 'wppa_team_action' => 'mentor_invite', 'team_id' => $mt_c, 'mentor_email' => 'another-mentor@example.com' );
+$mt_checks['приглашение для другого наставника'] = 'team_invite_sent' === $mt_run( 1303, $mt_second_invite );
+$mt_invites = get_user_meta( 1307, WPPA_Teams::META_MENTOR_INVITES, true );
+$mt_invites[ $mt_c ] = time() - 1;
+update_user_meta( 1307, WPPA_Teams::META_MENTOR_INVITES, $mt_invites );
+$mt_checks['просроченное приглашение отклоняется'] = 'team_invalid_token' === $mt_run( 1307, array( 'wppa_team_action' => 'mentor_accept', 'invite_team' => $mt_c ) );
+$mt_invites[ $mt_c ] = time() + 60;
+update_user_meta( 1307, WPPA_Teams::META_MENTOR_INVITES, $mt_invites );
+$mt_checks['наставник может отклонить приглашение'] = 'team_invite_declined' === $mt_run( 1307, array( 'wppa_team_action' => 'mentor_decline', 'invite_team' => $mt_c ) ) && ! WPPA_Teams::is_mentor_of( $mt_c, 1307 );
+
+
+$mt_checks['выход только из выбранной команды'] = 'left' === WPPA_Teams::leave( 1304, $mt_b ) && ! WPPA_Teams::is_mentor_of( $mt_b, 1304 ) && WPPA_Teams::is_mentor_of( $mt_a, 1304 ) && WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+
+$mt_run_queue['items'] = array_values( array_filter( $mt_queued_items, static function ( $row ) use ( $mt_b ) { return (int) $row['team_id'] === (int) $mt_b; } ) );
+update_option( WPPA_Mailing::QUEUE, $mt_run_queue );
+$mt_mail_before = count( (array) $GLOBALS['wppa_test']['mail'] );
+$mt_checks['после выхода очередь письмо не отправляет'] = 0 === WPPA_Mailing::process_due( true ) && $mt_mail_before === count( (array) $GLOBALS['wppa_test']['mail'] ) && 'skipped' === WPPA_Mailing::run_state()['items'][0]['status'];
+
+WPPA_Teams::dissolve( $mt_a );
+$mt_checks['роспуск первой сохраняет остальные'] = WPPA_Teams::is_mentor_of( $mt_c, 1304 ) && (int) $mt_c === WPPA_Teams::team_id( 1304 );
+$mt_checks['после удаления команды доступ закрыт'] = ! WPPA_Teams::is_mentor_of( $mt_a, 1304 );
+
+$mt_checks['снятие из другой команды не делает участником'] = WPPA_Teams::dismiss_mentor( $mt_c, 1304 ) && 0 === WPPA_Teams::team_id( 1304 ) && '' === WPPA_Teams::role( 1304 );
+$mt_checks['снятие назначенного извне не делает участником'] = WPPA_Teams::dismiss_mentor( $mt_b, 1307 ) && 0 === WPPA_Teams::team_id( 1307 ) && '' === WPPA_Teams::role( 1307 );
+
+WPPA_Teams::dissolve( $mt_b );
+WPPA_Teams::dissolve( $mt_c );
+$GLOBALS['wppa_test']['meta'] = $mt_backup_meta;
+update_option( 'wppa_settings', $mt_backup_settings );
+update_option( WPPA_Mailing::QUEUE, $mt_queue_backup );
+update_option( WPPA_Mailing::LOG, $mt_log_backup );
+update_option( WPPA_Mailing_Certificates::QUEUE, $mt_cert_queue_backup );
+update_option( WPPA_Mailing_Certificates::LOG, $mt_cert_log_backup );
+$GLOBALS['wppa_test']['users_by'] = $mt_backup_users_by;
+$GLOBALS['wppa_test']['users'] = $mt_backup_users;
+$GLOBALS['wppa_test']['current_user'] = $mt_backup_current;
+$GLOBALS['wppa_test']['mail_fail'] = $mt_backup_mail_fail;
+$_GET = $mt_backup_get; $_POST = $mt_backup_post;
+foreach ( $mt_checks as $name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'multi mentor: ' . $name . "\n";
     if ( ! $ok ) { $fail++; }
 }
 

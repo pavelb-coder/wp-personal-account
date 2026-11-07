@@ -936,7 +936,7 @@ class WPPA_Admin {
 			return 'team_mentor_invalid';
 		}
 
-		if ( (int) WPPA_Teams::team_id( $member_id ) !== $team_id ) {
+		if ( (int) WPPA_Teams::team_id( $member_id ) !== $team_id && ! WPPA_Teams::is_mentor_of( $team_id, $member_id ) ) {
 			return 'team_mentor_not_member';
 		}
 

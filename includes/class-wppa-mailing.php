@@ -280,6 +280,8 @@ class WPPA_Mailing {
 				}
 
 				$key = strtolower( $email );
+				// Наставнику разных команд отправляем отдельные письма с названием каждой.
+				if ( WPPA_Teams::is_mentor_of( $team_id, (int) $member->ID ) ) { $key .= ':' . $team_id; }
 
 				if ( isset( $seen[ $key ] ) ) {
 					continue;
@@ -304,6 +306,32 @@ class WPPA_Mailing {
 		return $rows;
 	}
 
+	/** Метка отправки наставнику учитывает конкретную команду. */
+	public static function row_was_sent( $row ) {
+		$user = (int) $row['user_id'];
+		$team = isset( $row['team_id'] ) ? (int) $row['team_id'] : 0;
+		if ( $team && WPPA_Teams::is_mentor_of( $team, $user ) ) {
+			if ( (int) get_user_meta( $user, static::META_SENT . '_team_' . $team, true ) > 0 ) { return true; }
+			// Прежняя метка относится к той команде, для которой она была записана.
+			$legacy_team = (int) get_user_meta( $user, static::META_SENT . '_legacy_team', true );
+			if ( ! $legacy_team ) { $legacy_team = (int) WPPA_Teams::team_id( $user ); }
+			return $legacy_team === $team && (int) get_user_meta( $user, static::META_SENT, true ) > 0;
+		}
+		return (int) get_user_meta( $user, static::META_SENT, true ) > 0;
+	}
+
+	/** Записать метку отдельно для каждой команды наставника. */
+	public static function mark_row_sent( $row, $time ) {
+		$user = (int) $row['user_id'];
+		$team = isset( $row['team_id'] ) ? (int) $row['team_id'] : 0;
+		if ( $team && WPPA_Teams::is_mentor_of( $team, $user ) ) {
+			update_user_meta( $user, static::META_SENT . '_team_' . $team, (int) $time );
+			if ( (int) WPPA_Teams::team_id( $user ) !== $team ) { return; }
+			update_user_meta( $user, static::META_SENT . '_legacy_team', $team );
+		}
+		update_user_meta( $user, static::META_SENT, (int) $time );
+	}
+
 	/**
 	 * Сколько получателей уже получали письмо.
 	 *
@@ -314,7 +342,7 @@ class WPPA_Mailing {
 		$count = 0;
 
 		foreach ( (array) $rows as $row ) {
-			if ( (int) get_user_meta( (int) $row['user_id'], static::META_SENT, true ) > 0 ) {
+			if ( static::row_was_sent( $row ) ) {
 				$count++;
 			}
 		}
@@ -433,7 +461,7 @@ class WPPA_Mailing {
 		$items    = array();
 
 		foreach ( $rows as $row ) {
-			if ( $skip && (int) get_user_meta( (int) $row['user_id'], static::META_SENT, true ) > 0 ) {
+			if ( $skip && static::row_was_sent( $row ) ) {
 				continue;
 			}
 
@@ -734,6 +762,24 @@ class WPPA_Mailing {
 				continue;
 			}
 
+			// Человек, исключённый после постановки в очередь, больше не получит письмо команды.
+			$item_user = (int) $item['user_id'];
+			$item_team = (int) $item['team_id'];
+			if ( (int) WPPA_Teams::team_id( $item_user ) !== $item_team && ! WPPA_Teams::is_mentor_of( $item_team, $item_user ) ) {
+				$run['items'][ $index ]['status'] = 'skipped';
+				$run['items'][ $index ]['error'] = __( 'Пользователь больше не состоит в команде.', 'wp-personal-account' );
+				$skipped++;
+				continue;
+			}
+
+			// Уведомления о сертификатах получают только действующие участники и капитаны.
+			if ( 'certificates' === static::kind() && ! in_array( WPPA_Teams::role( $item_user ), array( 'owner', 'member' ), true ) ) {
+				$run['items'][ $index ]['status'] = 'skipped';
+				$run['items'][ $index ]['error'] = __( 'Получатель больше не является участником команды.', 'wp-personal-account' );
+				$skipped++;
+				continue;
+			}
+
 			if ( static::send( $item, $run ) ) {
 				$run['items'][ $index ]['status']  = 'sent';
 				$run['items'][ $index ]['sent_at'] = $now;
@@ -741,7 +787,7 @@ class WPPA_Mailing {
 				$fails                             = 0;
 				$sent++;
 
-				update_user_meta( (int) $item['user_id'], static::META_SENT, $now );
+				static::mark_row_sent( $item, $now );
 			} else {
 				$run['items'][ $index ]['status'] = 'failed';
 				$run['items'][ $index ]['error']  = __( 'wp_mail() вернул ошибку', 'wp-personal-account' );
@@ -782,7 +828,7 @@ class WPPA_Mailing {
 			static::log(
 				sprintf(
 					/* translators: %d: число писем */
-					__( 'Пропущено писем без отправки (отметка второго этапа снята): %d.', 'wp-personal-account' ),
+					__( 'Пропущено писем без отправки: %d.', 'wp-personal-account' ),
 					(int) $skipped
 				)
 			);

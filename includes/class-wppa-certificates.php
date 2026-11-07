@@ -135,6 +135,9 @@ class WPPA_Certificates {
 		if ( WPPA_Teams::is_curator( $viewer_id ) ) {
 			return true;
 		}
+		if ( WPPA_Teams::is_mentor_of( WPPA_Teams::team_id( $user_id ), $viewer_id ) ) {
+			return true;
+		}
 
 		return function_exists( 'current_user_can' ) && current_user_can( 'manage_options' );
 	}
@@ -237,7 +240,7 @@ class WPPA_Certificates {
 			$single = (int) WPPA_Teams::viewing_team_id( $viewer_id );
 			$teams  = $single ? array( $single ) : array_map( 'intval', array_column( WPPA_Teams::all_teams(), 'id' ) );
 		} elseif ( WPPA_Teams::is_mentor( $viewer_id ) ) {
-			$teams = array( (int) WPPA_Teams::team_id( $viewer_id ) );
+			$teams = WPPA_Teams::mentor_team_ids( $viewer_id );
 		}
 
 		$rows = array();

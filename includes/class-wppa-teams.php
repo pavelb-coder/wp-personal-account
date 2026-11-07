@@ -32,6 +32,11 @@ class WPPA_Teams {
 	 */
 	const META_ROLE = '_wppa_team_role';
 
+	const META_MENTOR_TEAMS = '_wppa_mentor_teams';
+	const META_MENTOR_ORIGIN = '_wppa_mentor_origin_team';
+	const META_MENTOR_IDS = '_wppa_mentor_ids';
+	const META_MENTOR_INVITES = '_wppa_mentor_invites';
+
 	/**
 	 * Допустимые роли в команде.
 	 */
@@ -89,6 +94,8 @@ class WPPA_Teams {
 	 */
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+		// Связи наставника нужны до удаления метаданных пользователя.
+		add_action( 'delete_user', array( __CLASS__, 'on_user_deleted' ) );
 		add_action( 'deleted_user', array( __CLASS__, 'on_user_deleted' ) );
 	}
 
@@ -364,6 +371,115 @@ class WPPA_Teams {
 		return 0;
 	}
 
+	/** Все команды наставника, включая команду из старой модели. */
+	public static function mentor_team_ids( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( 'mentor' !== self::role( $user_id ) ) {
+			return array();
+		}
+		$primary = self::team_id( $user_id );
+		$stored = get_user_meta( $user_id, self::META_MENTOR_TEAMS, true );
+		$stored = is_array( $stored ) ? $stored : array();
+		$valid = array();
+		foreach ( array_unique( array_map( 'intval', array_merge( array( $primary ), $stored ) ) ) as $id ) {
+			if ( ! $id || self::CPT !== get_post_type( $id ) ) {
+				continue;
+			}
+			$mentors = get_post_meta( $id, self::META_MENTOR_IDS, true );
+			if ( $id === $primary || ( is_array( $mentors ) && in_array( $user_id, array_map( 'intval', $mentors ), true ) ) ) {
+				$valid[] = $id;
+			}
+		}
+		return $valid;
+	}
+
+	/** Наставник именно выбранной команды. */
+	public static function is_mentor_of( $team_id, $user_id ) {
+		return in_array( (int) $team_id, self::mentor_team_ids( (int) $user_id ), true );
+	}
+
+	/** Выбранная наставником команда: чужие номера игнорируются. */
+	public static function active_team_id( $user_id ) {
+		$teams = self::mentor_team_ids( $user_id );
+		if ( ! $teams ) {
+			return self::team_id( $user_id );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- только просмотр.
+		$requested = isset( $_GET['wppa_team'] ) ? absint( wp_unslash( $_GET['wppa_team'] ) ) : 0;
+		return in_array( $requested, $teams, true ) ? $requested : (int) $teams[0];
+	}
+
+	/** Добавление наставника без допуска к участию в других командах. */
+	public static function add_mentor( $team_id, $user_id ) {
+		$team_id = (int) $team_id;
+		$user_id = (int) $user_id;
+		if ( ! $user_id || self::CPT !== get_post_type( $team_id ) || ! get_userdata( $user_id ) ) {
+			return false;
+		}
+		$primary = self::team_id( $user_id );
+		$role = self::role( $user_id );
+		if ( $primary && 'mentor' !== $role ) {
+			// Участника этой команды можно назначить наставником, но не переводить из другой.
+			return $primary === $team_id && 'member' === $role && self::make_mentor( $team_id, $user_id );
+		}
+		$teams = self::mentor_team_ids( $user_id );
+		// Отдельно помним, был ли наставник участником до назначения.
+		if ( '' === (string) get_user_meta( $user_id, self::META_MENTOR_ORIGIN, true ) ) {
+			update_user_meta( $user_id, self::META_MENTOR_ORIGIN, (string) ( $primary ? $primary : 0 ) );
+		}
+		// Привязываем старые метки рассылок к прежней основной команде, пока она не сменилась.
+		if ( ! $primary || 'mentor' === $role ) {
+			foreach ( array( 'WPPA_Mailing', 'WPPA_Mailing_Files' ) as $mailing_class ) {
+				if ( class_exists( $mailing_class ) ) {
+					$key = constant( $mailing_class . '::META_SENT' );
+					if ( (int) get_user_meta( $user_id, $key, true ) > 0 && ! get_user_meta( $user_id, $key . '_legacy_team', true ) ) {
+						update_user_meta( $user_id, $key . '_legacy_team', $primary ? $primary : -1 );
+					}
+				}
+			}
+		}
+		if ( in_array( $team_id, $teams, true ) ) {
+			return false;
+		}
+		$team_mentors = get_post_meta( $team_id, self::META_MENTOR_IDS, true );
+		$team_mentors = is_array( $team_mentors ) ? array_map( 'intval', $team_mentors ) : array();
+		$team_mentors[] = $user_id;
+		update_post_meta( $team_id, self::META_MENTOR_IDS, array_values( array_unique( $team_mentors ) ) );
+		if ( ! $primary ) {
+			update_user_meta( $user_id, self::META_TEAM, $team_id );
+			update_user_meta( $user_id, self::META_ROLE, 'mentor' );
+		}
+		$teams[] = $team_id;
+		update_user_meta( $user_id, self::META_MENTOR_TEAMS, array_values( array_unique( $teams ) ) );
+		return true;
+	}
+
+	/** Открепить наставника только от указанной команды. */
+	public static function detach_mentor( $team_id, $user_id ) {
+		$team_id = (int) $team_id;
+		$user_id = (int) $user_id;
+		$teams = self::mentor_team_ids( $user_id );
+		if ( ! in_array( $team_id, $teams, true ) ) {
+			return false;
+		}
+		$teams = array_values( array_diff( $teams, array( $team_id ) ) );
+		$ids = get_post_meta( $team_id, self::META_MENTOR_IDS, true );
+		$ids = is_array( $ids ) ? array_values( array_diff( array_map( 'intval', $ids ), array( $user_id ) ) ) : array();
+		update_post_meta( $team_id, self::META_MENTOR_IDS, $ids );
+		if ( $teams ) {
+			update_user_meta( $user_id, self::META_MENTOR_TEAMS, $teams );
+			if ( self::team_id( $user_id ) === $team_id ) {
+				update_user_meta( $user_id, self::META_TEAM, (int) $teams[0] );
+			}
+		} else {
+			delete_user_meta( $user_id, self::META_MENTOR_TEAMS );
+			delete_user_meta( $user_id, self::META_MENTOR_ORIGIN );
+			delete_user_meta( $user_id, self::META_TEAM );
+			delete_user_meta( $user_id, self::META_ROLE );
+		}
+		return true;
+	}
+
 	/**
 	 * Роль пользователя в команде.
 	 *
@@ -589,7 +705,7 @@ class WPPA_Teams {
 			return false;
 		}
 
-		return (int) self::team_id( $user_id ) === $team_id && self::is_manager( $user_id );
+		return self::is_captain_of( $team_id, $user_id ) || self::is_mentor_of( $team_id, $user_id );
 	}
 
 	/**
@@ -642,6 +758,10 @@ class WPPA_Teams {
 			}
 		}
 
+		if ( self::is_mentor( $user_id ) ) {
+			$posted = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+			return $posted ? ( self::is_mentor_of( $posted, $user_id ) ? $posted : 0 ) : self::active_team_id( $user_id );
+		}
 		return (int) self::team_id( $user_id );
 	}
 
@@ -677,6 +797,21 @@ class WPPA_Teams {
 			return false;
 		}
 
+		if ( 'member' === $role && self::is_mentor_of( $team_id, $user_id ) ) {
+			if ( count( self::mentor_team_ids( $user_id ) ) > 1 ) {
+				return self::detach_mentor( $team_id, $user_id );
+			}
+			$origin = get_user_meta( $user_id, self::META_MENTOR_ORIGIN, true );
+			// Старые наставники раньше назначались только из участников своей команды.
+			$origin = '' === (string) $origin ? (int) $team_id : (int) $origin;
+			self::detach_mentor( $team_id, $user_id );
+			if ( $origin !== (int) $team_id ) {
+				return true;
+			}
+			update_user_meta( (int) $user_id, self::META_TEAM, (int) $team_id );
+			update_user_meta( (int) $user_id, self::META_ROLE, 'member' );
+			return true;
+		}
 		if ( (int) self::team_id( $user_id ) !== (int) $team_id ) {
 			return false;
 		}
@@ -686,6 +821,9 @@ class WPPA_Teams {
 			return false;
 		}
 
+		if ( 'mentor' === $role && 'member' === self::role( $user_id ) ) {
+			update_user_meta( (int) $user_id, self::META_MENTOR_ORIGIN, (string) (int) $team_id );
+		}
 		update_user_meta( (int) $user_id, self::META_ROLE, 'mentor' === $role ? 'mentor' : 'member' );
 
 		return true;
@@ -757,7 +895,20 @@ class WPPA_Teams {
 			)
 		);
 
-		return is_array( $users ) ? $users : array();
+		$users = is_array( $users ) ? $users : array();
+		$known = array_map( static function ( $user ) { return (int) $user->ID; }, $users );
+		$extra = get_post_meta( (int) $team_id, self::META_MENTOR_IDS, true );
+		foreach ( is_array( $extra ) ? $extra : array() as $user_id ) {
+			$user_id = (int) $user_id;
+			if ( ! in_array( $user_id, $known, true ) && self::is_mentor_of( $team_id, $user_id ) ) {
+				$user = get_userdata( $user_id );
+				if ( $user ) {
+					$users[] = $user;
+					$known[] = $user_id;
+				}
+			}
+		}
+		return $users;
 	}
 
 	/**
@@ -978,8 +1129,14 @@ class WPPA_Teams {
 	 * @param int $user_id ID пользователя.
 	 * @return string dissolved|left
 	 */
-	public static function leave( $user_id ) {
-		$team_id = self::team_id( $user_id );
+	public static function leave( $user_id, $requested_team = 0 ) {
+		$team_id = $requested_team ? (int) $requested_team : self::team_id( $user_id );
+		if ( self::is_mentor( $user_id ) ) {
+			return self::detach_mentor( $team_id, $user_id ) ? 'left' : 'denied';
+		}
+		if ( $team_id !== self::team_id( $user_id ) ) {
+			return 'denied';
+		}
 
 		if ( ! $team_id ) {
 			return 'left';
@@ -1004,6 +1161,9 @@ class WPPA_Teams {
 	 * @return bool
 	 */
 	public static function remove_member( $team_id, $user_id ) {
+		if ( self::is_mentor_of( $team_id, $user_id ) ) {
+			return self::detach_mentor( $team_id, $user_id );
+		}
 		if ( (int) self::team_id( $user_id ) !== (int) $team_id || self::is_owner( $user_id ) ) {
 			return false;
 		}
@@ -1027,6 +1187,10 @@ class WPPA_Teams {
 		}
 
 		foreach ( self::members( $team_id ) as $member ) {
+			if ( self::is_mentor_of( $team_id, $member->ID ) ) {
+				self::detach_mentor( $team_id, $member->ID );
+				continue;
+			}
 			delete_user_meta( $member->ID, self::META_TEAM );
 			delete_user_meta( $member->ID, self::META_ROLE );
 		}
@@ -1045,6 +1209,10 @@ class WPPA_Teams {
 
 		if ( $team_id && self::is_owner( $user_id ) ) {
 			self::dissolve( $team_id );
+		} elseif ( self::is_mentor( $user_id ) ) {
+			foreach ( self::mentor_team_ids( $user_id ) as $mentor_team ) {
+				self::detach_mentor( $mentor_team, $user_id );
+			}
 		}
 	}
 
@@ -1140,7 +1308,7 @@ class WPPA_Teams {
 		$team_id = (int) $team_id;
 		$user_id = $user_id ? (int) $user_id : get_current_user_id();
 
-		return $team_id && $user_id && (int) self::team_id( $user_id ) === $team_id && self::is_manager( $user_id );
+		return $team_id && $user_id && ( self::is_captain_of( $team_id, $user_id ) || self::is_mentor_of( $team_id, $user_id ) );
 	}
 
 	/**
@@ -1168,7 +1336,7 @@ class WPPA_Teams {
 		$url     = WPPA_Plugin::tab_url( 'team' );
 		$user_id = $user_id ? (int) $user_id : get_current_user_id();
 
-		if ( $team_id && self::is_curator( $user_id ) ) {
+		if ( $team_id && ( self::is_curator( $user_id ) || self::is_mentor_of( $team_id, $user_id ) ) ) {
 			$url = add_query_arg( 'wppa_team', (int) $team_id, $url );
 		}
 
@@ -1264,6 +1432,51 @@ class WPPA_Teams {
 
 				WPPA_Notices::redirect( $sent ? 'team_invite_sent' : 'save_failed', $back );
 
+			case 'mentor_invite':
+			case 'mentor_assign':
+				$team_id = self::request_team_id( $user_id );
+				$back = self::context_url( $team_id, $user_id );
+				$allowed = 'mentor_assign' === $sub ? self::is_curator( $user_id ) : self::is_captain_of( $team_id, $user_id );
+				if ( ! $team_id || ! $allowed ) {
+					WPPA_Notices::redirect( 'team_manager_only', $back );
+				}
+				$email = isset( $_POST['mentor_email'] ) ? sanitize_email( wp_unslash( $_POST['mentor_email'] ) ) : '';
+				$candidate = is_email( $email ) ? get_user_by( 'email', $email ) : false;
+				$candidate_team = $candidate ? self::team_id( $candidate->ID ) : 0;
+				$candidate_is_member_here = $candidate && $candidate_team === $team_id && 'member' === self::role( $candidate->ID );
+				if ( ! $candidate || ( $candidate_team && ! self::is_mentor( $candidate->ID ) && ! $candidate_is_member_here ) || self::is_mentor_of( $team_id, $candidate->ID ) ) {
+					WPPA_Notices::redirect( 'team_mentor_candidate_invalid', $back );
+				}
+				if ( 'mentor_assign' === $sub ) {
+					WPPA_Notices::redirect( self::add_mentor( $team_id, $candidate->ID ) ? 'team_mentor_added' : 'team_mentor_candidate_invalid', $back );
+				}
+				$invites = get_user_meta( $candidate->ID, self::META_MENTOR_INVITES, true );
+				$invites = is_array( $invites ) ? $invites : array();
+				$invites[ $team_id ] = time() + self::TOKEN_TTL;
+				update_user_meta( $candidate->ID, self::META_MENTOR_INVITES, $invites );
+				$body = sprintf( __( 'Вас пригласили стать наставником команды «%1$s». Войдите в кабинет и подтвердите приглашение на вкладке «Команда»: %2$s. Приглашение действует 7 дней.', 'wp-personal-account' ), get_the_title( $team_id ), WPPA_Plugin::tab_url( 'team' ) );
+				if ( ! wp_mail( $email, __( 'Приглашение наставнику', 'wp-personal-account' ), $body ) ) {
+					unset( $invites[ $team_id ] );
+					update_user_meta( $candidate->ID, self::META_MENTOR_INVITES, $invites );
+					WPPA_Notices::redirect( 'save_failed', $back );
+				}
+				WPPA_Notices::redirect( 'team_invite_sent', $back );
+
+			case 'mentor_accept':
+			case 'mentor_decline':
+				$invited_team = isset( $_POST['invite_team'] ) ? absint( wp_unslash( $_POST['invite_team'] ) ) : 0;
+				$invites = get_user_meta( $user_id, self::META_MENTOR_INVITES, true );
+				$invites = is_array( $invites ) ? $invites : array();
+				if ( ! $invited_team || empty( $invites[ $invited_team ] ) || (int) $invites[ $invited_team ] <= time() || self::CPT !== get_post_type( $invited_team ) ) {
+					WPPA_Notices::redirect( 'team_invalid_token', $tab_url );
+				}
+				if ( 'mentor_accept' === $sub && ! self::add_mentor( $invited_team, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_mentor_candidate_invalid', $tab_url );
+				}
+				unset( $invites[ $invited_team ] );
+				update_user_meta( $user_id, self::META_MENTOR_INVITES, $invites );
+				WPPA_Notices::redirect( 'mentor_accept' === $sub ? 'team_mentor_added' : 'team_invite_declined', $tab_url );
+
 			case 'remove_member':
 				$team_id   = self::request_team_id( $user_id );
 				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
@@ -1291,33 +1504,29 @@ class WPPA_Teams {
 					WPPA_Notices::redirect( 'team_mentor_invalid', $tab_url );
 				}
 
-				WPPA_Notices::redirect( 'team_member_removed', $tab_url );
+				WPPA_Notices::redirect( 'team_member_removed', self::context_url( $team_id, $user_id ) );
 
 			case 'make_mentor':
 			case 'dismiss_mentor':
 				$team_id   = self::request_team_id( $user_id );
 				$member_id = isset( $_POST['member_id'] ) ? absint( wp_unslash( $_POST['member_id'] ) ) : 0;
 
-				// Наставников назначает капитан этой команды. Куратор состав не меняет.
-				if ( $team_id && self::is_curator( $user_id ) && ! self::is_captain_of( $team_id, $user_id ) ) {
-					WPPA_Notices::redirect( 'team_curator_denied', self::context_url( $team_id, $user_id ) );
-				}
-
-				if ( ! $team_id || ! self::is_captain_of( $team_id, $user_id ) ) {
+				// Капитан или куратор может назначать и снимать наставников.
+				if ( ! $team_id || ( ! self::is_captain_of( $team_id, $user_id ) && ! self::is_curator( $user_id ) ) ) {
 					WPPA_Notices::redirect( 'team_owner_only', $tab_url );
 				}
 
-				if ( (int) self::team_id( $member_id ) !== (int) $team_id || 'owner' === self::role( $member_id ) ) {
+				if ( ( (int) self::team_id( $member_id ) !== (int) $team_id && ! self::is_mentor_of( $team_id, $member_id ) ) || 'owner' === self::role( $member_id ) ) {
 					WPPA_Notices::redirect( 'team_mentor_invalid', $tab_url );
 				}
 
 				if ( 'make_mentor' === $sub ) {
 					self::make_mentor( $team_id, $member_id );
-					WPPA_Notices::redirect( 'team_mentor_added', $tab_url );
+					WPPA_Notices::redirect( 'team_mentor_added', self::context_url( $team_id, $user_id ) );
 				}
 
 				self::dismiss_mentor( $team_id, $member_id );
-				WPPA_Notices::redirect( 'team_mentor_removed', $tab_url );
+				WPPA_Notices::redirect( 'team_mentor_removed', self::context_url( $team_id, $user_id ) );
 
 			case 'stage2_add':
 			case 'stage2_remove':
@@ -1369,8 +1578,12 @@ class WPPA_Teams {
 				break;
 
 			case 'leave':
-				$outcome = self::leave( $user_id );
-				WPPA_Notices::redirect( 'dissolved' === $outcome ? 'team_dissolved' : 'team_left', $tab_url );
+				$leaving_team = self::request_team_id( $user_id );
+				if ( ! $leaving_team ) {
+					WPPA_Notices::redirect( 'team_manager_only', $tab_url );
+				}
+				$outcome = self::leave( $user_id, $leaving_team );
+				WPPA_Notices::redirect( 'denied' === $outcome ? 'team_manager_only' : ( 'dissolved' === $outcome ? 'team_dissolved' : 'team_left' ), $tab_url );
 
 			default:
 				WPPA_Notices::redirect( '', $tab_url );

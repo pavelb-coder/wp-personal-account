@@ -1687,6 +1687,12 @@ $mentor_checks['чужой участник']          = 'team_mentor_not_member
 $mentor_checks['несуществующая команда']  = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'set_team_mentor', 999999, 9002 );
 $mentor_checks['пустые параметры']        = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'set_team_mentor', 0, 0 );
 $mentor_checks['неизвестное действие']    = 'team_mentor_invalid' === WPPA_Admin::mentor_action( 'dissolve_team', 902, 9002 );
+WPPA_Teams::make_mentor( 902, 9002 );
+$mentor_checks['дополнительная команда: назначение'] = WPPA_Teams::add_mentor( 903, 9002 );
+$mentor_checks['дополнительная команда: снять через админку'] = 'team_mentor_removed' === WPPA_Admin::mentor_action( 'remove_team_mentor', 903, 9002 );
+$mentor_checks['после снятия первая команда остаётся'] = WPPA_Teams::is_mentor_of( 902, 9002 ) && ! WPPA_Teams::is_mentor_of( 903, 9002 );
+WPPA_Teams::dismiss_mentor( 902, 9002 );
+
 
 // Ни один отказ не должен менять роль.
 $mentor_checks['отказы роль не меняют']   = 'member' === WPPA_Teams::role( 9003 ) && 'owner' === WPPA_Teams::role( 9001 );

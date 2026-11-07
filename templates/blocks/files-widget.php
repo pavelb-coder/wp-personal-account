@@ -14,7 +14,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $wppa_is_curator = WPPA_Teams::is_curator( $user->ID );
-$wppa_my_team_id = (int) WPPA_Teams::team_id( $user->ID );
+$wppa_my_team_id = (int) WPPA_Teams::active_team_id( $user->ID );
 
 // Куратор открывает файлы любой команды: ?wppa_tab=files&wppa_team=ID
 $wppa_curator_team_id = $wppa_is_curator ? WPPA_Teams::viewing_team_id( $user->ID ) : 0;
@@ -54,6 +54,15 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 <h2 class="wppa-title">
 	<?php echo isset( $block_title ) && '' !== $block_title ? esc_html( $block_title ) : esc_html__( 'Файлы', 'wp-personal-account' ); ?>
 </h2>
+
+<?php $wppa_mentor_teams = WPPA_Teams::mentor_team_ids( $user->ID ); ?>
+<?php if ( count( $wppa_mentor_teams ) > 1 && ! $wppa_is_curator ) : ?>
+	<section class="wppa-card"><h3 class="wppa-subtitle"><?php esc_html_e( 'Файлы команд', 'wp-personal-account' ); ?></h3>
+		<?php foreach ( $wppa_mentor_teams as $wppa_choice ) : ?>
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', $wppa_choice, WPPA_Plugin::tab_url( 'files' ) ) ); ?>"><?php echo esc_html( get_the_title( $wppa_choice ) ); ?><?php echo (int) $wppa_choice === $wppa_team_id ? ' ✓' : ''; ?></a>
+		<?php endforeach; ?>
+	</section>
+<?php endif; ?>
 
 <?php if ( ! $wppa_team_id ) : ?>
 
@@ -217,6 +226,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 												<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 												<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
+				<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 												<input type="hidden" name="curator_file_action" value="remove" />
 												<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
 												<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Удалить файл?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Удалить', 'wp-personal-account' ); ?></button>
@@ -276,6 +286,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 											<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 											<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
+				<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 											<input type="hidden" name="curator_file_action" value="remove" />
 											<input type="hidden" name="file_key" value="<?php echo esc_attr( $wppa_file['key'] ); ?>" />
 											<button type="submit" class="wppa-link-button" data-wppa-confirm="<?php esc_attr_e( 'Убрать файл из кабинета?', 'wp-personal-account' ); ?>"><?php esc_html_e( 'Убрать', 'wp-personal-account' ); ?></button>
@@ -303,6 +314,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" />
 				<input type="hidden" name="wppa_action" value="curator_file" />
 						<input type="hidden" name="wppa_back" value="files" />
+				<input type="hidden" name="wppa_return" value="<?php echo esc_attr( WPPA_Plugin::current_url() ); ?>" />
 				<input type="hidden" name="curator_file_action" value="upload" />
 
 				<p class="wppa-field">

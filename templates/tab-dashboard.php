@@ -10,10 +10,11 @@
 defined( 'ABSPATH' ) || exit;
 
 // Отметка «команда прошла во второй этап» — видна всем участникам команды и наставнику.
-$wppa_dash_team_id = WPPA_Teams::team_id( $user->ID );
-$wppa_dash_stage2  = $wppa_dash_team_id ? WPPA_Teams::stage2( $wppa_dash_team_id ) : array();
-$wppa_dash_team    = $wppa_dash_stage2 ? WPPA_Teams::get( $wppa_dash_team_id ) : null;
+$wppa_dash_teams = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_ids( $user->ID ) : array( WPPA_Teams::team_id( $user->ID ) );
 ?>
+<?php foreach ( $wppa_dash_teams as $wppa_dash_team_id ) : ?>
+<?php $wppa_dash_stage2 = $wppa_dash_team_id ? WPPA_Teams::stage2( $wppa_dash_team_id ) : array(); ?>
+<?php $wppa_dash_team = $wppa_dash_stage2 ? WPPA_Teams::get( $wppa_dash_team_id ) : null; ?>
 <?php if ( array() !== $wppa_dash_stage2 ) : ?>
 	<div class="wppa-card wppa-stage2 wppa-stage2--notice" role="status">
 		<div class="wppa-stage2__head">
@@ -36,10 +37,11 @@ $wppa_dash_team    = $wppa_dash_stage2 ? WPPA_Teams::get( $wppa_dash_team_id ) :
 			?>
 		</p>
 		<?php if ( isset( $tabs['team'] ) ) : ?>
-			<a class="wppa-link" href="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>"><?php esc_html_e( 'Перейти к команде', 'wp-personal-account' ); ?></a>
+			<a class="wppa-link" href="<?php echo esc_url( WPPA_Teams::context_url( $wppa_dash_team_id, $user->ID ) ); ?>"><?php esc_html_e( 'Перейти к команде', 'wp-personal-account' ); ?></a>
 		<?php endif; ?>
 	</div>
 <?php endif; ?>
+<?php endforeach; ?>
 <?php
 
 // Куратору — состояние рассылок и кнопки отмены: второй этап, файлы и сертификаты.

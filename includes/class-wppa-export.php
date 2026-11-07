@@ -142,6 +142,29 @@ class WPPA_Export {
 			'email_pending'    => (string) WPPA_Profile::pending_email( $user->ID ),
 		);
 
+		// В одной строке наставника показываем все команды, не теряя остальные.
+		$mentor_teams = WPPA_Teams::mentor_team_ids( $user->ID );
+		if ( count( $mentor_teams ) > 1 ) {
+			$names = array(); $owners = array(); $mentor_names = array(); $counts = array(); $complete = array();
+			foreach ( $mentor_teams as $mentor_team_id ) {
+				$one = WPPA_Teams::get( $mentor_team_id );
+				if ( ! $one ) { continue; }
+				$names[] = (string) $one['name'];
+				$one_owner = get_userdata( (int) $one['owner'] );
+				$owners[] = $one_owner ? $one_owner->display_name : '';
+				$one_mentors = array();
+				foreach ( WPPA_Teams::mentors( $mentor_team_id ) as $one_mentor ) { $one_mentors[] = $one_mentor->display_name; }
+				$mentor_names[] = implode( ', ', $one_mentors );
+				$counts[] = (string) WPPA_Teams::members_count( $mentor_team_id );
+				$complete[] = WPPA_Teams::is_complete( $mentor_team_id ) ? __( 'да', 'wp-personal-account' ) : __( 'нет', 'wp-personal-account' );
+			}
+			$row['team'] = implode( '; ', $names );
+			$row['team_owner'] = implode( '; ', $owners );
+			$row['team_mentors'] = implode( '; ', $mentor_names );
+			$row['team_members'] = implode( '; ', $counts );
+			$row['team_complete'] = implode( '; ', $complete );
+		}
+
 		if ( WPPA_Olympiad::is_active() ) {
 			$scores = isset( $context['olympiad'][ (int) $user->ID ] )
 				? (array) $context['olympiad'][ (int) $user->ID ]
@@ -229,8 +252,11 @@ class WPPA_Export {
 				continue;
 			}
 
-			if ( 'complete' === $scope && $team_id && WPPA_Teams::is_complete( $team_id ) ) {
-				$out[] = $user;
+			if ( 'complete' === $scope && $team_id ) {
+				$teams = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_ids( $user->ID ) : array( $team_id );
+				foreach ( $teams as $one_team ) {
+					if ( WPPA_Teams::is_complete( $one_team ) ) { $out[] = $user; break; }
+				}
 			}
 		}
 

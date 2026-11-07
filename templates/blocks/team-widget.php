@@ -9,7 +9,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$wppa_my_team_id = (int) WPPA_Teams::team_id( $user->ID );
+$wppa_my_team_id = (int) WPPA_Teams::active_team_id( $user->ID );
 $wppa_is_curator = WPPA_Teams::is_curator( $user->ID );
 $wppa_team_id    = $wppa_my_team_id;
 
@@ -44,7 +44,7 @@ $wppa_stage2     = $wppa_team_id ? WPPA_Teams::stage2( $wppa_team_id ) : array()
 $wppa_stage2_on  = array() !== $wppa_stage2;
 
 // Скрытое поле team_id: без него куратор не поймёт, к какой команде относится действие.
-$wppa_team_field = ( $wppa_is_curator && $wppa_team_id )
+$wppa_team_field = ( ( $wppa_is_curator || $wppa_is_mentor ) && $wppa_team_id )
 	? '<input type="hidden" name="team_id" value="' . (int) $wppa_team_id . '" />'
 	: '';
 $wppa_max      = WPPA_Teams::team_limit( $wppa_team_id );
@@ -60,6 +60,31 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<?php echo isset( $block_title ) && '' !== $block_title ? esc_html( $block_title ) : esc_html__( 'Команда', 'wp-personal-account' ); ?>
 </h2>
 
+<?php
+$wppa_mentor_teams = WPPA_Teams::mentor_team_ids( $user->ID );
+$wppa_pending_mentor = get_user_meta( $user->ID, WPPA_Teams::META_MENTOR_INVITES, true );
+$wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor : array();
+?>
+<?php if ( count( $wppa_mentor_teams ) > 1 && ! $wppa_is_curator ) : ?>
+	<section class="wppa-card"><h3 class="wppa-subtitle"><?php esc_html_e( 'Мои команды', 'wp-personal-account' ); ?></h3>
+		<?php foreach ( $wppa_mentor_teams as $wppa_choice ) : ?>
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', $wppa_choice, WPPA_Plugin::tab_url( 'team' ) ) ); ?>"><?php echo esc_html( get_the_title( $wppa_choice ) ); ?><?php echo (int) $wppa_choice === $wppa_team_id ? ' ✓' : ''; ?></a>
+		<?php endforeach; ?>
+	</section>
+<?php endif; ?>
+<?php foreach ( $wppa_pending_mentor as $wppa_invite_team => $wppa_invite_expiry ) : ?>
+	<?php if ( (int) $wppa_invite_expiry <= time() || WPPA_Teams::CPT !== get_post_type( (int) $wppa_invite_team ) ) { continue; } ?>
+	<section class="wppa-card"><p><?php printf( esc_html__( 'Приглашение стать наставником команды «%s».', 'wp-personal-account' ), esc_html( get_the_title( (int) $wppa_invite_team ) ) ); ?></p>
+		<?php foreach ( array( 'mentor_accept' => __( 'Принять', 'wp-personal-account' ), 'mentor_decline' => __( 'Отклонить', 'wp-personal-account' ) ) as $wppa_invite_action => $wppa_invite_label ) : ?>
+			<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<input type="hidden" name="wppa_action" value="team" /><input type="hidden" name="wppa_team_action" value="<?php echo esc_attr( $wppa_invite_action ); ?>" /><input type="hidden" name="invite_team" value="<?php echo esc_attr( (string) (int) $wppa_invite_team ); ?>" />
+				<button type="submit" class="wppa-button wppa-button--ghost"><?php echo esc_html( $wppa_invite_label ); ?></button>
+			</form>
+		<?php endforeach; ?>
+	</section>
+<?php endforeach; ?>
+
 <?php if ( $wppa_is_curator ) : ?>
 	<?php
 	$wppa_all_teams = WPPA_Teams::all_teams();
@@ -68,7 +93,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 	<section class="wppa-card wppa-curator">
 		<h3 class="wppa-subtitle"><?php esc_html_e( 'Куратор: все команды', 'wp-personal-account' ); ?></h3>
 		<p class="wppa-hint">
-			<?php esc_html_e( 'Вы видите все команды сайта и состояние каждой. Состав ведут капитан и наставник: приглашают участников, исключают их, назначают наставников и переименовывают команду. Ваша задача — прикреплять для наставников документы.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Вы видите все команды сайта и состояние каждой. Капитан и наставник ведут состав. Куратор может назначить или снять наставника и прикреплять документы.', 'wp-personal-account' ); ?>
 		</p>
 
 		<?php if ( empty( $wppa_all_teams ) ) : ?>
@@ -151,6 +176,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( $wppa_team_list ); ?>"><?php esc_html_e( 'Закрыть', 'wp-personal-account' ); ?></a>
 									<?php else : ?>
 										<a class="wppa-button" href="<?php echo esc_url( add_query_arg( array( 'wppa_tab' => 'files', 'wppa_team' => (int) $wppa_row['id'] ), WPPA_Plugin::tab_url( 'files' ) ) ); ?>"><?php esc_html_e( 'Добавить файлы', 'wp-personal-account' ); ?></a>
+									<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', (int) $wppa_row['id'], WPPA_Plugin::tab_url( 'team' ) ) ); ?>"><?php esc_html_e( 'Открыть команду', 'wp-personal-account' ); ?></a>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -167,7 +193,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 		<?php
 		printf(
 			/* translators: 1: название команды, 2: ссылка на список команд */
-			esc_html__( 'Вы управляете командой «%1$s» как куратор: состав и файлы. Приглашения и переименование — у капитана и наставника. %2$s', 'wp-personal-account' ),
+			esc_html__( 'Вы управляете командой «%1$s» как куратор: наставники и файлы. Приглашения участников и переименование — у капитана и наставника. %2$s', 'wp-personal-account' ),
 			esc_html( $wppa_team_name ),
 			'<a href="' . esc_url( WPPA_Plugin::tab_url( 'team' ) ) . '">' . esc_html__( 'Вернуться к списку команд', 'wp-personal-account' ) . '</a>'
 		);
@@ -233,7 +259,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 
 	<?php if ( $wppa_curator_view ) : ?>
 		<div class="wppa-notice wppa-notice--info">
-			<?php esc_html_e( 'Список участников ведут капитан и наставник — куратор в состав не вмешивается. Ниже можно прикрепить документы для наставника.', 'wp-personal-account' ); ?>
+			<?php esc_html_e( 'Список участников ведут капитан и наставник. Куратор может назначить наставника и прикрепить ему документы.', 'wp-personal-account' ); ?>
 		</div>
 	<?php endif; ?>
 
@@ -396,6 +422,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 											</form>
 										<?php endif; ?>
 
+										<?php if ( ! $wppa_curator_view ) : ?>
 										<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
 											<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
 											<?php echo $wppa_team_field; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- собранный статический input. ?>
@@ -404,6 +431,7 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 											<input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_member->ID ); ?>" />
 											<button type="submit" class="wppa-link-button"><?php esc_html_e( 'Исключить', 'wp-personal-account' ); ?></button>
 										</form>
+										<?php endif; ?>
 									</div>
 								<?php else : ?>
 									<span class="wppa-hint">—</span>
@@ -536,6 +564,27 @@ $wppa_complete = $wppa_team_id && WPPA_Teams::is_complete( $wppa_team_id );
 			</ul>
 		</section>
 
+	<?php endif; ?>
+
+	<?php if ( $wppa_team_id && ( $wppa_is_owner || $wppa_curator_view ) ) : ?>
+		<section class="wppa-card"><h3 class="wppa-subtitle"><?php echo $wppa_curator_view ? esc_html__( 'Назначить наставника', 'wp-personal-account' ) : esc_html__( 'Пригласить наставника', 'wp-personal-account' ); ?></h3>
+			<?php if ( $wppa_curator_view ) : ?>
+				<?php foreach ( WPPA_Teams::mentors( $wppa_team_id ) as $wppa_team_mentor ) : ?>
+					<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-inline-form">
+						<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+						<input type="hidden" name="wppa_action" value="team" /><input type="hidden" name="wppa_team_action" value="dismiss_mentor" /><input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" /><input type="hidden" name="member_id" value="<?php echo esc_attr( (string) $wppa_team_mentor->ID ); ?>" />
+						<span><?php echo esc_html( WPPA_Teams::full_name( $wppa_team_mentor ) ); ?></span> <button type="submit" class="wppa-link-button"><?php esc_html_e( 'Снять наставника', 'wp-personal-account' ); ?></button>
+					</form>
+				<?php endforeach; ?>
+			<?php endif; ?>
+			<p class="wppa-hint"><?php esc_html_e( 'Укажите email зарегистрированного пользователя. Наставник может вести несколько команд, но не может быть участником или капитаном другой команды.', 'wp-personal-account' ); ?></p>
+			<form method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>" class="wppa-form">
+				<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+				<input type="hidden" name="team_id" value="<?php echo esc_attr( (string) $wppa_team_id ); ?>" /><input type="hidden" name="wppa_action" value="team" /><input type="hidden" name="wppa_team_action" value="<?php echo $wppa_curator_view ? 'mentor_assign' : 'mentor_invite'; ?>" />
+				<p class="wppa-field"><label for="wppa-mentor-email"><?php esc_html_e( 'Email наставника', 'wp-personal-account' ); ?></label><input type="email" id="wppa-mentor-email" name="mentor_email" required /></p>
+				<button type="submit" class="wppa-button"><?php echo $wppa_curator_view ? esc_html__( 'Назначить', 'wp-personal-account' ) : esc_html__( 'Отправить приглашение', 'wp-personal-account' ); ?></button>
+			</form>
+		</section>
 	<?php endif; ?>
 
 	<?php if ( $wppa_can_invite ) : ?>

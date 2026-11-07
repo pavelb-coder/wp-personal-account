@@ -142,6 +142,22 @@ $sections   .= demo_section(
 	WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
 );
 
+// Отдельный пример наставника в двух командах, не меняющий остальные демо.
+$wppa_multi_demo = WPPA_Teams::create( 'Команда «Орион»', 90 );
+if ( ! is_wp_error( $wppa_multi_demo ) && WPPA_Teams::add_mentor( $wppa_multi_demo, 8 ) ) {
+	$wppa_multi_prev_user = isset( $GLOBALS['wppa_test']['current_user'] ) ? $GLOBALS['wppa_test']['current_user'] : null;
+	$GLOBALS['wppa_test']['current_user'] = 8;
+	$_GET['wppa_team'] = $wppa_multi_demo;
+	$sections .= demo_section(
+		'Наставник нескольких команд',
+		'Наставник переключается между своими командами; состав и файлы доступны только для выбранной команды.',
+		WPPA_Template::get( 'tab-team', array( 'user' => $mentor_user, 'tabs' => $tabs ) )
+	);
+	unset( $_GET['wppa_team'] );
+	if ( null === $wppa_multi_prev_user ) { unset( $GLOBALS['wppa_test']['current_user'] ); } else { $GLOBALS['wppa_test']['current_user'] = $wppa_multi_prev_user; }
+	WPPA_Teams::dissolve( $wppa_multi_demo );
+}
+
 // Команда без наставника: команда считается несформированной.
 $wppa_mentor_snapshot = isset( $GLOBALS['wppa_test']['meta'] ) ? $GLOBALS['wppa_test']['meta'] : array();
 
@@ -193,7 +209,7 @@ WPPA_Curator_Files::store( $demo_team, $wppa_mentor_upload, 'Список ком
 
 $sections .= demo_section(
 	'Куратор: открытая команда',
-	'Куратор открыл команду «Студия «Вектор»»: карточка команды со счётчиками и файлы для наставника. Состава, приглашений, переименования, роспуска и выхода у куратора нет — это права капитана и наставника команды',
+	'Куратор открыл команду «Студия «Вектор»»: карточка команды со счётчиками и файлы для наставника. Куратор может назначать и снимать наставников; состав участников, приглашения участников, переименование и роспуск остаются капитану и наставнику',
 	WPPA_Template::get( 'tab-team', array( 'user' => $curator_user, 'tabs' => $tabs ) )
 );
 
@@ -789,5 +805,7 @@ body {
 </body>
 </html>';
 
+// Пустые строки без пробелов — стабильное превью без ошибок git diff --check.
+$html = preg_replace( '/^[ \t]+$/m', '', $html );
 file_put_contents( $base . 'preview.html', $html );
 echo 'preview.html: ' . strlen( $html ) . " байт\n";

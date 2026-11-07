@@ -84,6 +84,8 @@ class WPPA_Notices {
 			'team_created'          => array( 'success', __( 'Команда создана. Пригласите участников по ссылке.', 'wp-personal-account' ) ),
 			'team_renamed'          => array( 'success', __( 'Название команды обновлено.', 'wp-personal-account' ) ),
 			'team_joined'           => array( 'success', __( 'Вы присоединились к команде.', 'wp-personal-account' ) ),
+			'team_mentor_candidate_invalid' => array( 'error', __( 'Пользователь не найден, уже назначен наставником этой команды или является участником другой команды.', 'wp-personal-account' ) ),
+			'team_invite_declined' => array( 'success', __( 'Приглашение отклонено.', 'wp-personal-account' ) ),
 			'team_left'             => array( 'success', __( 'Вы вышли из команды.', 'wp-personal-account' ) ),
 			'team_dissolved'        => array( 'success', __( 'Команда распущена.', 'wp-personal-account' ) ),
 			'team_member_removed'   => array( 'success', __( 'Участник удалён из команды.', 'wp-personal-account' ) ),

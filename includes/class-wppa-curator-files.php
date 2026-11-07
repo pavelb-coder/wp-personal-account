@@ -227,7 +227,10 @@ class WPPA_Curator_Files {
 		}
 
 		if ( WPPA_Teams::is_mentor( $user_id ) ) {
-			return self::has_curator_files( $team_id ) || WPPA_Teams::is_stage2( $team_id );
+			foreach ( WPPA_Teams::mentor_team_ids( $user_id ) as $mentor_team ) {
+				if ( self::has_curator_files( $mentor_team ) || WPPA_Teams::is_stage2( $mentor_team ) ) { return true; }
+			}
+			return false;
 		}
 
 		return self::has_curator_files( $team_id );
@@ -275,12 +278,11 @@ class WPPA_Curator_Files {
 			return true;
 		}
 
+		if ( WPPA_Teams::is_mentor_of( $team_id, $user_id ) ) {
+			return true;
+		}
 		if ( (int) WPPA_Teams::team_id( $user_id ) !== $team_id ) {
 			return false;
-		}
-
-		if ( WPPA_Teams::is_mentor( $user_id ) ) {
-			return true;
 		}
 
 		// Участник команды видит раздел, когда в нём есть документы куратора.
@@ -360,7 +362,7 @@ class WPPA_Curator_Files {
 			return 'curator';
 		}
 
-		if ( (int) WPPA_Teams::team_id( $user_id ) === $team_id && WPPA_Teams::is_mentor( $user_id ) ) {
+		if ( WPPA_Teams::is_mentor_of( $team_id, $user_id ) ) {
 			return 'mentor';
 		}
 
