@@ -72,6 +72,24 @@ $wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor :
 		<?php endforeach; ?>
 	</section>
 <?php endif; ?>
+<?php if ( WPPA_Teams::is_mentor( $user->ID ) ) : ?>
+	<section class="wppa-card">
+		<h3 class="wppa-subtitle"><?php esc_html_e( 'Присоединиться к другой команде', 'wp-personal-account' ); ?></h3>
+		<p class="wppa-hint"><?php esc_html_e( 'Введите код или ссылку приглашения. Вы присоединитесь к команде как наставник.', 'wp-personal-account' ); ?></p>
+		<form class="wppa-form" method="post" action="<?php echo esc_url( WPPA_Plugin::tab_url( 'team' ) ); ?>">
+			<?php wp_nonce_field( 'wppa_team', 'wppa_nonce' ); ?>
+			<input type="hidden" name="wppa_action" value="team" />
+			<input type="hidden" name="wppa_team_action" value="mentor_join_code" />
+			<p class="wppa-field">
+				<label for="wppa-mentor-team-code"><?php esc_html_e( 'Код из приглашения', 'wp-personal-account' ); ?></label>
+				<input type="text" id="wppa-mentor-team-code" name="team_code" autocomplete="off" placeholder="a1b2c3…" required />
+				<span class="wppa-hint"><?php esc_html_e( 'Можно вставить ссылку целиком.', 'wp-personal-account' ); ?></span>
+			</p>
+			<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Присоединиться', 'wp-personal-account' ); ?></button>
+		</form>
+	</section>
+<?php endif; ?>
+
 <?php foreach ( $wppa_pending_mentor as $wppa_invite_team => $wppa_invite_expiry ) : ?>
 	<?php if ( (int) $wppa_invite_expiry <= time() || WPPA_Teams::CPT !== get_post_type( (int) $wppa_invite_team ) ) { continue; } ?>
 	<section class="wppa-card"><p><?php printf( esc_html__( 'Приглашение стать наставником команды «%s».', 'wp-personal-account' ), esc_html( get_the_title( (int) $wppa_invite_team ) ) ); ?></p>

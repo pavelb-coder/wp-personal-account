@@ -6385,6 +6385,7 @@ $GLOBALS['wppa_test']['current_user'] = 1304;
 $mt_checks['выбор команды'] = (int) $mt_b === WPPA_Teams::active_team_id( 1304 );
 $mt_team_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
 $mt_checks['выбор показан в кабинете'] = false !== strpos( $mt_team_html, 'Мои команды' ) && false !== strpos( $mt_team_html, 'Мульти Альфа' ) && false !== strpos( $mt_team_html, 'Мульти Бета' );
+$mt_checks['поле кода видно при нескольких командах'] = false !== strpos( $mt_team_html, 'value="mentor_join_code"' ) && false !== strpos( $mt_team_html, 'name="team_code"' );
 $mt_checks['нет ссылки на документы у наставника нескольких команд'] = false === strpos( $mt_team_html, 'Документы от куратора — на вкладке «Файлы».' );
 $mt_checks['формы передают выбранную команду'] = false !== strpos( $mt_team_html, 'name="team_id" value="' . (int) $mt_b . '"' );
 $mt_file_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
@@ -6406,6 +6407,38 @@ $mt_run = static function ( $id, $post ) {
     }
     $GLOBALS['wppa_test']['catch_redirect'] = false; return '';
 };
+// Код команды: работает только для действующих наставников, не меняя роль участника.
+$mt_c_token = (string) get_post_meta( $mt_c, WPPA_Teams::META_TOKEN, true );
+$mt_join_form = array( 'wppa_team_action' => 'mentor_join_code', 'team_code' => $mt_c_token );
+$mt_checks['код наставника отклоняет капитана'] = 'mentor_join_denied' === $mt_run( 1302, $mt_join_form ) && ! WPPA_Teams::is_mentor_of( $mt_c, 1302 );
+$mt_checks['код наставника отклоняет участника'] = 'mentor_join_denied' === $mt_run( 1305, $mt_join_form ) && 'member' === WPPA_Teams::role( 1305 );
+$mt_checks['код наставника отклоняет пользователя без команды'] = 'mentor_join_denied' === $mt_run( 1308, $mt_join_form ) && 0 === WPPA_Teams::team_id( 1308 );
+$mt_checks['пустой код отклонён'] = 'team_invalid_token' === $mt_run( 1304, array_merge( $mt_join_form, array( 'team_code' => '' ) ) );
+$mt_checks['неизвестный код отклонён'] = 'team_invalid_token' === $mt_run( 1304, array_merge( $mt_join_form, array( 'team_code' => 'invalidcode1234567890' ) ) );
+update_post_meta( $mt_c, WPPA_Teams::META_TOKEN_EXPIRES, time() - 1 );
+$mt_checks['просроченный код отклонён'] = 'team_invalid_token' === $mt_run( 1304, $mt_join_form ) && ! WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+$mt_new_token = WPPA_Teams::refresh_token( $mt_c );
+$mt_checks['старый код после обновления отклонён'] = 'team_invalid_token' === $mt_run( 1304, $mt_join_form );
+
+$GLOBALS['wppa_test']['current_user'] = 1304;
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$mt_link_notice = '';
+try {
+    WPPA_Teams::handle_join( $mt_new_token );
+} catch ( RuntimeException $e ) {
+    $mt_link_notice = $e->getMessage();
+}
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$mt_checks['открытие ссылки само по себе не назначает наставника'] = false !== strpos( $mt_link_notice, 'wppa_team_other' ) && ! WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+
+$mt_join_form['team_code'] = $mt_new_token;
+$mt_checks['наставник присоединяется по коду'] = 'mentor_team_joined' === $mt_run( 1304, $mt_join_form ) && WPPA_Teams::is_mentor_of( $mt_c, 1304 ) && WPPA_Teams::is_mentor_of( $mt_a, 1304 ) && WPPA_Teams::is_mentor_of( $mt_b, 1304 );
+$mt_checks['повторный код не дублирует наставника'] = 'mentor_team_already' === $mt_run( 1304, $mt_join_form ) && 1 === count( array_filter( WPPA_Teams::mentor_team_ids( 1304 ), static function ( $id ) use ( $mt_c ) { return (int) $id === (int) $mt_c; } ) );
+WPPA_Teams::detach_mentor( $mt_c, 1304 );
+$mt_join_form['team_code'] = WPPA_Teams::invite_link( $mt_c );
+$mt_checks['принимается полная ссылка приглашения'] = 'mentor_team_joined' === $mt_run( 1304, $mt_join_form ) && WPPA_Teams::is_mentor_of( $mt_c, 1304 );
+WPPA_Teams::detach_mentor( $mt_c, 1304 );
+
 $mt_invite = array( 'wppa_team_action' => 'mentor_invite', 'team_id' => $mt_c, 'mentor_email' => 'multi-mentor@example.com' );
 $mt_checks['чужой человек не может пригласить'] = 'team_manager_only' === $mt_run( 1305, $mt_invite );
 $mt_checks['капитан приглашает наставника'] = 'team_invite_sent' === $mt_run( 1303, $mt_invite );
@@ -6419,6 +6452,21 @@ $GLOBALS['wppa_test']['users_by']['email']['another-mentor@example.com'] = 1307;
 $mt_assign = array( 'wppa_team_action' => 'mentor_assign', 'team_id' => $mt_b, 'mentor_email' => 'another-mentor@example.com' );
 $mt_checks['без прав прямое назначение запрещено'] = 'team_manager_only' === $mt_run( 1303, $mt_assign );
 $mt_checks['куратор назначает по email'] = 'team_mentor_added' === $mt_run( 1306, $mt_assign ) && WPPA_Teams::is_mentor_of( $mt_b, 1307 );
+
+$GLOBALS['wppa_test']['current_user'] = 1307;
+$_GET = array();
+$mt_single_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1307 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['поле кода видно при одной команде'] = false !== strpos( $mt_single_html, 'value="mentor_join_code"' );
+WPPA_Teams::set_curator( 1307, true );
+$_GET = array( 'wppa_team' => $mt_c );
+$mt_mentor_curator_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1307 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['поле кода видно наставнику со статусом куратора'] = false !== strpos( $mt_mentor_curator_html, 'value="mentor_join_code"' );
+WPPA_Teams::set_curator( 1307, false );
+$GLOBALS['wppa_test']['current_user'] = 1305;
+$_GET = array();
+$mt_member_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1305 ), 'tabs' => WPPA_Template::tabs() ) );
+$mt_checks['поле кода наставника не видно участнику'] = false === strpos( $mt_member_html, 'value="mentor_join_code"' );
+
 
 $GLOBALS['wppa_test']['users_by']['email']['team-member@example.com'] = 1305;
 $mt_checks['куратор назначает участника его команды'] = 'team_mentor_added' === $mt_run( 1306, array_merge( $mt_assign, array( 'mentor_email' => 'team-member@example.com' ) ) ) && WPPA_Teams::is_mentor_of( $mt_b, 1305 );

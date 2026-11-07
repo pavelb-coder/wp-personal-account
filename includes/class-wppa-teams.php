@@ -1566,6 +1566,25 @@ class WPPA_Teams {
 
 				WPPA_Notices::redirect( 'stage2_removed', $back );
 
+			case 'mentor_join_code':
+				// Общий код даёт роль наставника только действующему наставнику.
+				if ( ! self::is_mentor( $user_id ) || ! self::mentor_team_ids( $user_id ) ) {
+					WPPA_Notices::redirect( 'mentor_join_denied', $tab_url );
+				}
+				$raw = isset( $_POST['team_code'] ) ? sanitize_text_field( wp_unslash( $_POST['team_code'] ) ) : '';
+				$code = self::extract_token( $raw );
+				$team_id = '' !== $code ? self::find_by_token( $code ) : 0;
+				if ( ! $team_id || ! self::has_valid_token( $team_id ) ) {
+					WPPA_Notices::redirect( 'team_invalid_token', $tab_url );
+				}
+				if ( self::is_mentor_of( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'mentor_team_already', self::context_url( $team_id, $user_id ) );
+				}
+				if ( ! self::add_mentor( $team_id, $user_id ) ) {
+					WPPA_Notices::redirect( 'team_mentor_candidate_invalid', $tab_url );
+				}
+				WPPA_Notices::redirect( 'mentor_team_joined', self::context_url( $team_id, $user_id ) );
+
 			case 'join_code':
 				$raw  = isset( $_POST['team_code'] ) ? sanitize_text_field( wp_unslash( $_POST['team_code'] ) ) : '';
 				$code = self::extract_token( $raw );
