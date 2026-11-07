@@ -18,7 +18,7 @@ $wppa_dash_teams = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_
 <?php if ( array() !== $wppa_dash_stage2 ) : ?>
 	<div class="wppa-card wppa-stage2 wppa-stage2--notice" role="status">
 		<div class="wppa-stage2__head">
-			<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Прошла во второй этап', 'wp-personal-account' ); ?></span>
+			<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Ваша команда прошла во второй этап', 'wp-personal-account' ); ?></span>
 			<?php if ( $wppa_dash_team ) : ?>
 				<strong class="wppa-stage2__team"><?php echo esc_html( $wppa_dash_team['name'] ); ?></strong>
 			<?php endif; ?>

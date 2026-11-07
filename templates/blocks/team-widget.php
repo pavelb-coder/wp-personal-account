@@ -320,7 +320,7 @@ $wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor :
 	<?php if ( $wppa_stage2_on ) : ?>
 		<div class="wppa-card wppa-stage2">
 			<p class="wppa-hint">
-				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Прошла во второй этап', 'wp-personal-account' ); ?></span>
+				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Ваша команда прошла во второй этап', 'wp-personal-account' ); ?></span>
 				<?php
 				if ( ! empty( $wppa_stage2['time'] ) ) {
 					printf(

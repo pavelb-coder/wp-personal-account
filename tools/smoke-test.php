@@ -1738,38 +1738,39 @@ if ( is_wp_error( $stage_team ) ) {
 	// Отметка видна на главной странице кабинета — всем участникам команды и наставнику.
 	$stage_tabs        = WPPA_Template::tabs();
 	$stage_dash_member = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => $stage_tabs ) );
-	$stage_checks['главная: участник видит отметку'] = false !== strpos( $stage_dash_member, 'Прошла во второй этап' );
+	$stage_checks['главная: участник видит отметку'] = false !== strpos( $stage_dash_member, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 	$stage_checks['главная: есть дата отметки']      = false !== strpos( $stage_dash_member, 'прошла во второй этап — отмечено' );
 	$stage_checks['главная: есть название команды']  = false !== strpos( $stage_dash_member, 'Команда второго этапа' );
 	$stage_checks['главная: ссылка на команду есть'] = false !== strpos( $stage_dash_member, 'Перейти к команде' );
 
 	$stage_dash_owner = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 71 ), 'tabs' => $stage_tabs ) );
-	$stage_checks['главная: капитан видит отметку'] = false !== strpos( $stage_dash_owner, 'Прошла во второй этап' );
+	$stage_checks['главная: капитан видит отметку'] = false !== strpos( $stage_dash_owner, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 	$stage_dash_mentor = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 72 ), 'tabs' => $stage_tabs ) );
-	$stage_checks['главная: наставник видит отметку'] = false !== strpos( $stage_dash_mentor, 'Прошла во второй этап' );
+	$stage_checks['главная: наставник видит отметку'] = false !== strpos( $stage_dash_mentor, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 	// Блок «Сводка профиля» дублирует отметку бейджем в карточке команды.
 	$stage_summary_block = array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
 	$stage_summary_html  = WPPA_Builder::render_block( $stage_summary_block, array( 'user' => get_userdata( 73 ) ) );
-	$stage_checks['сводка профиля: бейдж отметки'] = false !== strpos( $stage_summary_html, 'Прошла во второй этап' );
+	$stage_checks['сводка профиля: бейдж отметки'] = false !== strpos( $stage_summary_html, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 	// Бейдж видят все участники команды и куратор.
 	$stage_block = array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
 
 	$GLOBALS['wppa_test']['current_user'] = 73;
 	$stage_member_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 73 ) ) );
-	$stage_checks['участник видит отметку'] = false !== strpos( $stage_member_html, 'Прошла во второй этап' );
+	$stage_checks['участник видит отметку'] = false !== strpos( $stage_member_html, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 	$GLOBALS['wppa_test']['current_user'] = 72;
 	$stage_mentor_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 72 ) ) );
-	$stage_checks['наставник видит отметку']   = false !== strpos( $stage_mentor_html, 'Прошла во второй этап' );
+	$stage_checks['наставник видит отметку']   = false !== strpos( $stage_mentor_html, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 	$stage_checks['наставник не переключает']  = false === strpos( $stage_mentor_html, 'value="stage2_remove"' );
 
 	$GLOBALS['wppa_test']['current_user'] = 74;
 	$_GET['wppa_team']                     = (int) $stage_team;
 	$stage_curator_html                    = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 74 ) ) );
 
+	$stage_checks['куратор видит обновлённый бейдж'] = false !== strpos( $stage_curator_html, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 	$stage_checks['куратор видит переключатель'] = false !== strpos( $stage_curator_html, 'value="stage2_remove"' );
 	$stage_checks['куратор видит колонку']       = false !== strpos( $stage_curator_html, 'Второй этап' );
 
@@ -1810,6 +1811,7 @@ if ( is_wp_error( $stage_team ) ) {
 
 	$stage_dash_after = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => $stage_tabs ) );
 	$stage_checks['главная: после снятия блока нет'] = false === strpos( $stage_dash_after, 'wppa-stage2--notice' );
+	$stage_checks['после снятия новой отметки нет'] = false === strpos( $stage_dash_after, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 	$stage_checks['обработчик: наставнику нельзя'] = 'stage2_denied' === $wppa_run_stage( 72, 'stage2_add' );
 	$stage_checks['обработчик: участнику нельзя']  = 'stage2_denied' === $wppa_run_stage( 73, 'stage2_add' );
 
@@ -6498,7 +6500,7 @@ $mt_checks['выгрузка содержит обе команды настав
 $mt_summary_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
 $mt_checks['обзор показывает обе команды'] = false !== strpos( $mt_summary_html, 'Мульти Альфа' ) && false !== strpos( $mt_summary_html, 'Мульти Бета' );
 $mt_dashboard = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
-$mt_checks['обзор показывает второй этап другой команды'] = false !== strpos( $mt_dashboard, 'Мульти Бета' ) && false !== strpos( $mt_dashboard, 'Прошла во второй этап' );
+$mt_checks['обзор показывает второй этап другой команды'] = false !== strpos( $mt_dashboard, 'Мульти Бета' ) && false !== strpos( $mt_dashboard, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 update_post_meta( $mt_a, WPPA_Teams::META_STAGE2, array( 'time' => time(), 'user' => 12 ) );
 $mt_mail_rows = array_values( array_filter( WPPA_Mailing::recipients(), static function ( $row ) { return 1304 === (int) $row['user_id']; } ) );

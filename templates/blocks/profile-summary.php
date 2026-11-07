@@ -35,7 +35,7 @@ $wppa_team_ids = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_id
 				<span class="wppa-badge wppa-badge--ok"><?php esc_html_e( 'Команда сформирована', 'wp-personal-account' ); ?></span>
 			<?php endif; ?>
 			<?php if ( WPPA_Teams::is_stage2( $wppa_team_id ) ) : ?>
-				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Прошла во второй этап', 'wp-personal-account' ); ?></span>
+				<span class="wppa-badge wppa-badge--stage2"><?php esc_html_e( 'Ваша команда прошла во второй этап', 'wp-personal-account' ); ?></span>
 			<?php endif; ?>
 			<?php if ( isset( $tabs['team'] ) ) : ?>
 				<a class="wppa-link" href="<?php echo esc_url( WPPA_Teams::context_url( $wppa_team_id, $user->ID ) ); ?>"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></a>
