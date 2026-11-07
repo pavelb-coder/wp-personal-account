@@ -27,6 +27,14 @@ defined( 'ABSPATH' ) || exit;
 			<label for="wppa-first-name"><?php esc_html_e( 'Имя', 'wp-personal-account' ); ?></label>
 			<input type="text" id="wppa-first-name" name="first_name" value="<?php echo esc_attr( $user->first_name ); ?>" autocomplete="given-name" />
 		</p>
+		<?php $wppa_profile_fields = WPPA_Fields::fields( 'profile' ); ?>
+		<?php if ( isset( $wppa_profile_fields['patronymic'] ) ) : ?>
+			<?php $wppa_patronymic = $wppa_profile_fields['patronymic']; ?>
+			<p class="wppa-field">
+				<label for="wppa-f-patronymic"><?php echo esc_html( $wppa_patronymic['label'] ); ?><?php if ( ! empty( $wppa_patronymic['required'] ) ) : ?> <span class="wppa-req" aria-hidden="true">*</span><?php endif; ?></label>
+				<input type="text" id="wppa-f-patronymic" name="wppa_fields[patronymic]" value="<?php echo esc_attr( WPPA_Fields::get( $user->ID, 'patronymic' ) ); ?>" autocomplete="additional-name"<?php if ( ! empty( $wppa_patronymic['required'] ) ) : ?> required<?php endif; ?> />
+			</p>
+		<?php endif; ?>
 	</div>
 
 	<p class="wppa-field">
@@ -34,7 +42,7 @@ defined( 'ABSPATH' ) || exit;
 		<input type="text" id="wppa-display-name" name="display_name" value="<?php echo esc_attr( $user->display_name ); ?>" required />
 	</p>
 
-	<?php WPPA_Fields::render( 'profile', $user->ID ); ?>
+	<?php WPPA_Fields::render( 'profile', $user->ID, array(), array( 'patronymic' ) ); ?>
 
 	<p class="wppa-field">
 		<label><?php esc_html_e( 'Email', 'wp-personal-account' ); ?></label>

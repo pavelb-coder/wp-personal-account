@@ -6235,6 +6235,52 @@ foreach ( $age_checks as $check_name => $ok ) {
     if ( ! $ok ) { $fail++; }
 }
 
+// Отчество в форме профиля рядом с фамилией и именем.
+$pat_backup = get_option( 'wppa_settings', array() );
+$pat_meta_backup = get_user_meta( 7, '_wppa_patronymic', true );
+$pat_checks = array();
+update_option( 'wppa_settings', array_merge( (array) $pat_backup, array( 'fields' => array( 'patronymic' => array( 'enabled' => 1, 'required' => 0, 'label' => 'Отчество' ) ) ) ) );
+update_user_meta( 7, '_wppa_patronymic', 'Сергеевич' );
+$pat_render = static function () {
+    return WPPA_Builder::render_block(
+        array( 'type' => 'block', 'id' => 'profile-form', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
+        array( 'user' => get_userdata( 7 ), 'tabs' => array() )
+    );
+};
+$pat_html = $pat_render();
+$pat_last = strpos( $pat_html, 'name="last_name"' );
+$pat_first = strpos( $pat_html, 'name="first_name"' );
+$pat_field = strpos( $pat_html, 'name="wppa_fields[patronymic]"' );
+$pat_display = strpos( $pat_html, 'name="display_name"' );
+$pat_checks['порядок: фамилия, имя, отчество'] = false !== $pat_last && false !== $pat_first && false !== $pat_field && $pat_last < $pat_first && $pat_first < $pat_field;
+$pat_checks['перед отображаемым именем'] = false !== $pat_display && $pat_field < $pat_display;
+$pat_checks['поле единственное'] = 1 === substr_count( $pat_html, 'name="wppa_fields[patronymic]"' );
+$pat_checks['текущее отчество выводится'] = (bool) preg_match( '/name="wppa_fields\[patronymic\]"[^>]*value="Сергеевич"/', $pat_html );
+$pat_checks['сохранение не изменило формат поля'] = false !== strpos( $pat_html, 'autocomplete="additional-name"' );
+$pat_checks['пустой раздел не выводится'] = false === strpos( $pat_html, 'data-wppa-section="main"' );
+update_option( 'wppa_settings', array_merge( (array) $pat_backup, array( 'fields' => array( 'patronymic' => array( 'enabled' => 1, 'required' => 1, 'label' => 'Ваше отчество' ) ) ) ) );
+$pat_required_html = $pat_render();
+$pat_checks['настраиваемая подпись'] = false !== strpos( $pat_required_html, 'Ваше отчество' );
+$pat_checks['обязательность в форме'] = (bool) preg_match( '/name="wppa_fields\[patronymic\]"[^>]*required/', $pat_required_html );
+$pat_checks['обязательность на сервере'] = 'field_required' === WPPA_Fields::validate( array(), 'profile' );
+update_option( 'wppa_settings', array_merge( (array) $pat_backup, array( 'fields' => array( 'patronymic' => array( 'enabled' => 0 ) ) ) ) );
+$pat_checks['скрытое поле не выводится'] = false === strpos( $pat_render(), 'name="wppa_fields[patronymic]"' );
+update_option( 'wppa_settings', array_merge( (array) $pat_backup, array( 'fields' => array( 'patronymic' => array( 'enabled' => 1, 'required' => 0 ) ) ) ) );
+$_POST = array( 'wppa_nonce' => wp_create_nonce( 'wppa_profile' ), 'first_name' => 'Иван', 'last_name' => 'Петров', 'display_name' => 'Петров Иван Сергеевич', 'wppa_fields' => array( 'patronymic' => 'Николаевич' ) );
+$GLOBALS['wppa_test']['logged_in'] = true;
+$GLOBALS['wppa_test']['catch_redirect'] = true;
+$pat_redirect = '';
+try { WPPA_Profile::handle_update(); } catch ( RuntimeException $e ) { $pat_redirect = $e->getMessage(); }
+$GLOBALS['wppa_test']['catch_redirect'] = false;
+$pat_checks['сохранение профиля работает'] = false !== strpos( $pat_redirect, 'profile_saved' ) && 'Николаевич' === get_user_meta( 7, '_wppa_patronymic', true );
+if ( '' === $pat_meta_backup ) { delete_user_meta( 7, '_wppa_patronymic' ); } else { update_user_meta( 7, '_wppa_patronymic', $pat_meta_backup ); }
+update_option( 'wppa_settings', $pat_backup );
+$_POST = array();
+foreach ( $pat_checks as $check_name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'profile patronymic: ' . $check_name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

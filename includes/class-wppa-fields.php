@@ -751,11 +751,15 @@ class WPPA_Fields {
 	 * @param string $context register|profile.
 	 * @param int    $user_id ID пользователя (для значений).
 	 * @param array  $values  Подготовленные значения (перекрывают значения пользователя).
+	 * @param array  $exclude ID полей, уже выведенных отдельно.
 	 * @return void
 	 */
-	public static function render( $context = 'register', $user_id = 0, $values = array() ) {
+	public static function render( $context = 'register', $user_id = 0, $values = array(), $exclude = array() ) {
 		foreach ( self::grouped( $context ) as $section_id => $section ) {
-			$fields = $section['fields'];
+			$fields = array_diff_key( $section['fields'], array_flip( (array) $exclude ) );
+			if ( ! $fields ) {
+				continue;
+			}
 
 			echo '<div class="wppa-section" data-wppa-section="' . esc_attr( $section_id ) . '">';
 			echo '<h3 class="wppa-section__title">' . esc_html( $section['label'] ) . '</h3>';
