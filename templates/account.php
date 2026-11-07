@@ -37,9 +37,14 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 		</div>
 
-		<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( wp_logout_url( WPPA_Plugin::account_url() ) ); ?>">
-			<?php esc_html_e( 'Выйти', 'wp-personal-account' ); ?>
-		</a>
+		<div class="wppa-header__actions">
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+				<?php esc_html_e( 'Вернуться на сайт', 'wp-personal-account' ); ?>
+			</a>
+			<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( wp_logout_url( WPPA_Plugin::account_url() ) ); ?>">
+				<?php esc_html_e( 'Выйти', 'wp-personal-account' ); ?>
+			</a>
+		</div>
 	</header>
 
 	<?php WPPA_Notices::render(); ?>

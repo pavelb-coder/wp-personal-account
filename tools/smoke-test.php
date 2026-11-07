@@ -1080,6 +1080,12 @@ $profile_html = WPPA_Template::get(
 	)
 );
 
+// Возврат из авторизованного кабинета ведёт на главную без выхода из аккаунта.
+$dashboard_back_pattern = '/<a[^>]*href="' . preg_quote( esc_url( home_url( '/' ) ), '/' ) . '"[^>]*>\s*Вернуться на сайт\s*<\/a>/u';
+preg_match( '/<header class="wppa-header">(.*?)<\/header>/s', $dashboard_html, $dashboard_header_match );
+preg_match( '/<header class="wppa-header">(.*?)<\/header>/s', $profile_html, $profile_header_match );
+$dashboard_header = isset( $dashboard_header_match[1] ) ? $dashboard_header_match[1] : '';
+$profile_header = isset( $profile_header_match[1] ) ? $profile_header_match[1] : '';
 $dashboard_checks = array(
 	'обзор: нет карточки email'        => false === strpos( $dashboard_html, 'wppa-header__email' ) && false === strpos( $dashboard_html, 'ivan.petrov@example.com' ),
 	'обзор: нет блока личных данных'   => false === strpos( $dashboard_html, 'Личные данные' ),
@@ -1087,7 +1093,17 @@ $dashboard_checks = array(
 	'обзор: дата регистрации на месте' => false !== strpos( $dashboard_html, 'Дата регистрации' ),
 	'обзор: имя в шапке осталось'      => false !== strpos( $dashboard_html, 'Иван Петров' ),
 	'профиль: email в шапке остаётся'  => false !== strpos( $profile_html, 'ivan.petrov@example.com' ),
+	'обзор: кнопка возврата в общей шапке' => 1 === preg_match( $dashboard_back_pattern, $dashboard_header ),
+	'профиль: кнопка возврата в общей шапке' => 1 === preg_match( $dashboard_back_pattern, $profile_header ),
+	'возврат и выход — разные ссылки' => false !== strpos( $dashboard_header, 'href="' . esc_url( wp_logout_url( WPPA_Plugin::account_url() ) ) . '"' ) && false !== strpos( $dashboard_header, 'Выйти' ) && 1 === preg_match( $dashboard_back_pattern, $dashboard_header ),
+	'кнопки шапки сгруппированы для переноса' => false !== strpos( $dashboard_header, 'wppa-header__actions' ),
 );
+
+$dashboard_login_snapshot = isset( $GLOBALS['wppa_test']['logged_in'] ) ? $GLOBALS['wppa_test']['logged_in'] : false;
+$GLOBALS['wppa_test']['logged_in'] = true;
+$account_shortcode_html = WPPA_Shortcodes::account();
+$dashboard_checks['авторизованный шорткод кабинета: возврат на сайт'] = 1 === preg_match( $dashboard_back_pattern, $account_shortcode_html );
+$GLOBALS['wppa_test']['logged_in'] = $dashboard_login_snapshot;
 
 $summary_html = WPPA_Builder::render_block(
 	array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),

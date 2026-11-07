@@ -136,6 +136,13 @@
 	gap: 14px;
 }
 
+.wppa-header__actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
 .wppa-avatar {
 	flex: 0 0 auto;
 	width: 56px;
