@@ -2325,6 +2325,7 @@ $file_checks['раздел: форма multipart']              = false !== strp
 
 $file_checks['раздел: ссылка на скачивание']         = false !== strpos( $mentor_files_html, 'action=wppa_curator_file' );
 $file_checks['раздел: название команды']             = false !== strpos( $mentor_files_html, 'Документы команды' );
+$file_checks['раздел: новая подпись'] = false !== strpos( $mentor_files_html, 'Их видят все участники команды.' ) && false === strpos( $mentor_files_html, 'Их видят только наставник этой команды и куратор.' );
 
 // Вкладка «Файлы» есть у наставника и куратора, но не у участника и гостя.
 $tabs_settings_backup = get_option( 'wppa_settings', array() );
@@ -2359,6 +2360,7 @@ $curator_team_html = WPPA_Builder::render_block(
 );
 
 $file_checks['куратор: кнопка «Добавить файлы»'] = false !== strpos( $curator_team_html, 'Добавить файлы' );
+$file_checks['куратор: кнопки «Открыть команду» нет'] = false === strpos( $curator_team_html, 'Открыть команду' );
 $file_checks['куратор: кнопки «Управлять» нет']  = false === strpos( $curator_team_html, 'Управлять' );
 $file_checks['куратор: ссылка на вкладку файлов'] = false !== strpos( $curator_team_html, 'wppa_tab=files' );
 // Вместо капитана куратор видит данные наставника: имя, фамилию и email.

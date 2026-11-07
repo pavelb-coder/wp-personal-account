@@ -718,6 +718,9 @@ class WPPA_Plugin {
 			case 'chat_delete':
 				WPPA_Chat::handle_delete();
 				break;
+			case 'chat_clear':
+				WPPA_Chat::handle_clear();
+				break;
 			case 'curator_file':
 				WPPA_Curator_Files::handle_request();
 				break;

@@ -252,6 +252,35 @@ class WPPA_Chat {
 		return wp_delete_post( $message_id, true ) ? 'chat_deleted' : 'chat_delete_failed';
 	}
 
+	/** Только куратор может окончательно очистить выбранную переписку у всех. */
+	public static function clear_thread( $mentor_id, $user_id ) {
+		$mentor_id = (int) $mentor_id; $user_id = (int) $user_id;
+		if ( ! WPPA_Teams::is_curator( $user_id ) || ! self::can_view( $mentor_id, $user_id ) ) { return 'chat_forbidden'; }
+		// Снимок всех ID, а не только текущей страницы: новые параллельные сообщения не удаляются.
+		$ids = get_posts( array(
+			'post_type' => self::CPT, 'post_status' => 'private', 'fields' => 'ids',
+			'meta_key' => self::MENTOR_META, 'meta_value' => (string) $mentor_id,
+			'numberposts' => -1, 'suppress_filters' => true,
+		) );
+		$failed = false;
+		foreach ( $ids as $id ) {
+			// Другой куратор мог удалить сообщение одновременно.
+			if ( ! get_post( $id ) ) { continue; }
+			if ( 'chat_deleted' !== self::delete_message( $mentor_id, $user_id, $id ) ) { $failed = true; }
+		}
+		return $failed ? 'chat_clear_failed' : 'chat_cleared';
+	}
+
+	/** Подтверждённая форма работает с JavaScript и без него. */
+	public static function handle_clear() {
+		$mentor = isset( $_POST['mentor_id'] ) && is_scalar( $_POST['mentor_id'] ) ? absint( wp_unslash( $_POST['mentor_id'] ) ) : 0;
+		check_admin_referer( 'wppa_chat_clear_' . $mentor, 'wppa_clear_nonce' );
+		$user_id = is_user_logged_in() ? get_current_user_id() : 0;
+		$result = self::clear_thread( $mentor, $user_id );
+		$back = WPPA_Teams::is_curator( $user_id ) && self::can_view( $mentor, $user_id ) ? self::thread_url( $mentor ) : WPPA_Plugin::account_url();
+		WPPA_Notices::redirect( $result, $back );
+	}
+
 	public static function handle_delete() {
 		$mentor = isset( $_POST['mentor_id'] ) && is_scalar( $_POST['mentor_id'] ) ? absint( wp_unslash( $_POST['mentor_id'] ) ) : 0;
 		$id = isset( $_POST['message_id'] ) && is_scalar( $_POST['message_id'] ) ? absint( wp_unslash( $_POST['message_id'] ) ) : 0;

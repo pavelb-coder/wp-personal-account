@@ -67,6 +67,18 @@ $wppa_chat_unread = $wppa_chat_is_curator ? WPPA_Chat::unread( $wppa_chat_user_i
 			<button class="wppa-button wppa-button--primary" type="submit"><?php esc_html_e( 'Отправить', 'wp-personal-account' ); ?></button>
 			<span class="wppa-chat__status" role="status" aria-live="polite"></span>
 		</form>
+		<?php if ( $wppa_chat_is_curator ) : ?>
+			<details class="wppa-chat__clear">
+				<summary class="wppa-link"><?php esc_html_e( 'Очистить чат', 'wp-personal-account' ); ?></summary>
+				<p class="wppa-hint"><?php esc_html_e( 'Все сообщения этой переписки будут удалены у наставника и всех кураторов. Отменить это действие нельзя.', 'wp-personal-account' ); ?></p>
+				<form method="post" action="<?php echo esc_url( WPPA_Chat::thread_url( $wppa_chat_mentor_id ) ); ?>">
+					<?php wp_nonce_field( 'wppa_chat_clear_' . $wppa_chat_mentor_id, 'wppa_clear_nonce' ); ?>
+					<input type="hidden" name="wppa_action" value="chat_clear" />
+					<input type="hidden" name="mentor_id" value="<?php echo esc_attr( (string) $wppa_chat_mentor_id ); ?>" />
+					<button type="submit" class="wppa-button wppa-button--ghost"><?php esc_html_e( 'Да, очистить чат', 'wp-personal-account' ); ?></button>
+				</form>
+			</details>
+		<?php endif; ?>
 		<p class="wppa-hint"><?php esc_html_e( 'Только текст, до 2000 символов. Последние сообщения обновляются автоматически. Удалённые сообщения исчезают у всех.', 'wp-personal-account' ); ?></p>
 	<?php elseif ( $wppa_chat_is_curator && $wppa_chat_mentor_id ) : ?>
 		<p class="wppa-notice wppa-notice--error"><?php esc_html_e( 'Переписка недоступна.', 'wp-personal-account' ); ?></p>

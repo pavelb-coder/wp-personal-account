@@ -159,6 +159,30 @@ WPPA_Chat::send( 8, 12, 'Ответ пользователю с двумя ро�
 $dual = WPPA_Chat::unread_html( 8, WPPA_Chat::unread( 8 ), WPPA_Chat::mentors() );
 chat_assert( WPPA_Chat::mentor_unread( 8 ) === 1 && false !== strpos( $dual, 'Ответы кураторов в вашей переписке' ), 'для наставника-куратора список содержит его личную переписку' );
 WPPA_Teams::set_curator( 8, false );
+// Очистка целого диалога доступна только кураторам, с явным подтверждением и отдельным nonce.
+for ( $i = 0; $i < 55; ++$i ) { WPPA_Chat::send( 9, 9, 'история для очистки' ); }
+WPPA_Chat::send( 9, 12, 'ответ для очистки' );
+$other_before = count( get_posts( array( 'post_type' => WPPA_Chat::CPT, 'post_status' => 'private', 'meta_key' => WPPA_Chat::MENTOR_META, 'meta_value' => '8', 'numberposts' => -1 ) ) );
+$curator_ui = chat_html( 12, 9 ); $mentor_ui = chat_html( 9, 9 );
+WPPA_Chat::send( 9, 12, 'непрочитанный ответ перед очисткой' );
+chat_assert( WPPA_Chat::mentor_unread( 9 ) > 0 && ! empty( WPPA_Chat::unread( 13 )[9] ), 'до очистки есть непрочитанные сообщения обеих сторон' );
+chat_assert( false !== strpos( $curator_ui, '<details class="wppa-chat__clear">' ) && false !== strpos( $curator_ui, 'Да, очистить чат' ) && false !== strpos( $curator_ui, 'wppa_clear_nonce' ) && false === strpos( $mentor_ui, 'Очистить чат' ), 'подтверждение очистки только у куратора' );
+chat_assert( 'chat_forbidden' === WPPA_Chat::clear_thread( 9, 9 ) && 'chat_forbidden' === WPPA_Chat::clear_thread( 9, 11 ) && 'chat_forbidden' === WPPA_Chat::clear_thread( 9000, 12 ), 'наставник, участник и вымышленный диалог не могут очистить' );
+$GLOBALS['wppa_test']['logged_in'] = true; $GLOBALS['wppa_test']['current_user'] = 12;
+$_POST = array( 'mentor_id' => 9, 'wppa_clear_nonce' => 'bad' );
+try { WPPA_Chat::handle_clear(); chat_assert( false, 'nonce очистки' ); } catch ( RuntimeException $e ) { chat_assert( 'invalid nonce' === $e->getMessage() && WPPA_Chat::messages( 9, 12 )['items'], 'неверный nonce не очищает чат' ); }
+$_POST['wppa_clear_nonce'] = wp_create_nonce( 'wppa_chat_clear_8' );
+try { WPPA_Chat::handle_clear(); chat_assert( false, 'nonce другого чата' ); } catch ( RuntimeException $e ) { chat_assert( 'invalid nonce' === $e->getMessage() && WPPA_Chat::messages( 9, 12 )['items'], 'nonce привязан к наставнику' ); }
+$_POST['wppa_clear_nonce'] = wp_create_nonce( 'wppa_chat_clear_9' ); $GLOBALS['wppa_test']['current_user'] = 9;
+try { WPPA_Chat::handle_clear(); chat_assert( false, 'роль очистки' ); } catch ( RuntimeException $e ) { chat_assert( false !== strpos( $e->getMessage(), 'chat_forbidden' ) && WPPA_Chat::messages( 9, 9 )['items'], 'даже с корректным nonce наставник не очищает чат' ); }
+$GLOBALS['wppa_test']['current_user'] = 12;
+$sample = WPPA_Chat::messages( 9, 12 )['items'][0]->ID; $GLOBALS['wppa_test']['delete_fail_ids'] = array( $sample );
+chat_assert( 'chat_clear_failed' === WPPA_Chat::clear_thread( 9, 12 ) && get_post( $sample ) && 1 === count( get_posts( array( 'post_type' => WPPA_Chat::CPT, 'post_status' => 'private', 'meta_key' => WPPA_Chat::MENTOR_META, 'meta_value' => '9', 'numberposts' => -1 ) ) ), 'частичная ошибка не маскируется, остальные сообщения со всех страниц удалены' );
+unset( $GLOBALS['wppa_test']['delete_fail_ids'] );
+try { WPPA_Chat::handle_clear(); chat_assert( false, 'форма очистки' ); } catch ( RuntimeException $e ) { chat_assert( false !== strpos( $e->getMessage(), 'chat_cleared' ) && ! WPPA_Chat::messages( 9, 9 )['items'] && ! WPPA_Chat::messages( 9, 13 )['items'], 'куратор подтверждает очистку у всех, включая старые страницы' ); }
+chat_assert( $other_before === count( get_posts( array( 'post_type' => WPPA_Chat::CPT, 'post_status' => 'private', 'meta_key' => WPPA_Chat::MENTOR_META, 'meta_value' => '8', 'numberposts' => -1 ) ) ) && empty( WPPA_Chat::unread( 13 )[9] ) && 0 === WPPA_Chat::mentor_unread( 9 ), 'другой чат сохранён, счётчики очищенного диалога исчезли' );
+WPPA_Chat::send( 9, 9, 'новое после очистки' );
+chat_assert( ! empty( WPPA_Chat::unread( 13 )[9] ), 'новые сообщения после очистки видны и считаются непрочитанными' );
 // Деинсталляция: по умолчанию сохраняем, при явной очистке удаляем пакетами.
 define( 'WP_UNINSTALL_PLUGIN', true );
 include WPPA_PATH . 'uninstall.php';

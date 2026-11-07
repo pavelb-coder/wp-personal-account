@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.66.10
+Stable tag: 3.66.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.66.11 =
+* Куратор может очистить переписку с наставником у всех участников после подтверждения.
+* Убрана кнопка «Открыть команду» у куратора, изменена подпись документов без изменения прав доступа.
 
 = 3.66.10 =
 * Добавлен общий переключатель email-уведомлений чата в настройках администратора. По умолчанию он выключен, в том числе при обновлении с 3.66.9.

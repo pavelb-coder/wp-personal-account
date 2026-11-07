@@ -194,7 +194,6 @@ $wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor :
 										<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( $wppa_team_list ); ?>"><?php esc_html_e( 'Закрыть', 'wp-personal-account' ); ?></a>
 									<?php else : ?>
 										<a class="wppa-button" href="<?php echo esc_url( add_query_arg( array( 'wppa_tab' => 'files', 'wppa_team' => (int) $wppa_row['id'] ), WPPA_Plugin::tab_url( 'files' ) ) ); ?>"><?php esc_html_e( 'Добавить файлы', 'wp-personal-account' ); ?></a>
-									<a class="wppa-button wppa-button--ghost" href="<?php echo esc_url( add_query_arg( 'wppa_team', (int) $wppa_row['id'], WPPA_Plugin::tab_url( 'team' ) ) ); ?>"><?php esc_html_e( 'Открыть команду', 'wp-personal-account' ); ?></a>
 									<?php endif; ?>
 								</td>
 							</tr>

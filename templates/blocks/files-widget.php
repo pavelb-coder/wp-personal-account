@@ -183,7 +183,7 @@ $wppa_upload_form = '<form class="wppa-form" method="post" enctype="multipart/fo
 				/* translators: %s: название команды */
 				'' === $wppa_direction
 					? esc_html__( 'Документы команды «%s», которые прислал куратор. Их можно скачать.', 'wp-personal-account' )
-					: esc_html__( 'Документы команды «%s». Их видят только наставник этой команды и куратор.', 'wp-personal-account' ),
+					: esc_html__( 'Документы команды «%s». Их видят все участники команды.', 'wp-personal-account' ),
 				esc_html( $wppa_team_name )
 			);
 			?>

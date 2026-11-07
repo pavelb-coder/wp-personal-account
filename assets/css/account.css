@@ -1712,3 +1712,6 @@
 .wppa-chat__unread li + li { margin-top: 4px; }
 .wppa-chat__delete { margin-top: 8px; padding: 0; border: 0; background: transparent; color: #9c2a22; font: inherit; font-size: .8em; cursor: pointer; text-decoration: underline; }
 .wppa-chat__delete:hover { color: #721d17; }
+
+.wppa-chat__clear { margin: 16px 0; }
+.wppa-chat__clear summary { cursor: pointer; width: fit-content; }

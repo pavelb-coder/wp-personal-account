@@ -261,7 +261,7 @@ function username_exists( $u ) { return false; }
 function wp_create_nonce( $action = -1 ) { return 'nonce-' . substr( md5( (string) $action ), 0, 10 ); }
 function wp_nonce_url( $url, $action = -1, $name = '_wpnonce' ) { return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $name . '=' . wp_create_nonce( $action ); }
 function auth_redirect() { throw new RuntimeException( 'auth_redirect' ); }
-function check_admin_referer( $a, $n = '' ) { if ( ( 'wppa_chat_send' === $a || 0 === strpos( (string) $a, 'wppa_chat_delete_' ) ) && ( ! isset( $_POST[ $n ] ) || ! wp_verify_nonce( $_POST[ $n ], $a ) ) ) { throw new RuntimeException( 'invalid nonce' ); } return true; }
+function check_admin_referer( $a, $n = '' ) { if ( ( 'wppa_chat_send' === $a || 0 === strpos( (string) $a, 'wppa_chat_delete_' ) || 0 === strpos( (string) $a, 'wppa_chat_clear_' ) ) && ( ! isset( $_POST[ $n ] ) || ! wp_verify_nonce( $_POST[ $n ], $a ) ) ) { throw new RuntimeException( 'invalid nonce' ); } return true; }
 
 if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	/**
@@ -272,7 +272,7 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	 * @return int|false
 	 */
 	function wp_verify_nonce( $nonce, $action = -1 ) {
-		return ( in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) || 0 === strpos( (string) $action, 'wppa_chat_view_' ) || 0 === strpos( (string) $action, 'wppa_chat_delete_' ) ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
+		return ( in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) || 0 === strpos( (string) $action, 'wppa_chat_view_' ) || 0 === strpos( (string) $action, 'wppa_chat_delete_' ) || 0 === strpos( (string) $action, 'wppa_chat_clear_' ) ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
 	}
 }
 function wp_safe_redirect( $u ) {
@@ -368,6 +368,7 @@ function wp_update_post( $args, $wp_error = false ) {
 }
 
 function wp_delete_post( $id, $force = false ) {
+	if ( in_array( (int) $id, isset( $GLOBALS['wppa_test']['delete_fail_ids'] ) ? $GLOBALS['wppa_test']['delete_fail_ids'] : array(), true ) ) { return false; }
 	unset( $GLOBALS['wppa_test']['posts'][ (int) $id ], $GLOBALS['wppa_test']['postmeta'][ (int) $id ] );
 	return true;
 }

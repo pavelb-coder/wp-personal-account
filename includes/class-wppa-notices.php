@@ -123,6 +123,8 @@ class WPPA_Notices {
 			'chat_sent_mail_failed' => array( 'info', __( 'Сообщение сохранено, но отправить email-уведомление не удалось. Проверьте настройки почты сайта.', 'wp-personal-account' ) ),
 			'chat_deleted' => array( 'success', __( 'Сообщение удалено у всех.', 'wp-personal-account' ) ),
 			'chat_delete_failed' => array( 'error', __( 'Не удалось удалить сообщение.', 'wp-personal-account' ) ),
+			'chat_cleared' => array( 'success', __( 'Переписка очищена у всех участников.', 'wp-personal-account' ) ),
+			'chat_clear_failed' => array( 'error', __( 'Не удалось удалить некоторые сообщения. Попробуйте очистить переписку ещё раз.', 'wp-personal-account' ) ),
 			'chat_empty' => array( 'error', __( 'Напишите сообщение перед отправкой.', 'wp-personal-account' ) ),
 			'chat_too_long' => array( 'error', __( 'Сообщение слишком длинное: максимум 2000 символов.', 'wp-personal-account' ) ),
 			'chat_forbidden' => array( 'error', __( 'Нет доступа к этой переписке.', 'wp-personal-account' ) ),
