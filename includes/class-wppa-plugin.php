@@ -153,6 +153,7 @@ class WPPA_Plugin {
 			'certificate_export_dir'  => 'Сертификаты',
 			'certificate_filename'    => '{recipient_name}',
 			'registration_enabled' => 1,
+			'registration_min_age' => 0,
 			'hide_admin_bar'       => 1,
 			'registration_start'   => '',
 			'registration_end'     => '',

@@ -6176,6 +6176,65 @@ foreach ( $fb_checks as $check_name => $ok ) {
 	}
 }
 
+// Ограничение возраста при регистрации.
+$age_backup = get_option( 'wppa_settings', array() );
+$age_users_can_register = get_option( 'users_can_register' );
+$age_checks = array();
+$age_checks['по умолчанию выключено'] = 0 === WPPA_Plugin::defaults()['registration_min_age'];
+$age_checks['настройка сохраняется'] = 14 === WPPA_Settings::sanitize( array( 'registration_min_age' => '14' ) )['registration_min_age'];
+$age_checks['отрицательное значение отключает'] = 0 === WPPA_Settings::sanitize( array( 'registration_min_age' => '-14' ) )['registration_min_age'];
+$age_checks['возраст ограничен 120'] = 120 === WPPA_Settings::sanitize( array( 'registration_min_age' => '999' ) )['registration_min_age'];
+update_option( 'wppa_settings', array_merge( (array) $age_backup, array( 'registration_min_age' => 14, 'registration_enabled' => 1, 'registration_start' => '', 'registration_end' => '', 'fields' => array( 'birthdate' => array( 'enabled' => 0, 'required' => 0 ) ) ) ) );
+update_option( 'users_can_register', 1 );
+$age_checks['дата обязательна при отключённом поле'] = ! empty( WPPA_Fields::fields( 'register' )['birthdate']['required'] );
+$age_checks['профиль не меняется'] = ! isset( WPPA_Fields::fields( 'profile' )['birthdate'] );
+$age_checks['в день рождения допускает'] = '' === WPPA_Fields::registration_age_error( '2012-07-01', '2026-07-01' );
+$age_checks['за день до дня рождения отказывает'] = 'registration_too_young' === WPPA_Fields::registration_age_error( '2012-07-02', '2026-07-01' );
+$age_checks['старше допускает'] = '' === WPPA_Fields::registration_age_error( '2010-07-01', '2026-07-01' );
+$age_checks['пустая дата не проходит'] = 'birthdate_invalid' === WPPA_Fields::registration_age_error( '', '2026-07-01' );
+$age_checks['некорректная дата не проходит'] = 'birthdate_invalid' === WPPA_Fields::registration_age_error( '2012-02-30', '2026-07-01' );
+$age_checks['будущая дата не проходит'] = 'birthdate_invalid' === WPPA_Fields::registration_age_error( '2027-01-01', '2026-07-01' );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings' ), array( 'registration_min_age' => 13 ) ) );
+$age_checks['29 февраля: 28 февраля недостаточно'] = 'registration_too_young' === WPPA_Fields::registration_age_error( '2012-02-29', '2025-02-28' );
+$age_checks['29 февраля: 1 марта достаточно'] = '' === WPPA_Fields::registration_age_error( '2012-02-29', '2025-03-01' );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings' ), array( 'registration_min_age' => 14 ) ) );
+ob_start();
+WPPA_Fields::render( 'register' );
+$age_html = ob_get_clean();
+$age_checks['в форме дата обязательна'] = (bool) preg_match( '/<input[^>]*name="wppa_fields\[birthdate\]"[^>]*required/', $age_html );
+$age_checks['в форме показан минимум'] = false !== strpos( $age_html, 'Минимальный возраст при регистрации: 14' );
+$age_checks['понятное сообщение об отказе'] = false !== strpos( WPPA_Notices::registry()['registration_too_young'][1], '14' );
+$age_attempt = static function ( $birthdate ) {
+    $GLOBALS['wppa_test']['inserted_user'] = array();
+    $_POST = array( 'wppa_nonce' => wp_create_nonce( 'wppa_register' ), 'email' => 'age-test@example.com', 'password' => 'Str0ng-Passw0rd-2026!', 'password_confirm' => 'Str0ng-Passw0rd-2026!', 'consent' => '1', 'wppa_fields' => array( 'birthdate' => $birthdate, 'first_name' => 'Пётр' ) );
+    $GLOBALS['wppa_test']['catch_redirect'] = true;
+    $redirect = '';
+    try { WPPA_Auth::handle_register(); } catch ( RuntimeException $e ) { $redirect = $e->getMessage(); }
+    $GLOBALS['wppa_test']['catch_redirect'] = false;
+    return array( $redirect, $GLOBALS['wppa_test']['inserted_user'] );
+};
+$age_now = new DateTimeImmutable( 'today', wp_timezone() );
+$age_under = $age_attempt( $age_now->modify( '-10 years' )->format( 'Y-m-d' ) );
+$age_checks['сервер не создаёт младше порога'] = false !== strpos( $age_under[0], 'registration_too_young' ) && empty( $age_under[1] );
+$age_missing = $age_attempt( '' );
+$age_checks['сервер не создаёт без даты'] = false !== strpos( $age_missing[0], 'birthdate_invalid' ) && empty( $age_missing[1] );
+$age_bad = $age_attempt( '2020-02-30' );
+$age_checks['сервер не создаёт с неверной датой'] = false !== strpos( $age_bad[0], 'birthdate_invalid' ) && empty( $age_bad[1] );
+$age_ok = $age_attempt( $age_now->modify( '-20 years' )->format( 'Y-m-d' ) );
+$age_checks['сервер создаёт достигшего возраста'] = ! empty( $age_ok[1] ) && false !== strpos( $age_ok[0], 'registration_success' );
+$age_checks['дата сохраняется в профиле'] = $age_now->modify( '-20 years' )->format( 'Y-m-d' ) === get_user_meta( 99, '_wppa_birthdate', true );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings' ), array( 'registration_min_age' => 0 ) ) );
+$age_checks['выключено: дата не обязательна'] = ! isset( WPPA_Fields::fields( 'register' )['birthdate'] ) && '' === WPPA_Fields::registration_age_error( '' );
+$age_no_limit = $age_attempt( '' );
+$age_checks['выключено: регистрация без даты'] = ! empty( $age_no_limit[1] ) && false !== strpos( $age_no_limit[0], 'registration_success' );
+update_option( 'wppa_settings', $age_backup );
+update_option( 'users_can_register', $age_users_can_register );
+$_POST = array();
+foreach ( $age_checks as $check_name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'registration age: ' . $check_name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

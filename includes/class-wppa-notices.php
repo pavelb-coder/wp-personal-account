@@ -76,6 +76,7 @@ class WPPA_Notices {
 			'field_invalid'         => array( 'error', __( 'Проверьте значение поля: формат не подходит.', 'wp-personal-account' ) ),
 			'phone_invalid'         => array( 'error', __( 'Укажите телефон в корректном формате, например +7 900 000-00-00.', 'wp-personal-account' ) ),
 			'birthdate_invalid'     => array( 'error', __( 'Укажите корректную дату рождения.', 'wp-personal-account' ) ),
+			'registration_too_young' => array( 'error', sprintf( __( 'Для регистрации необходимо достичь возраста %d полных лет.', 'wp-personal-account' ), WPPA_Fields::registration_min_age() ) ),
 			'website_invalid'       => array( 'error', __( 'Укажите корректный адрес сайта, например https://example.com.', 'wp-personal-account' ) ),
 			'no_consent'            => array( 'error', __( 'Необходимо согласие на обработку персональных данных.', 'wp-personal-account' ) ),
 			'save_failed'           => array( 'error', __( 'Не удалось сохранить изменения. Попробуйте позже.', 'wp-personal-account' ) ),

@@ -94,6 +94,9 @@ class WPPA_Settings {
 		$out['enabled_tabs']    = array_values( array_intersect( $allowed_tabs, $tabs ) );
 
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
+		// 0 отключает ограничение, отрицательные значения не превращаем в положительные.
+		$age = isset( $input['registration_min_age'] ) && is_numeric( $input['registration_min_age'] ) ? (int) $input['registration_min_age'] : 0;
+		$out['registration_min_age'] = min( 120, max( 0, $age ) );
 		$out['hide_admin_bar']       = empty( $input['hide_admin_bar'] ) ? 0 : 1;
 		$out['registration_start']   = isset( $input['registration_start'] ) ? WPPA_Time::sanitize_datetime( $input['registration_start'] ) : '';
 		$out['registration_end']     = isset( $input['registration_end'] ) ? WPPA_Time::sanitize_datetime( $input['registration_end'] ) : '';
@@ -487,6 +490,13 @@ class WPPA_Settings {
 								);
 								?>
 							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wppa-reg-min-age"><?php esc_html_e( 'Минимальный возраст при регистрации', 'wp-personal-account' ); ?></label></th>
+						<td>
+							<input type="number" id="wppa-reg-min-age" name="wppa_settings[registration_min_age]" min="0" max="120" step="1" value="<?php echo esc_attr( (string) $s['registration_min_age'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Возраст в полных годах на дату регистрации по часовому поясу сайта. 0 — без ограничения. Если указан возраст, дата рождения обязательна; проверка действует для всех, включая наставников. Для родившихся 29 февраля в невисокосный год день рождения считается 1 марта.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 					<tr>

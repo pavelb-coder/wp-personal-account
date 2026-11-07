@@ -135,6 +135,14 @@ class WPPA_Auth {
 			WPPA_Notices::redirect( 'empty_fields', $tab_url );
 		}
 
+		// Проверяем возраст до создания пользователя; обходить скрытием поля нельзя.
+		if ( WPPA_Fields::registration_min_age() > 0 ) {
+			$age_error = WPPA_Fields::registration_age_error( isset( $fields['birthdate'] ) ? $fields['birthdate'] : '' );
+			if ( '' !== $age_error ) {
+				WPPA_Notices::redirect( $age_error, $tab_url );
+			}
+		}
+
 		$field_error = WPPA_Fields::validate( $fields, 'register' );
 
 		if ( '' !== $field_error ) {

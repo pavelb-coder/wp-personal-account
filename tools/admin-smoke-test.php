@@ -111,6 +111,16 @@ ob_start();
 WPPA_Settings::render_page();
 $settings_html = ob_get_clean();
 
+$age_admin_checks = array(
+    'поле настройки возраста' => false !== strpos( $settings_html, 'name="wppa_settings[registration_min_age]"' ),
+    'подсказка про отключение и наставников' => false !== strpos( $settings_html, '0 — без ограничения' ) && false !== strpos( $settings_html, 'включая наставников' ),
+);
+foreach ( $age_admin_checks as $name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'registration age settings: ' . $name . "\n";
+    if ( ! $ok ) { $fail++; }
+}
+
+
 ob_start();
 WPPA_Admin::page_tools();
 $tools_html = ob_get_clean();

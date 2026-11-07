@@ -455,6 +455,12 @@ class WPPA_Fields {
 		$fields = array();
 
 		foreach ( self::schema() as $id => $def ) {
+			// Ограничение возраста требует дату даже при выключенном поле в настройках анкеты.
+			if ( 'register' === $context && 'birthdate' === $id && self::registration_min_age() > 0 ) {
+				$def['enabled']  = 1;
+				$def['required'] = 1;
+				$def['hint'] = sprintf( __( 'Минимальный возраст при регистрации: %d полных лет.', 'wp-personal-account' ), self::registration_min_age() );
+			}
 			if ( empty( $def['enabled'] ) ) {
 				continue;
 			}
@@ -606,6 +612,30 @@ class WPPA_Fields {
 		}
 
 		return $raw;
+	}
+
+	/** Минимальный возраст регистрации: 0 означает отсутствие ограничения. */
+	public static function registration_min_age() {
+		return min( 120, max( 0, (int) WPPA_Plugin::setting( 'registration_min_age', 0 ) ) );
+	}
+
+	/** Проверка возраста по календарной дате сайта (29 февраля: 1 марта в невисокосный год). */
+	public static function registration_age_error( $birthdate, $today = '' ) {
+		$age = self::registration_min_age();
+		if ( ! $age ) {
+			return '';
+		}
+		$birthdate = self::sanitize_date( $birthdate );
+		if ( '' === $birthdate ) {
+			return 'birthdate_invalid';
+		}
+		$timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$now = '' !== $today ? $today : ( new DateTimeImmutable( 'now', $timezone ) )->format( 'Y-m-d' );
+		$born = DateTimeImmutable::createFromFormat( '!Y-m-d', $birthdate, $timezone );
+		if ( $birthdate > $now ) {
+			return 'birthdate_invalid';
+		}
+		return $born->modify( '+' . $age . ' years' )->format( 'Y-m-d' ) <= $now ? '' : 'registration_too_young';
 	}
 
 	/**
