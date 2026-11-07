@@ -1099,60 +1099,37 @@ foreach ( $dashboard_checks as $check_name => $ok ) {
 	}
 }
 
-// ---------- Панель WordPress в кабинете ----------
+// ---------- Панель WordPress на сайте и в админке ----------
 $bar_settings_snapshot = get_option( 'wppa_settings', array() );
-
-/**
- * Прогон скрытия админ-бара и возврат флага.
- *
- * @return bool|null true — скрыт, false — показан, null — не трогали.
- */
-function wppa_admin_bar_state() {
-	$GLOBALS['wppa_test']['admin_bar'] = null;
-	WPPA_Plugin::maybe_hide_admin_bar();
-	return $GLOBALS['wppa_test']['admin_bar'];
-}
-
+$bar_admin_snapshot = isset( $GLOBALS['wppa_test']['is_admin'] ) ? $GLOBALS['wppa_test']['is_admin'] : false;
 $bar_checks = array();
-
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'hide_admin_bar' => 1 ) ) );
-$GLOBALS['wppa_test']['logged_in']      = true;
-$GLOBALS['wppa_test']['is_admin']       = false;
-$GLOBALS['wppa_test']['is_singular']    = true;
-
-$bar_checks['в кабинете панель скрыта'] = false === wppa_admin_bar_state();
-
-$GLOBALS['wppa_test']['is_admin'] = true;
-$bar_checks['в админке панель не трогаем'] = null === wppa_admin_bar_state();
+WPPA_Plugin::init();
+$bar_checks['фильтр подключён при загрузке плагина'] = ! empty( $GLOBALS['wppa_test']['filters']['show_admin_bar'][ PHP_INT_MAX ] );
+$bar_checks['стили админки подключены при загрузке'] = ! empty( $GLOBALS['wppa_test']['actions']['admin_head'][100] )
+	&& array( 'WPPA_Plugin', 'admin_bar_styles' ) === $GLOBALS['wppa_test']['actions']['admin_head'][100][0][0];
+update_option( 'wppa_settings', array_merge( (array) $bar_settings_snapshot, array( 'hide_admin_bar' => 1 ) ) );
 $GLOBALS['wppa_test']['is_admin'] = false;
-
-$GLOBALS['wppa_test']['logged_in'] = false;
-$bar_checks['гостю панель не нужна'] = null === wppa_admin_bar_state();
-$GLOBALS['wppa_test']['logged_in'] = true;
-
-$GLOBALS['wppa_test']['doing_ajax'] = true;
-$bar_checks['в ajax не вмешиваемся'] = null === wppa_admin_bar_state();
-$GLOBALS['wppa_test']['doing_ajax'] = false;
-
-$GLOBALS['wppa_test']['is_singular']  = false;
-unset( $GLOBALS['wppa_test']['has_block'] );
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'account_page_id' => 0 ) ) );
-$bar_checks['не кабинет — панель остаётся'] = null === wppa_admin_bar_state();
+$GLOBALS['wppa_test']['is_singular'] = false;
+$bar_checks['на произвольной странице панель скрыта'] = false === apply_filters( 'show_admin_bar', true );
 $GLOBALS['wppa_test']['is_singular'] = true;
-
-// Кабинет через блок на произвольной странице.
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'account_page_id' => 0 ) ) );
-$GLOBALS['wppa_test']['has_block'] = array( 'wppa/auth' => true );
-$bar_checks['кабинет блоком на другой странице'] = false === wppa_admin_bar_state();
-unset( $GLOBALS['wppa_test']['has_block'] );
-
-// Настройка выключена — панель остаётся.
-update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'hide_admin_bar' => 0, 'account_page_id' => 5 ) ) );
-$bar_checks['настройка выключена — панель видна'] = null === wppa_admin_bar_state();
-
+$bar_checks['в кабинете панель скрыта'] = false === apply_filters( 'show_admin_bar', true );
+$bar_checks['скрытая панель остаётся скрытой'] = false === apply_filters( 'show_admin_bar', false );
+$GLOBALS['wppa_test']['is_admin'] = true;
+ob_start();
+WPPA_Plugin::admin_bar_styles();
+$bar_css = ob_get_clean();
+$bar_checks['в админке скрывается панель'] = false !== strpos( $bar_css, '#wpadminbar { display: none !important;' );
+$bar_checks['в админке убран отступ панели'] = false !== strpos( $bar_css, 'html.wp-toolbar { padding-top: 0 !important;' );
+$bar_checks['мобильная кнопка меню остаётся'] = false !== strpos( $bar_css, '#wp-admin-bar-menu-toggle' ) && false !== strpos( $bar_css, 'max-width: 782px' );
+update_option( 'wppa_settings', array_merge( (array) $bar_settings_snapshot, array( 'hide_admin_bar' => 0 ) ) );
+$bar_checks['настройка выключена: видимую панель не скрываем'] = true === apply_filters( 'show_admin_bar', true );
+$bar_checks['настройка выключена: скрытую панель не включаем'] = false === apply_filters( 'show_admin_bar', false );
+ob_start();
+WPPA_Plugin::admin_bar_styles();
+$bar_checks['настройка выключена: CSS админки не добавляется'] = '' === ob_get_clean();
 update_option( 'wppa_settings', $bar_settings_snapshot );
-$GLOBALS['wppa_test']['admin_bar'] = null;
-
+$GLOBALS['wppa_test']['is_admin'] = $bar_admin_snapshot;
+remove_filter( 'show_admin_bar', array( 'WPPA_Plugin', 'filter_admin_bar' ), PHP_INT_MAX );
 foreach ( $bar_checks as $check_name => $ok ) {
 	echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'admin bar: ' . $check_name . "\n";
 	if ( ! $ok ) {

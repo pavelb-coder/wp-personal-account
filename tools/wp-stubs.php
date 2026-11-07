@@ -529,7 +529,10 @@ function plugin_basename( $f ) { return basename( dirname( $f ) ) . '/' . basena
 function register_activation_hook( $f, $cb ) {}
 function register_deactivation_hook( $f, $cb ) {}
 function load_plugin_textdomain( $d, $dep = false, $path = '' ) {}
-function add_action( $h, $cb, $p = 10, $a = 1 ) {}
+function add_action( $h, $cb, $p = 10, $a = 1 ) {
+	$GLOBALS['wppa_test']['actions'][ $h ][ (int) $p ][] = array( $cb, (int) $a );
+	return true;
+}
 function add_filter( $h, $cb, $p = 10, $a = 1 ) {
 	$GLOBALS['wppa_test']['filters'][ $h ][ (int) $p ][] = array( $cb, (int) $a );
 	return true;

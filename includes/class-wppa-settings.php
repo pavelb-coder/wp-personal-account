@@ -523,10 +523,10 @@ class WPPA_Settings {
 							<p>
 								<label>
 									<input type="checkbox" name="wppa_settings[hide_admin_bar]" value="1" <?php checked( 1, (int) $s['hide_admin_bar'] ); ?> />
-									<?php esc_html_e( 'Скрывать панель WordPress (админ-бар) в личном кабинете', 'wp-personal-account' ); ?>
+									<?php esc_html_e( 'Скрывать панель WordPress (админ-бар) на всех страницах', 'wp-personal-account' ); ?>
 								</label>
 							</p>
-							<p class="description"><?php esc_html_e( 'Скрывается только на страницах кабинета — в остальных разделах сайта панель остаётся. Доступ в админку это не ограничивает: если нужно запретить участникам вход в wp-admin, используйте отдельный плагин или роль.', 'wp-personal-account' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Панель скрывается для всех пользователей на сайте и в админке. На мобильных экранах в админке остаётся кнопка открытия меню. Доступ в админку это не ограничивает.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
 					<tr>

@@ -36,6 +36,8 @@ class WPPA_Plugin {
 	 */
 	public static function init() {
 		add_action( 'plugins_loaded', array( __CLASS__, 'instance' ) );
+		add_filter( 'show_admin_bar', array( __CLASS__, 'filter_admin_bar' ), PHP_INT_MAX );
+		add_action( 'admin_head', array( __CLASS__, 'admin_bar_styles' ), 100 );
 	}
 
 	/**
@@ -58,7 +60,6 @@ class WPPA_Plugin {
 		add_action( 'admin_init', array( __CLASS__, 'maybe_upgrade' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'template_redirect', array( $this, 'handle_requests' ), 5 );
-		add_action( 'wp', array( __CLASS__, 'maybe_hide_admin_bar' ), 5 );
 		add_action( 'init', array( 'WPPA_Export_Folder', 'reschedule' ), 20 );
 		add_action( WPPA_Export_Folder::CRON_HOOK, array( 'WPPA_Export_Folder', 'run_cron' ) );
 
@@ -316,31 +317,52 @@ class WPPA_Plugin {
 	}
 
 	/**
-	 * Скрыть панель WordPress в личном кабинете.
+	 * При включённой настройке скрыть панель на всех публичных страницах.
+	 * В wp-admin WordPress всегда возвращает true до применения этого фильтра.
 	 *
-	 * Панель нужна администратору в админке, а в кабинете мешает: перекрывает шапку
-	 * и подсказывает участнику лишние ссылки. Скрывается для всех, кто в кабинете.
+	 * @param bool $show Исходное состояние WordPress и других плагинов.
+	 * @return bool
+	 */
+	public static function filter_admin_bar( $show ) {
+		return (bool) self::setting( 'hide_admin_bar', 1 ) ? false : $show;
+	}
+
+	/**
+	 * Скрыть панель в wp-admin, где фильтр show_admin_bar не применяется.
+	 * На мобильном экране остаётся только штатная кнопка открытия меню.
+	 *
+	 * @return void
+	 */
+	public static function admin_bar_styles() {
+		if ( ! (bool) self::setting( 'hide_admin_bar', 1 ) ) {
+			return;
+		}
+		?>
+		<style id="wppa-hide-admin-bar">
+			html.wp-toolbar { padding-top: 0 !important; --wp-admin--admin-bar--height: 0px; }
+			#wpadminbar { display: none !important; }
+			@media screen and (max-width: 782px) {
+				html.wp-toolbar { --wp-admin--admin-bar--height: 46px; }
+				#wpadminbar { display: block !important; position: fixed !important; top: 0; left: 0; width: 46px !important; min-width: 0 !important; height: 46px; background: transparent; }
+				#wp-toolbar > ul > li:not(#wp-admin-bar-menu-toggle), #wp-admin-bar-top-secondary { display: none !important; }
+				#wpadminbar li#wp-admin-bar-menu-toggle { display: block !important; background: #1d2327; }
+			}
+			@media screen and (min-width: 601px) and (max-width: 782px) {
+				html.wp-toolbar { padding-top: 46px !important; }
+			}
+		</style>
+		<?php
+	}
+
+	/**
+	 * Обратная совместимость для вызовов старого публичного метода.
 	 *
 	 * @return void
 	 */
 	public static function maybe_hide_admin_bar() {
-		if ( is_admin() || ! is_user_logged_in() ) {
-			return;
+		if ( ! is_admin() && (bool) self::setting( 'hide_admin_bar', 1 ) ) {
+			show_admin_bar( false );
 		}
-
-		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
-			return;
-		}
-
-		if ( ! (bool) self::setting( 'hide_admin_bar', 1 ) ) {
-			return;
-		}
-
-		if ( ! self::is_account_view() ) {
-			return;
-		}
-
-		show_admin_bar( false );
 	}
 
 	/**
