@@ -375,18 +375,6 @@ $wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor :
 		</p>
 	<?php endif; ?>
 
-	<?php if ( $wppa_mentors > 0 ) : ?>
-		<p class="wppa-hint">
-			<?php esc_html_e( 'Наставники входят в состав, но не считаются участниками: не занимают место в лимите и не идут в зачёт минимума.', 'wp-personal-account' ); ?>
-		</p>
-	<?php endif; ?>
-
-	<?php if ( $wppa_is_mentor ) : ?>
-		<div class="wppa-notice wppa-notice--info">
-			<?php esc_html_e( 'Вы наставник команды: можете приглашать и исключать участников. Переименовать или распустить команду может только капитан.', 'wp-personal-account' ); ?>
-		</div>
-	<?php endif; ?>
-
 	<h3 class="wppa-subtitle"><?php esc_html_e( 'Состав команды', 'wp-personal-account' ); ?></h3>
 
 	<div class="wppa-table-wrap">

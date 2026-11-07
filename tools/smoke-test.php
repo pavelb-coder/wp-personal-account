@@ -246,7 +246,8 @@ if ( is_wp_error( $team_id ) ) {
 
 	$mentor_ui = array(
 		'кабинет: бейдж «Наставник»'        => false !== strpos( $mentor_html, 'wppa-badge--mentor' ) && false !== strpos( $mentor_html, 'Наставник' ),
-		'кабинет: подсказка наставнику'      => false !== strpos( $mentor_html, 'Вы наставник команды' ),
+		'кабинет: подсказка наставнику убрана' => false === strpos( $mentor_html, 'Вы наставник команды: можете приглашать и исключать участников.' ),
+		'кабинет: пояснение о подсчёте наставников убрано' => false === strpos( $mentor_html, 'Наставники входят в состав, но не считаются участниками:' ),
 		'кабинет: приглашения доступны'      => false !== strpos( $mentor_html, 'Пригласить участников' ),
 		'кабинет: переименование недоступно' => false === strpos( $mentor_html, 'value="rename"' ),
 		'кабинет: выход вместо роспуска'     => false !== strpos( $mentor_html, 'Выйти из команды' ),
@@ -258,6 +259,7 @@ if ( is_wp_error( $team_id ) ) {
 		array( 'user' => get_userdata( 7 ), 'tabs' => $tabs )
 	);
 
+	$mentor_ui['капитан: пояснение о подсчёте наставников убрано'] = false === strpos( $owner_html, 'Наставники входят в состав, но не считаются участниками:' );
 	$mentor_ui['капитан: приглашения доступны']     = false !== strpos( $owner_html, 'Пригласить участников' );
 	$mentor_ui['капитан: переименование доступно']  = false !== strpos( $owner_html, 'value="rename"' );
 	$mentor_ui['капитан: кнопка снятия наставника'] = false !== strpos( $owner_html, 'value="dismiss_mentor"' );
@@ -2417,14 +2419,15 @@ $file_checks['вкладка: шаблон есть']       = is_file( WPPA_PATH
 $file_checks['вкладка: блок в конструкторе'] = array_key_exists( 'files-widget', WPPA_Builder::blocks() );
 $file_checks['вкладка: блок в раскладке']   = isset( WPPA_Builder::layout()['files'][0]['id'] ) && 'files-widget' === WPPA_Builder::layout()['files'][0]['id'];
 
-// В карточке команды у наставника осталась только ссылка на раздел.
+// У наставника файлы куратора находятся на отдельной вкладке, а лишние подсказки убраны.
 $mentor_team_html = WPPA_Builder::render_block(
 	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
 	array( 'user' => get_userdata( 8 ) )
 );
 $file_checks['команда: файлов больше нет'] = false === strpos( $mentor_team_html, 'action=wppa_curator_file' );
 $file_checks['команда: ссылка на документы у наставника убрана'] = false === strpos( $mentor_team_html, 'Документы от куратора — на вкладке «Файлы».' );
-$file_checks['команда: пояснение о правах наставника сохранено'] = false !== strpos( $mentor_team_html, 'Вы наставник команды: можете приглашать и исключать участников.' );
+$file_checks['команда: пояснение о правах наставника убрано'] = false === strpos( $mentor_team_html, 'Вы наставник команды: можете приглашать и исключать участников.' );
+$file_checks['команда: пояснение о подсчёте наставников убрано'] = false === strpos( $mentor_team_html, 'Наставники входят в состав, но не считаются участниками:' );
 
 // Участник и капитан видят файлы куратора прямо в карточке команды.
 $member_team_html = WPPA_Builder::render_block(
@@ -2435,6 +2438,9 @@ $owner_team_html = WPPA_Builder::render_block(
 	array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ),
 	array( 'user' => get_userdata( 7 ) )
 );
+
+$file_checks['участник: пояснение о подсчёте наставников убрано'] = false === strpos( $member_team_html, 'Наставники входят в состав, но не считаются участниками:' );
+$file_checks['капитан: пояснение о подсчёте наставников убрано'] = false === strpos( $owner_team_html, 'Наставники входят в состав, но не считаются участниками:' );
 
 $file_checks['участник: полка куратора в команде']  = false !== strpos( $member_team_html, 'Файлы от куратора' );
 $file_checks['участник: файл куратора в команде']    = false !== strpos( $member_team_html, 'методичка.pdf' );
