@@ -23,22 +23,6 @@ $wppa_dash_teams = WPPA_Teams::is_mentor( $user->ID ) ? WPPA_Teams::mentor_team_
 				<strong class="wppa-stage2__team"><?php echo esc_html( $wppa_dash_team['name'] ); ?></strong>
 			<?php endif; ?>
 		</div>
-		<p class="wppa-hint">
-			<?php
-			if ( ! empty( $wppa_dash_stage2['time'] ) ) {
-				printf(
-					/* translators: %s: дата отметки */
-					esc_html__( 'Ваша команда прошла во второй этап — отмечено %s.', 'wp-personal-account' ),
-					esc_html( date_i18n( get_option( 'date_format' ), (int) $wppa_dash_stage2['time'] ) )
-				);
-			} else {
-				esc_html_e( 'Ваша команда прошла во второй этап.', 'wp-personal-account' );
-			}
-			?>
-		</p>
-		<?php if ( isset( $tabs['team'] ) ) : ?>
-			<a class="wppa-link" href="<?php echo esc_url( WPPA_Teams::context_url( $wppa_dash_team_id, $user->ID ) ); ?>"><?php esc_html_e( 'Перейти к команде', 'wp-personal-account' ); ?></a>
-		<?php endif; ?>
 	</div>
 <?php endif; ?>
 <?php endforeach; ?>

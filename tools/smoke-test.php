@@ -1739,15 +1739,20 @@ if ( is_wp_error( $stage_team ) ) {
 	$stage_tabs        = WPPA_Template::tabs();
 	$stage_dash_member = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 73 ), 'tabs' => $stage_tabs ) );
 	$stage_checks['главная: участник видит отметку'] = false !== strpos( $stage_dash_member, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
-	$stage_checks['главная: есть дата отметки']      = false !== strpos( $stage_dash_member, 'прошла во второй этап — отмечено' );
+	$stage_checks['главная: повторная строка с датой убрана'] = false === strpos( $stage_dash_member, 'прошла во второй этап — отмечено' );
 	$stage_checks['главная: есть название команды']  = false !== strpos( $stage_dash_member, 'Команда второго этапа' );
-	$stage_checks['главная: ссылка на команду есть'] = false !== strpos( $stage_dash_member, 'Перейти к команде' );
+	$stage_checks['главная: ссылка под отметкой убрана'] = false === strpos( $stage_dash_member, 'Перейти к команде' );
 
 	$stage_dash_owner = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 71 ), 'tabs' => $stage_tabs ) );
 	$stage_checks['главная: капитан видит отметку'] = false !== strpos( $stage_dash_owner, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 	$stage_dash_mentor = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 72 ), 'tabs' => $stage_tabs ) );
 	$stage_checks['главная: наставник видит отметку'] = false !== strpos( $stage_dash_mentor, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
+	foreach ( array( 'участник' => $stage_dash_member, 'капитан' => $stage_dash_owner, 'наставник' => $stage_dash_mentor ) as $stage_role => $stage_html ) {
+		preg_match( '/<div class="wppa-card wppa-stage2 wppa-stage2--notice"[^>]*>(.*?)<\/div>\s*<\/div>/s', $stage_html, $stage_card_match );
+		$stage_card = isset( $stage_card_match[1] ) ? $stage_card_match[1] : '';
+		$stage_checks[ $stage_role . ': отметка и название сохранены без даты и ссылки' ] = false !== strpos( $stage_card, 'Ваша команда прошла во второй этап' ) && false !== strpos( $stage_card, 'Команда второго этапа' ) && false === strpos( $stage_card, '<p' ) && false === strpos( $stage_card, '<a' );
+	}
 
 	// Блок «Сводка профиля» дублирует отметку бейджем в карточке команды.
 	$stage_summary_block = array( 'type' => 'block', 'id' => 'profile-summary', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' );
@@ -1760,6 +1765,7 @@ if ( is_wp_error( $stage_team ) ) {
 	$GLOBALS['wppa_test']['current_user'] = 73;
 	$stage_member_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 73 ) ) );
 	$stage_checks['участник видит отметку'] = false !== strpos( $stage_member_html, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
+	$stage_checks['дата в карточке команды сохранена'] = false !== strpos( $stage_member_html, 'Отмечено ' );
 
 	$GLOBALS['wppa_test']['current_user'] = 72;
 	$stage_mentor_html = WPPA_Builder::render_block( $stage_block, array( 'user' => get_userdata( 72 ) ) );
@@ -6503,6 +6509,9 @@ $mt_dashboard = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userda
 $mt_checks['обзор показывает второй этап другой команды'] = false !== strpos( $mt_dashboard, 'Мульти Бета' ) && false !== strpos( $mt_dashboard, '<span class="wppa-badge wppa-badge--stage2">Ваша команда прошла во второй этап</span>' );
 
 update_post_meta( $mt_a, WPPA_Teams::META_STAGE2, array( 'time' => time(), 'user' => 12 ) );
+$mt_dashboard_two = WPPA_Template::get( 'tab-dashboard', array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
+preg_match_all( '/<div class="wppa-card wppa-stage2 wppa-stage2--notice"[^>]*>(.*?)<\/div>\s*<\/div>/s', $mt_dashboard_two, $mt_stage_cards );
+$mt_checks['две команды: отдельные карточки без даты и ссылки'] = 2 === count( $mt_stage_cards[1] ) && false !== strpos( $mt_stage_cards[1][0] . $mt_stage_cards[1][1], 'Мульти Альфа' ) && false !== strpos( $mt_stage_cards[1][0] . $mt_stage_cards[1][1], 'Мульти Бета' ) && false === strpos( implode( '', $mt_stage_cards[1] ), '<a' ) && false === strpos( implode( '', $mt_stage_cards[1] ), '<p' );
 $mt_mail_rows = array_values( array_filter( WPPA_Mailing::recipients(), static function ( $row ) { return 1304 === (int) $row['user_id']; } ) );
 $mt_mail_teams = array_column( $mt_mail_rows, 'team_id' );
 $mt_checks['очередь создаёт письмо для каждой команды наставника'] = 2 === count( $mt_mail_rows ) && in_array( $mt_a, $mt_mail_teams ) && in_array( $mt_b, $mt_mail_teams );
