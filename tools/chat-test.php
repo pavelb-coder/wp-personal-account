@@ -6,7 +6,7 @@ define( 'WPPA_VERSION', 'test' );
 define( 'WPPA_FILE', $base . 'wp-personal-account.php' );
 define( 'WPPA_PATH', $base );
 define( 'WPPA_URL', 'https://example.com/wp-content/plugins/wp-personal-account/' );
-foreach ( array( 'plugin', 'template', 'notices', 'teams', 'chat', 'builder' ) as $class ) { require $base . 'includes/class-wppa-' . $class . '.php'; }
+foreach ( array( 'plugin', 'template', 'theme', 'notices', 'teams', 'chat', 'builder' ) as $class ) { require $base . 'includes/class-wppa-' . $class . '.php'; }
 $fail = 0; $count = 0;
 function chat_assert( $condition, $label ) { global $fail, $count; ++$count; echo ( $condition ? 'OK   ' : 'FAIL ' ) . $label . "\n"; if ( ! $condition ) { ++$fail; } }
 function chat_ajax( $method, $user, $mentor, $nonce, $text = '' ) {
@@ -17,7 +17,7 @@ function chat_ajax( $method, $user, $mentor, $nonce, $text = '' ) {
 }
 function chat_html( $id, $mentor = 0, $page = 1 ) {
 	$GLOBALS['wppa_test']['current_user'] = $id; $GLOBALS['wppa_test']['logged_in'] = $id > 0;
-	$_GET = array( 'wppa_chat_mentor' => $mentor, 'wppa_chat_page' => $page );
+	$_GET = array( 'wppa_chat_mentor' => $mentor, 'wppa_chat_page' => $page, 'wppa_chat_view_nonce' => wp_create_nonce( 'wppa_chat_view_' . (int) $mentor ) );
 	$user = new WP_User( $id ); $block_title = ''; ob_start(); include WPPA_PATH . 'templates/blocks/chat-widget.php'; return ob_get_clean();
 }
 $GLOBALS['wppa_test']['users'] = array( 8 => array( 'Наставник один', 'email' => 'one@example.com' ), 9 => array( 'Наставник два', 'email' => 'two@example.com' ), 11 => array( 'Участник', 'email' => 'member@example.com' ), 12 => array( 'Куратор один', 'email' => 'curator@example.com' ), 13 => array( 'Куратор два', 'email' => 'curator2@example.com' ) );
@@ -34,6 +34,33 @@ $nonce = wp_create_nonce( 'wppa_chat_ajax' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 8, "Вопрос: \\\"цитата\\\" \\ путь\nвторая строка" ), 'сообщение наставника' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 12, 'Ответ первого куратора' ) && 'chat_sent' === WPPA_Chat::send( 8, 13, 'Ответ второго куратора' ), 'каждый куратор отвечает независимо' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 9, 9, 'секрет второго' ), 'отдельный чат другого наставника' );
+// Счётчики независимы для кураторов, учитывают только реплики наставника.
+chat_assert( WPPA_Chat::unread( 12 ) === array( 8 => 1, 9 => 1 ) && WPPA_Chat::unread( 13 ) === array( 8 => 1, 9 => 1 ), 'каждый куратор видит новые сообщения каждого наставника' );
+$GLOBALS['wppa_test']['current_user'] = 12; $_GET = array();
+$account = WPPA_Template::get( 'account', array( 'user' => new WP_User( 12 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) );
+chat_assert( false !== strpos( $account, 'data-wppa-unread-badge' ) && false !== strpos( $account, 'Непрочитанных сообщений: 2' ), 'куратор видит количество у вкладки кабинета' );
+$index = chat_html( 12 );
+chat_assert( false !== strpos( $index, 'Новые сообщения от наставников' ) && false !== strpos( $index, 'Наставник один' ) && false !== strpos( $index, 'Наставник два' ) && false === strpos( $index, 'секрет второго' ), 'список непрочитанных содержит ссылки без текста' );
+$r = chat_ajax( 'ajax_unread', 11, 8, $nonce ); chat_assert( ! $r->payload['success'] && 403 === $r->status, 'участник не может получать список' );
+$r = chat_ajax( 'ajax_unread', 12, 8, 'bad' ); chat_assert( ! $r->payload['success'] && 403 === $r->status, 'nonce списка проверяется' );
+$r = chat_ajax( 'ajax_unread', 12, 8, $nonce ); chat_assert( $r->payload['success'] && 2 === $r->payload['data']['total'], 'AJAX возвращает общий счётчик куратора' );
+$snapshot = WPPA_Chat::messages( 8, 12 )['items'];
+WPPA_Chat::mark_read( 8, 12, $snapshot );
+chat_assert( ! isset( WPPA_Chat::unread( 12 )[8] ) && isset( WPPA_Chat::unread( 13 )[8] ), 'прочтение одним куратором не затрагивает другого' );
+$GLOBALS['wppa_test']['blog_id'] = 2; chat_assert( isset( WPPA_Chat::unread( 12 )[8] ), 'отметки разных сайтов multisite не смешиваются' ); $GLOBALS['wppa_test']['blog_id'] = 1;
+WPPA_Chat::send( 8, 8, 'новое после открытия' );
+$last_ids = array_keys( $GLOBALS['wppa_test']['posts'] ); $new_id = end( $last_ids );
+WPPA_Chat::mark_read( 8, 12, $snapshot );
+chat_assert( 1 === WPPA_Chat::unread( 12 )[8], 'новое сообщение после снимка не отмечается прочитанным' );
+chat_html( 12, 8, 2 ); chat_assert( 1 === WPPA_Chat::unread( 12 )[8], 'просмотр старой страницы не скрывает новые сообщения' );
+$GLOBALS['wppa_test']['current_user'] = 12; $_GET = array( 'wppa_chat_mentor' => 8, 'wppa_chat_view_nonce' => 'bad' );
+$user = new WP_User( 12 ); $block_title = ''; ob_start(); include WPPA_PATH . 'templates/blocks/chat-widget.php'; ob_end_clean();
+chat_assert( 1 === WPPA_Chat::unread( 12 )[8], 'поддельный переход не отмечает переписку прочитанной' );
+chat_html( 12, 8, 1 ); chat_assert( ! isset( WPPA_Chat::unread( 12 )[8] ) && isset( WPPA_Chat::unread( 13 )[8] ), 'открытие последней страницы отмечает её для конкретного куратора' );
+WPPA_Chat::mark_read( 8, 12, $snapshot ); chat_assert( ! isset( WPPA_Chat::unread( 12 )[8] ), 'запаздывающий запрос не откатывает отметку прочтения' );
+wp_delete_post( $new_id, true );
+$r = chat_ajax( 'ajax_read', 13, 8, $nonce ); chat_assert( $r->payload['success'] && ! isset( WPPA_Chat::unread( 13 )[8] ), 'автообновление открытого чата отмечает сообщения прочитанными' );
+chat_assert( ! WPPA_Chat::unread( 11 ), 'посторонним счётчики недоступны' );
 $one = WPPA_Chat::messages( 8, 8 );
 chat_assert( 3 === count( $one['items'] ) && "Вопрос: \\\"цитата\\\" \\ путь\nвторая строка" === $one['items'][0]->post_content, 'кавычки, переносы и обратные слэши сохранены' );
 chat_assert( 0 === count( WPPA_Chat::messages( 8, 9 )['items'] ) && 'chat_forbidden' === WPPA_Chat::send( 8, 11, 'чужой текст' ), 'доступ к данным и записи проверяется на сервере' );
@@ -76,6 +103,8 @@ include WPPA_PATH . 'uninstall.php';
 chat_assert( count( WPPA_Chat::messages( 8, 8 )['items'] ) === 50, 'деинсталляция по умолчанию сохраняет историю' );
 for ( $i = 0; $i < 501; ++$i ) { WPPA_Chat::send( 8, 8, 'проверка удаления' ); }
 $settings = get_option( 'wppa_settings' ); $settings['delete_data_on_uninstall'] = 1; update_option( 'wppa_settings', $settings );
+update_user_meta( 12, '_wppa_chat_read_2_8', 123 );
 include WPPA_PATH . 'uninstall.php';
-chat_assert( 0 === count( get_posts( array( 'post_type' => WPPA_Chat::CPT, 'post_status' => 'private', 'numberposts' => -1 ) ) ) && get_post_type( $team1 ) === WPPA_Teams::CPT, 'деинсталляция с очисткой удаляет всю переписку, но не команды' );
+chat_assert( 123 === get_user_meta( 12, '_wppa_chat_read_2_8', true ), 'очистка не удаляет отметки другого сайта multisite' );
+chat_assert( 0 === count( get_posts( array( 'post_type' => WPPA_Chat::CPT, 'post_status' => 'private', 'numberposts' => -1 ) ) ) && get_post_type( $team1 ) === WPPA_Teams::CPT && '' === get_user_meta( 12, WPPA_Chat::read_prefix() . '8', true ), 'деинсталляция с очисткой удаляет переписку и отметки, но не команды' );
 echo "Проверок: $count, ошибок: $fail\n"; exit( $fail ? 1 : 0 );

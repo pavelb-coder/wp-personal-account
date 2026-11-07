@@ -49,6 +49,13 @@ defined( 'ABSPATH' ) || exit;
 
 	<?php WPPA_Notices::render(); ?>
 
+	<?php
+	// Индикатор доступен только кураторам и только если вкладка включена.
+	$wppa_show_unread = is_user_logged_in() && get_current_user_id() === (int) $user->ID && isset( $tabs['messages'] ) && WPPA_Teams::is_curator( $user->ID );
+	$wppa_unread_total = $wppa_show_unread ? array_sum( WPPA_Chat::unread( $user->ID ) ) : 0;
+	if ( $wppa_show_unread ) { wp_enqueue_script( 'wppa-chat-unread', WPPA_URL . 'assets/js/chat-unread.js', array(), WPPA_VERSION, true ); }
+	?>
+
 	<nav class="wppa-nav" aria-label="<?php esc_attr_e( 'Разделы личного кабинета', 'wp-personal-account' ); ?>">
 		<?php
 		foreach ( $tabs as $slug => $label ) :
@@ -62,6 +69,9 @@ defined( 'ABSPATH' ) || exit;
 				<?php echo $slug === $current_tab ? 'aria-current="page"' : ''; ?>
 			>
 				<?php echo esc_html( $label ); ?>
+				<?php if ( 'messages' === $slug && $wppa_show_unread ) : ?>
+					<span class="wppa-chat__badge" data-wppa-unread-badge data-nonce="<?php echo esc_attr( wp_create_nonce( 'wppa_chat_ajax' ) ); ?>" data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Непрочитанных сообщений: %d', 'wp-personal-account' ), $wppa_unread_total ) ); ?>" <?php echo $wppa_unread_total ? '' : 'hidden'; ?>><?php echo esc_html( (string) $wppa_unread_total ); ?></span>
+				<?php endif; ?>
 			</a>
 		<?php endforeach; ?>
 	</nav>

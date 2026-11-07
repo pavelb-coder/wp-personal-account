@@ -7,11 +7,13 @@ class WPPA_Chat {
 	const MENTOR_META = '_wppa_chat_mentor';
 	const PAGE_SIZE = 50;
 	const MAX_LENGTH = 2000;
+	const READ_META_PREFIX = '_wppa_chat_read_';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'wp_ajax_wppa_chat_read', array( __CLASS__, 'ajax_read' ) );
 		add_action( 'wp_ajax_wppa_chat_send', array( __CLASS__, 'ajax_send' ) );
+		add_action( 'wp_ajax_wppa_chat_unread', array( __CLASS__, 'ajax_unread' ) );
 	}
 
 	public static function register_post_type() {
@@ -69,6 +71,92 @@ class WPPA_Chat {
 		return array( 'items' => array_reverse( array_slice( $posts, 0, self::PAGE_SIZE ) ), 'more' => $more );
 	}
 
+	/** Метаданные пользователей общие в multisite, поэтому добавляем ID сайта. */
+	public static function read_prefix() { return self::READ_META_PREFIX . get_current_blog_id() . '_'; }
+
+	/** Для каждого куратора — собственный счётчик новых сообщений каждого наставника. */
+	public static function unread( $user_id, $mentors = null ) {
+		$user_id = (int) $user_id;
+		if ( $user_id <= 0 || ! WPPA_Teams::is_curator( $user_id ) ) { return array(); }
+		if ( null === $mentors ) { $mentors = self::mentors(); }
+		$active = array();
+		foreach ( $mentors as $mentor ) {
+			if ( $mentor instanceof WP_User && (int) $mentor->ID !== $user_id && self::can_view( $mentor->ID, $user_id ) ) {
+				$active[ (int) $mentor->ID ] = $mentor;
+			}
+		}
+		if ( ! $active ) { return array(); }
+		global $wpdb;
+		// Только сообщения наставника (не ответы кураторов), без чтения текста.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- актуальные персональные счётчики.
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT /* WPPA_CHAT_UNREAD */ p.post_author AS mentor_id, COUNT(DISTINCT p.ID) AS unread_count
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = %s
+			LEFT JOIN (
+				SELECT meta_key, MAX(CAST(meta_value AS UNSIGNED)) AS last_seen
+				FROM {$wpdb->usermeta} WHERE user_id = %d GROUP BY meta_key
+			) seen ON seen.meta_key = CONCAT(%s, p.post_author)
+			WHERE p.post_type = %s AND p.post_status = 'private'
+			AND CAST(pm.meta_value AS UNSIGNED) = p.post_author
+			AND p.ID > COALESCE(seen.last_seen, 0)
+			GROUP BY p.post_author",
+			self::MENTOR_META, $user_id, self::read_prefix(), self::CPT
+		) );
+		$counts = array();
+		foreach ( (array) $rows as $row ) {
+			$id = (int) $row->mentor_id;
+			$count = (int) $row->unread_count;
+			if ( isset( $active[ $id ] ) && $count > 0 ) { $counts[ $id ] = $count; }
+		}
+		return $counts;
+	}
+
+	/** Отмечаем просмотр только по последней выданной странице, не затрагивая параллельно пришедшие сообщения. */
+	public static function mark_read( $mentor_id, $user_id, $messages ) {
+		$mentor_id = (int) $mentor_id; $user_id = (int) $user_id;
+		if ( ! WPPA_Teams::is_curator( $user_id ) || ! self::can_view( $mentor_id, $user_id ) ) { return; }
+		$latest = 0;
+		foreach ( (array) $messages as $message ) {
+			if ( $message instanceof WP_Post && self::CPT === $message->post_type && 'private' === $message->post_status
+				&& (int) get_post_meta( $message->ID, self::MENTOR_META, true ) === $mentor_id ) {
+				$latest = max( $latest, (int) $message->ID );
+			}
+		}
+		if ( ! $latest ) { return; }
+		$key = self::read_prefix() . $mentor_id;
+		// Сравнение предыдущего значения не позволяет параллельному запросу сдвинуть отметку назад.
+		for ( $attempt = 0; $attempt < 4; ++$attempt ) {
+			$previous = get_user_meta( $user_id, $key, true );
+			if ( (int) $previous >= $latest ) { return; }
+			if ( '' === $previous ) {
+				if ( add_user_meta( $user_id, $key, $latest, true ) ) { return; }
+			} elseif ( update_user_meta( $user_id, $key, $latest, $previous ) ) { return; }
+		}
+	}
+
+	/** Список непрочитанных диалогов содержит только имена и ссылки, текст не раскрывается. */
+	public static function unread_html( $user_id, $counts, $mentors ) {
+		if ( ! WPPA_Teams::is_curator( $user_id ) || ! $counts ) { return ''; }
+		$out = '<div class="wppa-chat__unread"><strong>' . esc_html__( 'Новые сообщения от наставников', 'wp-personal-account' ) . '</strong><ul>';
+		foreach ( $mentors as $mentor ) {
+			$id = (int) $mentor->ID;
+			if ( empty( $counts[ $id ] ) || ! self::can_view( $id, $user_id ) ) { continue; }
+			$out .= '<li><a href="' . esc_url( self::thread_url( $id ) ) . '">' . esc_html( $mentor->display_name . ' (' . $mentor->user_email . ')' ) . '</a> — ' . esc_html( sprintf( __( 'непрочитанных: %d', 'wp-personal-account' ), (int) $counts[ $id ] ) ) . '</li>';
+		}
+		return $out . '</ul></div>';
+	}
+
+	public static function ajax_unread() {
+		$user_id = is_user_logged_in() ? get_current_user_id() : 0;
+		$nonce = isset( $_POST['nonce'] ) && is_string( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
+		if ( ! $user_id || ! WPPA_Teams::is_curator( $user_id ) || ! wp_verify_nonce( $nonce, 'wppa_chat_ajax' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Нет доступа. Обновите страницу.', 'wp-personal-account' ) ), 403 );
+		}
+		$mentors = self::mentors(); $counts = self::unread( $user_id, $mentors );
+		wp_send_json_success( array( 'total' => array_sum( $counts ), 'html' => self::unread_html( $user_id, $counts, $mentors ) ) );
+	}
+
 	/** Сообщения — только обычный текст, без HTML, вложений и ссылок с разметкой. */
 	public static function send( $mentor_id, $user_id, $text ) {
 		if ( ! self::can_view( $mentor_id, $user_id ) ) {
@@ -95,7 +183,10 @@ class WPPA_Chat {
 
 	public static function thread_url( $mentor_id = 0, $page = 1 ) {
 		$args = array();
-		if ( $mentor_id ) { $args['wppa_chat_mentor'] = (int) $mentor_id; }
+		if ( $mentor_id ) {
+			$args['wppa_chat_mentor'] = (int) $mentor_id;
+			$args['wppa_chat_view_nonce'] = wp_create_nonce( 'wppa_chat_view_' . (int) $mentor_id );
+		}
 		if ( $page > 1 ) { $args['wppa_chat_page'] = (int) $page; }
 		return WPPA_Plugin::tab_url( 'messages', $args );
 	}
@@ -124,6 +215,7 @@ class WPPA_Chat {
 	public static function ajax_read() {
 		list( $user_id, $mentor ) = self::ajax_user_and_mentor();
 		$data = self::messages( $mentor, $user_id );
+		self::mark_read( $mentor, $user_id, $data['items'] );
 		wp_send_json_success( array( 'html' => self::messages_html( $data['items'], $mentor, $user_id ), 'more' => $data['more'] ) );
 	}
 
@@ -136,6 +228,7 @@ class WPPA_Chat {
 			wp_send_json_error( array( 'message' => isset( $notices[ $result ][1] ) ? $notices[ $result ][1] : __( 'Не удалось отправить сообщение.', 'wp-personal-account' ) ), 400 );
 		}
 		$data = self::messages( $mentor, $user_id );
+		self::mark_read( $mentor, $user_id, $data['items'] );
 		wp_send_json_success( array( 'html' => self::messages_html( $data['items'], $mentor, $user_id ), 'more' => $data['more'] ) );
 	}
 

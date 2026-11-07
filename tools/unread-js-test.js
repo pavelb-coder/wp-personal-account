@@ -1,0 +1,24 @@
+'use strict';
+const assert = require('assert');
+const vm = require('vm');
+const fs = require('fs');
+const handlers = {};
+const badge = { dataset: { nonce: 'nonce', ajax: '/wp-admin/admin-ajax.php' }, textContent: '0', hidden: true, setAttribute(k, v) { this[k] = v; } };
+const list = { innerHTML: '' };
+let calls = [], interval, response = { success: true, data: { total: 2, html: '<ul><li>Наставник</li></ul>' } };
+const document = { readyState: 'complete', hidden: false, querySelector(selector) { return selector === '[data-wppa-unread-badge]' ? badge : list; }, addEventListener(name, fn) { handlers[name] = fn; } };
+const window = { fetch: true, URLSearchParams, setInterval(fn, ms) { assert.equal(ms, 15000); interval = fn; } };
+const context = { window, document, URLSearchParams, fetch(url, opts) { calls.push([url, opts]); return response instanceof Error ? Promise.reject(response) : Promise.resolve({ json: () => Promise.resolve(response) }); } };
+vm.runInNewContext(fs.readFileSync(__dirname + '/../assets/js/chat-unread.js', 'utf8'), context);
+const tick = () => new Promise(resolve => setImmediate(resolve));
+(async () => {
+  await tick();
+  assert.equal(badge.textContent, '2'); assert.equal(badge.hidden, false); assert.match(badge['aria-label'], /2/); assert.match(list.innerHTML, /Наставник/);
+  assert.equal(calls[0][1].body.get('action'), 'wppa_chat_unread'); assert.equal(calls[0][1].body.get('nonce'), 'nonce');
+  document.hidden = true; interval(); await tick(); assert.equal(calls.length, 1);
+  document.hidden = false; response = { success: true, data: { total: 0, html: '' } }; handlers['wppa:chat-updated'](); await tick();
+  assert.equal(badge.hidden, true); assert.equal(list.innerHTML, '');
+  response = new Error('offline'); interval(); await tick(); assert.equal(badge.hidden, true);
+  response = { success: true, data: { total: 3, html: '<p>Новое</p>' } }; handlers.visibilitychange(); await tick(); assert.equal(badge.textContent, '3');
+  console.log('OK: счётчик, список, видимость вкладки, обновление и ошибка сети');
+})().catch(e => { console.error(e); process.exitCode = 1; });

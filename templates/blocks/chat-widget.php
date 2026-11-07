@@ -11,14 +11,23 @@ $wppa_chat_page = isset( $_GET['wppa_chat_page'] ) && is_scalar( $_GET['wppa_cha
 $wppa_chat_allowed = WPPA_Chat::can_view( $wppa_chat_mentor_id, $wppa_chat_user_id );
 $wppa_chat_mentors = $wppa_chat_is_curator ? WPPA_Chat::mentors() : array();
 $wppa_chat_mentor = $wppa_chat_allowed ? get_userdata( $wppa_chat_mentor_id ) : false;
+$wppa_chat_data = $wppa_chat_allowed && $wppa_chat_mentor ? WPPA_Chat::messages( $wppa_chat_mentor_id, $wppa_chat_user_id, $wppa_chat_page ) : array( 'items' => array(), 'more' => false );
+// Переход по ссылке со страницы кабинета отмечает открытый диалог прочитанным и без JavaScript.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce дополнительно проверяется перед изменением отметки.
+$wppa_chat_view_nonce = isset( $_GET['wppa_chat_view_nonce'] ) && is_string( $_GET['wppa_chat_view_nonce'] ) ? wp_unslash( $_GET['wppa_chat_view_nonce'] ) : '';
+if ( $wppa_chat_is_curator && $wppa_chat_allowed && 1 === $wppa_chat_page && wp_verify_nonce( $wppa_chat_view_nonce, 'wppa_chat_view_' . $wppa_chat_mentor_id ) ) {
+	WPPA_Chat::mark_read( $wppa_chat_mentor_id, $wppa_chat_user_id, $wppa_chat_data['items'] );
+}
+$wppa_chat_unread = $wppa_chat_is_curator ? WPPA_Chat::unread( $wppa_chat_user_id, $wppa_chat_mentors ) : array();
 ?>
 <section class="wppa-card wppa-chat">
 	<h2 class="wppa-title"><?php echo isset( $block_title ) && '' !== $block_title ? esc_html( $block_title ) : esc_html__( 'Сообщения', 'wp-personal-account' ); ?></h2>
 	<?php if ( $wppa_chat_is_curator ) : ?>
 		<p class="wppa-hint"><?php esc_html_e( 'Выберите наставника. Переписку видят все кураторы и выбранный наставник.', 'wp-personal-account' ); ?></p>
+		<div data-wppa-unread-list aria-live="polite"><?php echo WPPA_Chat::unread_html( $wppa_chat_user_id, $wppa_chat_unread, $wppa_chat_mentors ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- значения экранируются в методе. ?></div>
 		<?php if ( $wppa_chat_mentors ) : ?>
 			<div class="wppa-chat__select">
-								<label for="wppa-chat-mentor"><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></label>
+				<label for="wppa-chat-mentor"><?php esc_html_e( 'Наставник', 'wp-personal-account' ); ?></label>
 				<select id="wppa-chat-mentor" data-wppa-chat-select>
 					<option value=""><?php esc_html_e( '— выберите наставника —', 'wp-personal-account' ); ?></option>
 					<?php foreach ( $wppa_chat_mentors as $wppa_chat_choice ) : ?>
@@ -39,7 +48,6 @@ $wppa_chat_mentor = $wppa_chat_allowed ? get_userdata( $wppa_chat_mentor_id ) : 
 	<?php endif; ?>
 	<?php if ( $wppa_chat_allowed && $wppa_chat_mentor ) : ?>
 		<h3 class="wppa-subtitle"><?php echo esc_html( $wppa_chat_is_curator ? sprintf( __( 'Переписка: %s', 'wp-personal-account' ), $wppa_chat_mentor->display_name ) : __( 'Переписка с кураторами', 'wp-personal-account' ) ); ?></h3>
-		<?php $wppa_chat_data = WPPA_Chat::messages( $wppa_chat_mentor_id, $wppa_chat_user_id, $wppa_chat_page ); ?>
 		<div class="wppa-chat__history" data-wppa-chat-history data-mentor="<?php echo esc_attr( (string) $wppa_chat_mentor_id ); ?>" data-page="<?php echo esc_attr( (string) $wppa_chat_page ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wppa_chat_ajax' ) ); ?>" data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" role="log" aria-live="polite">
 			<?php echo WPPA_Chat::messages_html( $wppa_chat_data['items'], $wppa_chat_mentor_id, $wppa_chat_user_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- значения экранируются в методе. ?>
 		</div>

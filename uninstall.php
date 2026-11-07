@@ -50,3 +50,12 @@ do {
 		if ( wp_delete_post( $wppa_chat_id, true ) ) { ++$wppa_deleted; }
 	}
 } while ( count( $wppa_chat_ids ) === 500 && $wppa_deleted === 500 );
+
+// Удаляем персональные отметки прочтения только при включённой полной очистке.
+global $wpdb;
+$wppa_chat_meta_pattern = $wpdb->esc_like( '_wppa_chat_read_' . get_current_blog_id() . '_' ) . '%';
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- деинсталляция, метаключи содержат ID наставника.
+$wppa_chat_curators = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key LIKE %s", $wppa_chat_meta_pattern ) );
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- пакетная очистка.
+$wpdb->query( $wpdb->prepare( "DELETE /* WPPA_CHAT_CLEANUP */ FROM {$wpdb->usermeta} WHERE meta_key LIKE %s", $wppa_chat_meta_pattern ) );
+foreach ( (array) $wppa_chat_curators as $wppa_chat_curator ) { wp_cache_delete( (int) $wppa_chat_curator, 'user_meta' ); }

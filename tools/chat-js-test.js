@@ -11,9 +11,9 @@ const select = { value: '', addEventListener(name, fn) { handlers.select = fn; }
 const history = { dataset: { page: '1', mentor: '8', nonce: 'nonce', ajax: '/wp-admin/admin-ajax.php' }, scrollTop: 0, scrollHeight: 200, clientHeight: 100, innerHTML: 'initial' };
 const form = { action: '/account?tab=messages', addEventListener(name, fn) { handlers.submit = fn; }, querySelector(selector) { return selector === 'textarea' ? input : selector === 'button[type="submit"]' ? button : status; } };
 let requests = [], interval, response = { success: true, data: { html: '<p>reply</p>', more: true } };
-const document = { readyState: 'complete', hidden: false, querySelector(selector) { return ({ '[data-wppa-chat-select]': select, '[data-wppa-chat-history]': history, '[data-wppa-chat-form]': form, '[data-wppa-chat-older]': older })[selector]; }, addEventListener(name, fn) { handlers[name] = fn; } };
+const document = { readyState: 'complete', hidden: false, querySelector(selector) { return ({ '[data-wppa-chat-select]': select, '[data-wppa-chat-history]': history, '[data-wppa-chat-form]': form, '[data-wppa-chat-older]': older })[selector]; }, addEventListener(name, fn) { handlers[name] = fn; }, dispatchEvent() {} };
 const window = { fetch: true, URLSearchParams, setInterval(fn, delay) { interval = fn; assert.equal(delay, 15000); return 1; }, clearInterval() {}, addEventListener() {}, location: { assign(url) { handlers.navigated = url; } } };
-const context = { window, document, URLSearchParams, fetch(url, opts) { requests.push([url, opts]); return response instanceof Error ? Promise.reject(response) : Promise.resolve({ json: () => Promise.resolve(response) }); } };
+const context = { window, document, URLSearchParams, Event: function (type) { this.type = type; }, fetch(url, opts) { requests.push([url, opts]); return response instanceof Error ? Promise.reject(response) : Promise.resolve({ json: () => Promise.resolve(response) }); } };
 vm.runInNewContext(fs.readFileSync(__dirname + '/../assets/js/chat.js', 'utf8'), context);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 (async () => {

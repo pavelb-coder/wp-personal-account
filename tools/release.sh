@@ -93,6 +93,14 @@ if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/chat-js-test.js" ]]; th
 	node "$ROOT/tools/chat-js-test.js" >/dev/null && ok "тест интерфейса чата пройден" || die "тест интерфейса чата упал"
 fi
 
+if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/unread-js-test.js" ]]; then
+	node "$ROOT/tools/unread-js-test.js" >/dev/null && ok "тест индикатора сообщений пройден" || die "тест индикатора сообщений упал"
+fi
+
+if command -v python3 >/dev/null 2>&1 && [[ -f "$ROOT/tools/unread-sql-test.py" ]]; then
+	python3 "$ROOT/tools/unread-sql-test.py" >/dev/null && ok "тест SQL индикатора пройден" || die "тест SQL индикатора упал"
+fi
+
 # Сборка архива: только то, что нужно на сайте.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT

@@ -129,9 +129,11 @@ WPPA_Chat::send( 8, 12, 'Здравствуйте! Информация появ
 $GLOBALS['wppa_test']['current_user'] = 8;
 $sections .= demo_section( 'Наставник: сообщения', 'Личная переписка наставника со всеми кураторами. Статическая демонстрация без отправки.', WPPA_Template::get( 'tab-messages', array( 'user' => new WP_User( 8 ), 'tabs' => $tabs ) ) );
 $GLOBALS['wppa_test']['current_user'] = 12;
+$sections .= demo_section( 'Куратор: новые сообщения', 'Число у вкладки и список непрочитанных наставников видны независимо для каждого куратора.', WPPA_Template::get( 'account', array( 'user' => new WP_User( 12 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) ) );
 $_GET['wppa_chat_mentor'] = 8;
+$_GET['wppa_chat_view_nonce'] = wp_create_nonce( 'wppa_chat_view_8' );
 $sections .= demo_section( 'Куратор: сообщения', 'Куратор выбирает наставника и отвечает в его личной переписке.', WPPA_Template::get( 'tab-messages', array( 'user' => new WP_User( 12 ), 'tabs' => $tabs ) ) );
-unset( $_GET['wppa_chat_mentor'] );
+unset( $_GET['wppa_chat_mentor'], $_GET['wppa_chat_view_nonce'] );
 WPPA_Teams::set_curator( 12, false );
 $GLOBALS['wppa_test']['current_user'] = 7;
 

@@ -161,11 +161,19 @@ function wp_send_json_error( $data = null, $status = null ) { throw new WPPA_Stu
 
 function is_email( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); }
 function absint( $v ) { return abs( (int) $v ); }
+function get_current_blog_id() { return isset( $GLOBALS['wppa_test']['blog_id'] ) ? (int) $GLOBALS['wppa_test']['blog_id'] : 1; }
 function get_option( $k, $d = false ) { return array_key_exists( $k, $GLOBALS['wppa_test']['options'] ) ? $GLOBALS['wppa_test']['options'][ $k ] : $d; }
 function update_option( $k, $v ) { $GLOBALS['wppa_test']['options'][ $k ] = $v; return true; }
 function delete_option( $k ) { unset( $GLOBALS['wppa_test']['options'][ $k ] ); return true; }
 function get_user_meta( $uid, $key, $single = false ) { return isset( $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] ) ? $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] : ''; }
-function update_user_meta( $uid, $key, $value ) { $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] = $value; return true; }
+function update_user_meta( $uid, $key, $value, $previous = '' ) {
+	if ( '' !== $previous && (string) get_user_meta( $uid, $key, true ) !== (string) $previous ) { return false; }
+	$GLOBALS['wppa_test']['meta'][ $uid ][ $key ] = $value; return true;
+}
+function add_user_meta( $uid, $key, $value, $unique = false ) {
+	if ( $unique && isset( $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] ) ) { return false; }
+	$GLOBALS['wppa_test']['meta'][ $uid ][ $key ] = $value; return true;
+}
 if ( ! function_exists( 'delete_metadata' ) ) {
 	function delete_metadata( $type, $object_id, $key, $value = '', $delete_all = false ) { if ( 'user' === $type && $delete_all ) { foreach ( $GLOBALS['wppa_test']['meta'] as &$meta ) { unset( $meta[ $key ] ); } } return true; }
 }
@@ -263,7 +271,7 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	 * @return int|false
 	 */
 	function wp_verify_nonce( $nonce, $action = -1 ) {
-		return in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
+		return ( in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) || 0 === strpos( (string) $action, 'wppa_chat_view_' ) ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
 	}
 }
 function wp_safe_redirect( $u ) {
@@ -768,6 +776,9 @@ function wp_tempnam( $filename = '', $dir = '' ) {
 class WPPA_Test_WPDB {
 
 	public $prefix = 'wp_';
+	public $posts = 'wp_posts';
+	public $postmeta = 'wp_postmeta';
+	public $usermeta = 'wp_usermeta';
 
 	public $data = array();
 
@@ -789,11 +800,39 @@ class WPPA_Test_WPDB {
 	public function get_results( $query, $output = null ) {
 		$this->queries[] = $query;
 
+		if ( false !== strpos( $query, 'WPPA_CHAT_UNREAD' ) ) {
+			preg_match( '/WHERE user_id = (\d+)/', $query, $match );
+			$uid = isset( $match[1] ) ? (int) $match[1] : 0;
+			$counts = array();
+			foreach ( $GLOBALS['wppa_test']['posts'] as $id => $post ) {
+				if ( 'wppa_chat_message' !== $post->post_type || 'private' !== $post->post_status ) { continue; }
+				$mentor = (int) get_post_meta( $id, '_wppa_chat_mentor', true );
+				if ( $mentor !== (int) $post->post_author || $id <= (int) get_user_meta( $uid, '_wppa_chat_read_' . get_current_blog_id() . '_' . $mentor, true ) ) { continue; }
+				$counts[ $mentor ] = isset( $counts[ $mentor ] ) ? $counts[ $mentor ] + 1 : 1;
+			}
+			$out = array(); foreach ( $counts as $mentor => $count ) { $out[] = (object) array( 'mentor_id' => $mentor, 'unread_count' => $count ); }
+			return $out;
+		}
 		if ( false !== strpos( $query, 'olympiad_attempts' ) ) {
 			return isset( $this->data['attempts'] ) ? $this->data['attempts'] : array();
 		}
 
 		return array();
+	}
+
+	public function query( $query ) {
+		$this->queries[] = $query;
+		if ( false !== strpos( $query, 'WPPA_CHAT_CLEANUP' ) ) {
+			foreach ( $GLOBALS['wppa_test']['meta'] as &$meta ) { foreach ( array_keys( $meta ) as $key ) { if ( 0 === strpos( $key, '_wppa_chat_read_' . get_current_blog_id() . '_' ) ) { unset( $meta[ $key ] ); } } }
+		}
+		return 1;
+	}
+
+	public function get_col( $query = null ) {
+		$this->queries[] = $query;
+		$ids = array();
+		foreach ( $GLOBALS['wppa_test']['meta'] as $id => $meta ) { foreach ( array_keys( $meta ) as $key ) { if ( 0 === strpos( $key, '_wppa_chat_read_' . get_current_blog_id() . '_' ) ) { $ids[] = $id; break; } } }
+		return $ids;
 	}
 
 	public function get_var( $query = null ) {
@@ -814,6 +853,8 @@ class WPPA_Test_WPDB {
 }
 
 $GLOBALS['wpdb'] = new WPPA_Test_WPDB();
+
+function wp_cache_delete( $key, $group = '' ) { return true; }
 
 function esc_sql( $data ) {
 	return str_replace( array( "'", '"' ), array( "\'", '\"' ), (string) $data );

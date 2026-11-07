@@ -15,7 +15,7 @@ class WPPA_Plugin {
 	/**
 	 * Query-параметры плагина (регистрируются, чтобы WordPress их не выбрасывал).
 	 */
-	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login', 'wppa_redirect', 'wppa_form', 'wppa_chat_mentor', 'wppa_chat_page' );
+	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login', 'wppa_redirect', 'wppa_form', 'wppa_chat_mentor', 'wppa_chat_page', 'wppa_chat_view_nonce' );
 
 	/**
 	 * Минимальная длина пароля.

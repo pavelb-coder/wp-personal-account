@@ -31,6 +31,7 @@
       if (history.innerHTML.trim() !== data.html.trim()) history.innerHTML = data.html;
       if (older) older.hidden = !data.more;
       if (force || atBottom) history.scrollTop = history.scrollHeight;
+      document.dispatchEvent(new Event('wppa:chat-updated'));
     }
     function refresh() {
       if (!firstPage || document.hidden || busy) return;
