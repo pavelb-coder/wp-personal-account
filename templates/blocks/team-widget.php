@@ -366,7 +366,6 @@ $wppa_pending_mentor = is_array( $wppa_pending_mentor ) ? $wppa_pending_mentor :
 	<?php if ( $wppa_is_mentor ) : ?>
 		<div class="wppa-notice wppa-notice--info">
 			<?php esc_html_e( 'Вы наставник команды: можете приглашать и исключать участников. Переименовать или распустить команду может только капитан.', 'wp-personal-account' ); ?>
-			<a href="<?php echo esc_url( WPPA_Plugin::tab_url( 'files' ) ); ?>"><?php esc_html_e( 'Документы от куратора — на вкладке «Файлы».', 'wp-personal-account' ); ?></a>
 		</div>
 	<?php endif; ?>
 

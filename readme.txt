@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.60.0
+Stable tag: 3.61.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.61.0 =
+* Убрана надпись о документах куратора в карточке команды наставника. Доступ к файлам не изменён.
 
 = 3.60.0 =
 * Наставник может вести несколько команд. Капитан приглашает, куратор назначает; в кабинете доступно переключение между командами, их файлами и сертификатами.

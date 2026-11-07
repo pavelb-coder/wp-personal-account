@@ -2256,7 +2256,8 @@ $mentor_team_html = WPPA_Builder::render_block(
 	array( 'user' => get_userdata( 8 ) )
 );
 $file_checks['команда: файлов больше нет'] = false === strpos( $mentor_team_html, 'action=wppa_curator_file' );
-$file_checks['команда: ссылка на раздел']  = false !== strpos( $mentor_team_html, 'wppa_tab=files' );
+$file_checks['команда: ссылка на документы у наставника убрана'] = false === strpos( $mentor_team_html, 'Документы от куратора — на вкладке «Файлы».' );
+$file_checks['команда: пояснение о правах наставника сохранено'] = false !== strpos( $mentor_team_html, 'Вы наставник команды: можете приглашать и исключать участников.' );
 
 // Участник и капитан видят файлы куратора прямо в карточке команды.
 $member_team_html = WPPA_Builder::render_block(
@@ -6384,6 +6385,7 @@ $GLOBALS['wppa_test']['current_user'] = 1304;
 $mt_checks['выбор команды'] = (int) $mt_b === WPPA_Teams::active_team_id( 1304 );
 $mt_team_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'team-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
 $mt_checks['выбор показан в кабинете'] = false !== strpos( $mt_team_html, 'Мои команды' ) && false !== strpos( $mt_team_html, 'Мульти Альфа' ) && false !== strpos( $mt_team_html, 'Мульти Бета' );
+$mt_checks['нет ссылки на документы у наставника нескольких команд'] = false === strpos( $mt_team_html, 'Документы от куратора — на вкладке «Файлы».' );
 $mt_checks['формы передают выбранную команду'] = false !== strpos( $mt_team_html, 'name="team_id" value="' . (int) $mt_b . '"' );
 $mt_file_html = WPPA_Builder::render_block( array( 'type' => 'block', 'id' => 'files-widget', 'enabled' => 1, 'title' => '', 'audience' => 'all', 'html' => '' ), array( 'user' => get_userdata( 1304 ), 'tabs' => WPPA_Template::tabs() ) );
 $mt_checks['выбор команды в файлах'] = false !== strpos( $mt_file_html, 'Мульти Бета' ) && false !== strpos( $mt_file_html, 'Мульти Альфа' );
