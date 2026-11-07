@@ -5,9 +5,10 @@
  * Блоки:
  * - wppa/auth     — вход и регистрация одним блоком;
  * - wppa/login    — только вход;
- * - wppa/register — только регистрация.
+ * - wppa/register — только регистрация;
+ * - wppa/login-button, wppa/logout-button, wppa/register-button — отдельные кнопки.
  *
- * Каждый блок выводит либо форму, либо кнопку-ссылку (атрибут display).
+ * Блоки форм поддерживают атрибут display; блоки-кнопки независимы.
  *
  * @package WP_Personal_Account
  */
@@ -46,6 +47,24 @@ class WPPA_Blocks {
 				'mode'  => 'register',
 				'title' => __( 'Регистрация (личный кабинет)', 'wp-personal-account' ),
 			),
+			'login-button' => array(
+				'name' => 'wppa/login-button',
+				'mode' => 'login',
+				'title' => __( 'Кнопка входа', 'wp-personal-account' ),
+				'button' => true,
+			),
+			'logout-button' => array(
+				'name' => 'wppa/logout-button',
+				'mode' => 'logout',
+				'title' => __( 'Кнопка выхода', 'wp-personal-account' ),
+				'button' => true,
+			),
+			'register-button' => array(
+				'name' => 'wppa/register-button',
+				'mode' => 'register',
+				'title' => __( 'Кнопка регистрации', 'wp-personal-account' ),
+				'button' => true,
+			),
 		);
 	}
 
@@ -81,25 +100,51 @@ class WPPA_Blocks {
 	 * @return void
 	 */
 	private static function register_block( $dir, $block ) {
-		$handle = 'wppa-block-' . $dir . '-editor';
-		$path   = WPPA_PATH . 'blocks/' . $dir;
+		$is_button = ! empty( $block['button'] );
+		$handle    = $is_button ? 'wppa-block-buttons-editor' : 'wppa-block-' . $dir . '-editor';
+		$path      = WPPA_PATH . 'blocks/' . $dir;
+		$script    = $is_button ? 'buttons' : $dir;
 
 		// Скрипт редактора регистрируем вручную: нужны зависимости wp-* без сборки.
 		wp_register_script(
 			$handle,
-			WPPA_URL . 'blocks/' . $dir . '/index.js',
+			WPPA_URL . 'blocks/' . $script . '/index.js',
 			array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
 			WPPA_VERSION,
 			true
 		);
 
 		$args = array(
-			'render_callback' => array( __CLASS__, 'render' ),
+			'render_callback' => array( __CLASS__, $is_button ? 'render_' . $block['mode'] . '_button' : 'render' ),
 			'editor_script'   => $handle,
 		);
 
 		if ( file_exists( $path . '/block.json' ) ) {
 			register_block_type( $path, $args );
+			return;
+		}
+
+		// Запасной путь для отдельных кнопок, если block.json недоступен.
+		if ( $is_button ) {
+			register_block_type(
+				$block['name'],
+				array_merge(
+					$args,
+					array(
+						'api_version' => 2,
+						'title' => $block['title'],
+						'category' => 'widgets',
+						'attributes' => array(
+							'buttonText' => array( 'type' => 'string', 'default' => '' ),
+							'buttonStyle' => array( 'type' => 'string', 'default' => 'primary' ),
+							'buttonSize' => array( 'type' => 'string', 'default' => 'md' ),
+							'buttonFullWidth' => array( 'type' => 'boolean', 'default' => false ),
+							'accentColor' => array( 'type' => 'string', 'default' => '' ),
+							'cornerRadius' => array( 'type' => 'number', 'default' => 0 ),
+						),
+					)
+				)
+			);
 			return;
 		}
 
@@ -126,6 +171,37 @@ class WPPA_Blocks {
 				)
 			)
 		);
+	}
+
+	/** Независимые блоки-кнопки показываются только соответствующей аудитории. */
+	public static function render_login_button( $attributes = array() ) {
+		return self::render_standalone_button( 'login', $attributes );
+	}
+
+	public static function render_register_button( $attributes = array() ) {
+		return self::render_standalone_button( 'register', $attributes );
+	}
+
+	public static function render_logout_button( $attributes = array() ) {
+		return self::render_standalone_button( 'logout', $attributes );
+	}
+
+	/**
+	 * @param string $mode login|register|logout.
+	 * @param array  $attributes Атрибуты блока.
+	 * @return string
+	 */
+	private static function render_standalone_button( $mode, $attributes ) {
+		$logged_in = is_user_logged_in();
+		if ( ( 'logout' === $mode && ! $logged_in ) || ( 'logout' !== $mode && $logged_in ) ) {
+			return '';
+		}
+		self::enqueue_styles();
+		if ( 'register' === $mode && WPPA_Plugin::registration_open() ) {
+			// Таймер должен работать и на страницах, где нет формы кабинета.
+			wp_enqueue_script( 'wppa-account', WPPA_URL . 'assets/js/account.js', array(), WPPA_VERSION, true );
+		}
+		return self::render_button( $mode, (array) $attributes, true );
 	}
 
 	/**
@@ -193,13 +269,14 @@ class WPPA_Blocks {
 	}
 
 	/**
-	 * Вывод кнопки-ссылки на форму входа или регистрации.
+	 * Вывод кнопки-ссылки входа, регистрации или выхода.
 	 *
-	 * @param string $mode       login|register.
+	 * @param string $mode       login|register|logout.
 	 * @param array  $attributes Атрибуты блока.
+	 * @param bool   $standalone Отдельный блок-кнопка.
 	 * @return string
 	 */
-	private static function render_button( $mode, $attributes ) {
+	private static function render_button( $mode, $attributes, $standalone = false ) {
 		if ( 'register' === $mode && ! WPPA_Plugin::registration_open() ) {
 			return '';
 		}
@@ -207,10 +284,10 @@ class WPPA_Blocks {
 		$text = isset( $attributes['buttonText'] ) ? trim( (string) $attributes['buttonText'] ) : '';
 
 		if ( '' === $text ) {
-			$text = 'register' === $mode ? __( 'Регистрация', 'wp-personal-account' ) : __( 'Войти', 'wp-personal-account' );
+			$text = 'register' === $mode ? __( 'Регистрация', 'wp-personal-account' ) : ( 'logout' === $mode ? __( 'Выйти', 'wp-personal-account' ) : __( 'Войти', 'wp-personal-account' ) );
 		}
 
-		$url   = 'register' === $mode ? WPPA_Plugin::register_url() : WPPA_Plugin::login_url();
+		$url = 'register' === $mode ? WPPA_Plugin::register_url() : ( 'logout' === $mode ? wp_logout_url( WPPA_Plugin::account_url() ) : WPPA_Plugin::login_url() );
 		$style = isset( $attributes['buttonStyle'] ) && 'ghost' === $attributes['buttonStyle'] ? 'ghost' : 'primary';
 		$window = 'register' === $mode ? WPPA_Plugin::registration_window() : array(
 			'state'     => 'open',
@@ -230,7 +307,7 @@ class WPPA_Blocks {
 		}
 
 		$classes = esc_attr( implode( ' ', $button_classes ) );
-		$wrapper = self::wrapper_attributes( $mode, $attributes );
+		$wrapper = self::wrapper_attributes( $mode, $attributes, $standalone );
 
 		// Регистрация ограничена по времени: вне окна кнопка неактивна, показываем отсчёт.
 		if ( 'register' === $mode && 'open' !== $window['state'] ) {
@@ -271,10 +348,11 @@ class WPPA_Blocks {
 	 *
 	 * @param string $mode       both|login|register.
 	 * @param array  $attributes Атрибуты блока.
+	 * @param bool   $standalone Отдельный блок-кнопка.
 	 * @return string
 	 */
-	private static function wrapper_attributes( $mode, $attributes ) {
-		$classes = array( 'wp-block-wppa-' . ( 'both' === $mode ? 'auth' : $mode ) );
+	private static function wrapper_attributes( $mode, $attributes, $standalone = false ) {
+		$classes = array( 'wp-block-wppa-' . ( 'both' === $mode ? 'auth' : $mode ) . ( $standalone ? '-button' : '' ) );
 
 		$appearance = isset( $attributes['appearance'] ) ? (string) $attributes['appearance'] : 'plain';
 		$classes[]  = 'wppa-block--' . ( in_array( $appearance, array( 'plain', 'card', 'bordered' ), true ) ? $appearance : 'plain' );
@@ -302,7 +380,7 @@ class WPPA_Blocks {
 
 		$radius = isset( $attributes['cornerRadius'] ) ? (int) $attributes['cornerRadius'] : 0;
 		if ( $radius > 0 ) {
-			$styles[] = '--wppa-radius:' . min( 40, $radius ) . 'px';
+			$styles[] = ( $standalone ? '--wppa-button-radius:' : '--wppa-radius:' ) . min( 40, $radius ) . 'px';
 		}
 
 		$extra = array( 'class' => implode( ' ', $classes ) );

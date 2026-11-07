@@ -1304,7 +1304,7 @@ $login_html = WPPA_Blocks::render( array( 'mode' => 'login', 'showTitle' => true
 $register_html_block = WPPA_Blocks::render( array( 'mode' => 'register' ) );
 
 $separate_checks = array(
-	'реестр: три блока'                 => 3 === count( $registry ) && isset( $registry['login'], $registry['register'], $registry['auth'] ),
+	'реестр: формы и три кнопки'        => 6 === count( $registry ) && isset( $registry['login'], $registry['register'], $registry['auth'], $registry['login-button'], $registry['logout-button'], $registry['register-button'] ),
 	'имена блоков'                      => 'wppa/login' === $registry['login']['name'] && 'wppa/register' === $registry['register']['name'],
 	'вход: своя обёртка'                => false !== strpos( $login_html, 'wp-block-wppa-login' ),
 	'вход: форма входа'                 => false !== strpos( $login_html, 'value="login"' ),
@@ -1371,6 +1371,56 @@ foreach ( $separate_checks as $check_name => $ok ) {
 	if ( ! $ok ) {
 		$fail++;
 	}
+}
+
+// Отдельные кнопки Gutenberg: регистрация, аудитория, настройки и безопасность.
+$button_settings_snapshot = get_option( 'wppa_settings', array() );
+$button_registration_snapshot = get_option( 'users_can_register' );
+$button_checks = array();
+foreach ( array( 'login', 'logout', 'register' ) as $button_mode ) {
+    $button_name = 'wppa/' . $button_mode . '-button';
+    $button_path = WPPA_PATH . 'blocks/' . $button_mode . '-button';
+    $button_json = json_decode( file_get_contents( $button_path . '/block.json' ), true );
+    $button_checks[ $button_mode . ': метаданные и совместимый API' ] = $button_name === $button_json['name'] && 2 === $button_json['apiVersion'];
+    $button_checks[ $button_mode . ': зарегистрирован отдельный рендер' ] = isset( $GLOBALS['wppa_test']['block_args'][ $button_path ] ) && array( 'WPPA_Blocks', 'render_' . $button_mode . '_button' ) === $GLOBALS['wppa_test']['block_args'][ $button_path ]['render_callback'];
+    $button_checks[ $button_mode . ': общий скрипт редактора' ] = 'wppa-block-buttons-editor' === $GLOBALS['wppa_test']['block_args'][ $button_path ]['editor_script'];
+}
+$button_checks['скрипт редактора на месте'] = false !== strpos( $GLOBALS['wppa_test']['scripts']['wppa-block-buttons-editor']['src'], '/blocks/buttons/index.js' );
+$GLOBALS['wppa_test']['logged_in'] = false;
+update_option( 'users_can_register', 1 );
+wppa_reg_window();
+$login_button_html = WPPA_Blocks::render_login_button();
+$register_button_html = WPPA_Blocks::render_register_button();
+$button_checks['вход гостю: ссылка и подпись'] = false !== strpos( $login_button_html, 'wppa_view=login' ) && false !== strpos( $login_button_html, 'Войти' ) && false !== strpos( $login_button_html, 'wp-block-wppa-login-button' );
+$button_checks['регистрация гостю: ссылка и подпись'] = false !== strpos( $register_button_html, 'wppa_view=register' ) && false !== strpos( $register_button_html, 'Регистрация' ) && false !== strpos( $register_button_html, 'wp-block-wppa-register-button' );
+$button_checks['выход гостю скрыт'] = '' === WPPA_Blocks::render_logout_button();
+$button_styled = WPPA_Blocks::render_login_button( array( 'buttonText' => '<script>Войти</script>', 'buttonStyle' => 'ghost', 'buttonSize' => 'lg', 'buttonFullWidth' => true, 'accentColor' => '#16a34a', 'cornerRadius' => 99 ) );
+$button_checks['текст кнопки безопасно экранируется'] = false === strpos( $button_styled, '<script>' ) && false !== strpos( $button_styled, '&lt;script&gt;' );
+$button_checks['стиль размер и ширина'] = false !== strpos( $button_styled, 'wppa-button--ghost' ) && false !== strpos( $button_styled, 'wppa-button--lg' ) && false !== strpos( $button_styled, 'wppa-button--block' );
+$button_checks['цвет и радиус'] = false !== strpos( $button_styled, '--wppa-accent:#16a34a' ) && false !== strpos( $button_styled, '--wppa-button-radius:40px' );
+$button_checks['небезопасный цвет игнорируется'] = false === strpos( WPPA_Blocks::render_login_button( array( 'accentColor' => 'javascript:alert(1)' ) ), 'javascript:' );
+update_option( 'users_can_register', 0 );
+$button_checks['регистрация скрывается при выключении в WordPress'] = '' === WPPA_Blocks::render_register_button();
+update_option( 'users_can_register', 1 );
+update_option( 'wppa_settings', array_merge( (array) get_option( 'wppa_settings', array() ), array( 'registration_enabled' => 0 ) ) );
+$button_checks['регистрация скрывается при выключении в плагине'] = '' === WPPA_Blocks::render_register_button();
+wppa_reg_window( gmdate( 'Y-m-d\\TH:i', time() + 3600 ), '' );
+$button_future = WPPA_Blocks::render_register_button();
+$button_checks['до начала регистрация неактивна и с таймером'] = false !== strpos( $button_future, 'aria-disabled="true"' ) && false !== strpos( $button_future, 'data-wppa-countdown=' ) && false === strpos( $button_future, 'wppa_view=register' );
+$button_checks['скрипт таймера подключён вне кабинета'] = isset( $GLOBALS['wppa_test']['scripts']['wppa-account'] );
+wppa_reg_window( '', gmdate( 'Y-m-d\\TH:i', time() - 3600 ) );
+$button_past = WPPA_Blocks::render_register_button();
+$button_checks['после окончания регистрация неактивна'] = false !== strpos( $button_past, 'aria-disabled="true"' ) && false === strpos( $button_past, 'wppa_view=register' );
+$GLOBALS['wppa_test']['logged_in'] = true;
+$button_checks['вход и регистрация скрыты авторизованным'] = '' === WPPA_Blocks::render_login_button( array( 'hideForMembers' => false ) ) && '' === WPPA_Blocks::render_register_button( array( 'hideForMembers' => false ) );
+$logout_button_html = WPPA_Blocks::render_logout_button( array( 'buttonText' => 'Завершить сеанс' ) );
+$button_checks['выход виден авторизованным'] = false !== strpos( $logout_button_html, 'wp-block-wppa-logout-button' ) && false !== strpos( $logout_button_html, 'Завершить сеанс' ) && false !== strpos( $logout_button_html, 'https://example.com/logout' );
+$button_checks['выход использует стандартный URL и возврат в кабинет'] = $GLOBALS['wppa_test']['logout_redirect'] === WPPA_Plugin::account_url();
+update_option( 'wppa_settings', $button_settings_snapshot );
+update_option( 'users_can_register', $button_registration_snapshot );
+foreach ( $button_checks as $check_name => $ok ) {
+    echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'button blocks: ' . $check_name . "\n";
+    if ( ! $ok ) { $fail++; }
 }
 
 $GLOBALS['wppa_test']['logged_in'] = true;

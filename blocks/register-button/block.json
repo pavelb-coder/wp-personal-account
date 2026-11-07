@@ -1,0 +1,53 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "wppa/register-button",
+	"title": "Кнопка регистрации",
+	"category": "widgets",
+	"icon": "admin-users",
+	"description": "Кнопка регистрации для посетителей сайта.",
+	"keywords": [
+		"регистрация",
+		"register",
+		"signup"
+	],
+	"textdomain": "wp-personal-account",
+	"attributes": {
+		"buttonText": {
+			"type": "string",
+			"default": ""
+		},
+		"buttonStyle": {
+			"type": "string",
+			"default": "primary"
+		},
+		"buttonSize": {
+			"type": "string",
+			"default": "md"
+		},
+		"buttonFullWidth": {
+			"type": "boolean",
+			"default": false
+		},
+		"accentColor": {
+			"type": "string",
+			"default": ""
+		},
+		"cornerRadius": {
+			"type": "number",
+			"default": 0
+		}
+	},
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"align": [
+			"wide",
+			"full"
+		]
+	}
+}

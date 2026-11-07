@@ -447,7 +447,7 @@ function add_query_arg( ...$args ) {
 	return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $query );
 }
 function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
-function wp_logout_url( $redirect = '' ) { return 'https://example.com/logout'; }
+function wp_logout_url( $redirect = '' ) { $GLOBALS['wppa_test']['logout_redirect'] = $redirect; return 'https://example.com/logout'; }
 function wp_lostpassword_url( $redirect = '' ) { return 'https://example.com/lost'; }
 function get_avatar( $id, $size = 56, $d = '', $a = '', $args = array() ) {
 	$svg = '<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="28" fill="#dbeafe"/><circle cx="28" cy="22" r="9" fill="#2563eb"/><path d="M8 52c4-11 13-16 20-16s16 5 20 16z" fill="#2563eb"/></svg>';
@@ -496,6 +496,7 @@ function get_block_wrapper_attributes( $extra = array() ) {
 function register_block_type( $name, $args = array() ) {
 	$key = is_string( $name ) ? $name : ( isset( $args['render_callback'] ) ? $name : $name );
 	$GLOBALS['wppa_test']['blocks'][] = is_string( $name ) ? $name : $name;
+	$GLOBALS['wppa_test']['block_args'][ $key ] = $args;
 	return (object) array( 'name' => $key, 'args' => $args );
 }
 

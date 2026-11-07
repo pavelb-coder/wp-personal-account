@@ -555,6 +555,18 @@ $sections .= demo_section(
 		. '</div>'
 );
 
+// Три самостоятельных блока-кнопки: гостевые и для авторизованного пользователя.
+$wppa_demo_login_button = WPPA_Blocks::render_login_button();
+$wppa_demo_register_button = WPPA_Blocks::render_register_button();
+$GLOBALS['wppa_test']['logged_in'] = true;
+$wppa_demo_logout_button = WPPA_Blocks::render_logout_button();
+$GLOBALS['wppa_test']['logged_in'] = false;
+$sections .= demo_section(
+	'Блоки-кнопки: вход, регистрация и выход',
+	'Для гостя показываются вход и регистрация; для авторизованного — выход. Здесь все три состояния показаны для примера.',
+	'<div class="demo-three"><div>' . $wppa_demo_login_button . '</div><div>' . $wppa_demo_register_button . '</div><div>' . $wppa_demo_logout_button . '</div></div>'
+);
+
 $sections .= demo_section(
 	'Настройка внешнего вида блока',
 	'Панель «Внешний вид»: оформление (без оформления / карточка / рамка), ширина, размер кнопок, акцент и радиус',

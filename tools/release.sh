@@ -84,6 +84,11 @@ else
 	echo "· php не найден — пропускаю проверку синтаксиса"
 fi
 
+# Проверка JavaScript новых блоков, если доступен Node.js.
+if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/button-block-editor-test.js" ]]; then
+	node "$ROOT/tools/button-block-editor-test.js" >/dev/null && ok "тест редактора кнопок пройден" || die "тест редактора кнопок упал"
+fi
+
 # Сборка архива: только то, что нужно на сайте.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT

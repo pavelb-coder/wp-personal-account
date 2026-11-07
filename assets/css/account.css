@@ -1146,6 +1146,19 @@
 	width: 100%;
 }
 
+/* Радиус отдельных кнопок, задаётся в их настройках редактора. */
+.wp-block-wppa-login-button,
+.wp-block-wppa-logout-button,
+.wp-block-wppa-register-button {
+	--wppa-button-radius: 10px;
+}
+
+.wp-block-wppa-login-button .wppa-button,
+.wp-block-wppa-logout-button .wppa-button,
+.wp-block-wppa-register-button .wppa-button {
+	border-radius: var(--wppa-button-radius, 10px);
+}
+
 /* Кнопки внутри блока: размер и ширина */
 
 .wppa-block--btn-sm .wppa-button {
