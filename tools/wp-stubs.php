@@ -72,6 +72,7 @@ class WP_Post {
 	public $post_type = 'page';
 	public $post_author = 7;
 	public $post_status = 'publish';
+	public $post_date = '2026-11-07 12:00:00';
 
 	public function __construct( $args = array() ) {
 		foreach ( (array) $args as $key => $value ) {
@@ -152,6 +153,12 @@ function sanitize_file_name( $n ) {
 function sanitize_user( $u, $strict = false ) { return preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $u ); }
 function wp_strip_all_tags( $t ) { return strip_tags( (string) $t ); }
 function wp_unslash( $v ) { return $v; }
+function wp_slash( $value ) { return is_array( $value ) ? array_map( 'wp_slash', $value ) : ( is_string( $value ) ? addslashes( $value ) : $value ); }
+function wppa_stub_stripslashes( $value ) { return is_array( $value ) ? array_map( 'wppa_stub_stripslashes', $value ) : ( is_string( $value ) ? stripslashes( $value ) : $value ); }
+class WPPA_Stub_Json extends RuntimeException { public $payload; public $status; public function __construct( $payload, $status ) { parent::__construct( 'json' ); $this->payload = $payload; $this->status = $status; } }
+function wp_send_json_success( $data = null, $status = null ) { throw new WPPA_Stub_Json( array( 'success' => true, 'data' => $data ), $status ); }
+function wp_send_json_error( $data = null, $status = null ) { throw new WPPA_Stub_Json( array( 'success' => false, 'data' => $data ), $status ); }
+
 function is_email( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); }
 function absint( $v ) { return abs( (int) $v ); }
 function get_option( $k, $d = false ) { return array_key_exists( $k, $GLOBALS['wppa_test']['options'] ) ? $GLOBALS['wppa_test']['options'][ $k ] : $d; }
@@ -159,6 +166,9 @@ function update_option( $k, $v ) { $GLOBALS['wppa_test']['options'][ $k ] = $v; 
 function delete_option( $k ) { unset( $GLOBALS['wppa_test']['options'][ $k ] ); return true; }
 function get_user_meta( $uid, $key, $single = false ) { return isset( $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] ) ? $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] : ''; }
 function update_user_meta( $uid, $key, $value ) { $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] = $value; return true; }
+if ( ! function_exists( 'delete_metadata' ) ) {
+	function delete_metadata( $type, $object_id, $key, $value = '', $delete_all = false ) { if ( 'user' === $type && $delete_all ) { foreach ( $GLOBALS['wppa_test']['meta'] as &$meta ) { unset( $meta[ $key ] ); } } return true; }
+}
 function delete_user_meta( $uid, $key ) { unset( $GLOBALS['wppa_test']['meta'][ $uid ][ $key ] ); return true; }
 function is_user_logged_in() { return (bool) $GLOBALS['wppa_test']['logged_in']; }
 class WP_Roles_Stub {
@@ -242,7 +252,7 @@ function username_exists( $u ) { return false; }
 function wp_create_nonce( $action = -1 ) { return 'nonce-' . substr( md5( (string) $action ), 0, 10 ); }
 function wp_nonce_url( $url, $action = -1, $name = '_wpnonce' ) { return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $name . '=' . wp_create_nonce( $action ); }
 function auth_redirect() { throw new RuntimeException( 'auth_redirect' ); }
-function check_admin_referer( $a, $n = '' ) { return true; }
+function check_admin_referer( $a, $n = '' ) { if ( 'wppa_chat_send' === $a && ( ! isset( $_POST[ $n ] ) || ! wp_verify_nonce( $_POST[ $n ], $a ) ) ) { throw new RuntimeException( 'invalid nonce' ); } return true; }
 
 if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	/**
@@ -253,7 +263,7 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	 * @return int|false
 	 */
 	function wp_verify_nonce( $nonce, $action = -1 ) {
-		return '' === (string) $nonce ? false : 1;
+		return in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
 	}
 }
 function wp_safe_redirect( $u ) {
@@ -310,12 +320,15 @@ function register_post_type( $type, $args = array() ) {
 }
 
 function wp_insert_post( $args, $wp_error = false ) {
+	if ( isset( $args['post_type'] ) && 'wppa_chat_message' === $args['post_type'] ) { $args = wppa_stub_stripslashes( $args ); }
 	$id   = ++$GLOBALS['wppa_test']['next_id'];
 	$post = new WP_Post(
 		array(
 			'ID'          => $id,
 			'post_type'   => isset( $args['post_type'] ) ? $args['post_type'] : 'post',
 			'post_title'  => isset( $args['post_title'] ) ? $args['post_title'] : '',
+			'post_content' => isset( $args['post_content'] ) ? $args['post_content'] : '[wppa_account]',
+			'post_date' => '2026-11-07 12:00:00',
 			'post_author' => isset( $args['post_author'] ) ? (int) $args['post_author'] : 0,
 			'post_status' => isset( $args['post_status'] ) ? $args['post_status'] : 'publish',
 		)
@@ -366,6 +379,17 @@ function delete_post_meta( $id, $key ) {
 }
 
 function get_posts( $args = array() ) {
+	if ( isset( $args['post_type'] ) && 'wppa_chat_message' === $args['post_type'] ) {
+		$found = array();
+		foreach ( $GLOBALS['wppa_test']['posts'] as $id => $post ) {
+			if ( $post->post_type !== $args['post_type'] ) { continue; }
+			if ( isset( $args['post_status'] ) && ! in_array( $post->post_status, (array) $args['post_status'], true ) ) { continue; }
+			if ( ! empty( $args['meta_key'] ) && (string) get_post_meta( $id, $args['meta_key'], true ) !== (string) $args['meta_value'] ) { continue; }
+			$found[ $id ] = isset( $args['fields'] ) && 'ids' === $args['fields'] ? $id : $post;
+		}
+		if ( isset( $args['order'] ) && 'DESC' === $args['order'] ) { krsort( $found ); } else { ksort( $found ); }
+		return array_slice( array_values( $found ), isset( $args['offset'] ) ? $args['offset'] : 0, isset( $args['numberposts'] ) && $args['numberposts'] > -1 ? $args['numberposts'] : null );
+	}
 	$out = array();
 
 	foreach ( (array) $GLOBALS['wppa_test']['posts'] as $id => $post ) {
@@ -468,7 +492,7 @@ function add_query_arg( ...$args ) {
 	$qs = $build( $merged );
 	return $bits[0] . ( '' !== $qs ? '?' . $qs : '' ) . $fragment;
 }
-function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />'; }
+function wp_nonce_field( $action = -1, $name = '_wpnonce' ) { $nonce = 'wppa_chat_send' === $action ? wp_create_nonce( $action ) : 'nonce'; echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $nonce ) . '" />'; }
 function wp_logout_url( $redirect = '' ) { $GLOBALS['wppa_test']['logout_redirect'] = $redirect; return 'https://example.com/logout'; }
 function wp_lostpassword_url( $redirect = '' ) { return 'https://example.com/lost'; }
 function get_avatar( $id, $size = 56, $d = '', $a = '', $args = array() ) {

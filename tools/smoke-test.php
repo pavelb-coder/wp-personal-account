@@ -38,6 +38,7 @@ require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-auth.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-chat.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 require $base . 'includes/class-wppa-widget.php';

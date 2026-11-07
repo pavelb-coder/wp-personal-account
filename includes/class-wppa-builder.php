@@ -130,6 +130,11 @@ class WPPA_Builder {
 				'tabs'  => array( 'files' ),
 				'desc'  => __( 'Документы куратора для наставника команды', 'wp-personal-account' ),
 			),
+			'chat-widget' => array(
+				'label' => __( 'Переписка наставника и кураторов', 'wp-personal-account' ),
+				'tabs'  => array( 'messages' ),
+				'desc'  => __( 'Личные сообщения наставника и всех кураторов', 'wp-personal-account' ),
+			),
 			'certificates-widget' => array(
 				'label' => __( 'Мои сертификаты', 'wp-personal-account' ),
 				'tabs'  => array( 'certificates' ),

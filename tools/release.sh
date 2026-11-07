@@ -76,7 +76,7 @@ if command -v php >/dev/null 2>&1; then
 		php -l "$file" >/dev/null || die "синтаксическая ошибка: $file"
 	done < <(find "$ROOT" -name '*.php' -not -path '*/.git/*' -print0)
 	ok "синтаксис в порядке"
-	for test_file in smoke-test.php admin-smoke-test.php; do
+	for test_file in smoke-test.php admin-smoke-test.php chat-test.php; do
 		[[ -f "$ROOT/tools/$test_file" ]] || continue
 		php "$ROOT/tools/$test_file" >/dev/null && ok "тест $test_file пройден" || die "тест $test_file упал"
 	done
@@ -87,6 +87,10 @@ fi
 # Проверка JavaScript новых блоков, если доступен Node.js.
 if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/button-block-editor-test.js" ]]; then
 	node "$ROOT/tools/button-block-editor-test.js" >/dev/null && ok "тест редактора кнопок пройден" || die "тест редактора кнопок упал"
+fi
+
+if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/chat-js-test.js" ]]; then
+	node "$ROOT/tools/chat-js-test.js" >/dev/null && ok "тест интерфейса чата пройден" || die "тест интерфейса чата упал"
 fi
 
 # Сборка архива: только то, что нужно на сайте.

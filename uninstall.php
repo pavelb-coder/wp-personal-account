@@ -36,3 +36,17 @@ $wppa_meta_keys = array(
 foreach ( $wppa_meta_keys as $wppa_meta_key ) {
 	delete_metadata( 'user', 0, $wppa_meta_key, '', true );
 }
+
+// Содержимое чата удаляется только при явно включённой настройке полной очистки.
+register_post_type( 'wppa_chat_message', array( 'public' => false, 'show_ui' => false ) );
+do {
+	$wppa_chat_ids = get_posts( array(
+		'post_type' => 'wppa_chat_message',
+		'post_status' => array( 'private', 'trash', 'draft', 'pending', 'publish', 'future' ),
+		'numberposts' => 500, 'fields' => 'ids', 'suppress_filters' => true,
+	) );
+	$wppa_deleted = 0;
+	foreach ( $wppa_chat_ids as $wppa_chat_id ) {
+		if ( wp_delete_post( $wppa_chat_id, true ) ) { ++$wppa_deleted; }
+	}
+} while ( count( $wppa_chat_ids ) === 500 && $wppa_deleted === 500 );

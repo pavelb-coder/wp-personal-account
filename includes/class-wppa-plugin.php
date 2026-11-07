@@ -15,7 +15,7 @@ class WPPA_Plugin {
 	/**
 	 * Query-параметры плагина (регистрируются, чтобы WordPress их не выбрасывал).
 	 */
-	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login', 'wppa_redirect', 'wppa_form' );
+	const QUERY_VARS = array( 'wppa_view', 'wppa_tab', 'wppa_notice', 'wppa_team_join', 'wppa_action', 'wppa_team_action', 'wppa_key', 'wppa_login', 'wppa_redirect', 'wppa_form', 'wppa_chat_mentor', 'wppa_chat_page' );
 
 	/**
 	 * Минимальная длина пароля.
@@ -68,6 +68,7 @@ class WPPA_Plugin {
 
 		WPPA_Shortcodes::init();
 		WPPA_Teams::init();
+		WPPA_Chat::init();
 		WPPA_Curator_Files::init();
 		WPPA_Participants::init();
 		WPPA_Certificates::init();
@@ -146,7 +147,7 @@ class WPPA_Plugin {
 	public static function defaults() {
 		return array(
 			'account_page_id'      => 0,
-			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ),
+			'enabled_tabs'         => array( 'dashboard', 'profile', 'team', 'files', 'messages', 'participants', 'certificates', 'mailing', 'security' ),
 			'participant_min_percent' => 60,
 			'certificate_template'    => 0,
 			'certificate_email'       => 0,
@@ -709,6 +710,9 @@ class WPPA_Plugin {
 				break;
 			case 'team':
 				WPPA_Teams::handle_request();
+				break;
+			case 'chat':
+				WPPA_Chat::handle_post();
 				break;
 			case 'curator_file':
 				WPPA_Curator_Files::handle_request();

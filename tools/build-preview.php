@@ -40,6 +40,7 @@ require $base . 'includes/class-wppa-notices.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-chat.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-shortcodes.php';
 require $base . 'includes/class-wppa-widget.php';
@@ -120,6 +121,19 @@ $sections  = demo_section(
 	'Шапка с аватаром, кнопками возврата на сайт и выхода, навигация по вкладкам, контент активной вкладки',
 	WPPA_Template::get( 'account', array( 'user' => $user, 'tabs' => $tabs, 'current_tab' => 'dashboard' ) )
 );
+
+// Пример личной переписки, одна на наставника независимо от команды.
+WPPA_Teams::set_curator( 12, true );
+WPPA_Chat::send( 8, 8, 'Здравствуйте! Подскажите, пожалуйста, когда будет следующий этап?' );
+WPPA_Chat::send( 8, 12, 'Здравствуйте! Информация появится в личном кабинете.' );
+$GLOBALS['wppa_test']['current_user'] = 8;
+$sections .= demo_section( 'Наставник: сообщения', 'Личная переписка наставника со всеми кураторами. Статическая демонстрация без отправки.', WPPA_Template::get( 'tab-messages', array( 'user' => new WP_User( 8 ), 'tabs' => $tabs ) ) );
+$GLOBALS['wppa_test']['current_user'] = 12;
+$_GET['wppa_chat_mentor'] = 8;
+$sections .= demo_section( 'Куратор: сообщения', 'Куратор выбирает наставника и отвечает в его личной переписке.', WPPA_Template::get( 'tab-messages', array( 'user' => new WP_User( 12 ), 'tabs' => $tabs ) ) );
+unset( $_GET['wppa_chat_mentor'] );
+WPPA_Teams::set_curator( 12, false );
+$GLOBALS['wppa_test']['current_user'] = 7;
 
 $sections .= demo_section(
 	'Профиль',

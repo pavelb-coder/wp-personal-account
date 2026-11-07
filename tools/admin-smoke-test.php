@@ -26,6 +26,7 @@ require $base . 'includes/class-wppa-link-button.php';
 require $base . 'includes/class-wppa-account.php';
 require $base . 'includes/class-wppa-profile.php';
 require $base . 'includes/class-wppa-teams.php';
+require $base . 'includes/class-wppa-chat.php';
 require $base . 'includes/class-wppa-builder.php';
 require $base . 'includes/class-wppa-export.php';
 require $base . 'includes/class-wppa-export-folder.php';
@@ -903,7 +904,7 @@ if ( $stage_admin_team && ! is_wp_error( $stage_admin_team ) ) {
 	$olympiad_checks['админка: отметка второго этапа'] = false;
 }
 
-$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'participants', 'certificates', 'mailing', 'security' ) === array_keys( WPPA_Template::all_tabs() );
+$olympiad_checks['вкладки кабинета на месте'] = array( 'dashboard', 'profile', 'team', 'files', 'messages', 'participants', 'certificates', 'mailing', 'security' ) === array_keys( WPPA_Template::all_tabs() );
 
 // 5. Раскладка со старым ключом olympiad не ломает рендер.
 update_option(

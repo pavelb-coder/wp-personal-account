@@ -25,6 +25,7 @@ class WPPA_Template {
 			'profile'      => __( 'Профиль', 'wp-personal-account' ),
 			'team'         => __( 'Команда', 'wp-personal-account' ),
 			'files'        => __( 'Файлы', 'wp-personal-account' ),
+			'messages'     => __( 'Сообщения', 'wp-personal-account' ),
 			'participants' => __( 'Участники', 'wp-personal-account' ),
 			'certificates' => __( 'Сертификаты', 'wp-personal-account' ),
 			'mailing'      => __( 'Рассылка', 'wp-personal-account' ),
@@ -51,6 +52,11 @@ class WPPA_Template {
 		// Вкладка «Файлы» нужна только наставнику команды и куратору.
 		if ( isset( $tabs['files'] ) && ! WPPA_Curator_Files::can_use_tab() ) {
 			unset( $tabs['files'] );
+		}
+
+		// Личная переписка доступна только действующим наставникам и кураторам.
+		if ( isset( $tabs['messages'] ) && ( ! is_user_logged_in() || ! WPPA_Chat::can_use( get_current_user_id() ) ) ) {
+			unset( $tabs['messages'] );
 		}
 
 		// «Участники и баллы» и «Рассылка» — только куратору.

@@ -1689,3 +1689,19 @@
 .wppa-bulk-teams__item .wppa-hint {
 	margin-left: auto;
 }
+
+/* Личная переписка наставника с кураторами. */
+.wppa-chat__select { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 20px; }
+.wppa-chat__select select { max-width: 100%; min-width: min(100%, 300px); }
+.wppa-chat__history { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin: 16px 0; padding: 14px; background: var(--wppa-bg, #f6f8fb); border: 1px solid var(--wppa-border, #dce1ea); border-radius: 12px; }
+.wppa-chat__message { align-self: flex-start; max-width: min(85%, 640px); padding: 10px 14px; background: #fff; border: 1px solid var(--wppa-border, #dce1ea); border-radius: 12px; overflow-wrap: anywhere; }
+.wppa-chat__message--mine { align-self: flex-end; background: #edf3ff; }
+.wppa-chat__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; font-size: 0.8em; opacity: .75; margin-bottom: 6px; }
+.wppa-chat__text { white-space: normal; line-height: 1.5; }
+.wppa-chat__empty { margin: 0; }
+.wppa-chat__pagination { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+.wppa-chat__pagination [hidden] { display: none; }
+.wppa-chat__form { display: grid; gap: 10px; }
+.wppa-chat__form textarea { width: 100%; resize: vertical; }
+.wppa-chat__form button { justify-self: start; }
+.wppa-chat__status { font-size: .9em; }
