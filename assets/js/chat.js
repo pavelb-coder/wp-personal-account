@@ -12,13 +12,15 @@
     var older = document.querySelector('[data-wppa-chat-older]');
     var firstPage = history.dataset.page === '1';
     var busy = false;
+    var stickyMailWarning = false;
     history.scrollTop = history.scrollHeight;
-    function request(action, message) {
+    function request(action, message, extra) {
       var body = new URLSearchParams();
       body.set('action', action);
       body.set('nonce', history.dataset.nonce);
       body.set('mentor_id', history.dataset.mentor);
       if (typeof message === 'string') body.set('message', message);
+      if (extra) Object.keys(extra).forEach(function (key) { body.set(key, extra[key]); });
       return fetch(history.dataset.ajax, { method: 'POST', credentials: 'same-origin', body: body, cache: 'no-store' })
         .then(function (response) { return response.json(); })
         .then(function (result) {
@@ -38,7 +40,7 @@
       busy = true;
       request('wppa_chat_read').then(function (data) {
         render(data, false);
-        status.textContent = '';
+        if (!stickyMailWarning) status.textContent = '';
       }).catch(function (err) { status.textContent = err.message; }).then(function () { busy = false; });
     }
     form.addEventListener('submit', function (event) {
@@ -54,10 +56,26 @@
         input.value = '';
         if (!firstPage) { window.location.assign(form.action); return; }
         render(data, true);
-        status.textContent = 'Сообщение отправлено.';
+        stickyMailWarning = !!data.mail_failed;
+        status.textContent = stickyMailWarning ? 'Сообщение сохранено, но email-уведомление отправить не удалось. Проверьте настройки почты сайта.' : 'Сообщение отправлено.';
       }).catch(function (err) { status.textContent = err.message + ' Текст сохранён в поле.'; })
         .then(function () { busy = false; button.disabled = false; input.readOnly = false; });
     });
+    history.addEventListener('submit', function (event) {
+      var target = event.target;
+      if (!target.matches('[data-wppa-chat-delete]')) return;
+      event.preventDefault();
+      if (busy) { status.textContent = 'Идёт обновление. Попробуйте удалить ещё раз.'; return; }
+      if (!window.confirm('Удалить сообщение у всех? Это действие нельзя отменить.')) return;
+      var fields = new FormData(target);
+      busy = true;
+      status.textContent = 'Удаление…';
+      request('wppa_chat_delete', null, { message_id: fields.get('message_id'), delete_nonce: fields.get('wppa_delete_nonce'), chat_page: history.dataset.page })
+        .then(function (data) { render(data, false); status.textContent = stickyMailWarning ? 'Сообщение сохранено, но email-уведомление отправить не удалось. Проверьте настройки почты сайта.' : 'Сообщение удалено у всех.'; })
+        .catch(function (err) { status.textContent = err.message; })
+        .then(function () { busy = false; });
+    });
+    if (firstPage) refresh();
     window.setInterval(refresh, 15000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   }

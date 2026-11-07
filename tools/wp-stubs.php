@@ -260,7 +260,7 @@ function username_exists( $u ) { return false; }
 function wp_create_nonce( $action = -1 ) { return 'nonce-' . substr( md5( (string) $action ), 0, 10 ); }
 function wp_nonce_url( $url, $action = -1, $name = '_wpnonce' ) { return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $name . '=' . wp_create_nonce( $action ); }
 function auth_redirect() { throw new RuntimeException( 'auth_redirect' ); }
-function check_admin_referer( $a, $n = '' ) { if ( 'wppa_chat_send' === $a && ( ! isset( $_POST[ $n ] ) || ! wp_verify_nonce( $_POST[ $n ], $a ) ) ) { throw new RuntimeException( 'invalid nonce' ); } return true; }
+function check_admin_referer( $a, $n = '' ) { if ( ( 'wppa_chat_send' === $a || 0 === strpos( (string) $a, 'wppa_chat_delete_' ) ) && ( ! isset( $_POST[ $n ] ) || ! wp_verify_nonce( $_POST[ $n ], $a ) ) ) { throw new RuntimeException( 'invalid nonce' ); } return true; }
 
 if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	/**
@@ -271,7 +271,7 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	 * @return int|false
 	 */
 	function wp_verify_nonce( $nonce, $action = -1 ) {
-		return ( in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) || 0 === strpos( (string) $action, 'wppa_chat_view_' ) ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
+		return ( in_array( $action, array( 'wppa_chat_ajax', 'wppa_chat_send' ), true ) || 0 === strpos( (string) $action, 'wppa_chat_view_' ) || 0 === strpos( (string) $action, 'wppa_chat_delete_' ) ) ? ( wp_create_nonce( $action ) === $nonce ? 1 : false ) : ( '' === (string) $nonce ? false : 1 );
 	}
 }
 function wp_safe_redirect( $u ) {
@@ -837,6 +837,17 @@ class WPPA_Test_WPDB {
 
 	public function get_var( $query = null ) {
 		$this->queries[] = $query;
+		if ( false !== strpos( (string) $query, 'WPPA_CHAT_MENTOR_UNREAD' ) ) {
+			preg_match( '/p\.post_author <> (\d+)/', $query, $match );
+			$uid = isset( $match[1] ) ? (int) $match[1] : 0;
+			$seen = (int) get_user_meta( $uid, '_wppa_chat_read_' . get_current_blog_id() . '_' . $uid, true );
+			$count = 0;
+			foreach ( $GLOBALS['wppa_test']['posts'] as $id => $post ) {
+				if ( 'wppa_chat_message' === $post->post_type && 'private' === $post->post_status && (int) $post->post_author !== $uid && (int) get_post_meta( $id, '_wppa_chat_mentor', true ) === $uid && $id > $seen ) { ++$count; }
+			}
+			return $count;
+		}
+
 
 		return isset( $this->data['var'] ) ? $this->data['var'] : null;
 	}

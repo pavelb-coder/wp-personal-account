@@ -127,6 +127,10 @@ class WPPA_Template {
 			'target'   => '',
 		);
 
+		if ( 'messages' === $slug && is_user_logged_in() && WPPA_Teams::is_mentor( get_current_user_id() ) && ! WPPA_Teams::is_curator( get_current_user_id() ) ) {
+			$link['url'] = WPPA_Chat::thread_url();
+		}
+
 		if ( 'certificates' === $slug && class_exists( 'WPPA_Certificates' ) ) {
 			$admin = WPPA_Certificates::curator_admin_link();
 

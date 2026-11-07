@@ -50,9 +50,9 @@ defined( 'ABSPATH' ) || exit;
 	<?php WPPA_Notices::render(); ?>
 
 	<?php
-	// Индикатор доступен только кураторам и только если вкладка включена.
-	$wppa_show_unread = is_user_logged_in() && get_current_user_id() === (int) $user->ID && isset( $tabs['messages'] ) && WPPA_Teams::is_curator( $user->ID );
-	$wppa_unread_total = $wppa_show_unread ? array_sum( WPPA_Chat::unread( $user->ID ) ) : 0;
+	// Индикатор доступен наставникам и кураторам, только если вкладка включена.
+	$wppa_show_unread = is_user_logged_in() && get_current_user_id() === (int) $user->ID && isset( $tabs['messages'] ) && WPPA_Chat::can_use( $user->ID );
+	$wppa_unread_total = $wppa_show_unread ? WPPA_Chat::unread_total( $user->ID ) : 0;
 	if ( $wppa_show_unread ) { wp_enqueue_script( 'wppa-chat-unread', WPPA_URL . 'assets/js/chat-unread.js', array(), WPPA_VERSION, true ); }
 	?>
 

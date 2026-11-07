@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.66.8
+Stable tag: 3.66.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,9 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.66.9 =
+* Добавлены уведомления наставнику, удаление сообщений по правам и email-уведомления обеим сторонам.
 
 = 3.66.8 =
 * Куратор видит счётчик и список наставников с непрочитанными сообщениями. У каждого куратора собственная отметка прочтения.

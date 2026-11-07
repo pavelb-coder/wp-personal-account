@@ -31,6 +31,7 @@ chat_assert( empty( $GLOBALS['wppa_test']['cpt'][ WPPA_Chat::CPT ]['public'] ) &
 chat_assert( WPPA_Chat::can_view( 8, 8 ) && WPPA_Chat::can_view( 8, 12 ) && WPPA_Chat::can_view( 8, 13 ), 'наставник и оба куратора имеют доступ' );
 chat_assert( ! WPPA_Chat::can_view( 8, 9 ) && ! WPPA_Chat::can_view( 8, 11 ) && ! WPPA_Chat::can_view( 8, 0 ) && ! WPPA_Chat::can_view( 9000, 12 ), 'посторонние и вымышленные наставники отклоняются' );
 $nonce = wp_create_nonce( 'wppa_chat_ajax' );
+$GLOBALS['wppa_test']['mail'] = array();
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 8, "Вопрос: \\\"цитата\\\" \\ путь\nвторая строка" ), 'сообщение наставника' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 8, 12, 'Ответ первого куратора' ) && 'chat_sent' === WPPA_Chat::send( 8, 13, 'Ответ второго куратора' ), 'каждый куратор отвечает независимо' );
 chat_assert( 'chat_sent' === WPPA_Chat::send( 9, 9, 'секрет второго' ), 'отдельный чат другого наставника' );
@@ -40,7 +41,7 @@ $GLOBALS['wppa_test']['current_user'] = 12; $_GET = array();
 $account = WPPA_Template::get( 'account', array( 'user' => new WP_User( 12 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) );
 chat_assert( false !== strpos( $account, 'data-wppa-unread-badge' ) && false !== strpos( $account, 'Непрочитанных сообщений: 2' ), 'куратор видит количество у вкладки кабинета' );
 $index = chat_html( 12 );
-chat_assert( false !== strpos( $index, 'Новые сообщения от наставников' ) && false !== strpos( $index, 'Наставник один' ) && false !== strpos( $index, 'Наставник два' ) && false === strpos( $index, 'секрет второго' ), 'список непрочитанных содержит ссылки без текста' );
+chat_assert( false !== strpos( $index, 'Новые сообщения' ) && false !== strpos( $index, 'Наставник один' ) && false !== strpos( $index, 'Наставник два' ) && false === strpos( $index, 'секрет второго' ), 'список непрочитанных содержит ссылки без текста' );
 $r = chat_ajax( 'ajax_unread', 11, 8, $nonce ); chat_assert( ! $r->payload['success'] && 403 === $r->status, 'участник не может получать список' );
 $r = chat_ajax( 'ajax_unread', 12, 8, 'bad' ); chat_assert( ! $r->payload['success'] && 403 === $r->status, 'nonce списка проверяется' );
 $r = chat_ajax( 'ajax_unread', 12, 8, $nonce ); chat_assert( $r->payload['success'] && 2 === $r->payload['data']['total'], 'AJAX возвращает общий счётчик куратора' );
@@ -61,6 +62,10 @@ WPPA_Chat::mark_read( 8, 12, $snapshot ); chat_assert( ! isset( WPPA_Chat::unrea
 wp_delete_post( $new_id, true );
 $r = chat_ajax( 'ajax_read', 13, 8, $nonce ); chat_assert( $r->payload['success'] && ! isset( WPPA_Chat::unread( 13 )[8] ), 'автообновление открытого чата отмечает сообщения прочитанными' );
 chat_assert( ! WPPA_Chat::unread( 11 ), 'посторонним счётчики недоступны' );
+// После начальной переписки письма раздельно отправлены всем кураторам и наставнику.
+$mail = $GLOBALS['wppa_test']['mail'];
+chat_assert( count( $mail ) >= 6 && 'curator@example.com' === $mail[0]['to'] && 'curator2@example.com' === $mail[1]['to'] && 'one@example.com' === $mail[2]['to'] && 'one@example.com' === $mail[3]['to'], 'email: наставнику и каждому куратору индивидуально' );
+chat_assert( false === strpos( $mail[0]['message'], 'Вопрос:' ) && false === strpos( $mail[2]['message'], 'Ответ первого' ) && false !== strpos( $mail[0]['message'], 'wppa_chat_mentor=8' ), 'email: без текста переписки, ссылка в правильный диалог' );
 $one = WPPA_Chat::messages( 8, 8 );
 chat_assert( 3 === count( $one['items'] ) && "Вопрос: \\\"цитата\\\" \\ путь\nвторая строка" === $one['items'][0]->post_content, 'кавычки, переносы и обратные слэши сохранены' );
 chat_assert( 0 === count( WPPA_Chat::messages( 8, 9 )['items'] ) && 'chat_forbidden' === WPPA_Chat::send( 8, 11, 'чужой текст' ), 'доступ к данным и записи проверяется на сервере' );
@@ -97,6 +102,48 @@ $_POST = array( 'mentor_id' => 8, 'message' => 'без JavaScript', 'wppa_nonce'
 try { WPPA_Chat::handle_post(); } catch ( RuntimeException $e ) { chat_assert( false !== strpos( $e->getMessage(), 'chat_sent' ) && false !== strpos( WPPA_Chat::messages_html( WPPA_Chat::messages( 8, 8 )['items'], 8, 8 ), 'без JavaScript' ), 'обычная POST-форма работает без JS' ); }
 $_POST['wppa_nonce'] = 'bad';
 try { WPPA_Chat::handle_post(); chat_assert( false, 'POST nonce' ); } catch ( RuntimeException $e ) { chat_assert( 'invalid nonce' === $e->getMessage(), 'POST nonce проверяется' ); }
+// Уведомление наставнику о новых ответах и независимое прочтение.
+$GLOBALS['wppa_test']['current_user'] = 12; WPPA_Chat::send( 8, 12, 'Новый ответ для наставника' );
+chat_assert( WPPA_Chat::mentor_unread( 8 ) >= 1 && WPPA_Chat::unread_total( 8 ) >= 1 && 0 === WPPA_Chat::mentor_unread( 11 ), 'у наставника появляется счётчик ответов' );
+$GLOBALS['wppa_test']['current_user'] = 8; $_GET = array();
+$account = WPPA_Template::get( 'account', array( 'user' => new WP_User( 8 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) );
+chat_assert( false !== strpos( $account, 'data-wppa-unread-badge' ) && false !== strpos( $account, 'wppa_chat_view_nonce' ), 'наставник видит индикатор и защищённую ссылку' );
+$r = chat_ajax( 'ajax_unread', 8, 8, $nonce ); chat_assert( $r->payload['success'] && $r->payload['data']['total'] >= 1, 'AJAX счётчика доступен наставнику' );
+$r = chat_ajax( 'ajax_read', 8, 8, $nonce ); chat_assert( $r->payload['success'] && 0 === WPPA_Chat::mentor_unread( 8 ), 'при открытии истории ответы помечаются прочитанными' );
+WPPA_Chat::send( 8, 13, 'Ответ для теста без JS' ); chat_assert( WPPA_Chat::mentor_unread( 8 ) === 1, 'новый ответ после прочтения снова виден' );
+chat_html( 8, 8, 1 ); chat_assert( 0 === WPPA_Chat::mentor_unread( 8 ), 'открытие истории по защищённой ссылке работает без JS' );
+// Точные права удаления и защита от подмены сообщений между диалогами.
+WPPA_Chat::send( 8, 8, 'Наставник удалит своё' );
+$posts = WPPA_Chat::messages( 8, 8 )['items']; $own = end( $posts )->ID;
+WPPA_Chat::send( 8, 12, 'Ответ на удаление' );
+$posts = WPPA_Chat::messages( 8, 8 )['items']; $reply = end( $posts )->ID;
+$mentor_render = WPPA_Chat::messages_html( WPPA_Chat::messages( 8, 8 )['items'], 8, 8 );
+$curator_render = WPPA_Chat::messages_html( WPPA_Chat::messages( 8, 12 )['items'], 8, 12 );
+chat_assert( false !== strpos( $mentor_render, 'name="message_id" value="' . $own . '"' ) && false === strpos( $mentor_render, 'name="message_id" value="' . $reply . '"' ) && false !== strpos( $curator_render, 'name="message_id" value="' . $reply . '"' ), 'кнопки удаления соответствуют правам' );
+chat_assert( 'chat_forbidden' === WPPA_Chat::delete_message( 8, 8, $reply ) && get_post( $reply ), 'наставник не может удалить ответ куратора' );
+chat_assert( 'chat_forbidden' === WPPA_Chat::delete_message( 8, 9, $own ) && 'chat_forbidden' === WPPA_Chat::delete_message( 9, 12, $own ), 'чужой наставник и подмена диалога запрещены' );
+chat_assert( 'chat_deleted' === WPPA_Chat::delete_message( 8, 8, $own ) && ! get_post( $own ), 'наставник удаляет своё сообщение для всех' );
+chat_assert( 'chat_deleted' === WPPA_Chat::delete_message( 8, 13, $reply ) && ! get_post( $reply ), 'любой куратор удаляет сообщение другого куратора' );
+WPPA_Chat::send( 8, 8, 'Удаление AJAX' ); $posts = WPPA_Chat::messages( 8, 8 )['items']; $delete_id = end( $posts )->ID;
+$GLOBALS['wppa_test']['logged_in'] = true; $GLOBALS['wppa_test']['current_user'] = 12;
+$_POST = array( 'mentor_id' => 8, 'nonce' => $nonce, 'message_id' => $delete_id, 'delete_nonce' => 'bad', 'chat_page' => 1 );
+try { WPPA_Chat::ajax_delete(); } catch ( WPPA_Stub_Json $e ) { chat_assert( ! $e->payload['success'] && get_post( $delete_id ), 'AJAX удаление проверяет отдельный nonce' ); }
+$_POST['delete_nonce'] = wp_create_nonce( 'wppa_chat_delete_' . $delete_id );
+try { WPPA_Chat::ajax_delete(); } catch ( WPPA_Stub_Json $e ) { chat_assert( $e->payload['success'] && ! get_post( $delete_id ), 'AJAX удаление куратора работает' ); }
+WPPA_Chat::send( 8, 8, 'Удаление без JS' ); $posts = WPPA_Chat::messages( 8, 8 )['items']; $delete_id = end( $posts )->ID;
+$GLOBALS['wppa_test']['current_user'] = 8;
+$_POST = array( 'mentor_id' => 8, 'message_id' => $delete_id, 'wppa_delete_nonce' => wp_create_nonce( 'wppa_chat_delete_' . $delete_id ), 'chat_page' => 1 );
+try { WPPA_Chat::handle_delete(); } catch ( RuntimeException $e ) { chat_assert( false !== strpos( $e->getMessage(), 'chat_deleted' ) && ! get_post( $delete_id ), 'удаление POST-формой без JS' ); }
+$GLOBALS['wppa_test']['mail_fail'] = true;
+$r = chat_ajax( 'ajax_send', 8, 8, $nonce, 'Письмо не ушло' );
+chat_assert( $r->payload['success'] && ! empty( $r->payload['data']['mail_failed'] ) && false !== strpos( $r->payload['data']['html'], 'Письмо не ушло' ), 'при ошибке email сообщение сохранено и автор предупреждён' );
+unset( $GLOBALS['wppa_test']['mail_fail'] );
+// Один человек может одновременно быть наставником и куратором.
+WPPA_Teams::set_curator( 8, true ); WPPA_Chat::mark_read( 8, 8, WPPA_Chat::messages( 8, 8 )['items'] );
+WPPA_Chat::send( 8, 12, 'Ответ пользователю с двумя ролями' );
+$dual = WPPA_Chat::unread_html( 8, WPPA_Chat::unread( 8 ), WPPA_Chat::mentors() );
+chat_assert( WPPA_Chat::mentor_unread( 8 ) === 1 && false !== strpos( $dual, 'Ответы кураторов в вашей переписке' ), 'для наставника-куратора список содержит его личную переписку' );
+WPPA_Teams::set_curator( 8, false );
 // Деинсталляция: по умолчанию сохраняем, при явной очистке удаляем пакетами.
 define( 'WP_UNINSTALL_PLUGIN', true );
 include WPPA_PATH . 'uninstall.php';

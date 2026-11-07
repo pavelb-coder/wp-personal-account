@@ -127,6 +127,7 @@ WPPA_Teams::set_curator( 12, true );
 WPPA_Chat::send( 8, 8, 'Здравствуйте! Подскажите, пожалуйста, когда будет следующий этап?' );
 WPPA_Chat::send( 8, 12, 'Здравствуйте! Информация появится в личном кабинете.' );
 $GLOBALS['wppa_test']['current_user'] = 8;
+$sections .= demo_section( 'Наставник: новое сообщение', 'Наставник видит число новых ответов куратора на вкладке «Сообщения».', WPPA_Template::get( 'account', array( 'user' => new WP_User( 8 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) ) );
 $sections .= demo_section( 'Наставник: сообщения', 'Личная переписка наставника со всеми кураторами. Статическая демонстрация без отправки.', WPPA_Template::get( 'tab-messages', array( 'user' => new WP_User( 8 ), 'tabs' => $tabs ) ) );
 $GLOBALS['wppa_test']['current_user'] = 12;
 $sections .= demo_section( 'Куратор: новые сообщения', 'Число у вкладки и список непрочитанных наставников видны независимо для каждого куратора.', WPPA_Template::get( 'account', array( 'user' => new WP_User( 12 ), 'tabs' => array( 'messages' => 'Сообщения' ), 'current_tab' => 'messages' ) ) );

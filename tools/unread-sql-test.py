@@ -30,4 +30,16 @@ assert counts(12) == {9: 1}, counts(12)
 assert counts(13) == {8: 2, 9: 1}, counts(13)
 db.execute('INSERT INTO wp_usermeta VALUES (?,?,?)', (12, '_wppa_chat_read_1_8', '101'))
 assert counts(12) == {9: 1}, counts(12)  # При конкуренции возможны повторные метаключи: применяется максимальная отметка.
-print('OK: SQL счётчиков, граница прочтения, разные кураторы, дубли метаданных')
+query_mentor = re.search(r'SELECT /\* WPPA_CHAT_MENTOR_UNREAD \*/.*?meta_key = %s\), 0\)', source, re.S).group(0)
+for key in ('posts', 'postmeta', 'usermeta'):
+    query_mentor = query_mentor.replace('{$wpdb->' + key + '}', 'wp_' + key)
+query_mentor = query_mentor.replace('%s', '?').replace('%d', '?')
+def mentor_count(uid):
+    return db.execute(query_mentor, ('_wppa_chat_mentor', str(uid), 'wppa_chat_message', uid, uid, '_wppa_chat_read_1_' + str(uid))).fetchone()[0]
+assert mentor_count(8) == 1, mentor_count(8)  # Ответ куратора, а не собственные реплики.
+db.execute('INSERT INTO wp_usermeta VALUES (?,?,?)', (8, '_wppa_chat_read_1_8', '102'))
+assert mentor_count(8) == 0, mentor_count(8)
+db.execute("INSERT INTO wp_posts VALUES (107, 13, 'wppa_chat_message', 'private')")
+db.execute("INSERT INTO wp_postmeta VALUES (107, '_wppa_chat_mentor', '8')")
+assert mentor_count(8) == 1, mentor_count(8)
+print('OK: SQL счётчиков обеих сторон, граница прочтения, кураторы, дубли метаданных')

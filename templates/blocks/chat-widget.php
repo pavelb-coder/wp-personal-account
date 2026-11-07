@@ -15,7 +15,7 @@ $wppa_chat_data = $wppa_chat_allowed && $wppa_chat_mentor ? WPPA_Chat::messages(
 // Переход по ссылке со страницы кабинета отмечает открытый диалог прочитанным и без JavaScript.
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce дополнительно проверяется перед изменением отметки.
 $wppa_chat_view_nonce = isset( $_GET['wppa_chat_view_nonce'] ) && is_string( $_GET['wppa_chat_view_nonce'] ) ? wp_unslash( $_GET['wppa_chat_view_nonce'] ) : '';
-if ( $wppa_chat_is_curator && $wppa_chat_allowed && 1 === $wppa_chat_page && wp_verify_nonce( $wppa_chat_view_nonce, 'wppa_chat_view_' . $wppa_chat_mentor_id ) ) {
+if ( $wppa_chat_allowed && 1 === $wppa_chat_page && wp_verify_nonce( $wppa_chat_view_nonce, 'wppa_chat_view_' . $wppa_chat_mentor_id ) ) {
 	WPPA_Chat::mark_read( $wppa_chat_mentor_id, $wppa_chat_user_id, $wppa_chat_data['items'] );
 }
 $wppa_chat_unread = $wppa_chat_is_curator ? WPPA_Chat::unread( $wppa_chat_user_id, $wppa_chat_mentors ) : array();
@@ -49,8 +49,11 @@ $wppa_chat_unread = $wppa_chat_is_curator ? WPPA_Chat::unread( $wppa_chat_user_i
 	<?php if ( $wppa_chat_allowed && $wppa_chat_mentor ) : ?>
 		<h3 class="wppa-subtitle"><?php echo esc_html( $wppa_chat_is_curator ? sprintf( __( 'Переписка: %s', 'wp-personal-account' ), $wppa_chat_mentor->display_name ) : __( 'Переписка с кураторами', 'wp-personal-account' ) ); ?></h3>
 		<div class="wppa-chat__history" data-wppa-chat-history data-mentor="<?php echo esc_attr( (string) $wppa_chat_mentor_id ); ?>" data-page="<?php echo esc_attr( (string) $wppa_chat_page ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wppa_chat_ajax' ) ); ?>" data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" role="log" aria-live="polite">
-			<?php echo WPPA_Chat::messages_html( $wppa_chat_data['items'], $wppa_chat_mentor_id, $wppa_chat_user_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- значения экранируются в методе. ?>
+			<?php echo WPPA_Chat::messages_html( $wppa_chat_data['items'], $wppa_chat_mentor_id, $wppa_chat_user_id, $wppa_chat_page ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- значения экранируются в методе. ?>
 		</div>
+		<?php if ( 1 === $wppa_chat_page && ! wp_verify_nonce( $wppa_chat_view_nonce, 'wppa_chat_view_' . $wppa_chat_mentor_id ) ) : ?>
+			<noscript><p><a class="wppa-link" href="<?php echo esc_url( WPPA_Chat::thread_url( $wppa_chat_is_curator ? $wppa_chat_mentor_id : 0 ) ); ?>"><?php esc_html_e( 'Отметить переписку прочитанной', 'wp-personal-account' ); ?></a></p></noscript>
+		<?php endif; ?>
 		<div class="wppa-chat__pagination">
 			<a class="wppa-link" data-wppa-chat-older <?php echo $wppa_chat_data['more'] ? '' : 'hidden'; ?> href="<?php echo esc_url( WPPA_Chat::thread_url( $wppa_chat_is_curator ? $wppa_chat_mentor_id : 0, $wppa_chat_page + 1 ) ); ?>"><?php esc_html_e( 'Более ранние сообщения', 'wp-personal-account' ); ?></a>
 			<?php if ( $wppa_chat_page > 1 ) : ?><a class="wppa-link" href="<?php echo esc_url( WPPA_Chat::thread_url( $wppa_chat_is_curator ? $wppa_chat_mentor_id : 0, $wppa_chat_page - 1 ) ); ?>"><?php esc_html_e( 'Более новые сообщения', 'wp-personal-account' ); ?></a><?php endif; ?>
@@ -64,7 +67,7 @@ $wppa_chat_unread = $wppa_chat_is_curator ? WPPA_Chat::unread( $wppa_chat_user_i
 			<button class="wppa-button wppa-button--primary" type="submit"><?php esc_html_e( 'Отправить', 'wp-personal-account' ); ?></button>
 			<span class="wppa-chat__status" role="status" aria-live="polite"></span>
 		</form>
-		<p class="wppa-hint"><?php esc_html_e( 'Только текст, до 2000 символов. Последние сообщения обновляются автоматически.', 'wp-personal-account' ); ?></p>
+		<p class="wppa-hint"><?php esc_html_e( 'Только текст, до 2000 символов. Последние сообщения обновляются автоматически. Удалённые сообщения исчезают у всех.', 'wp-personal-account' ); ?></p>
 	<?php elseif ( $wppa_chat_is_curator && $wppa_chat_mentor_id ) : ?>
 		<p class="wppa-notice wppa-notice--error"><?php esc_html_e( 'Переписка недоступна.', 'wp-personal-account' ); ?></p>
 	<?php endif; ?>
