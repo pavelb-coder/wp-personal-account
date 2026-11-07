@@ -473,6 +473,12 @@ $reg_btn_checks = array(
 $login_hidden = WPPA_Template::get( 'login', array( 'hide_register' => true ) );
 $reg_btn_checks['вход: кнопку можно отключить'] = false === strpos( $login_hidden, 'wppa_view=register' );
 
+$reg_btn_checks['вход: возврат на главную сайта'] = 1 === substr_count( $login_html, 'Вернуться на сайт' ) && false !== strpos( $login_html, 'href="' . esc_url( home_url( '/' ) ) . '"' ) && (bool) preg_match( '/<a[^>]*class="[^"]*wppa-button[^>]*href="' . preg_quote( esc_url( home_url( '/' ) ), '/' ) . '"[^>]*>\s*Вернуться на сайт\s*<\/a>/u', $login_html );
+$reg_btn_checks['вход: возврат не зависит от кнопки регистрации'] = false !== strpos( $login_hidden, 'Вернуться на сайт' );
+$guest_login_with_back = WPPA_Template::get( 'guest', array( 'view' => 'login', 'registration' => true ) );
+$reg_btn_checks['гостевой кабинет: кнопка возврата есть'] = 1 === substr_count( $guest_login_with_back, 'Вернуться на сайт' ) && false !== strpos( $guest_login_with_back, 'href="' . esc_url( home_url( '/' ) ) . '"' );
+
+
 $register_html = WPPA_Template::get( 'register', array( 'title' => '' ) );
 $reg_btn_checks['регистрация: кнопка «Войти»'] = false !== strpos( $register_html, 'wppa_view=login' );
 $reg_btn_checks['регистрация: кнопку можно отключить'] = false === strpos( WPPA_Template::get( 'register', array( 'hide_login' => true ) ), 'wppa_view=login' );
@@ -480,6 +486,7 @@ $reg_btn_checks['регистрация: кнопку можно отключи�
 // Регистрация закрыта — кнопки нет.
 update_option( 'users_can_register', 0 );
 $reg_btn_checks['регистрация закрыта: кнопки нет'] = false === strpos( WPPA_Template::get( 'login', array() ), 'wppa_view=register' );
+$reg_btn_checks['возврат доступен при закрытой регистрации'] = false !== strpos( WPPA_Template::get( 'login', array() ), 'Вернуться на сайт' );
 update_option( 'users_can_register', 1 );
 
 $reg_btn_checks['хелпер registration_open()'] = true === WPPA_Plugin::registration_open();
@@ -488,6 +495,9 @@ $reg_btn_checks['хелпер registration_open()'] = true === WPPA_Plugin::regi
 $short_login    = WPPA_Shortcodes::login( array() );
 $short_login_no = WPPA_Shortcodes::login( array( 'hide_register' => '1' ) );
 $reg_btn_checks['шорткод: кнопка по умолчанию'] = false !== strpos( $short_login, 'wppa_view=register' );
+$reg_btn_checks['шорткод: возврат на сайт'] = false !== strpos( $short_login, 'Вернуться на сайт' ) && false !== strpos( $short_login, 'href="' . esc_url( home_url( '/' ) ) . '"' );
+$reg_btn_checks['блок входа: возврат на сайт'] = false !== strpos( WPPA_Blocks::render( array( 'mode' => 'login' ) ), 'Вернуться на сайт' );
+$reg_btn_checks['виджет входа: возврат на сайт'] = false !== strpos( WPPA_Shortcodes::auth( array( 'mode' => 'login' ) ), 'Вернуться на сайт' );
 $reg_btn_checks['шорткод: hide_register="1"']   = false === strpos( $short_login_no, 'wppa_view=register' );
 
 foreach ( $reg_btn_checks as $check_name => $ok ) {

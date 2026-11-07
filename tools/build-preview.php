@@ -593,7 +593,7 @@ $sections .= demo_section(
 
 $sections .= demo_section(
 	'Экран гостя',
-	'Страница кабинета для неавторизованных: кнопка «Регистрация» под формой входа',
+	'Страница кабинета для неавторизованных: под формой входа находятся кнопки регистрации и возврата на сайт',
 	'<div class="demo-two">'
 		. '<div>' . WPPA_Template::get( 'guest', array( 'view' => 'login', 'registration' => true ) ) . '</div>'
 		. '<div>' . WPPA_Template::get( 'guest', array( 'view' => 'register', 'registration' => true ) ) . '</div>'

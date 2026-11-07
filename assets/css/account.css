@@ -717,6 +717,10 @@
 	text-decoration: none;
 }
 
+.wppa-login__back {
+	margin-top: 16px;
+}
+
 /* Адаптив */
 
 @media (max-width: 640px) {

@@ -81,4 +81,10 @@ $wppa_reg_live = 'open' === $wppa_window['state'];
 			</p>
 		<?php endif; ?>
 	<?php endif; ?>
+
+	<div class="wppa-login__back">
+		<a class="wppa-button wppa-button--ghost wppa-button--block" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+			<?php esc_html_e( 'Вернуться на сайт', 'wp-personal-account' ); ?>
+		</a>
+	</div>
 </div>
