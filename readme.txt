@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.66.11
+Stable tag: 3.66.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.66.12 =
+* Добавлены блок Gutenberg всего личного кабинета и отдельные блоки всех девяти разделов с учётом настроек и прав пользователей.
+* Для навигации и форм укажите страницу кабинета в настройках плагина. Страницы с персональными данными необходимо исключить из публичного кеширования.
 
 = 3.66.11 =
 * Куратор может очистить переписку с наставником у всех участников после подтверждения.

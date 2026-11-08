@@ -315,7 +315,7 @@ class WPPA_Plugin {
 			return true;
 		}
 
-		return function_exists( 'has_block' ) && has_block( 'wppa/auth', $post );
+		return function_exists( 'has_block' ) && ( has_block( 'wppa/auth', $post ) || has_block( 'wppa/account', $post ) );
 	}
 
 	/**
@@ -626,8 +626,11 @@ class WPPA_Plugin {
 
 		$post = get_post();
 		if ( $post instanceof WP_Post ) {
-			if ( function_exists( 'has_block' ) && has_block( 'wppa/auth', $post ) ) {
-				return true;
+			if ( function_exists( 'has_block' ) ) {
+				if ( has_block( 'wppa/auth', $post ) ) { return true; }
+				foreach ( array_keys( WPPA_Blocks::account_blocks() ) as $block_id ) {
+					if ( has_block( 'wppa/' . $block_id, $post ) ) { return true; }
+				}
 			}
 
 			foreach ( array( 'wppa_account', 'wppa_login', 'wppa_register', 'wppa_auth' ) as $tag ) {

@@ -90,6 +90,61 @@ class WPPA_Blocks {
 		foreach ( self::blocks() as $dir => $block ) {
 			self::register_block( $dir, $block );
 		}
+
+		self::register_account_blocks();
+	}
+
+	/** Gutenberg-блок целого кабинета и по одному блоку для каждой вкладки. */
+	public static function account_blocks() {
+		$blocks = array( 'account' => __( 'Личный кабинет', 'wp-personal-account' ) );
+		foreach ( WPPA_Template::all_tabs() as $slug => $label ) {
+			$blocks[ 'section-' . $slug ] = sprintf( __( 'Личный кабинет: %s', 'wp-personal-account' ), $label );
+		}
+		return $blocks;
+	}
+
+	private static function register_account_blocks() {
+		wp_register_script( 'wppa-account-blocks-editor', WPPA_URL . 'blocks/account/index.js', array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-i18n' ), WPPA_VERSION, true );
+		foreach ( self::account_blocks() as $id => $title ) {
+			$slug = 'account' === $id ? '' : substr( $id, strlen( 'section-' ) );
+			register_block_type( 'wppa/' . $id, array(
+				'api_version' => 2,
+				'title' => $title,
+				'category' => 'widgets',
+				'icon' => 'id',
+				'description' => __( 'Динамический блок личного кабинета. Учитывает настройки и права текущего пользователя.', 'wp-personal-account' ),
+				'supports' => array( 'html' => false, 'multiple' => false ),
+				'editor_script' => 'wppa-account-blocks-editor',
+				'render_callback' => static function () use ( $slug ) {
+					return '' === $slug ? self::render_account_block() : self::render_account_section( $slug );
+				},
+			) );
+		}
+	}
+
+	/** Стили и поведение нужны и тогда, когда блок встроен в шаблон или паттерн. */
+	private static function enqueue_account_assets() {
+		self::enqueue_styles();
+		wp_enqueue_script( 'wppa-account', WPPA_URL . 'assets/js/account.js', array(), WPPA_VERSION, true );
+	}
+
+	public static function render_account_block() {
+		self::enqueue_account_assets();
+		return WPPA_Shortcodes::account();
+	}
+
+	/** Вкладка использует те же права, настройки, раскладку и шаблон, что и кабинет. */
+	public static function render_account_section( $slug ) {
+		$all = WPPA_Template::all_tabs();
+		if ( ! is_string( $slug ) || ! isset( $all[ $slug ] ) ) { return ''; }
+		self::enqueue_account_assets();
+		if ( ! is_user_logged_in() ) {
+			return '<div class="wppa"><p>' . esc_html__( 'Войдите в личный кабинет, чтобы открыть этот раздел.', 'wp-personal-account' ) . ' <a href="' . esc_url( WPPA_Plugin::account_url() ) . '">' . esc_html__( 'Войти', 'wp-personal-account' ) . '</a></p></div>';
+		}
+		$tabs = WPPA_Template::tabs();
+		if ( ! isset( $tabs[ $slug ] ) ) { return ''; }
+		$html = WPPA_Template::get( 'tab-' . $slug, array( 'user' => wp_get_current_user(), 'tabs' => $tabs ) );
+		return '<div class="wppa wppa-gutenberg-section">' . $html . '</div>';
 	}
 
 	/**

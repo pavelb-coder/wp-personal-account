@@ -85,6 +85,10 @@ else
 fi
 
 # Проверка JavaScript новых блоков, если доступен Node.js.
+if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/account-blocks-editor-test.js" ]]; then
+	node "$ROOT/tools/account-blocks-editor-test.js" >/dev/null && ok "тест блоков кабинета в редакторе пройден" || die "тест блоков кабинета в редакторе упал"
+fi
+
 if command -v node >/dev/null 2>&1 && [[ -f "$ROOT/tools/button-block-editor-test.js" ]]; then
 	node "$ROOT/tools/button-block-editor-test.js" >/dev/null && ok "тест редактора кнопок пройден" || die "тест редактора кнопок упал"
 fi

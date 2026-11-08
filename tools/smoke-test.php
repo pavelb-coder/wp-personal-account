@@ -6756,6 +6756,39 @@ foreach ( $class_checks as $name => $ok ) {
     if ( ! $ok ) { $fail++; }
 }
 
+// Gutenberg: кабинет и отдельные вкладки используют действующие права и раскладку.
+$gb_backup_settings = get_option( 'wppa_settings' ); $gb_backup_layout = get_option( WPPA_Builder::OPTION, null );
+$gb_backup_meta = $GLOBALS['wppa_test']['meta']; $gb_backup_user = get_current_user_id(); $gb_backup_logged = is_user_logged_in();
+$gb_settings = (array) $gb_backup_settings; $gb_settings['enabled_tabs'] = array_keys( WPPA_Template::all_tabs() ); update_option( 'wppa_settings', $gb_settings );
+delete_option( WPPA_Builder::OPTION );
+$GLOBALS['wppa_test']['current_user'] = 7; $GLOBALS['wppa_test']['logged_in'] = false;
+$gb_all = WPPA_Blocks::account_blocks(); $gb_checks = array();
+$gb_checks['зарегистрирован кабинет и девять разделов'] = 10 === count( $gb_all ) && count( array_filter( array_keys( $gb_all ), static function ( $id ) { return isset( $GLOBALS['wppa_test']['block_args'][ 'wppa/' . $id ] ); } ) ) === 10;
+$gb_checks['гость: кабинет показывает форму входа'] = false !== strpos( WPPA_Blocks::render_account_block(), 'wppa_action' );
+$gb_checks['гость: раздел не раскрывает личные данные'] = false !== strpos( WPPA_Blocks::render_account_section( 'messages' ), 'Войдите в личный кабинет' );
+$gb_checks['неизвестный раздел отклоняется'] = '' === WPPA_Blocks::render_account_section( '../../profile' );
+$GLOBALS['wppa_test']['logged_in'] = true; update_user_meta( 7, WPPA_Teams::META_ROLE, 'member' ); WPPA_Teams::set_curator( 7, false );
+$gb_checks['участник: профиль отображается'] = false !== strpos( WPPA_Blocks::render_account_section( 'profile' ), 'wppa_action' );
+$gb_checks['участник: чат и кураторские разделы скрыты'] = '' === WPPA_Blocks::render_account_section( 'messages' ) && '' === WPPA_Blocks::render_account_section( 'participants' ) && '' === WPPA_Blocks::render_account_section( 'mailing' );
+$gb_team = wp_insert_post( array( 'post_type' => WPPA_Teams::CPT ) ); update_user_meta( 7, WPPA_Teams::META_ROLE, 'mentor' ); update_user_meta( 7, WPPA_Teams::META_TEAM, $gb_team );
+$gb_checks['наставник: чат доступен'] = false !== strpos( WPPA_Blocks::render_account_section( 'messages' ), 'data-wppa-chat-history' );
+WPPA_Teams::set_curator( 7, true );
+$gb_checks['куратор: участники доступны, профиль скрыт'] = false !== strpos( WPPA_Blocks::render_account_section( 'participants' ), 'wppa-participants' ) && '' === WPPA_Blocks::render_account_section( 'profile' );
+$gb_layout = WPPA_Builder::defaults();
+$gb_layout['team'] = array(
+	array( 'type' => 'custom', 'id' => 'custom-on', 'enabled' => 1, 'title' => '', 'html' => 'GUTENBERG-ACTIVE', 'audience' => 'all' ),
+	array( 'type' => 'custom', 'id' => 'custom-off', 'enabled' => 0, 'title' => '', 'html' => 'GUTENBERG-DISABLED', 'audience' => 'all' ),
+);
+update_option( WPPA_Builder::OPTION, $gb_layout ); $gb_team_html = WPPA_Blocks::render_account_section( 'team' );
+$gb_checks['раздел наследует раскладку конструктора и отключённые элементы'] = false !== strpos( $gb_team_html, 'GUTENBERG-ACTIVE' ) && false === strpos( $gb_team_html, 'GUTENBERG-DISABLED' );
+
+$gb_settings['enabled_tabs'] = array( 'team' ); update_option( 'wppa_settings', $gb_settings );
+$gb_checks['выключенная вкладка не выводится'] = '' === WPPA_Blocks::render_account_section( 'messages' );
+$gb_checks['стили и скрипт подключены'] = ! empty( $GLOBALS['wppa_test']['styles']['wppa-account'] ) && ! empty( $GLOBALS['wppa_test']['scripts']['wppa-account'] );
+foreach ( $gb_checks as $name => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'Gutenberg: ' . $name . "\n"; if ( ! $ok ) { ++$fail; } }
+update_option( 'wppa_settings', $gb_backup_settings ); if ( null === $gb_backup_layout ) { delete_option( WPPA_Builder::OPTION ); } else { update_option( WPPA_Builder::OPTION, $gb_backup_layout ); }
+$GLOBALS['wppa_test']['meta'] = $gb_backup_meta; $GLOBALS['wppa_test']['current_user'] = $gb_backup_user; $GLOBALS['wppa_test']['logged_in'] = $gb_backup_logged;
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";
