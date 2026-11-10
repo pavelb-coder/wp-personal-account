@@ -243,6 +243,7 @@ function wp_insert_user( $a ) {
 }
 function wp_mail( $to, $s, $m, $headers = array(), $attachments = array() ) {
 	$GLOBALS['wppa_test']['mail_attempts'] = isset( $GLOBALS['wppa_test']['mail_attempts'] ) ? $GLOBALS['wppa_test']['mail_attempts'] + 1 : 1;
+	if ( ! empty( $GLOBALS['wppa_test']['mail_throw'] ) ) { throw new RuntimeException( 'simulated wp_mail error' ); }
 	if ( ! empty( $GLOBALS['wppa_test']['mail_fail'] ) ) {
 		return false;
 	}

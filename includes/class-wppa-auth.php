@@ -122,9 +122,10 @@ class WPPA_Auth {
 		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$repeat   = isset( $_POST['password_confirm'] ) ? (string) wp_unslash( $_POST['password_confirm'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$consent  = ! empty( $_POST['consent'] );
+		$consent_enabled = (bool) WPPA_Plugin::setting( 'consent_enabled', 1 );
+		$consent  = $consent_enabled && isset( $_POST['consent'] ) && is_string( $_POST['consent'] ) && '1' === wp_unslash( $_POST['consent'] );
 
-		if ( ! $consent ) {
+		if ( $consent_enabled && WPPA_Plugin::setting( 'consent_required', 1 ) && ! $consent ) {
 			WPPA_Notices::redirect( 'no_consent', $tab_url );
 		}
 
@@ -217,12 +218,37 @@ class WPPA_Auth {
 
 		// Мета-поля: телефон, город, организация, должность и т. д.
 		WPPA_Fields::save_meta( $user_id, $fields );
-		update_user_meta( $user_id, '_wppa_consent_time', time() );
+		if ( $consent ) {
+			update_user_meta( $user_id, '_wppa_consent_time', time() );
+			update_user_meta( $user_id, '_wppa_consent_text', wp_slash( (string) WPPA_Plugin::setting( 'consent_text' ) ) );
+			update_user_meta( $user_id, '_wppa_consent_url', wp_slash( (string) WPPA_Plugin::setting( 'consent_url' ) ) );
+		}
 
 		wp_set_current_user( $user_id );
 		wp_set_auth_cookie( $user_id, true, is_ssl() );
 
-		WPPA_Notices::redirect( 'registration_success', $requested_redirect ? $requested_redirect : WPPA_Plugin::tab_url( 'dashboard' ) );
+		$notice = 'registration_success';
+		if ( WPPA_Plugin::setting( 'registration_email_enabled', 0 ) && ! self::send_registration_email( $email, $name ) ) {
+			$notice = 'registration_success_mail_failed';
+		}
+		WPPA_Notices::redirect( $notice, $requested_redirect ? $requested_redirect : WPPA_Plugin::tab_url( 'dashboard' ) );
+	}
+
+	/** Письмо только новому пользователю, без пароля; ошибка не отменяет регистрацию. */
+	public static function send_registration_email( $email, $name ) {
+		$settings = WPPA_Plugin::get_settings();
+		$defaults = WPPA_Plugin::defaults();
+		$subject = is_string( $settings['registration_email_subject'] ) && '' !== trim( $settings['registration_email_subject'] ) ? $settings['registration_email_subject'] : $defaults['registration_email_subject'];
+		$body = is_string( $settings['registration_email_body'] ) && '' !== trim( $settings['registration_email_body'] ) ? $settings['registration_email_body'] : $defaults['registration_email_body'];
+		$variables = array(
+			'{name}' => sanitize_text_field( $name ),
+			'{email}' => sanitize_email( $email ),
+			'{site_name}' => sanitize_text_field( wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ),
+			'{account_url}' => WPPA_Plugin::account_url(),
+		);
+		$subject = sanitize_text_field( strtr( $subject, $variables ) );
+		$body = sanitize_textarea_field( strtr( $body, $variables ) );
+		try { return (bool) wp_mail( $email, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) ); } catch ( Throwable $error ) { return false; }
 	}
 
 	/**

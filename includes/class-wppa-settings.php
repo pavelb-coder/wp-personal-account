@@ -95,6 +95,18 @@ class WPPA_Settings {
 
 		$out['chat_email_enabled'] = empty( $input['chat_email_enabled'] ) ? 0 : 1;
 		$out['registration_enabled'] = empty( $input['registration_enabled'] ) ? 0 : 1;
+		$out['consent_enabled'] = empty( $input['consent_enabled'] ) ? 0 : 1;
+		$out['consent_required'] = empty( $input['consent_required'] ) ? 0 : 1;
+		$consent_text = isset( $input['consent_text'] ) && is_string( $input['consent_text'] ) ? sanitize_text_field( $input['consent_text'] ) : '';
+		$out['consent_text'] = '' !== $consent_text ? $consent_text : $defaults['consent_text'];
+		$consent_url = isset( $input['consent_url'] ) && is_string( $input['consent_url'] ) ? esc_url_raw( trim( $input['consent_url'] ) ) : '';
+		$out['consent_url'] = preg_match( '~^https?://[^/\s?#]+~i', $consent_url ) ? $consent_url : '';
+		$out['registration_email_enabled'] = empty( $input['registration_email_enabled'] ) ? 0 : 1;
+		$subject = isset( $input['registration_email_subject'] ) && is_string( $input['registration_email_subject'] ) ? sanitize_text_field( $input['registration_email_subject'] ) : '';
+		$body = isset( $input['registration_email_body'] ) && is_string( $input['registration_email_body'] ) ? sanitize_textarea_field( $input['registration_email_body'] ) : '';
+		$out['registration_email_subject'] = '' !== trim( $subject ) ? $subject : $defaults['registration_email_subject'];
+		$out['registration_email_body'] = '' !== trim( $body ) ? $body : $defaults['registration_email_body'];
+
 		// 0 отключает ограничение, отрицательные значения не превращаем в положительные.
 		$age = isset( $input['registration_min_age'] ) && is_numeric( $input['registration_min_age'] ) ? (int) $input['registration_min_age'] : 0;
 		$out['registration_min_age'] = min( 120, max( 0, $age ) );
@@ -537,6 +549,38 @@ class WPPA_Settings {
 							<p class="description"><?php esc_html_e( 'Пусто — остаться на текущей странице.', 'wp-personal-account' ); ?></p>
 						</td>
 					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Согласие на обработку персональных данных', 'wp-personal-account' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr><th scope="row"><?php esc_html_e( 'Чекбокс при регистрации', 'wp-personal-account' ); ?></th><td>
+						<label><input type="checkbox" name="wppa_settings[consent_enabled]" value="1" <?php checked( 1, (int) $s['consent_enabled'] ); ?> /> <?php esc_html_e( 'Показывать согласие в форме регистрации', 'wp-personal-account' ); ?></label><br />
+						<label><input type="checkbox" name="wppa_settings[consent_required]" value="1" <?php checked( 1, (int) $s['consent_required'] ); ?> /> <?php esc_html_e( 'Согласие обязательно для регистрации', 'wp-personal-account' ); ?></label>
+						<p class="description"><?php esc_html_e( 'По умолчанию согласие показывается и обязательно. Если чекбокс скрыт, обязательность не применяется и новая отметка согласия не записывается. Настройте эти параметры с учётом требований к обработке данных.', 'wp-personal-account' ); ?></p>
+					</td></tr>
+					<tr><th scope="row"><label for="wppa-consent-text"><?php esc_html_e( 'Текст согласия', 'wp-personal-account' ); ?></label></th><td>
+						<input type="text" class="large-text" id="wppa-consent-text" name="wppa_settings[consent_text]" value="<?php echo esc_attr( $s['consent_text'] ); ?>" />
+						<p class="description"><?php esc_html_e( 'Обычный текст без HTML. Пустое поле возвращает стандартную подпись.', 'wp-personal-account' ); ?></p>
+					</td></tr>
+					<tr><th scope="row"><label for="wppa-consent-url"><?php esc_html_e( 'Ссылка на документ', 'wp-personal-account' ); ?></label></th><td>
+						<input type="url" class="large-text" id="wppa-consent-url" name="wppa_settings[consent_url]" value="<?php echo esc_attr( $s['consent_url'] ); ?>" placeholder="https://example.com/privacy/" />
+						<p class="description"><?php esc_html_e( 'Необязательная внешняя ссылка http или https на документ. Откроется в новой вкладке рядом с чекбоксом.', 'wp-personal-account' ); ?></p>
+					</td></tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Email при регистрации', 'wp-personal-account' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr><th scope="row"><?php esc_html_e( 'Уведомление пользователю', 'wp-personal-account' ); ?></th><td>
+						<label><input type="checkbox" name="wppa_settings[registration_email_enabled]" value="1" <?php checked( 1, (int) $s['registration_email_enabled'] ); ?> /> <?php esc_html_e( 'Отправлять письмо пользователю после успешной регистрации', 'wp-personal-account' ); ?></label>
+						<p class="description"><?php esc_html_e( 'По умолчанию выключено, в том числе после обновления. Пароль в письмо не добавляется. Отправка через WordPress wp_mail: фактическая доставка зависит от настройки почты или SMTP.', 'wp-personal-account' ); ?></p>
+					</td></tr>
+					<tr><th scope="row"><label for="wppa-reg-email-subject"><?php esc_html_e( 'Тема письма', 'wp-personal-account' ); ?></label></th><td>
+						<input type="text" class="large-text" id="wppa-reg-email-subject" name="wppa_settings[registration_email_subject]" value="<?php echo esc_attr( $s['registration_email_subject'] ); ?>" />
+					</td></tr>
+					<tr><th scope="row"><label for="wppa-reg-email-body"><?php esc_html_e( 'Текст письма', 'wp-personal-account' ); ?></label></th><td>
+						<textarea class="large-text" rows="8" id="wppa-reg-email-body" name="wppa_settings[registration_email_body]"><?php echo esc_textarea( $s['registration_email_body'] ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Обычный текст. Подстановки: {name}, {email}, {site_name}, {account_url}. Пустая тема или текст заменяются стандартными.', 'wp-personal-account' ); ?></p>
+					</td></tr>
 				</table>
 
 				<h2><?php esc_html_e( 'Вкладки кабинета', 'wp-personal-account' ); ?></h2>

@@ -4,7 +4,7 @@ Tags: personal account, личный кабинет, user profile, team, ком�
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.66.13
+Stable tag: 3.66.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Скопируйте файл из `wp-personal-account/templates/` в `ваша-тема/wp-personal-account/` и правьте копию.
 
 == Changelog ==
+
+= 3.66.14 =
+* Добавлены настройки текста и ссылки согласия, его показа и обязательности; при отметке сохраняются время, текст и ссылка.
+* Добавлено необязательное настраиваемое письмо новому пользователю после регистрации.
 
 = 3.66.13 =
 * Улучшено отображение личного кабинета и Gutenberg-блоков на телефонах: навигация, кнопки, поля и чат.

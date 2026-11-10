@@ -24,6 +24,7 @@ class WPPA_Notices {
 			'email_confirm_sent'    => array( 'success', __( 'Письмо с подтверждением отправлено на новый адрес. Перейдите по ссылке из письма.', 'wp-personal-account' ) ),
 			'email_confirmed'       => array( 'success', __( 'Новый email подтверждён и сохранён.', 'wp-personal-account' ) ),
 			'registration_success'  => array( 'success', __( 'Регистрация завершена. Добро пожаловать!', 'wp-personal-account' ) ),
+			'registration_success_mail_failed' => array( 'info', __( 'Регистрация завершена, но письмо отправить не удалось. Обратитесь к администратору сайта.', 'wp-personal-account' ) ),
 			'login_success'         => array( 'success', __( 'Вы вошли в аккаунт.', 'wp-personal-account' ) ),
 			'logged_out'            => array( 'success', __( 'Вы вышли из аккаунта.', 'wp-personal-account' ) ),
 			'email_confirm_invalid' => array( 'error', __( 'Ссылка подтверждения недействительна или истекла. Запросите смену email повторно.', 'wp-personal-account' ) ),

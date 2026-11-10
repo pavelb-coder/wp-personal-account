@@ -1440,6 +1440,19 @@ $chat_setting_checks = array(
 );
 foreach ( $chat_setting_checks as $label => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'chat email settings: ' . $label . "\n"; if ( ! $ok ) { ++$fail; } }
 
+// Согласие и письмо регистрации: отдельные управляемые параметры администратора.
+$registration_fields = array( 'consent_enabled', 'consent_required', 'consent_text', 'consent_url', 'registration_email_enabled', 'registration_email_subject', 'registration_email_body' );
+$registration_settings_checks = array();
+foreach ( $registration_fields as $field ) { $registration_settings_checks[ 'поле ' . $field ] = false !== strpos( $settings_html, 'name="wppa_settings[' . $field . ']"' ); }
+$reg_sanitized = WPPA_Settings::sanitize( array( 'consent_enabled' => '1', 'consent_required' => '1', 'consent_text' => '<b>Принимаю</b>', 'consent_url' => 'https://docs.example.test/privacy', 'registration_email_enabled' => '1', 'registration_email_subject' => '<b>Привет</b>', 'registration_email_body' => "Первый\nВторой" ) );
+$registration_settings_checks['согласие, текст и ссылка очищены'] = 1 === $reg_sanitized['consent_enabled'] && 1 === $reg_sanitized['consent_required'] && 'Принимаю' === $reg_sanitized['consent_text'] && 'https://docs.example.test/privacy' === $reg_sanitized['consent_url'];
+$registration_settings_checks['письмо и многострочный шаблон сохраняются'] = 1 === $reg_sanitized['registration_email_enabled'] && 'Привет' === $reg_sanitized['registration_email_subject'] && "Первый\nВторой" === $reg_sanitized['registration_email_body'];
+$bad_url = WPPA_Settings::sanitize( array( 'consent_url' => 'javascript:alert(1)' ) );
+$registration_settings_checks['опасная ссылка отклоняется'] = '' === $bad_url['consent_url'];
+$registration_settings_checks['пустой шаблон заменяется стандартным'] = WPPA_Plugin::defaults()['registration_email_subject'] === $bad_url['registration_email_subject'] && WPPA_Plugin::defaults()['registration_email_body'] === $bad_url['registration_email_body'];
+$registration_settings_checks['по умолчанию уведомление выключено'] = 0 === WPPA_Plugin::defaults()['registration_email_enabled'];
+foreach ( $registration_settings_checks as $label => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'registration settings: ' . $label . "\n"; if ( ! $ok ) { ++$fail; } }
+
 // Редактор персональных данных: подписи, разделы, свои поля и разделы.
 $personal_ui_checks = array(
 	'настройки: таблица полей с подписью'    => false !== strpos( $settings_html, 'wppa_settings[fields][first_name][label]' ),

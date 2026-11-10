@@ -23,6 +23,8 @@ $wppa_meta_keys = array(
 	'_wppa_email_token',
 	'_wppa_email_token_expires',
 	'_wppa_consent_time',
+	'_wppa_consent_text',
+	'_wppa_consent_url',
 	'_wppa_patronymic',
 	'_wppa_phone',
 	'_wppa_birthdate',

@@ -6789,6 +6789,49 @@ foreach ( $gb_checks as $name => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'G
 update_option( 'wppa_settings', $gb_backup_settings ); if ( null === $gb_backup_layout ) { delete_option( WPPA_Builder::OPTION ); } else { update_option( WPPA_Builder::OPTION, $gb_backup_layout ); }
 $GLOBALS['wppa_test']['meta'] = $gb_backup_meta; $GLOBALS['wppa_test']['current_user'] = $gb_backup_user; $GLOBALS['wppa_test']['logged_in'] = $gb_backup_logged;
 
+// Согласие и письмо при регистрации: настройка, валидация и запись только фактического согласия.
+$regopt_settings = get_option( 'wppa_settings' ); $regopt_users = get_option( 'users_can_register' ); $regopt_meta = $GLOBALS['wppa_test']['meta']; $regopt_post = $_POST; $regopt_get = $_GET; $regopt_logged = $GLOBALS['wppa_test']['logged_in'];
+$regopt_checks = array(); $defaults = WPPA_Plugin::defaults();
+$regopt_checks['обновление: согласие обязательно, письмо выключено'] = 1 === $defaults['consent_enabled'] && 1 === $defaults['consent_required'] && 0 === $defaults['registration_email_enabled'];
+$regopt_base = array_merge( $defaults, array( 'registration_enabled' => 1, 'registration_min_age' => 0, 'registration_start' => '', 'registration_end' => '', 'consent_text' => 'Подтверждаю согласие', 'consent_url' => 'https://docs.example.test/privacy' ) );
+update_option( 'wppa_settings', $regopt_base ); update_option( 'users_can_register', 1 ); $_GET = array();
+$regopt_form = WPPA_Template::get( 'register', array() );
+$regopt_checks['форма: обязательный чекбокс, текст и внешняя ссылка'] = false !== strpos( $regopt_form, 'name="consent" value="1" required' ) && false !== strpos( $regopt_form, 'Подтверждаю согласие' ) && false !== strpos( $regopt_form, 'href="https://docs.example.test/privacy"' ) && false !== strpos( $regopt_form, 'rel="noopener noreferrer"' );
+$regopt_attempt = static function ( $consent, $settings, $failure = '' ) {
+	update_option( 'wppa_settings', $settings );
+	$GLOBALS['wppa_test']['inserted_user'] = array(); $GLOBALS['wppa_test']['mail'] = array(); $GLOBALS['wppa_test']['mail_attempts'] = 0;
+	unset( $GLOBALS['wppa_test']['mail_fail'], $GLOBALS['wppa_test']['mail_throw'] );
+	if ( 'fail' === $failure ) { $GLOBALS['wppa_test']['mail_fail'] = true; }
+	if ( 'throw' === $failure ) { $GLOBALS['wppa_test']['mail_throw'] = true; }
+	foreach ( array( '_wppa_consent_time', '_wppa_consent_text', '_wppa_consent_url' ) as $k ) { delete_user_meta( 99, $k ); }
+	$_POST = array( 'wppa_nonce' => wp_create_nonce( 'wppa_register' ), 'email' => 'new@example.com', 'password' => 'Str0ng-Passw0rd-2026!', 'password_confirm' => 'Str0ng-Passw0rd-2026!', 'wppa_fields' => array( 'first_name' => 'Пётр' ) );
+	if ( null !== $consent ) { $_POST['consent'] = $consent; }
+	$GLOBALS['wppa_test']['catch_redirect'] = true; $redirect = '';
+	try { WPPA_Auth::handle_register(); } catch ( RuntimeException $e ) { $redirect = $e->getMessage(); }
+	$GLOBALS['wppa_test']['catch_redirect'] = false;
+	return array( 'redirect' => $redirect, 'user' => $GLOBALS['wppa_test']['inserted_user'], 'time' => get_user_meta( 99, '_wppa_consent_time', true ), 'text' => get_user_meta( 99, '_wppa_consent_text', true ), 'url' => get_user_meta( 99, '_wppa_consent_url', true ), 'mail' => $GLOBALS['wppa_test']['mail'], 'attempts' => $GLOBALS['wppa_test']['mail_attempts'] );
+};
+$r = $regopt_attempt( null, $regopt_base ); $regopt_checks['обязательное согласие проверяется сервером'] = false !== strpos( $r['redirect'], 'no_consent' ) && empty( $r['user'] ) && 0 === $r['attempts'];
+$r = $regopt_attempt( '1', $regopt_base ); $regopt_checks['отмеченное согласие: регистрация и запись времени, текста, ссылки'] = false !== strpos( $r['redirect'], 'registration_success' ) && ! empty( $r['user'] ) && $r['time'] && 'Подтверждаю согласие' === $r['text'] && 'https://docs.example.test/privacy' === $r['url'] && 0 === $r['attempts'];
+$r = $regopt_attempt( array( '1' ), $regopt_base ); $regopt_checks['массив вместо чекбокса не обходится'] = false !== strpos( $r['redirect'], 'no_consent' ) && empty( $r['user'] );
+$opt = array_merge( $regopt_base, array( 'consent_required' => 0 ) ); update_option( 'wppa_settings', $opt ); $form = WPPA_Template::get( 'register', array() );
+$regopt_checks['необязательное согласие выводится без required'] = false !== strpos( $form, 'name="consent" value="1"' ) && false === strpos( $form, 'name="consent" value="1" required' );
+$r = $regopt_attempt( null, $opt ); $regopt_checks['необязательное: без отметки нет записи согласия'] = ! empty( $r['user'] ) && '' === $r['time'] && '' === $r['text'];
+$r = $regopt_attempt( '1', $opt ); $regopt_checks['необязательное: отмеченное согласие записывается'] = ! empty( $r['user'] ) && $r['time'] && 'Подтверждаю согласие' === $r['text'];
+$disabled = array_merge( $regopt_base, array( 'consent_enabled' => 0, 'consent_required' => 1 ) ); update_option( 'wppa_settings', $disabled ); $form = WPPA_Template::get( 'register', array() );
+$regopt_checks['выключенное согласие не выводится'] = false === strpos( $form, 'name="consent"' ) && false === strpos( $form, 'docs.example.test/privacy' );
+$r = $regopt_attempt( '1', $disabled ); $regopt_checks['выключенное: даже подставленная отметка не записывается'] = ! empty( $r['user'] ) && '' === $r['time'];
+$mailsettings = array_merge( $regopt_base, array( 'registration_email_enabled' => 1, 'registration_email_subject' => 'Добро пожаловать, {name}', 'registration_email_body' => "Сайт {site_name}\nАдрес {email}\nКабинет {account_url}" ) );
+$r = $regopt_attempt( '1', $mailsettings ); $mail = isset( $r['mail'][0] ) ? $r['mail'][0] : array();
+$regopt_checks['письмо только новому пользователю с подстановками без пароля'] = 1 === $r['attempts'] && 1 === count( $r['mail'] ) && 'new@example.com' === $mail['to'] && false !== strpos( $mail['subject'], 'Пётр' ) && false !== strpos( $mail['message'], 'Демо-сайт' ) && false !== strpos( $mail['message'], 'new@example.com' ) && false !== strpos( $mail['message'], WPPA_Plugin::account_url() ) && false === strpos( $mail['message'], 'Str0ng-Passw0rd' );
+$r = $regopt_attempt( null, $mailsettings ); $regopt_checks['неуспешная регистрация не отправляет письмо'] = empty( $r['user'] ) && 0 === $r['attempts'];
+$r = $regopt_attempt( '1', $mailsettings, 'fail' ); $regopt_checks['ошибка почты не отменяет аккаунт и показывает предупреждение'] = ! empty( $r['user'] ) && false !== strpos( $r['redirect'], 'registration_success_mail_failed' ) && 1 === $r['attempts'];
+$r = $regopt_attempt( '1', $mailsettings, 'throw' ); $regopt_checks['исключение почты не отменяет аккаунт'] = ! empty( $r['user'] ) && false !== strpos( $r['redirect'], 'registration_success_mail_failed' );
+$unsafe = array_merge( $regopt_base, array( 'consent_url' => 'javascript:alert(1)', 'consent_text' => '<script>bad</script>' ) ); update_option( 'wppa_settings', $unsafe ); $form = WPPA_Template::get( 'register', array() );
+$regopt_checks['ссылка на небезопасный протокол не выводится, текст экранируется'] = false === strpos( $form, 'javascript:alert' ) && false === strpos( $form, '<script>bad</script>' );
+unset( $GLOBALS['wppa_test']['mail_fail'], $GLOBALS['wppa_test']['mail_throw'] ); update_option( 'wppa_settings', $regopt_settings ); update_option( 'users_can_register', $regopt_users ); $GLOBALS['wppa_test']['meta'] = $regopt_meta; $GLOBALS['wppa_test']['logged_in'] = $regopt_logged; $_POST = $regopt_post; $_GET = $regopt_get;
+foreach ( $regopt_checks as $name => $ok ) { echo ( $ok ? 'OK    ' : 'FAIL  ' ) . 'registration consent/email: ' . $name . "\n"; if ( ! $ok ) { ++$fail; } }
+
 // Проверка утилит.
 echo "\nВкладки: " . implode( ', ', array_keys( WPPA_Template::tabs() ) ) . "\n";
 echo 'URL вкладки: ' . WPPA_Plugin::tab_url( 'security' ) . "\n";

@@ -61,12 +61,18 @@ if ( 'open' !== $wppa_window['state'] ) {
 			<input type="password" id="wppa-reg-password2" name="password_confirm" minlength="<?php echo esc_attr( (string) WPPA_Plugin::min_password_length() ); ?>" autocomplete="new-password" required data-wppa-password />
 		</p>
 
-		<p class="wppa-field wppa-field--check">
-			<label>
-				<input type="checkbox" name="consent" value="1" required />
-				<?php esc_html_e( 'Согласен на обработку персональных данных', 'wp-personal-account' ); ?><?php echo WPPA_Fields::req_mark(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			</label>
-		</p>
+		<?php if ( WPPA_Plugin::setting( 'consent_enabled', 1 ) ) : ?>
+			<p class="wppa-field wppa-field--check">
+				<label>
+					<input type="checkbox" name="consent" value="1" <?php echo WPPA_Plugin::setting( 'consent_required', 1 ) ? 'required' : ''; ?> />
+					<span><?php echo esc_html( WPPA_Plugin::setting( 'consent_text' ) ); ?><?php if ( WPPA_Plugin::setting( 'consent_required', 1 ) ) { echo WPPA_Fields::req_mark(); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ } ?></span>
+				</label>
+				<?php $wppa_consent_url = (string) WPPA_Plugin::setting( 'consent_url' ); ?>
+				<?php if ( preg_match( '~^https?://[^/\s?#]+~i', $wppa_consent_url ) ) : ?>
+					<a class="wppa-hint" href="<?php echo esc_url( $wppa_consent_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Ознакомиться с документом об обработке персональных данных (откроется в новой вкладке)', 'wp-personal-account' ); ?></a>
+				<?php endif; ?>
+			</p>
+		<?php endif; ?>
 
 		<p class="wppa-hint wppa-hint--block">
 			<?php esc_html_e( 'Поля со звёздочкой (*) обязательны — без email и пароля аккаунт не создать. Данные видны только вам, капитану команды и администратору сайта.', 'wp-personal-account' ); ?>
